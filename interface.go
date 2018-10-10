@@ -94,6 +94,7 @@ type EngineInterface interface {
 	GetTZDatabase() *time.Location
 	GetTZLocation() *time.Location
 	ImportFile(fp string) ([]sql.Result, error)
+	Logger() core.ILogger
 	MapCacher(interface{}, caches.Cacher) error
 	NewSession() *Session
 	NoAutoTime() *Session
