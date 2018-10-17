@@ -102,7 +102,7 @@ func (session *Session) Delete(bean interface{}) (int64, error) {
 		return 0, err
 	}
 	pLimitN := session.statement.LimitN
-	if len(condSQL) == 0 && pLimitN == nil && *pLimitN == 0 {
+	if len(condSQL) == 0 && (pLimitN == nil || *pLimitN == 0) {
 		return 0, ErrNeedDeletedCond
 	}
 
