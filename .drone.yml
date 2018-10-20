@@ -180,6 +180,20 @@ steps:
     - push
     - pull_request
 
+- name: test-cockroach
+  pull: default
+  image: golang:1.13
+  environment:
+    GO111MODULE: "on"
+    GOPROXY: "https://goproxy.cn"
+  commands:
+  - go test -v -race -db="postgres" -conn_str="postgres://postgres:@cockroach/xorm_test?sslmode=disable" -schema=xorm -coverprofile=coverage8-1.txt -covermode=atomic
+  - go test -v -race -db="postgres" -conn_str="postgres://postgres:@cockroach/xorm_test?sslmode=disable" -schema=xorm -cache=true -coverprofile=coverage8-2.txt -covermode=atomic
+  when:
+    event:
+    - push
+    - pull_request
+
 - name: merge_coverage
   pull: default
   image: golang:1.12
@@ -258,6 +272,15 @@ services:
 - name: tidb
   pull: default
   image: pingcap/tidb:v3.0.3
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
+
+- name: cockroach
+  pull: default
+  image: cockroachdb/cockroach:v2.0.6
   when:
     event:
     - push
