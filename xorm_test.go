@@ -59,7 +59,7 @@ func createEngine(dbType, connStr string) error {
 				db.Close()
 				*ignoreSelectUpdate = true
 			case schemas.POSTGRES:
-				db, err := sql.Open(dbType, connStr)
+				db, err := sql.Open(dbType, strings.Replace(connStr, "xorm_test", "postgres", -1))
 				if err != nil {
 					return err
 				}
