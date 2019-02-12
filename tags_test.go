@@ -1295,3 +1295,22 @@ func TestVersion4(t *testing.T) {
 		assert.EqualValues(t, v.Ver, 1)
 	}
 }
+
+func TestIndexes(t *testing.T) {
+	assert.NoError(t, prepareEngine())
+
+	type TestIndexesStruct struct {
+		Id    int64
+		Name  string `xorm:"index unique(s)"`
+		Email string `xorm:"index unique(s)"`
+	}
+
+	assertSync(t, new(TestIndexesStruct))
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(tables))
+	assert.EqualValues(t, 3, len(tables[0].Columns()))
+	assert.EqualValues(t, testEngine.GetTableMapper().tables[0].Columns()[0].Name)
+	assert.EqualValues(t, 3, len(tables[0].Indexes))
+}
