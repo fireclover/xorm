@@ -801,3 +801,22 @@ func TestFindJoin(t *testing.T) {
 		Where("scene_item.type=?", 3).Or("device_user_privrels.user_id=?", 339).Find(&scenes)
 	assert.NoError(t, err)
 }
+
+func TestFindMapCols(t *testing.T) {
+	type FindMapCols struct {
+		Id   int64
+		ColA string
+		ColB string
+	}
+
+	assert.NoError(t, prepareEngine())
+	assertSync(t, new(FindMapCols))
+
+	var objs = make(map[int64]*FindMapCols)
+	err := testEngine.Cols("col_a, col_b").Find(&objs)
+	assert.Error(t, err)
+	assert.True(t, IsErrPrimaryKeyNoSelected(err))
+
+	err = testEngine.Cols("id, col_a, col_b").Find(&objs)
+	assert.NoError(t, err)
+}
