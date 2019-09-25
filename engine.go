@@ -55,6 +55,9 @@ type Engine struct {
 	cacherLock sync.RWMutex
 
 	defaultContext context.Context
+
+	quotePolicy QuotePolicy
+	quoteMode   QuoteMode
 }
 
 func (engine *Engine) setCacher(tableName string, cacher core.Cacher) {
@@ -173,85 +176,6 @@ func (engine *Engine) SetColumnMapper(mapper core.IMapper) {
 // generate batch sql and exeute.
 func (engine *Engine) SupportInsertMany() bool {
 	return engine.dialect.SupportInsertMany()
-}
-
-func (engine *Engine) quoteColumns(columnStr string) string {
-	columns := strings.Split(columnStr, ",")
-	for i := 0; i < len(columns); i++ {
-		columns[i] = engine.Quote(strings.TrimSpace(columns[i]))
-	}
-	return strings.Join(columns, ",")
-}
-
-// Quote Use QuoteStr quote the string sql
-func (engine *Engine) Quote(value string) string {
-	value = strings.TrimSpace(value)
-	if len(value) == 0 {
-		return value
-	}
-
-	buf := strings.Builder{}
-	engine.QuoteTo(&buf, value)
-
-	return buf.String()
-}
-
-// QuoteTo quotes string and writes into the buffer
-func (engine *Engine) QuoteTo(buf *strings.Builder, value string) {
-	if buf == nil {
-		return
-	}
-
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return
-	}
-
-	quoteTo(buf, engine.dialect.Quote(""), value)
-}
-
-func quoteTo(buf *strings.Builder, quotePair string, value string) {
-	if len(quotePair) < 2 { // no quote
-		_, _ = buf.WriteString(value)
-		return
-	}
-	
-	prefix, suffix := quotePair[0], quotePair[1]
-
-	i := 0
-	for i < len(value) {
-		// start of a token; might be already quoted
-		if value[i] == '.' {
-			_ = buf.WriteByte('.')
-			i++
-		} else if value[i] == prefix || value[i] == '`' {
-			// Has quotes; skip/normalize `name` to prefix+name+sufix
-			var ch byte
-			if value[i] == prefix {
-				ch = suffix
-			} else {
-				ch = '`'
-			}
-			i++
-			_ = buf.WriteByte(prefix)
-			for ; i < len(value) && value[i] != ch; i++ {
-				_ = buf.WriteByte(value[i])
-			}
-			_ = buf.WriteByte(suffix)
-			i++
-		} else {
-			// Requires quotes
-			_ = buf.WriteByte(prefix)
-			for ; i < len(value) && value[i] != '.'; i++ {
-				_ = buf.WriteByte(value[i])
-			}
-			_ = buf.WriteByte(suffix)
-		}
-	}
-}
-
-func (engine *Engine) quote(sql string) string {
-	return engine.dialect.Quote(sql)
 }
 
 // SqlType will be deprecated, please use SQLType instead
@@ -495,6 +419,8 @@ func (engine *Engine) dumpTables(tables []*core.Table, w io.Writer, tp ...core.D
 		return err
 	}
 
+	quoter := newQuoter(dialect, engine.quoteMode, engine.quotePolicy)
+
 	for i, table := range tables {
 		if i > 0 {
 			_, err = io.WriteString(w, "\n")
@@ -514,10 +440,10 @@ func (engine *Engine) dumpTables(tables []*core.Table, w io.Writer, tp ...core.D
 		}
 
 		cols := table.ColumnsSeq()
-		colNames := engine.dialect.Quote(strings.Join(cols, engine.dialect.Quote(", ")))
-		destColNames := dialect.Quote(strings.Join(cols, dialect.Quote(", ")))
+		colNames := quoteJoin(engine, cols)
+		destColNames := quoteJoin(quoter, cols)
 
-		rows, err := engine.DB().Query("SELECT " + colNames + " FROM " + engine.Quote(table.Name))
+		rows, err := engine.DB().Query("SELECT " + colNames + " FROM " + engine.quote(table.Name, false))
 		if err != nil {
 			return err
 		}
