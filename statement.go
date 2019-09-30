@@ -615,7 +615,7 @@ func (statement *Statement) Cols(columns ...string) *Statement {
 
 	newColumns := statement.colmap2NewColsWithQuote()
 
-	statement.ColumnStr = quoteJoin(statement.Engine, newColumns)
+	statement.ColumnStr = quoteJoin(statement.Engine.colQuoter, newColumns)
 	return statement
 }
 
@@ -650,7 +650,7 @@ func (statement *Statement) Omit(columns ...string) {
 	for _, nc := range newColumns {
 		statement.omitColumnMap = append(statement.omitColumnMap, nc)
 	}
-	statement.OmitStr = quoteJoin(statement.Engine, newColumns)
+	statement.OmitStr = quoteJoin(statement.Engine.colQuoter, newColumns)
 }
 
 // Nullable Update use only: update columns to null when value is nullable and zero-value
@@ -744,7 +744,7 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		}
 		tbs := strings.Split(tp.TableName(), ".")
 
-		var aliasName = unQuote(statement.Engine, tbs[len(tbs)-1])
+		var aliasName = unQuote(statement.Engine.tableQuoter, tbs[len(tbs)-1])
 		fmt.Fprintf(&buf, "(%s) %s ON %v", subSQL, aliasName, condition)
 		statement.joinArgs = append(statement.joinArgs, subQueryArgs...)
 	case *builder.Builder:
@@ -755,7 +755,7 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		}
 		tbs := strings.Split(tp.TableName(), ".")
 
-		var aliasName = unQuote(statement.Engine, tbs[len(tbs)-1])
+		var aliasName = unQuote(statement.Engine.tableQuoter, tbs[len(tbs)-1])
 		fmt.Fprintf(&buf, "(%s) %s ON %v", subSQL, aliasName, condition)
 		statement.joinArgs = append(statement.joinArgs, subQueryArgs...)
 	default:
@@ -821,7 +821,7 @@ func (statement *Statement) genColumnStr() string {
 			buf.WriteString(".")
 		}
 
-		quoteTo(statement.Engine, &buf, col.Name, true)
+		quoteTo(statement.Engine.colQuoter, &buf, col.Name)
 	}
 
 	return buf.String()
@@ -940,7 +940,7 @@ func (statement *Statement) genGetSQL(bean interface{}) (string, []interface{}, 
 		if len(statement.JoinStr) == 0 {
 			if len(columnStr) == 0 {
 				if len(statement.GroupByStr) > 0 {
-					columnStr = quoteColumns(statement.Engine, statement.GroupByStr)
+					columnStr = quoteColumns(statement.Engine.colQuoter, statement.GroupByStr)
 				} else {
 					columnStr = statement.genColumnStr()
 				}
@@ -948,7 +948,7 @@ func (statement *Statement) genGetSQL(bean interface{}) (string, []interface{}, 
 		} else {
 			if len(columnStr) == 0 {
 				if len(statement.GroupByStr) > 0 {
-					columnStr = quoteColumns(statement.Engine, statement.GroupByStr)
+					columnStr = quoteColumns(statement.Engine.colQuoter, statement.GroupByStr)
 				}
 			}
 		}
