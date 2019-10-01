@@ -251,7 +251,7 @@ func (session *Session) Sync2(beans ...interface{}) error {
 		} else {
 			tbName = engine.TableName(bean)
 		}
-		tbNameWithSchema := engine.tbNameWithSchema(tbName)
+		tbNameWithSchema := engine.TableName(tbName, true)
 
 		var oriTable *core.Table
 		for _, tb := range tables {
