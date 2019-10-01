@@ -42,7 +42,7 @@ steps:
   - "go test -v -race -db=\"mysql\" -conn_str=\"root:@tcp(mysql)/xorm_test\" -cache=true -coverprofile=coverage2-2.txt -covermode=atomic"
   - "go test -v -race -db=\"mysql\" -conn_str=\"root:@tcp(mysql)/xorm_test\" -col_quote=reserved -coverprofile=coverage2-3.txt -covermode=atomic"
   - "go test -v -race -db=\"mysql\" -conn_str=\"root:@tcp(mysql)/xorm_test\" -col_quote=reserved -cache=true -coverprofile=coverage2-4.txt -covermode=atomic"
-   when:
+  when:
     event:
     - push
     - pull_request
