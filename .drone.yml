@@ -11,7 +11,7 @@ clone:
 
 workspace:
   base: /go
-  path: src/github.com/go-xorm/xorm
+  path: src/gitea.com/xorm/xorm
 
 steps:
 - name: git
@@ -191,7 +191,7 @@ clone:
 
 workspace:
   base: /go
-  path: src/github.com/go-xorm/xorm
+  path: src/gitea.com/xorm/xorm
 
 steps:
 - name: git
@@ -411,7 +411,7 @@ clone:
 
 workspace:
   base: /go
-  path: src/github.com/go-xorm/xorm
+  path: src/gitea.com/xorm/xorm
 
 steps:
 - name: git
@@ -623,7 +623,7 @@ clone:
 
 workspace:
   base: /go
-  path: src/github.com/go-xorm/xorm
+  path: src/gitea.com/xorm/xorm
 
 steps:
 - name: git
