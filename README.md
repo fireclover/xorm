@@ -337,7 +337,7 @@ if _, err := session.Exec("delete from userinfo where username = ?", user2.Usern
 return nil
 ```
 
-* Transation should on one go routine. There is transaction and resue session memory
+* Transation should be on one go routine. There is transaction and resue session memory
 
 ```Go
 session := engine.NewSession()
