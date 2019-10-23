@@ -1409,7 +1409,7 @@ func TestUpdateMap3(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	type UpdateMapUser struct {
-		Id   uint64 `xorm:"PK"`
+		Id   uint64 `xorm:"PK autoincr"`
 		Name string `xorm:""`
 		Ver  uint64 `xorm:"version"`
 	}
