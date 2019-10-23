@@ -216,7 +216,7 @@ func TestWithIn(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 	assert.NoError(t, testEngine.Sync(new(temp3)))
 
-	testEngine.Insert(&[]temp3{
+	cnt, err := testEngine.Insert(&[]temp3{
 		{
 			Name: "user1",
 		},
@@ -227,8 +227,10 @@ func TestWithIn(t *testing.T) {
 			Name: "user1",
 		},
 	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 3, cnt)
 
-	cnt, err := testEngine.In("Id", 1, 2, 3, 4).Update(&temp3{Name: "aa"}, &temp3{Name: "user1"})
+	cnt, err = testEngine.In("Id", 1, 2, 3, 4).Update(&temp3{Name: "aa"}, &temp3{Name: "user1"})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 3, cnt)
 }
