@@ -378,19 +378,22 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	}
 
 	var tableAlias = session.engine.Quote(tableName)
+	var fromSQL string
 	if session.statement.TableAlias != "" {
 		switch session.engine.dialect.DBType() {
 		case core.MSSQL:
-			tableAlias = fmt.Sprintf("%s %s", tableAlias, session.statement.TableAlias)
+			tableAlias = fmt.Sprintf("%s", tableAlias)
+			fromSQL = fmt.Sprintf("FROM %s %s ", session.statement.TableAlias, tableAlias)
 		default:
 			tableAlias = fmt.Sprintf("%s AS %s", tableAlias, session.statement.TableAlias)
 		}
 	}
 
-	sqlStr = fmt.Sprintf("UPDATE %v%v SET %v %v",
+	sqlStr = fmt.Sprintf("UPDATE %v%v SET %v %v%v",
 		top,
 		tableAlias,
 		strings.Join(colNames, ", "),
+		fromSQL,
 		condSQL)
 
 	res, err := session.exec(sqlStr, append(args, condArgs...)...)
