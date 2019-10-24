@@ -87,13 +87,13 @@ func (session *Session) bufferIterate(bean interface{}, fun IterFunc) error {
 			idx++
 		}
 
+		if slice.Elem().Len() == 0 || idx == limit {
+			break
+		}
+
 		start = start + slice.Elem().Len()
 		if limit > 0 && idx+bufferSize > limit {
 			bufferSize = limit - idx
-		}
-
-		if bufferSize <= 0 || slice.Elem().Len() < bufferSize || idx == limit {
-			break
 		}
 	}
 
