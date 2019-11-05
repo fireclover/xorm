@@ -207,7 +207,7 @@ func (engine *Engine) QuoteTo(buf *strings.Builder, value string) {
 		return
 	}
 
-	quoteTo(buf, value, engine.dialect.Quote(""))
+	quoteTo(buf, engine.dialect.Quote(""), value)
 }
 
 func quoteTo(buf *strings.Builder, quotePair string, value string) {
