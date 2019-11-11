@@ -214,38 +214,38 @@ func quoteTo(buf *strings.Builder, quotePair string, value string) {
 	if len(quotePair) < 2 { // no quote
 		_, _ = buf.WriteString(value)
 		return
-	} else {
-		prefix, suffix := quotePair[0], quotePair[1]
+	}
+	
+	prefix, suffix := quotePair[0], quotePair[1]
 
-		i := 0
-		for i < len(value) {
-			// start of a token; might be already quoted
-			if value[i] == '.' {
-				_ = buf.WriteByte('.')
-				i++
-			} else if value[i] == prefix || value[i] == '`' {
-				// Has quotes; skip/normalize `name` to prefix+name+sufix
-				var ch byte
-				if value[i] == prefix {
-					ch = suffix
-				} else {
-					ch = '`'
-				}
-				i++
-				_ = buf.WriteByte(prefix)
-				for ; i < len(value) && value[i] != ch; i++ {
-					_ = buf.WriteByte(value[i])
-				}
-				_ = buf.WriteByte(suffix)
-				i++
+	i := 0
+	for i < len(value) {
+		// start of a token; might be already quoted
+		if value[i] == '.' {
+			_ = buf.WriteByte('.')
+			i++
+		} else if value[i] == prefix || value[i] == '`' {
+			// Has quotes; skip/normalize `name` to prefix+name+sufix
+			var ch byte
+			if value[i] == prefix {
+				ch = suffix
 			} else {
-				// Requires quotes
-				_ = buf.WriteByte(prefix)
-				for ; i < len(value) && value[i] != '.'; i++ {
-					_ = buf.WriteByte(value[i])
-				}
-				_ = buf.WriteByte(suffix)
+				ch = '`'
 			}
+			i++
+			_ = buf.WriteByte(prefix)
+			for ; i < len(value) && value[i] != ch; i++ {
+				_ = buf.WriteByte(value[i])
+			}
+			_ = buf.WriteByte(suffix)
+			i++
+		} else {
+			// Requires quotes
+			_ = buf.WriteByte(prefix)
+			for ; i < len(value) && value[i] != '.'; i++ {
+				_ = buf.WriteByte(value[i])
+			}
+			_ = buf.WriteByte(suffix)
 		}
 	}
 }
