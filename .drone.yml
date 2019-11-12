@@ -1,8 +1,6 @@
 ---
 kind: pipeline
 name: clone
-clone:
-  disable: true
 workspace:
   base: /go
   path: src/xorm.io/xorm
