@@ -25,6 +25,9 @@ depends_on:
   - clone
 clone:
   disable: true
+workspace:
+  base: /go
+  path: src/xorm.io/xorm
 steps:
 - name: build
   pull: default
