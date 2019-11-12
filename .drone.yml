@@ -20,7 +20,7 @@ steps:
   pull: default
   image: golang:1.10
   commands:
-  - go get -t -d -v ./...
+  - go get -u -v
   - go build -v
   when:
     event:
