@@ -7,8 +7,6 @@ steps:
   image: golang:1.10
   commands:
   - go get -t -d -v ./...
-  - go get -u xorm.io/core
-  - go get -u xorm.io/builder
   - go build -v
   when:
     event:
@@ -18,12 +16,15 @@ steps:
 ---
 kind: pipeline
 name: go1.10-test-sqlite
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-sqlite
   pull: default
   image: golang:1.10
   commands:
-  - go get -u github.com/wadey/gocovmerge
   - "go test -v -race -db=\"sqlite3\" -conn_str=\"./test.db\" -coverprofile=coverage1-1.txt -covermode=atomic"
   - "go test -v -race -db=\"sqlite3\" -conn_str=\"./test.db\" -cache=true -coverprofile=coverage1-2.txt -covermode=atomic"
   when:
@@ -34,6 +35,10 @@ steps:
 ---
 kind: pipeline
 name: go1.10-test-mysql
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-mysql
   pull: default
@@ -67,7 +72,6 @@ steps:
     event:
     - push
     - pull_request
-
 services:
 - name: mysql
   pull: default
@@ -84,6 +88,10 @@ services:
 ---
 kind: pipeline
 name: go1.10-test-postgres
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-postgres
   pull: default
@@ -106,7 +114,6 @@ steps:
     event:
     - push
     - pull_request
-
 services:
 - name: pgsql
   pull: default
@@ -123,6 +130,10 @@ services:
 ---
 kind: pipeline
 name: go1.10-test-mssql
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-mssql
   pull: default
@@ -134,7 +145,6 @@ steps:
     event:
     - push
     - pull_request
-
 services:
 - name: mssql
   pull: default
@@ -152,6 +162,10 @@ services:
 ---
 kind: pipeline
 name: go1.10-test-tidb
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-tidb
   pull: default
@@ -163,7 +177,6 @@ steps:
     event:
     - push
     - pull_request
-
 services:
 - name: tidb
   pull: default
@@ -177,6 +190,10 @@ services:
 ---
 kind: pipeline
 name: go1.13-build
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: build
   pull: default
@@ -195,6 +212,10 @@ steps:
 ---
 kind: pipeline
 name: go1.13-test-sqlite
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-sqlite
   pull: default
@@ -213,6 +234,10 @@ steps:
 ---
 kind: pipeline
 name: go1.13-test-mysql
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-mysql
   pull: default
@@ -255,7 +280,6 @@ steps:
     event:
     - push
     - pull_request
-
 services:
 - name: mysql
   pull: default
@@ -272,6 +296,10 @@ services:
 ---
 kind: pipeline
 name: go1.13-test-postgres
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-postgres
   pull: default
@@ -300,7 +328,6 @@ steps:
     event:
     - push
     - pull_request
-
 services:
 - name: pgsql
   pull: default
@@ -317,6 +344,10 @@ services:
 ---
 kind: pipeline
 name: go1.13-test-mssql
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-mssql
   pull: default
@@ -331,7 +362,6 @@ steps:
     event:
     - push
     - pull_request
-
 services:
 - name: mssql
   pull: default
@@ -349,6 +379,10 @@ services:
 ---
 kind: pipeline
 name: go1.13-test-tidb
+depends_on:
+  - go1.10-build
+clone:
+  disable: true
 steps:
 - name: test-tidb
   pull: default
@@ -378,6 +412,8 @@ steps:
 ---
 kind: pipeline
 name: go1.13-merge_coverage
+clone:
+  disable: true
 depends_on:
   - go1.13-build
   - go1.13-test-sqlite
@@ -385,7 +421,6 @@ depends_on:
   - go1.13-test-postgres
   - go1.13-test-mssql
   - go1.13-test-tidb
-
 steps:
 - name: merge_coverage
   pull: default
