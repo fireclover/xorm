@@ -174,11 +174,7 @@ services:
 
 ---
 kind: pipeline
-name: go1.13-build
-depends_on:
-  - clone
-clone:
-  disable: true
+name: go1.13-test
 steps:
 - name: build
   pull: default
@@ -194,10 +190,6 @@ steps:
     - push
     - pull_request
 
----
-kind: pipeline
-name: go1.13-test
-steps:
 - name: test-sqlite
   pull: default
   image: golang:1.13
@@ -319,6 +311,7 @@ steps:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
   depends_on:
+  - build
   - test-sqlite
   - test-mysql
   - test-mysql-utf8mb4
