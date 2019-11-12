@@ -4,7 +4,9 @@
 
 package xorm
 
-import "reflect"
+import (
+	"reflect"
+)
 
 // IterFunc only use by Iterate
 type IterFunc func(idx int, bean interface{}) error
@@ -74,9 +76,9 @@ func (session *Session) bufferIterate(bean interface{}, fun IterFunc) error {
 		session.autoResetStatement = true
 	}()
 
-	for {
+	for bufferSize > 0 {
 		slice := reflect.New(sliceType)
-		if err := session.Limit(bufferSize, start).find(slice.Interface(), bean); err != nil {
+		if err := session.NoCache().Limit(bufferSize, start).find(slice.Interface(), bean); err != nil {
 			return err
 		}
 
@@ -87,13 +89,13 @@ func (session *Session) bufferIterate(bean interface{}, fun IterFunc) error {
 			idx++
 		}
 
-		if slice.Elem().Len() == 0 || idx == limit {
+		if bufferSize > slice.Elem().Len() {
 			break
 		}
 
 		start = start + slice.Elem().Len()
-		if limit > 0 && idx+bufferSize > limit {
-			bufferSize = limit - idx
+		if limit > 0 && start+bufferSize > limit {
+			bufferSize = limit - start
 		}
 	}
 
