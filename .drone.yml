@@ -3,6 +3,9 @@ kind: pipeline
 name: clone
 clone:
   disable: true
+workspace:
+  base: /go
+  path: src/xorm.io/xorm
 steps:
 - name: clone
   image: alpine/git
@@ -38,7 +41,7 @@ steps:
 kind: pipeline
 name: go1.10-test-sqlite
 depends_on:
-  - clone
+  - go1.10-build
 clone:
   disable: true
 steps:
