@@ -221,6 +221,8 @@ steps:
 - name: test-mysql-utf8mb4
   pull: default
   image: golang:1.13
+  depends_on:
+    - test-mysql
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -235,6 +237,8 @@ steps:
 - name: test-mymysql
   pull: default
   image: golang:1.13
+  depends_on:
+    - test-mysql-utf8mb4
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
