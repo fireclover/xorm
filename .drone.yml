@@ -10,9 +10,7 @@ steps:
   pull: default
   image: golang:1.10
   commands:
-  - go get -t -d -v ./...
-  - go get -u xorm.io/core
-  - go get -u xorm.io/builder
+  - go get -t -d -v
   - go build -v
   when:
     event:
@@ -87,6 +85,8 @@ steps:
 - name: test-postgres-schema
   pull: default
   image: golang:1.10
+  depends_on:
+    - build
   commands:
   - "go test -v -race -db=\"postgres\" -conn_str=\"postgres://postgres:@pgsql/xorm_test?sslmode=disable\" -schema=xorm -coverprofile=coverage5-1.txt -covermode=atomic"
   - "go test -v -race -db=\"postgres\" -conn_str=\"postgres://postgres:@pgsql/xorm_test?sslmode=disable\" -schema=xorm -cache=true -coverprofile=coverage5-2.txt -covermode=atomic"
