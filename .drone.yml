@@ -1,6 +1,27 @@
 ---
 kind: pipeline
+name: clone
+clone:
+  disable: true
+steps:
+- name: clone
+  image: alpine/git
+  commands:
+  - git clone https://gitea.com/xorm/xorm.git .
+  - git checkout $DRONE_COMMIT
+  when:
+    event:
+    - tag
+    - push
+    - pull_request
+
+---
+kind: pipeline
 name: go1.10-build
+depends_on:
+  - clone
+clone:
+  disable: true
 steps:
 - name: build
   pull: default
@@ -17,7 +38,7 @@ steps:
 kind: pipeline
 name: go1.10-test-sqlite
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -36,7 +57,7 @@ steps:
 kind: pipeline
 name: go1.10-test-mysql
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -89,7 +110,7 @@ services:
 kind: pipeline
 name: go1.10-test-postgres
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -131,7 +152,7 @@ services:
 kind: pipeline
 name: go1.10-test-mssql
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -163,7 +184,7 @@ services:
 kind: pipeline
 name: go1.10-test-tidb
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -191,7 +212,7 @@ services:
 kind: pipeline
 name: go1.13-build
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -213,7 +234,7 @@ steps:
 kind: pipeline
 name: go1.13-test-sqlite
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -235,7 +256,7 @@ steps:
 kind: pipeline
 name: go1.13-test-mysql
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -297,7 +318,7 @@ services:
 kind: pipeline
 name: go1.13-test-postgres
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -345,7 +366,7 @@ services:
 kind: pipeline
 name: go1.13-test-mssql
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
@@ -380,7 +401,7 @@ services:
 kind: pipeline
 name: go1.13-test-tidb
 depends_on:
-  - go1.10-build
+  - clone
 clone:
   disable: true
 steps:
