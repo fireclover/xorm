@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: go1.10-build
+name: go1.10-test
 workspace:
   base: /go
   path: src/gitea.com/xorm/xorm
@@ -10,7 +10,9 @@ steps:
   pull: default
   image: golang:1.10
   commands:
-  - go get -u -v
+  - go get -t -d -v ./...
+  - go get -u xorm.io/core
+  - go get -u xorm.io/builder
   - go build -v
   when:
     event:
