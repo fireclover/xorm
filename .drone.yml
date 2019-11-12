@@ -1,20 +1,10 @@
 ---
 kind: pipeline
-name: clone
+name: go1.10-build
 workspace:
   base: /go
   path: src/xorm.io/xorm
 
----
-kind: pipeline
-name: go1.10-build
-depends_on:
-  - clone
-clone:
-  disable: true
-workspace:
-  base: /go
-  path: src/xorm.io/xorm
 steps:
 - name: build
   pull: default
@@ -27,14 +17,6 @@ steps:
     - push
     - pull_request
 
----
-kind: pipeline
-name: go1.10-test-sqlite
-depends_on:
-  - go1.10-build
-clone:
-  disable: true
-steps:
 - name: test-sqlite
   pull: default
   image: golang:1.10
@@ -46,14 +28,6 @@ steps:
     - push
     - pull_request
 
----
-kind: pipeline
-name: go1.10-test-mysql
-depends_on:
-  - clone
-clone:
-  disable: true
-steps:
 - name: test-mysql
   pull: default
   image: golang:1.10
@@ -86,27 +60,7 @@ steps:
     event:
     - push
     - pull_request
-services:
-- name: mysql
-  pull: default
-  image: mysql:5.7
-  environment:
-    MYSQL_ALLOW_EMPTY_PASSWORD: yes
-    MYSQL_DATABASE: xorm_test
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
 
----
-kind: pipeline
-name: go1.10-test-postgres
-depends_on:
-  - clone
-clone:
-  disable: true
-steps:
 - name: test-postgres
   pull: default
   image: golang:1.10
@@ -128,7 +82,61 @@ steps:
     event:
     - push
     - pull_request
+
+- name: test-mssql
+  pull: default
+  image: golang:1.10
+  commands:
+  - "go test -v -race -db=\"mssql\" -conn_str=\"server=mssql;user id=sa;password=yourStrong(!)Password;database=xorm_test\" -coverprofile=coverage6-1.txt -covermode=atomic"
+  - "go test -v -race -db=\"mssql\" -conn_str=\"server=mssql;user id=sa;password=yourStrong(!)Password;database=xorm_test\" -cache=true -coverprofile=coverage6-2.txt -covermode=atomic"
+  when:
+    event:
+    - push
+    - pull_request
+
+- name: test-tidb
+  pull: default
+  image: golang:1.10
+  commands:
+  - "go test -v -race -db=\"mysql\" -conn_str=\"root:@tcp(tidb:4000)/xorm_test\" -ignore_select_update=true -coverprofile=coverage7-1.txt -covermode=atomic"
+  - "go test -v -race -db=\"mysql\" -conn_str=\"root:@tcp(tidb:4000)/xorm_test\" -ignore_select_update=true -cache=true -coverprofile=coverage7-2.txt -covermode=atomic"
+  when:
+    event:
+    - push
+    - pull_request
+
+- name: test-echo
+  pull: default
+  image: golang:1.10
+  depends_on:
+  - test-sqlite
+  - test-mysql
+  - test-mysql-utf8mb4
+  - test-mymysql
+  - test-postgres
+  - test-postgres-schema
+  - test-mssql
+  - test-tidb
+  commands:
+  - echo "go1.10 build end"
+  when:
+    event:
+    - push
+    - pull_request
+
 services:
+- name: mysql
+  pull: default
+  image: mysql:5.7
+  environment:
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    MYSQL_DATABASE: xorm_test
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
+
 - name: pgsql
   pull: default
   image: postgres:9.5
@@ -141,25 +149,6 @@ services:
     - tag
     - pull_request
 
----
-kind: pipeline
-name: go1.10-test-mssql
-depends_on:
-  - clone
-clone:
-  disable: true
-steps:
-- name: test-mssql
-  pull: default
-  image: golang:1.10
-  commands:
-  - "go test -v -race -db=\"mssql\" -conn_str=\"server=mssql;user id=sa;password=yourStrong(!)Password;database=xorm_test\" -coverprofile=coverage6-1.txt -covermode=atomic"
-  - "go test -v -race -db=\"mssql\" -conn_str=\"server=mssql;user id=sa;password=yourStrong(!)Password;database=xorm_test\" -cache=true -coverprofile=coverage6-2.txt -covermode=atomic"
-  when:
-    event:
-    - push
-    - pull_request
-services:
 - name: mssql
   pull: default
   image: microsoft/mssql-server-linux:latest
@@ -173,25 +162,6 @@ services:
     - tag
     - pull_request
 
----
-kind: pipeline
-name: go1.10-test-tidb
-depends_on:
-  - clone
-clone:
-  disable: true
-steps:
-- name: test-tidb
-  pull: default
-  image: golang:1.10
-  commands:
-  - "go test -v -race -db=\"mysql\" -conn_str=\"root:@tcp(tidb:4000)/xorm_test\" -ignore_select_update=true -coverprofile=coverage7-1.txt -covermode=atomic"
-  - "go test -v -race -db=\"mysql\" -conn_str=\"root:@tcp(tidb:4000)/xorm_test\" -ignore_select_update=true -cache=true -coverprofile=coverage7-2.txt -covermode=atomic"
-  when:
-    event:
-    - push
-    - pull_request
-services:
 - name: tidb
   pull: default
   image: pingcap/tidb:v3.0.3
