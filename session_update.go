@@ -382,8 +382,8 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	if session.statement.TableAlias != "" {
 		switch session.engine.dialect.DBType() {
 		case core.MSSQL:
-			tableAlias = fmt.Sprintf("%s", tableAlias)
-			fromSQL = fmt.Sprintf("FROM %s %s ", session.statement.TableAlias, tableAlias)
+			tableAlias = session.statement.TableAlias
+			fromSQL = fmt.Sprintf("FROM %s %s ", tableAlias, session.statement.TableAlias)
 		default:
 			tableAlias = fmt.Sprintf("%s AS %s", tableAlias, session.statement.TableAlias)
 		}
