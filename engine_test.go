@@ -15,7 +15,7 @@ func TestQuoteTo(t *testing.T) {
 
 	test := func(t *testing.T, expected string, value string) {
 		buf := &strings.Builder{}
-		quoteTo(buf, "[]", value)
+		realQuoteTo('[', ']', buf, value)
 		assert.EqualValues(t, expected, buf.String())
 	}
 
@@ -34,8 +34,4 @@ func TestQuoteTo(t *testing.T) {
 	test(t, "[myschema].[mytable]", `[myschema].[mytable]`)
 
 	test(t, `["myschema].[mytable"]`, `"myschema.mytable"`)
-
-	buf := &strings.Builder{}
-	quoteTo(buf, "", "noquote")
-	assert.EqualValues(t, "noquote", buf.String())
 }
