@@ -280,7 +280,9 @@ services:
 
 - name: cockroach
   pull: default
-  image: cockroachdb/cockroach:v2.0.6
+  image: cockroachdb/cockroach:v19.2.0
+  commands:
+  - start --insecure
   when:
     event:
     - push
