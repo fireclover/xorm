@@ -180,18 +180,6 @@ steps:
     - push
     - pull_request
 
-- name: cockroach
-  pull: default
-  image: cockroachdb/cockroach:v19.2.0
-  detach: true
-  commands:
-  - start --insecure
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
-
 - name: test-cockroach
   pull: default
   image: golang:1.13
@@ -199,7 +187,6 @@ steps:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
   commands:
-  - sleep 5
   - go test -v -race -db="postgres" -conn_str="postgres://postgres:@cockroach/xorm_test?sslmode=disable" -schema=xorm -coverprofile=coverage8-1.txt -covermode=atomic
   - go test -v -race -db="postgres" -conn_str="postgres://postgres:@cockroach/xorm_test?sslmode=disable" -schema=xorm -cache=true -coverprofile=coverage8-2.txt -covermode=atomic
   when:
@@ -291,4 +278,13 @@ services:
     - tag
     - pull_request
 
-
+- name: cockroach
+  pull: default
+  image: cockroachdb/cockroach:v19.2.0
+  commands:
+  - start --insecure
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
