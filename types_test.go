@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"testing"
 
-	"xorm.io/core"
 	"github.com/stretchr/testify/assert"
+	"xorm.io/core"
 )
 
 func TestArrayField(t *testing.T) {
@@ -81,6 +81,29 @@ func TestGetBytes(t *testing.T) {
 
 	type Varbinary struct {
 		Data []byte `xorm:"VARBINARY(250)"`
+	}
+
+	err := testEngine.Sync2(new(Varbinary))
+	assert.NoError(t, err)
+
+	cnt, err := testEngine.Insert(&Varbinary{
+		Data: []byte("test"),
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var b Varbinary
+	has, err := testEngine.Get(&b)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, "test", string(b.Data))
+}
+
+func TestGetBytesMax(t *testing.T) {
+	assert.NoError(t, prepareEngine())
+
+	type Varbinary struct {
+		Data []byte `xorm:"VARBINARY"`
 	}
 
 	err := testEngine.Sync2(new(Varbinary))

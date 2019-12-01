@@ -232,10 +232,10 @@ func (db *mssql) SqlType(c *core.Column) string {
 		c.IsPrimaryKey = true
 		c.Nullable = false
 		res = core.BigInt
-	case core.Bytea, core.Blob, core.Binary, core.TinyBlob, core.MediumBlob, core.LongBlob:
+	case core.VarBinary, core.Bytea, core.Blob, core.Binary, core.TinyBlob, core.MediumBlob, core.LongBlob:
 		res = core.VarBinary
 		if c.Length == 0 {
-			c.Length = 50
+			res += "(MAX)"
 		}
 	case core.TimeStamp:
 		res = core.DateTime
