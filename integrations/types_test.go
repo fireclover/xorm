@@ -106,6 +106,29 @@ func TestGetBytes(t *testing.T) {
 	assert.Equal(t, "test", string(b.Data))
 }
 
+func TestGetBytesMax(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type Varbinary struct {
+		Data []byte `xorm:"VARBINARY"`
+	}
+
+	err := testEngine.Sync2(new(Varbinary))
+	assert.NoError(t, err)
+
+	cnt, err := testEngine.Insert(&Varbinary{
+		Data: []byte("test"),
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var b Varbinary
+	has, err := testEngine.Get(&b)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, "test", string(b.Data))
+}
+
 type ConvString string
 
 func (s *ConvString) FromDB(data []byte) error {
