@@ -104,24 +104,24 @@ func TestGetBytes(t *testing.T) {
 func TestGetBytesMax(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
-	type Varbinary struct {
+	type BigVarbinary struct {
 		Data []byte `xorm:"VARBINARY"`
 	}
 
-	err := testEngine.Sync2(new(Varbinary))
+	err := testEngine.Sync2(new(BigVarbinary))
 	assert.NoError(t, err)
 
 	bigData := make([]byte, 80000) //over 8000
 	rand.Seed(time.Now().UnixNano())
 	rand.Read(bigData)
 
-	cnt, err := testEngine.Insert(&Varbinary{
+	cnt, err := testEngine.Insert(&BigVarbinary{
 		Data: bigData,
 	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var b Varbinary
+	var b BigVarbinary
 	has, err := testEngine.Get(&b)
 	assert.NoError(t, err)
 	assert.Equal(t, true, has)
