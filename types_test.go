@@ -7,7 +7,9 @@ package xorm
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"xorm.io/core"
@@ -109,8 +111,12 @@ func TestGetBytesMax(t *testing.T) {
 	err := testEngine.Sync2(new(Varbinary))
 	assert.NoError(t, err)
 
+	bigData := make([]byte, 80000) //over 8000
+	rand.Seed(time.Now().UnixNano())
+	rand.Read(bigData)
+
 	cnt, err := testEngine.Insert(&Varbinary{
-		Data: []byte("test"),
+		Data: bigData,
 	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
@@ -119,7 +125,7 @@ func TestGetBytesMax(t *testing.T) {
 	has, err := testEngine.Get(&b)
 	assert.NoError(t, err)
 	assert.Equal(t, true, has)
-	assert.Equal(t, "test", string(b.Data))
+	assert.Equal(t, bigData, b.Data)
 }
 
 type ConvString string
