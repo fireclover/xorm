@@ -1374,11 +1374,33 @@ func TestUpdateExprs2(t *testing.T) {
 
 	assertSync(t, new(UpdateExprsRelease))
 
-	_, err := testEngine.
+	var uer = UpdateExprsRelease{
+		RepoId:     1,
+		IsTag:      false,
+		IsDraft:    false,
+		NumCommits: 1,
+		Sha1:       "sha1",
+	}
+	inserted, err := testEngine.Insert(&uer)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, inserted)
+
+	updated, err := testEngine.
 		Where("repo_id = ? AND is_tag = ?", 1, false).
 		SetExpr("is_draft", true).
 		SetExpr("num_commits", 0).
 		SetExpr("sha1", "").
 		Update(new(UpdateExprsRelease))
 	assert.NoError(t, err)
+	assert.EqualValues(t, 1, updated)
+
+	var uer2 UpdateExprsRelease
+	has, err := testEngine.ID(uer.Id).Get(&uer2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, 1, uer2.RepoId)
+	assert.EqualValues(t, false, uer2.IsTag)
+	assert.EqualValues(t, true, uer2.IsDraft)
+	assert.EqualValues(t, 0, uer2.NumCommits)
+	assert.EqualValues(t, "", uer2.Sha1)
 }
