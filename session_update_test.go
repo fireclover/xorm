@@ -1359,3 +1359,26 @@ func TestUpdateAlias(t *testing.T) {
 	assert.EqualValues(t, 2, ue.NumIssues)
 	assert.EqualValues(t, "lunny xiao", ue.Name)
 }
+
+func TestUpdateExprs2(t *testing.T) {
+	assert.NoError(t, prepareEngine())
+
+	type UpdateExprsRelease struct {
+		Id         int64
+		RepoId     int
+		IsTag      bool
+		IsDraft    bool
+		NumCommits int
+		Sha1       string
+	}
+
+	assertSync(t, new(UpdateExprsRelease))
+
+	_, err := testEngine.
+		Where("repo_id = ? AND is_tag = ?", 1, false).
+		SetExpr("is_draft", true).
+		SetExpr("num_commits", 0).
+		SetExpr("sha1", "").
+		Update(new(UpdateExprsRelease))
+	assert.NoError(t, err)
+}

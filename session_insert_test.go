@@ -928,6 +928,43 @@ func TestInsertWhere(t *testing.T) {
 	assert.EqualValues(t, 5, j5.Index)
 }
 
+func TestInsertExpr2(t *testing.T) {
+	assert.NoError(t, prepareEngine())
+
+	type InsertExprsRelease struct {
+		Id         int64
+		RepoId     int
+		IsTag      bool
+		IsDraft    bool
+		NumCommits int
+		Sha1       string
+	}
+
+	assertSync(t, new(InsertExprsRelease))
+
+	inserted, err := testEngine.
+		SetExpr("is_draft", true).
+		SetExpr("num_commits", 0).
+		SetExpr("sha1", "").
+		Insert(&InsertExprsRelease{
+			RepoId: 1,
+			IsTag:  true,
+		})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, inserted)
+
+	inserted, err = testEngine.Table(new(InsertExprsRelease)).
+		SetExpr("is_draft", true).
+		SetExpr("num_commits", 0).
+		SetExpr("sha1", "").
+		Insert(map[string]interface{}{
+			"repo_id": 1,
+			"is_tag":  true,
+		})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, inserted)
+}
+
 type NightlyRate struct {
 	ID int64 `xorm:"'id' not null pk BIGINT(20)" json:"id"`
 }
