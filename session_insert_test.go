@@ -546,10 +546,7 @@ func TestInsertMulti2(t *testing.T) {
 		{Username: "xlw22", Departname: "dev", Alias: "lunny3", Created: time.Now()},
 	}
 	cnt, err := testEngine.Insert(&users)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	assert.EqualValues(t, len(users), cnt)
 
 	users2 := []*Userinfo{
@@ -576,10 +573,7 @@ func TestInsertMulti2Interface(t *testing.T) {
 		Userinfo{Username: "xlw22", Departname: "dev", Alias: "lunny3", Created: time.Now()},
 	}
 	cnt, err := testEngine.Insert(&users)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	assert.EqualValues(t, len(users), cnt)
 
 	users2 := []interface{}{
