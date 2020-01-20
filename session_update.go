@@ -239,14 +239,20 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	for i, colName := range exprColumns.colNames {
 		switch tp := exprColumns.args[i].(type) {
 		case string:
-			colNames = append(colNames, session.engine.Quote(colName)+" = "+tp)
+			if len(tp) == 0 {
+				tp = "''"
+			}
+			colNames = append(colNames, session.engine.Quote(colName)+"="+tp)
 		case *builder.Builder:
 			subQuery, subArgs, err := builder.ToSQL(tp)
 			if err != nil {
 				return 0, err
 			}
-			colNames = append(colNames, session.engine.Quote(colName)+" = ("+subQuery+")")
+			colNames = append(colNames, session.engine.Quote(colName)+"=("+subQuery+")")
 			args = append(args, subArgs...)
+		default:
+			colNames = append(colNames, session.engine.Quote(colName)+"=?")
+			args = append(args, exprColumns.args[i])
 		}
 	}
 
@@ -294,21 +300,25 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 
 	st := &session.statement
 
-	var sqlStr string
-	var condArgs []interface{}
-	var condSQL string
-	cond := session.statement.cond.And(autoCond)
+	var (
+		sqlStr   string
+		condArgs []interface{}
+		condSQL  string
+		cond     = session.statement.cond.And(autoCond)
 
-	var doIncVer = (table != nil && table.Version != "" && session.statement.checkVersion)
-	var verValue *reflect.Value
+		doIncVer = isStruct && (table != nil && table.Version != "" && session.statement.checkVersion)
+		verValue *reflect.Value
+	)
 	if doIncVer {
 		verValue, err = table.VersionColumn().ValueOf(bean)
 		if err != nil {
 			return 0, err
 		}
 
-		cond = cond.And(builder.Eq{session.engine.Quote(table.Version): verValue.Interface()})
-		colNames = append(colNames, session.engine.Quote(table.Version)+" = "+session.engine.Quote(table.Version)+" + 1")
+		if verValue != nil {
+			cond = cond.And(builder.Eq{session.engine.Quote(table.Version): verValue.Interface()})
+			colNames = append(colNames, session.engine.Quote(table.Version)+" = "+session.engine.Quote(table.Version)+" + 1")
+		}
 	}
 
 	condSQL, condArgs, err = builder.ToSQL(cond)

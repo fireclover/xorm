@@ -1359,3 +1359,90 @@ func TestUpdateAlias(t *testing.T) {
 	assert.EqualValues(t, 2, ue.NumIssues)
 	assert.EqualValues(t, "lunny xiao", ue.Name)
 }
+
+func TestUpdateExprs2(t *testing.T) {
+	assert.NoError(t, prepareEngine())
+
+	type UpdateExprsRelease struct {
+		Id         int64
+		RepoId     int
+		IsTag      bool
+		IsDraft    bool
+		NumCommits int
+		Sha1       string
+	}
+
+	assertSync(t, new(UpdateExprsRelease))
+
+	var uer = UpdateExprsRelease{
+		RepoId:     1,
+		IsTag:      false,
+		IsDraft:    false,
+		NumCommits: 1,
+		Sha1:       "sha1",
+	}
+	inserted, err := testEngine.Insert(&uer)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, inserted)
+
+	updated, err := testEngine.
+		Where("repo_id = ? AND is_tag = ?", 1, false).
+		SetExpr("is_draft", true).
+		SetExpr("num_commits", 0).
+		SetExpr("sha1", "").
+		Update(new(UpdateExprsRelease))
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, updated)
+
+	var uer2 UpdateExprsRelease
+	has, err := testEngine.ID(uer.Id).Get(&uer2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, 1, uer2.RepoId)
+	assert.EqualValues(t, false, uer2.IsTag)
+	assert.EqualValues(t, true, uer2.IsDraft)
+	assert.EqualValues(t, 0, uer2.NumCommits)
+	assert.EqualValues(t, "", uer2.Sha1)
+}
+
+func TestUpdateMap3(t *testing.T) {
+	assert.NoError(t, prepareEngine())
+
+	type UpdateMapUser struct {
+		Id   uint64 `xorm:"PK autoincr"`
+		Name string `xorm:""`
+		Ver  uint64 `xorm:"version"`
+	}
+
+	oldMapper := testEngine.GetColumnMapper()
+	defer func() {
+		testEngine.SetColumnMapper(oldMapper)
+	}()
+
+	mapper := core.NewPrefixMapper(core.SnakeMapper{}, "F")
+	testEngine.SetColumnMapper(mapper)
+
+	assertSync(t, new(UpdateMapUser))
+
+	_, err := testEngine.Table(new(UpdateMapUser)).Insert(map[string]interface{}{
+		"Fname": "first user name",
+		"Fver":  1,
+	})
+	assert.NoError(t, err)
+
+	update := map[string]interface{}{
+		"Fname": "user name",
+		"Fver":  1,
+	}
+	rows, err := testEngine.Table(new(UpdateMapUser)).ID(1).Update(update)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, rows)
+
+	update = map[string]interface{}{
+		"Name": "user name",
+		"Ver":  1,
+	}
+	rows, err = testEngine.Table(new(UpdateMapUser)).ID(1).Update(update)
+	assert.Error(t, err)
+	assert.EqualValues(t, 0, rows)
+}
