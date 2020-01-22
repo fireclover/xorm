@@ -870,7 +870,7 @@ func (cfg *goracleDriver) Parse(driverName, dataSourceName string) (*core.Uri, e
 			db.DbName = match
 		}
 	}
-	if db.DbName == "" {
+	if db.DbName == "" && len(matches) != 0 {
 		return nil, errors.New("dbname is empty")
 	}
 	return db, nil
@@ -895,7 +895,7 @@ func (p *oci8Driver) Parse(driverName, dataSourceName string) (*core.Uri, error)
 			db.DbName = match
 		}
 	}
-	if db.DbName == "" {
+	if db.DbName == "" && len(matches) != 0 {
 		return nil, errors.New("dbname is empty")
 	}
 	return db, nil
