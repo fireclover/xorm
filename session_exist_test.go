@@ -78,101 +78,101 @@ func TestExistStruct(t *testing.T) {
 func TestExistStructForJoin(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
-	type Salary struct {
+	type Number struct {
 		Id  int64
 		Lid int64
 	}
 
-	type CheckList struct {
+	type OrderList struct {
 		Id  int64
 		Eid int64
 	}
 
-	type Empsetting struct {
+	type Player struct {
 		Id   int64
 		Name string
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(Salary), new(CheckList), new(Empsetting)))
+	assert.NoError(t, testEngine.Sync2(new(Number), new(OrderList), new(Player)))
 
-	var emp Empsetting
-	cnt, err := testEngine.Insert(&emp)
+	var ply Player
+	cnt, err := testEngine.Insert(&ply)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var checklist = CheckList{
-		Eid: emp.Id,
+	var orderlist = OrderList{
+		Eid: ply.Id,
 	}
-	cnt, err = testEngine.Insert(&checklist)
+	cnt, err = testEngine.Insert(&orderlist)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var salary = Salary{
-		Lid: checklist.Id,
+	var um = Number{
+		Lid: orderlist.Id,
 	}
-	cnt, err = testEngine.Insert(&salary)
+	cnt, err = testEngine.Insert(&um)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
 	session := testEngine.NewSession()
 	defer session.Close()
 
-	session.Table("salary").
-		Join("INNER", "check_list", "check_list.id = salary.lid").
-		Join("LEFT", "empsetting", "empsetting.id = check_list.eid").
-		Where("salary.lid = ?", 1)
+	session.Table("number").
+		Join("INNER", "order_list", "order_list.id = number.lid").
+		Join("LEFT", "player", "player.id = order_list.eid").
+		Where("number.lid = ?", 1)
 	has, err := session.Exist()
 	assert.NoError(t, err)
 	assert.True(t, has)
 
-	session.Table("salary").
-		Join("INNER", "check_list", "check_list.id = salary.lid").
-		Join("LEFT", "empsetting", "empsetting.id = check_list.eid").
-		Where("salary.lid = ?", 2)
+	session.Table("number").
+		Join("INNER", "order_list", "order_list.id = number.lid").
+		Join("LEFT", "player", "player.id = order_list.eid").
+		Where("number.lid = ?", 2)
 	has, err = session.Exist()
 	assert.NoError(t, err)
 	assert.False(t, has)
 
-	session.Table("salary").
-		Select("check_list.id").
-		Join("INNER", "check_list", "check_list.id = salary.lid").
-		Join("LEFT", "empsetting", "empsetting.id = check_list.eid").
-		Where("check_list.id = ?", 1)
+	session.Table("number").
+		Select("order_list.id").
+		Join("INNER", "order_list", "order_list.id = number.lid").
+		Join("LEFT", "player", "player.id = order_list.eid").
+		Where("order_list.id = ?", 1)
 	has, err = session.Exist()
 	assert.NoError(t, err)
 	assert.True(t, has)
 
-	session.Table("salary").
-		Select("empsetting.id").
-		Join("INNER", "check_list", "check_list.id = salary.lid").
-		Join("LEFT", "empsetting", "empsetting.id = check_list.eid").
-		Where("empsetting.id = ?", 2)
+	session.Table("number").
+		Select("player.id").
+		Join("INNER", "order_list", "order_list.id = number.lid").
+		Join("LEFT", "player", "player.id = order_list.eid").
+		Where("player.id = ?", 2)
 	has, err = session.Exist()
 	assert.NoError(t, err)
 	assert.False(t, has)
 
-	session.Table("salary").
-		Select("empsetting.id").
-		Join("INNER", "check_list", "check_list.id = salary.lid").
-		Join("LEFT", "empsetting", "empsetting.id = check_list.eid")
+	session.Table("number").
+		Select("player.id").
+		Join("INNER", "order_list", "order_list.id = number.lid").
+		Join("LEFT", "player", "player.id = order_list.eid")
 	has, err = session.Exist()
 	assert.NoError(t, err)
 	assert.True(t, has)
 
-	err = session.DropTable("check_list")
+	err = session.DropTable("order_list")
 	assert.NoError(t, err)
 
-	session.Table("salary").
-		Select("empsetting.id").
-		Join("INNER", "check_list", "check_list.id = salary.lid").
-		Join("LEFT", "empsetting", "empsetting.id = check_list.eid")
+	session.Table("number").
+		Select("player.id").
+		Join("INNER", "order_list", "order_list.id = number.lid").
+		Join("LEFT", "player", "player.id = order_list.eid")
 	has, err = session.Exist()
 	assert.Error(t, err)
 	assert.False(t, has)
 
-	session.Table("salary").
-		Select("empsetting.id").
-		Join("LEFT", "empsetting", "empsetting.id = salary.lid")
+	session.Table("number").
+		Select("player.id").
+		Join("LEFT", "player", "player.id = number.lid")
 	has, err = session.Exist()
 	assert.NoError(t, err)
 	assert.True(t, has)
