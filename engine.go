@@ -1392,6 +1392,24 @@ func (engine *Engine) DropTables(beans ...interface{}) error {
 	return session.Commit()
 }
 
+// DropTableCols drop specify columns of a table
+func (engine *Engine) DropTableCols(bean interface{}, cols ...string) error {
+	session := engine.NewSession()
+	defer session.Close()
+
+	err := session.Begin()
+	if err != nil {
+		return err
+	}
+
+		err = session.dropTableCols(bean, cols)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	return session.Commit()
+}
+
 // DropIndexes drop indexes of a table
 func (engine *Engine) DropIndexes(bean interface{}) error {
 	session := engine.NewSession()

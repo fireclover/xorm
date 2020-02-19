@@ -7,6 +7,7 @@ package xorm
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"xorm.io/core"
@@ -109,6 +110,175 @@ func (session *Session) dropIndexes(bean interface{}) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// DropTableCols drop specify columns of a table
+func (session *Session) DropTableCols(beanOrTableName interface{}, cols ...string) error {
+	if session.isAutoClose {
+		defer session.Close()
+	}
+
+	return session.dropTableCols(beanOrTableName, cols)
+}
+
+func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string) error {
+	tableName := session.engine.TableName(beanOrTableName)
+
+	if tableName == "" || len(cols) == 0 {
+		return nil
+	}
+
+	// TODO: This will not work if there are foreign keys
+
+	switch session.engine.dialect.DBType() {
+	case core.SQLITE:
+		// First drop the indexes on the columns
+		res, errIndex := session.Query(fmt.Sprintf("PRAGMA index_list(`%s`)", tableName))
+		if errIndex != nil {
+			return errIndex
+		}
+		for _, row := range res {
+			indexName := row["name"]
+			indexRes, err := session.Query(fmt.Sprintf("PRAGMA index_info(`%s`)", indexName))
+			if err != nil {
+				return err
+			}
+			if len(indexRes) != 1 {
+				continue
+			}
+			indexColumn := string(indexRes[0]["name"])
+			for _, name := range cols {
+				if name == indexColumn {
+					_, err := session.Exec(fmt.Sprintf("DROP INDEX `%s`", indexName))
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		// Here we need to get the columns from the original table
+		sql := fmt.Sprintf("SELECT sql FROM sqlite_master WHERE tbl_name='%s' and type='table'", tableName)
+		res, err := session.Query(sql)
+		if err != nil {
+			return err
+		}
+		tableSQL := string(res[0]["sql"])
+
+		// Separate out the column definitions
+		tableSQL = tableSQL[strings.Index(tableSQL, "("):]
+
+		// Remove the required cols
+		for _, name := range cols {
+			tableSQL = regexp.MustCompile(regexp.QuoteMeta("`"+name+"`")+"[^`,)]*?[,)]").ReplaceAllString(tableSQL, "")
+		}
+
+		// Ensure the query is ended properly
+		tableSQL = strings.TrimSpace(tableSQL)
+		if tableSQL[len(tableSQL)-1] != ')' {
+			if tableSQL[len(tableSQL)-1] == ',' {
+				tableSQL = tableSQL[:len(tableSQL)-1]
+			}
+			tableSQL += ")"
+		}
+
+		// Find all the columns in the table
+		columns := regexp.MustCompile("`([^`]*)`").FindAllString(tableSQL, -1)
+
+		tableSQL = fmt.Sprintf("CREATE TABLE `new_%s_new` ", tableName) + tableSQL
+		if _, err := session.Exec(tableSQL); err != nil {
+			return err
+		}
+
+		// Now restore the data
+		columnsSeparated := strings.Join(columns, ",")
+		insertSQL := fmt.Sprintf("INSERT INTO `new_%s_new` (%s) SELECT %s FROM %s", tableName, columnsSeparated, columnsSeparated, tableName)
+		if _, err := session.Exec(insertSQL); err != nil {
+			return err
+		}
+
+		// Now drop the old table
+		if _, err := session.Exec(fmt.Sprintf("DROP TABLE `%s`", tableName)); err != nil {
+			return err
+		}
+
+		// Rename the table
+		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `new_%s_new` RENAME TO `%s`", tableName, tableName)); err != nil {
+			return err
+		}
+	case core.POSTGRES:
+		columns := ""
+		for _, col := range cols {
+			if columns != "" {
+				columns += ", "
+			}
+			columns += "DROP COLUMN `" + col + "` CASCADE"
+		}
+		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `%s` %s", tableName, columns)); err != nil {
+			return fmt.Errorf("Drop table `%s` columns %v: %v", tableName, cols, err)
+		}
+	case core.MYSQL:
+		// Drop indexes on columns first
+		sql := fmt.Sprintf("SHOW INDEX FROM %s WHERE column_name IN ('%s')", tableName, strings.Join(cols, "','"))
+		res, err := session.Query(sql)
+		if err != nil {
+			return err
+		}
+		for _, index := range res {
+			indexName := index["column_name"]
+			if len(indexName) > 0 {
+				_, err := session.Exec(fmt.Sprintf("DROP INDEX `%s` ON `%s`", indexName, tableName))
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// Now drop the columns
+		columns := ""
+		for _, col := range cols {
+			if columns != "" {
+				columns += ", "
+			}
+			columns += "DROP COLUMN `" + col + "`"
+		}
+		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `%s` %s", tableName, columns)); err != nil {
+			return fmt.Errorf("Drop table `%s` columns %v: %v", tableName, cols, err)
+		}
+	case core.MSSQL:
+		columns := ""
+		for _, col := range cols {
+			if columns != "" {
+				columns += ", "
+			}
+			columns += "`" + strings.ToLower(col) + "`"
+		}
+		sql := fmt.Sprintf("SELECT Name FROM SYS.DEFAULT_CONSTRAINTS WHERE PARENT_OBJECT_ID = OBJECT_ID('%[1]s') AND PARENT_COLUMN_ID IN (SELECT column_id FROM sys.columns WHERE lower(NAME) IN (%[2]s) AND object_id = OBJECT_ID('%[1]s'))",
+			tableName, strings.Replace(columns, "`", "'", -1))
+		constraints := make([]string, 0)
+		if err := session.SQL(sql).Find(&constraints); err != nil {
+			session.Rollback()
+			return fmt.Errorf("Find constraints: %v", err)
+		}
+		for _, constraint := range constraints {
+			if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `%s` DROP CONSTRAINT `%s`", tableName, constraint)); err != nil {
+				session.Rollback()
+				return fmt.Errorf("Drop table `%s` constraint `%s`: %v", tableName, constraint, err)
+			}
+		}
+		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `%s` DROP COLUMN %s", tableName, columns)); err != nil {
+			session.Rollback()
+			return fmt.Errorf("Drop table `%s` columns %v: %v", tableName, cols, err)
+		}
+
+		return session.Commit()
+	case core.ORACLE:
+		return fmt.Errorf("not implemented for oracle")
+	default:
+		return fmt.Errorf("unrecognized DB")
+	}
+
 	return nil
 }
 
