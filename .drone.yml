@@ -92,6 +92,8 @@ steps:
 - name: test-postgres-schema
   pull: default
   image: golang:1.12
+  depends_on:
+    - test-postgres
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
