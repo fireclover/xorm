@@ -10,18 +10,25 @@ GOFILES := $(shell find . -name "*.go" -type f)
 
 PACKAGES ?= $(shell GO111MODULE=on $(GO) list ./...)
 
-TEST_MYSQL_HOST ?= mysql:3306
-TEST_MYSQL_DBNAME ?= xorm_test
-TEST_MYSQL_USERNAME ?= root
-TEST_MYSQL_PASSWORD ?=
-TEST_PGSQL_HOST ?= pgsql:5432
-TEST_PGSQL_DBNAME ?= testgitea
-TEST_PGSQL_USERNAME ?= postgres
-TEST_PGSQL_PASSWORD ?= postgres
 TEST_MSSQL_HOST ?= mssql:1433
 TEST_MSSQL_DBNAME ?= gitea
 TEST_MSSQL_USERNAME ?= sa
 TEST_MSSQL_PASSWORD ?= MwantsaSecurePassword1
+
+TEST_MYSQL_HOST ?= mysql:3306
+TEST_MYSQL_DBNAME ?= xorm_test
+TEST_MYSQL_USERNAME ?= root
+TEST_MYSQL_PASSWORD ?=
+
+TEST_PGSQL_HOST ?= pgsql:5432
+TEST_PGSQL_DBNAME ?= testgitea
+TEST_PGSQL_USERNAME ?= postgres
+TEST_PGSQL_PASSWORD ?= postgres
+
+TEST_TIDB_HOST ?= tidb:4000
+TEST_TIDB_DBNAME ?= xorm_test
+TEST_TIDB_USERNAME ?= root
+TEST_TIDB_PASSWORD ?=
 
 .PHONY: all
 all: build
@@ -99,11 +106,11 @@ test: test-sqlite
 
 .PNONY: test-mssql
 test-mssql: go-check
-	$(GO) test -race -db=mssql -conn_str="server=$(TEST_MYSQL_HOST);user id=$(TEST_MYSQL_USERNAME);password=$(TEST_MYSQL_PASSWORD);database=$(TEST_MYSQL_DBNAME)"
+	$(GO) test -race -db=mssql -conn_str="server=$(TEST_MSSQL_HOST);user id=$(TEST_MSSQL_USERNAME);password=$(TEST_MSSQL_PASSWORD);database=$(TEST_MSSQL_DBNAME)"
 
 .PNONY: test-mssql-cache
 test-mssql-cache: go-check
-	$(GO) test -race -db=mssql -cache=true -conn_str="server=$(TEST_MYSQL_HOST);user id=$(TEST_MYSQL_USERNAME);password=$(TEST_MYSQL_PASSWORD);database=$(TEST_MYSQL_DBNAME)"
+	$(GO) test -race -db=mssql -cache=true -conn_str="server=$(TEST_MSSQL_HOST);user id=$(TEST_MSSQL_USERNAME);password=$(TEST_MSSQL_PASSWORD);database=$(TEST_MSSQL_DBNAME)"
 
 
 .PNONY: test-mymysql
@@ -128,15 +135,15 @@ test-mysql\#%: go-check
 
 .PNONY: test-postgres
 test-postgres: go-check
-	$(GO) test -race -db=postgres -conn_str="postgres://$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@$(TEST_MYSQL_HOST)/$(TEST_MYSQL_DBNAME)?sslmode=disable"
+	$(GO) test -race -db=postgres -conn_str="postgres://$(TEST_PGSQL_USERNAME):$(TEST_PGSQL_PASSWORD)@$(TEST_PGSQL_HOST)/$(TEST_PGSQL_DBNAME)?sslmode=disable"
 
 .PNONY: test-postgres-cache
 test-postgres-cache: go-check
-	$(GO) test -race -db=postgres -cache=true -conn_str="postgres://$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@$(TEST_MYSQL_HOST)/$(TEST_MYSQL_DBNAME)?sslmode=disable"
+	$(GO) test -race -db=postgres -cache=true -conn_str="postgres://$(TEST_PGSQL_USERNAME):$(TEST_PGSQL_PASSWORD)@$(TEST_PGSQL_HOST)/$(TEST_PGSQL_DBNAME)?sslmode=disable"
 
 .PHONY: test-postgres\#%
 test-postgres\#%: go-check
-	$(GO) test -race -run $* -db=postgres -conn_str="postgres://$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@$(TEST_MYSQL_HOST)/$(TEST_MYSQL_DBNAME)?sslmode=disable"
+	$(GO) test -race -run $* -db=postgres -conn_str="postgres://$(TEST_PGSQL_USERNAME):$(TEST_PGSQL_PASSWORD)@$(TEST_PGSQL_HOST)/$(TEST_PGSQL_DBNAME)?sslmode=disable"
 
 .PHONY: test-sqlite
 test-sqlite: go-check
@@ -152,16 +159,15 @@ test-sqlite\#%: go-check
 
 .PNONY: test-tidb
 test-tidb: go-check
-	$(GO) test -race -db=mysql -ignore_select_update=true -conn_str="$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@tcp($(TEST_MYSQL_HOST))/$(TEST_MYSQL_DBNAME)"
+	$(GO) test -race -db=mysql -ignore_select_update=true -conn_str="$(TEST_TIDB_USERNAME):$(TEST_TIDB_PASSWORD)@tcp($(TEST_TIDB_HOST))/$(TEST_TIDB_DBNAME)"
 
 .PNONY: test-tidb-cache
 test-tidb-cache: go-check
-	$(GO) test -race -db=mysql -ignore_select_update=true -cache=true -conn_str="$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@tcp($(TEST_MYSQL_HOST))/$(TEST_MYSQL_DBNAME)"
+	$(GO) test -race -db=mysql -ignore_select_update=true -cache=true -conn_str="$(TEST_TIDB_USERNAME):$(TEST_TIDB_PASSWORD)@tcp($(TEST_TIDB_HOST))/$(TEST_TIDB_DBNAME)"
 
 .PHONY: test-tidb\#%
 test-tidb\#%: go-check
-	$(GO) test -race -run $* -db=mysql -ignore_select_update=true -conn_str="$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@tcp($(TEST_MYSQL_HOST))/$(TEST_MYSQL_DBNAME)"
-
+	$(GO) test -race -run $* -db=mysql -ignore_select_update=true -conn_str="$(TEST_TIDB_USERNAME):$(TEST_TIDB_PASSWORD)@tcp($(TEST_TIDB_HOST))/$(TEST_TIDB_DBNAME)"
 
 go test -db=mysql -conn_str="root:@tcp(localhost:4000)/xorm_test" -ignore_select_update=true
 .PHONY: vet
