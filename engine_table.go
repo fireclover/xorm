@@ -25,13 +25,20 @@ func (engine *Engine) tbNameWithSchema(v string) string {
 	return v
 }
 
+func isSubQuery(tbName string) bool {
+	if len(tbName) <= 6 {
+		return false
+	}
+
+	return strings.EqualFold(tbName[:5], "select") || strings.EqualFold(tbName[:6], "(select")
+}
+
 // TableName returns table name with schema prefix if has
 func (engine *Engine) TableName(bean interface{}, includeSchema ...bool) string {
 	tbName := engine.tbNameNoSchema(bean)
-	if len(includeSchema) > 0 && includeSchema[0] {
+	if len(includeSchema) > 0 && includeSchema[0] && !isSubQuery(tbName) {
 		tbName = engine.tbNameWithSchema(tbName)
 	}
-
 	return tbName
 }
 
