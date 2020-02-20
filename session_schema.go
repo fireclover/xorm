@@ -347,7 +347,7 @@ func (session *Session) Sync2(beans ...interface{}) error {
 
 			if col.Default != oriCol.Default {
 				switch {
-				case col.IsAutoIncrement: // For autoincrement, don't check default
+				case col.IsAutoIncrement: // For autoincrement column, don't check default
 				case (col.SQLType.Name == core.Bool || col.SQLType.Name == core.Boolean) &&
 					((strings.EqualFold(col.Default, "true") && oriCol.Default == "1") ||
 						(strings.EqualFold(col.Default, "false") && oriCol.Default == "0")):
