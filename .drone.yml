@@ -29,6 +29,8 @@ steps:
 
 - name: test-sqlite-cache
   image: golang:1.12
+  depends_on:
+    - test-sqlite
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -60,6 +62,8 @@ steps:
 
 - name: test-mysql-cache
   image: golang:1.12
+  depends_on:
+    - test-mysql
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -79,7 +83,7 @@ steps:
 - name: test-mysql-utf8mb4
   image: golang:1.12
   depends_on:
-    - test-mysql
+    - test-mysql-cache
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -99,7 +103,7 @@ steps:
 - name: test-mysql-utf8mb4-cache
   image: golang:1.12
   depends_on:
-    - test-mysql
+    - test-mysql-utf8mb4
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -120,7 +124,7 @@ steps:
   pull: default
   image: golang:1.12
   depends_on:
-    - test-mysql-utf8mb4
+    - test-mysql-utf8mb4-cache
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -140,7 +144,7 @@ steps:
   pull: default
   image: golang:1.12
   depends_on:
-    - test-mysql-utf8mb4
+    - test-mymysql
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -177,6 +181,8 @@ steps:
 - name: test-postgres-cache
   pull: default
   image: golang:1.12
+  depends_on:
+    - test-postgres
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -215,6 +221,8 @@ steps:
 - name: test-postgres-schema-cache
   pull: default
   image: golang:1.12
+  depends_on:
+    - test-postgres-schema
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -253,6 +261,8 @@ steps:
 - name: test-mssql-cache
   pull: default
   image: golang:1.12
+  depends_on:
+    - test-mssql
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -289,6 +299,8 @@ steps:
 - name: test-tidb-cache
   pull: default
   image: golang:1.12
+  depends_on:
+    - test-tidb
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
