@@ -330,6 +330,11 @@ func (statement *Statement) buildUpdates(bean interface{},
 			if err != nil {
 				engine.logger.Error(err)
 			} else {
+				if fieldType.Kind() == reflect.Ptr && len(data) == 0 {
+					args = append(args, nil)
+					colNames = append(colNames, fmt.Sprintf("%v=?", engine.Quote(col.Name)))
+					continue
+				}
 				val = data
 			}
 			goto APPEND
