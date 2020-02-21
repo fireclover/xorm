@@ -790,8 +790,12 @@ func TestFindJoin(t *testing.T) {
 		DeviceId int64
 	}
 
+	type Order struct {
+		Id int64
+	}
+
 	assert.NoError(t, prepareEngine())
-	assertSync(t, new(SceneItem), new(DeviceUserPrivrels))
+	assertSync(t, new(SceneItem), new(DeviceUserPrivrels), new(Order))
 
 	var scenes []SceneItem
 	err := testEngine.Join("LEFT OUTER", "device_user_privrels", "device_user_privrels.device_id=scene_item.device_id").
@@ -801,6 +805,10 @@ func TestFindJoin(t *testing.T) {
 	scenes = make([]SceneItem, 0)
 	err = testEngine.Join("LEFT OUTER", new(DeviceUserPrivrels), "device_user_privrels.device_id=scene_item.device_id").
 		Where("scene_item.type=?", 3).Or("device_user_privrels.user_id=?", 339).Find(&scenes)
+	assert.NoError(t, err)
+
+	scenes = make([]SceneItem, 0)
+	err = testEngine.Join("INNER", "order", "`scene_item`.device_id=`order`.id").Find(&scenes)
 	assert.NoError(t, err)
 }
 

@@ -765,6 +765,11 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		statement.joinArgs = append(statement.joinArgs, subQueryArgs...)
 	default:
 		tbName := statement.Engine.TableName(tablename, true)
+		if !isSubQuery(tbName) {
+			var buf strings.Builder
+			statement.Engine.QuoteTo(&buf, tbName)
+			tbName = buf.String()
+		}
 		fmt.Fprintf(&buf, "%s ON %v", tbName, condition)
 	}
 
