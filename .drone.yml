@@ -69,7 +69,7 @@ steps:
   pull: default
   image: golang:1.12
   depends_on:
-    - test-mysql
+    - test-mysql-utf8mb4
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
