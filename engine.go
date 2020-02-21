@@ -96,7 +96,8 @@ func (engine *Engine) CondDeleted(col *core.Column) builder.Cond {
 	if col.SQLType.IsNumeric() {
 		cond = builder.Eq{col.Name: 0}
 	} else {
-		if col.SQLType.IsTime() || engine.dialect.DBType() != core.MSSQL {
+		// FIXME: mssql: The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value.
+		if engine.dialect.DBType() != core.MSSQL {
 			cond = builder.Eq{col.Name: zeroTime1}
 		}
 	}
