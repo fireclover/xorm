@@ -26,11 +26,12 @@ func (engine *Engine) tbNameWithSchema(v string) string {
 }
 
 func isSubQuery(tbName string) bool {
-	if len(tbName) <= 6 {
+	const selStr = "select"
+	if len(tbName) <= len(selStr)+1 {
 		return false
 	}
 
-	return strings.EqualFold(tbName[:5], "select") || strings.EqualFold(tbName[:6], "(select")
+	return strings.EqualFold(tbName[:len(selStr)], selStr) || strings.EqualFold(tbName[:len(selStr)+1], "("+selStr)
 }
 
 // TableName returns table name with schema prefix if has
