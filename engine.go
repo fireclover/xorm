@@ -92,7 +92,7 @@ func (engine *Engine) BufferSize(size int) *Session {
 
 // CondDeleted returns the conditions whether a record is soft deleted.
 func (engine *Engine) CondDeleted(col *core.Column) builder.Cond {
-	var cond builder.Cond
+	var cond = builder.NewCond()
 	if col.SQLType.IsNumeric() {
 		cond = builder.Eq{col.Name: 0}
 	} else {
