@@ -5,6 +5,7 @@
 package schemas
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -21,6 +22,37 @@ func (q Quoter) IsEmpty() bool {
 func (q Quoter) Quote(s string) string {
 	var buf strings.Builder
 	q.QuoteTo(&buf, s)
+	return buf.String()
+}
+
+func (q Quoter) Replace(sql string, newQuoter Quoter) string {
+	if q.IsEmpty() {
+		return sql
+	}
+
+	if newQuoter.IsEmpty() {
+		var buf strings.Builder
+		for i := 0; i < len(sql); i = i + 1 {
+			if sql[i] != q[0][0] && sql[i] != q[1][0] {
+				_ = buf.WriteByte(sql[i])
+			}
+		}
+		return buf.String()
+	}
+
+	prefix, suffix := newQuoter[0][0], newQuoter[1][0]
+	var buf strings.Builder
+	for i, cnt := 0, 0; i < len(sql); i = i + 1 {
+		if cnt == 0 && sql[i] == q[0][0] {
+			_ = buf.WriteByte(prefix)
+			cnt = 1
+		} else if cnt == 1 && sql[i] == q[1][0] {
+			_ = buf.WriteByte(suffix)
+			cnt = 0
+		} else {
+			_ = buf.WriteByte(sql[i])
+		}
+	}
 	return buf.String()
 }
 
@@ -44,8 +76,31 @@ func (q Quoter) Trim(s string) string {
 	return s
 }
 
+func TrimSpaceJoin(a []string, sep string) string {
+	switch len(a) {
+	case 0:
+		return ""
+	case 1:
+		return a[0]
+	}
+	n := len(sep) * (len(a) - 1)
+	for i := 0; i < len(a); i++ {
+		n += len(a[i])
+	}
+
+	var b strings.Builder
+	b.Grow(n)
+	b.WriteString(strings.TrimSpace(a[0]))
+	for _, s := range a[1:] {
+		b.WriteString(sep)
+		b.WriteString(strings.TrimSpace(s))
+	}
+	return b.String()
+}
+
 func (q Quoter) Join(s []string, splitter string) string {
-	return q.Quote(strings.Join(s, q.ReverseQuote(splitter)))
+	//return fmt.Sprintf("%s%s%s", q[0], TrimSpaceJoin(s, fmt.Sprintf("%s%s%s", q[1], splitter, q[0])), q[1])
+	return q.Quote(TrimSpaceJoin(s, fmt.Sprintf("%s%s%s", q[1], splitter, q[0])))
 }
 
 func (q Quoter) QuoteTo(buf *strings.Builder, value string) {

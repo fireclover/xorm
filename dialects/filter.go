@@ -22,7 +22,24 @@ type QuoteFilter struct {
 
 func (s *QuoteFilter) Do(sql string, dialect Dialect, table *schemas.Table) string {
 	quoter := dialect.Quoter()
-	return quoter.Quote(sql)
+	if quoter.IsEmpty() {
+		return sql
+	}
+
+	prefix, suffix := quoter[0][0], quoter[1][0]
+	raw := []byte(sql)
+	for i, cnt := 0, 0; i < len(raw); i = i + 1 {
+		if raw[i] == '`' {
+			if cnt%2 == 0 {
+				raw[i] = prefix
+			} else {
+				raw[i] = suffix
+			}
+			cnt++
+		}
+	}
+	return string(raw)
+
 }
 
 // SeqFilter filter SQL replace ?, ? ... to $1, $2 ...

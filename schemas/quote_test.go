@@ -38,6 +38,8 @@ func TestQuoteTo(t *testing.T) {
 
 	test(t, "[message_user] AS [sender]", "`message_user` AS `sender`")
 
+	assert.EqualValues(t, "[a],[b]", quoter.Join([]string{"a", " b"}, ","))
+
 	buf := &strings.Builder{}
 	quoter = Quoter{"", ""}
 	quoter.QuoteTo(buf, "noquote")
