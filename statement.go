@@ -872,6 +872,10 @@ func (statement *Statement) genUniqueSQL() []string {
 func (statement *Statement) genDelIndexSQL() []string {
 	var sqls []string
 	tbName := statement.TableName()
+	idx := strings.Index(tbName, ".")
+	if idx > -1 {
+		tbName = tbName[idx+1:]
+	}
 	idxPrefixName := strings.Replace(tbName, `"`, "", -1)
 	idxPrefixName = strings.Replace(idxPrefixName, `.`, "_", -1)
 	for idxName, index := range statement.RefTable.Indexes {
