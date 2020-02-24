@@ -77,14 +77,14 @@ func TestWhere(t *testing.T) {
 	assertSync(t, new(Userinfo))
 
 	users := make([]Userinfo, 0)
-	err := testEngine.Where("uid > ?", 2).Find(&users)
+	err := testEngine.Where("id > ?", 2).Find(&users)
 	if err != nil {
 		t.Error(err)
 		panic(err)
 	}
 	fmt.Println(users)
 
-	err = testEngine.Where("uid > ?", 2).And("uid < ?", 10).Find(&users)
+	err = testEngine.Where("id > ?", 2).And("id < ?", 10).Find(&users)
 	if err != nil {
 		t.Error(err)
 		panic(err)
@@ -312,12 +312,12 @@ func TestOrderSameMapper(t *testing.T) {
 	assertSync(t, new(Userinfo))
 
 	users := make([]Userinfo, 0)
-	err := testEngine.OrderBy("Uid desc").Find(&users)
+	err := testEngine.OrderBy("id desc").Find(&users)
 	assert.NoError(t, err)
 	fmt.Println(users)
 
 	users2 := make([]Userinfo, 0)
-	err = testEngine.Asc("Uid", "Username").Desc("Height").Find(&users2)
+	err = testEngine.Asc("id", "Username").Desc("Height").Find(&users2)
 	assert.NoError(t, err)
 	fmt.Println(users2)
 }
