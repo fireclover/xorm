@@ -149,11 +149,8 @@ type PointerModel struct {
 	ID          string  `xorm:"varchar(20) pk unique 'id'" json:"id"`
 	Username    string  `xorm:"varchar(100) notnull" json:"username"`
 	Nickname    *string `xorm:"varchar(50) null" json:"nickname"`
-	Like        JSON    `xorm:"json default('{}')" json:"like"`
-	TJson       *JSON   `xorm:"json null" json:"t_json"`
 	TNumeric    float64 `xorm:"numeric"`
 	Description string  `xorm:"text" json:"description"`
-	FoundedDate *Time   `xorm:"date null" json:"founded_date"`
 	FetchedAt   *Time   `xorm:"timestampz null" json:"fetched_at"`
 	StartTime   Time    `xorm:"timestampz null" json:"start_time"`
 	EndTime     *Time   `xorm:"timestamp null" json:"end_time"`
@@ -179,10 +176,10 @@ func TestPointerModelInsertUpdate(t *testing.T) {
 	et := TimeFrom(now.Add(time.Minute * 15))
 	id := strconv.FormatInt(now.UnixNano(), 10)
 	item := PointerModel{
-		ID:          id,
-		Username:    "pinter property insert test",
-		FoundedDate: &fd,
-		StartTime:   et,
+		ID:        id,
+		Username:  "pinter property insert test",
+		FetchedAt: &fd,
+		StartTime: et,
 		// EndTime:   et,
 		CreatedAt: ct,
 		UpdatedAt: ct,
@@ -197,14 +194,12 @@ func TestPointerModelInsertUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal("get", err)
 	}
-	assert.NotNil(t, result.FoundedDate)
-	assert.Nil(t, result.FetchedAt)
+	assert.NotNil(t, result.FetchedAt)
 	assert.Nil(t, result.EndTime)
 	t.Logf("[Get] insert result=%+v\n", result)
 
 	// update
-	result.FoundedDate = nil
-	result.FetchedAt = &fd
+	result.FetchedAt = nil
 	result.EndTime = &et
 	item.Username = "pointer property update test"
 	_, err = testEngine.Where("id=?", id).AllCols().Update(&result)
@@ -216,8 +211,7 @@ func TestPointerModelInsertUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal("get", err)
 	}
-	assert.Nil(t, upResult.FoundedDate)
-	assert.NotNil(t, upResult.FetchedAt)
+	assert.Nil(t, upResult.FetchedAt)
 	assert.NotNil(t, upResult.EndTime)
 	t.Logf("[Get] update result=%+v\n", upResult)
 }
