@@ -266,11 +266,11 @@ type sqlNode struct {
 }
 
 func genSQLKey(sql string, args interface{}) string {
-	return fmt.Sprintf("%v-%v", sql, args)
+	return fmt.Sprintf("%s-%v", sql, args)
 }
 
 func genID(prefix string, id string) string {
-	return fmt.Sprintf("%v-%v", prefix, id)
+	return fmt.Sprintf("%s-%s", prefix, id)
 }
 
 func newIDNode(tbName string, id string) *idNode {
