@@ -21,49 +21,8 @@ type QuoteFilter struct {
 }
 
 func (s *QuoteFilter) Do(sql string, dialect Dialect, table *schemas.Table) string {
-	dummy := dialect.Quote("")
-	if len(dummy) != 2 {
-		return sql
-	}
-	prefix, suffix := dummy[0], dummy[1]
-	raw := []byte(sql)
-	for i, cnt := 0, 0; i < len(raw); i = i + 1 {
-		if raw[i] == '`' {
-			if cnt%2 == 0 {
-				raw[i] = prefix
-			} else {
-				raw[i] = suffix
-			}
-			cnt++
-		}
-	}
-	return string(raw)
-}
-
-// IdFilter filter SQL replace (id) to primary key column name
-type IdFilter struct {
-}
-
-type Quoter struct {
-	dialect Dialect
-}
-
-func NewQuoter(dialect Dialect) *Quoter {
-	return &Quoter{dialect}
-}
-
-func (q *Quoter) Quote(content string) string {
-	return q.dialect.Quote(content)
-}
-
-func (i *IdFilter) Do(sql string, dialect Dialect, table *schemas.Table) string {
-	quoter := NewQuoter(dialect)
-	if table != nil && len(table.PrimaryKeys) == 1 {
-		sql = strings.Replace(sql, " `(id)` ", " "+quoter.Quote(table.PrimaryKeys[0])+" ", -1)
-		sql = strings.Replace(sql, " "+quoter.Quote("(id)")+" ", " "+quoter.Quote(table.PrimaryKeys[0])+" ", -1)
-		return strings.Replace(sql, " (id) ", " "+quoter.Quote(table.PrimaryKeys[0])+" ", -1)
-	}
-	return sql
+	quoter := dialect.Quoter()
+	return quoter.Quote(sql)
 }
 
 // SeqFilter filter SQL replace ?, ? ... to $1, $2 ...

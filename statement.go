@@ -618,7 +618,7 @@ func (statement *Statement) Cols(columns ...string) *Statement {
 	newColumns := statement.colmap2NewColsWithQuote()
 
 	statement.ColumnStr = strings.Join(newColumns, ", ")
-	statement.ColumnStr = strings.Replace(statement.ColumnStr, statement.Engine.quote("*"), "*", -1)
+	statement.ColumnStr = strings.Replace(statement.ColumnStr, statement.Engine.dialect.Quoter().Quote("*"), "*", -1)
 	return statement
 }
 

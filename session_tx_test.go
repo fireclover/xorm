@@ -39,7 +39,7 @@ func TestTransaction(t *testing.T) {
 	assert.NoError(t, err)
 
 	user2 := Userinfo{Username: "yyy"}
-	_, err = session.Where("(id) = ?", 0).Update(&user2)
+	_, err = session.Where("uid = ?", 0).Update(&user2)
 	assert.NoError(t, err)
 
 	_, err = session.Delete(&user2)
@@ -119,7 +119,7 @@ func TestCombineTransactionSameMapper(t *testing.T) {
 	assert.NoError(t, err)
 
 	user2 := Userinfo{Username: "zzz"}
-	_, err = session.Where("(id) = ?", 0).Update(&user2)
+	_, err = session.Where("uid = ?", 0).Update(&user2)
 	assert.NoError(t, err)
 
 	_, err = session.Exec("delete from  "+testEngine.TableName("`Userinfo`", true)+" where `Username` = ?", user2.Username)
