@@ -149,7 +149,7 @@ type PointerModel struct {
 	ID          string  `xorm:"varchar(20) pk unique 'id'" json:"id"`
 	Username    string  `xorm:"varchar(100) notnull" json:"username"`
 	Nickname    *string `xorm:"varchar(50) null" json:"nickname"`
-	Like        JSON    `xorm:"jsonb default('{}')" json:"like"`
+	Like        JSON    `xorm:"json default('{}')" json:"like"`
 	TJson       *JSON   `xorm:"json null" json:"t_json"`
 	TNumeric    float64 `xorm:"numeric"`
 	Description string  `xorm:"text" json:"description"`
