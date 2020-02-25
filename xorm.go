@@ -21,6 +21,7 @@ import (
 	"xorm.io/xorm/log"
 	"xorm.io/xorm/names"
 	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/tags"
 )
 
 const (
@@ -65,9 +66,7 @@ func NewEngine(driverName string, dataSourceName string) (*Engine, error) {
 		dialect:        dialect,
 		Tables:         make(map[reflect.Type]*schemas.Table),
 		mutex:          &sync.RWMutex{},
-		TagIdentifier:  "xorm",
 		TZLocation:     time.Local,
-		tagHandlers:    defaultTagHandlers,
 		defaultContext: context.Background(),
 		cacherMgr:      caches.NewManager(),
 	}
@@ -82,6 +81,7 @@ func NewEngine(driverName string, dataSourceName string) (*Engine, error) {
 	logger.SetLevel(log.LOG_INFO)
 	engine.SetLogger(logger)
 	engine.SetMapper(names.NewCacheMapper(new(names.SnakeMapper)))
+	engine.tagParser = tags.NewParser("xorm", dialect, engine.TableMapper, engine.ColumnMapper, engine.cacherMgr)
 
 	runtime.SetFinalizer(engine, close)
 

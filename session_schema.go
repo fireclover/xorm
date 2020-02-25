@@ -241,7 +241,7 @@ func (session *Session) Sync2(beans ...interface{}) error {
 
 	for _, bean := range beans {
 		v := rValue(bean)
-		table, err := engine.mapType(v)
+		table, err := engine.tagParser.MapType(v)
 		if err != nil {
 			return err
 		}

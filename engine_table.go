@@ -72,8 +72,8 @@ func (engine *Engine) tbNameNoSchema(tablename interface{}) string {
 			switch f.(type) {
 			case string:
 				table = f.(string)
-			case TableName:
-				table = f.(TableName).TableName()
+			case names.TableName:
+				table = f.(names.TableName).TableName()
 			default:
 				v := rValue(f)
 				t := v.Type()
@@ -90,8 +90,8 @@ func (engine *Engine) tbNameNoSchema(tablename interface{}) string {
 		} else if l == 1 {
 			return engine.Quote(table)
 		}
-	case TableName:
-		return tablename.(TableName).TableName()
+	case names.TableName:
+		return tablename.(names.TableName).TableName()
 	case string:
 		return tablename.(string)
 	case reflect.Value:
