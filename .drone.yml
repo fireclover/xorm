@@ -186,10 +186,10 @@ steps:
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
-    TEST_TIDB_HOST: "cockroach:26257"
-    TEST_TIDB_DBNAME: xorm_test
-    TEST_TIDB_USERNAME: root
-    TEST_TIDB_PASSWORD:
+    TEST_COCKROACH_HOST: "cockroach:26257"
+    TEST_COCKROACH_DBNAME: xorm_test
+    TEST_COCKROACH_USERNAME: root
+    TEST_COCKROACH_PASSWORD:
   commands:
   - make test-cockroach
   - TEST_CACHE_ENABLE=true make test-cockroach
@@ -286,6 +286,7 @@ services:
 - name: cockroach
   pull: default
   image: cockroachdb/cockroach:v19.2.4
+  hostname: cockroach
   commands:
   - start --insecure
   when:
