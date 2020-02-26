@@ -72,8 +72,9 @@ func (session *Session) Clone() *Session {
 
 // Init reset the session as the init status.
 func (session *Session) Init() {
-	session.statement.Init()
+	session.statement.dialect = session.engine.dialect
 	session.statement.Engine = session.engine
+	session.statement.Reset()
 	session.showSQL = session.engine.showSQL
 	session.isAutoCommit = true
 	session.isCommitedOrRollbacked = false
@@ -128,7 +129,7 @@ func (session *Session) IsClosed() bool {
 
 func (session *Session) resetStatement() {
 	if session.autoResetStatement {
-		session.statement.Init()
+		session.statement.Reset()
 	}
 }
 
