@@ -186,9 +186,13 @@ steps:
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
+    TEST_TIDB_HOST: "cockroach:26257"
+    TEST_TIDB_DBNAME: xorm_test
+    TEST_TIDB_USERNAME: root
+    TEST_TIDB_PASSWORD:
   commands:
-  - go test -v -race -db="postgres" -conn_str="postgres://postgres:@cockroach/xorm_test?sslmode=disable" -schema=xorm -coverprofile=coverage8-1.txt -covermode=atomic
-  - go test -v -race -db="postgres" -conn_str="postgres://postgres:@cockroach/xorm_test?sslmode=disable" -schema=xorm -cache=true -coverprofile=coverage8-2.txt -covermode=atomic
+  - make test-cockroach
+  - TEST_CACHE_ENABLE=true make test-cockroach
   when:
     event:
     - push
@@ -210,6 +214,7 @@ steps:
   - test-postgres-schema
   - test-mssql
   - test-tidb
+  - test-cockroach
   commands:
   - make coverage
   when:
@@ -280,7 +285,7 @@ services:
 
 - name: cockroach
   pull: default
-  image: cockroachdb/cockroach:v19.2.0
+  image: cockroachdb/cockroach:v19.2.4
   commands:
   - start --insecure
   when:
