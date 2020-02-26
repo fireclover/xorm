@@ -4,7 +4,11 @@
 
 package tags
 
-import "testing"
+import (
+	"testing"
+
+	"xorm.io/xorm/internal/utils"
+)
 
 func TestSplitTag(t *testing.T) {
 	var cases = []struct {
@@ -19,7 +23,7 @@ func TestSplitTag(t *testing.T) {
 
 	for _, kase := range cases {
 		tags := splitTag(kase.tag)
-		if !sliceEq(tags, kase.tags) {
+		if !utils.SliceEq(tags, kase.tags) {
 			t.Fatalf("[%d]%v is not equal [%d]%v", len(tags), tags, len(kase.tags), kase.tags)
 		}
 	}
