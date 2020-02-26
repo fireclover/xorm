@@ -940,6 +940,11 @@ func (statement *Statement) genConds(bean interface{}) (string, []interface{}, e
 	return builder.ToSQL(statement.cond)
 }
 
+func (statement *Statement) quoteColumnStr(columnStr string) string {
+	columns := strings.Split(columnStr, ",")
+	return statement.Engine.dialect.Quoter().Join(columns, ",")
+}
+
 func (statement *Statement) genGetSQL(bean interface{}) (string, []interface{}, error) {
 	v := rValue(bean)
 	isStruct := v.Kind() == reflect.Struct
@@ -955,7 +960,7 @@ func (statement *Statement) genGetSQL(bean interface{}) (string, []interface{}, 
 		if len(statement.JoinStr) == 0 {
 			if len(columnStr) == 0 {
 				if len(statement.GroupByStr) > 0 {
-					columnStr = statement.Engine.quoteColumns(statement.GroupByStr)
+					columnStr = statement.quoteColumnStr(statement.GroupByStr)
 				} else {
 					columnStr = statement.genColumnStr()
 				}
@@ -963,7 +968,7 @@ func (statement *Statement) genGetSQL(bean interface{}) (string, []interface{}, 
 		} else {
 			if len(columnStr) == 0 {
 				if len(statement.GroupByStr) > 0 {
-					columnStr = statement.Engine.quoteColumns(statement.GroupByStr)
+					columnStr = statement.quoteColumnStr(statement.GroupByStr)
 				}
 			}
 		}

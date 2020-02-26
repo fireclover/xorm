@@ -251,19 +251,21 @@ func (session *Session) innerInsertMulti(rowsSlicePtr interface{}) (int64, error
 	}
 	cleanupProcessorsClosures(&session.beforeClosures)
 
+	quoter := session.engine.dialect.Quoter()
 	var sql string
+	colStr := quoter.Join(colNames, ",")
 	if session.engine.dialect.DBType() == schemas.ORACLE {
 		temp := fmt.Sprintf(") INTO %s (%v) VALUES (",
-			session.engine.Quote(tableName),
-			quoteColumns(colNames, session.engine.Quote, ","))
+			quoter.Quote(tableName),
+			colStr)
 		sql = fmt.Sprintf("INSERT ALL INTO %s (%v) VALUES (%v) SELECT 1 FROM DUAL",
-			session.engine.Quote(tableName),
-			quoteColumns(colNames, session.engine.Quote, ","),
+			quoter.Quote(tableName),
+			colStr,
 			strings.Join(colMultiPlaces, temp))
 	} else {
 		sql = fmt.Sprintf("INSERT INTO %s (%v) VALUES (%v)",
-			session.engine.Quote(tableName),
-			quoteColumns(colNames, session.engine.Quote, ","),
+			quoter.Quote(tableName),
+			colStr,
 			strings.Join(colMultiPlaces, "),("))
 	}
 	res, err := session.exec(sql, args...)
