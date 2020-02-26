@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"xorm.io/builder"
+	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -153,7 +154,7 @@ func (session *Session) innerInsertMulti(rowsSlicePtr interface{}) (int64, error
 					return 0, err
 				}
 				fieldValue := *ptrFieldValue
-				if col.IsAutoIncrement && isZero(fieldValue.Interface()) {
+				if col.IsAutoIncrement && utils.IsZero(fieldValue.Interface()) {
 					continue
 				}
 				if col.MapType == schemas.ONLYFROMDB {
@@ -204,7 +205,7 @@ func (session *Session) innerInsertMulti(rowsSlicePtr interface{}) (int64, error
 				}
 				fieldValue := *ptrFieldValue
 
-				if col.IsAutoIncrement && isZero(fieldValue.Interface()) {
+				if col.IsAutoIncrement && utils.IsZero(fieldValue.Interface()) {
 					continue
 				}
 				if col.MapType == schemas.ONLYFROMDB {
@@ -679,7 +680,7 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 
 		// !evalphobia! set fieldValue as nil when column is nullable and zero-value
 		if _, ok := getFlagForColumn(session.statement.nullableMap, col); ok {
-			if col.Nullable && isZeroValue(fieldValue) {
+			if col.Nullable && utils.IsValueZero(fieldValue) {
 				var nilValue *int
 				fieldValue = reflect.ValueOf(nilValue)
 			}
