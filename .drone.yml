@@ -288,7 +288,7 @@ services:
   image: cockroachdb/cockroach:v19.2.4
   hostname: cockroach
   commands:
-  - start --insecure
+  - /cockroach/cockroach start --insecure
   when:
     event:
     - push

@@ -184,6 +184,7 @@ func TestMain(m *testing.M) {
 
 		if err := prepareEngine(); err != nil {
 			fmt.Println(err)
+			os.Exit(1)
 			return
 		}
 
