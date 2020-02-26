@@ -19,19 +19,20 @@ import (
 )
 
 type Parser struct {
-	identifier                string
-	dialect                   dialects.Dialect
-	tableMapper, columnMapper names.Mapper
-	handlers                  map[string]Handler
-	cacherMgr                 *caches.Manager
+	identifier   string
+	dialect      dialects.Dialect
+	ColumnMapper names.Mapper
+	TableMapper  names.Mapper
+	handlers     map[string]Handler
+	cacherMgr    *caches.Manager
 }
 
 func NewParser(identifier string, dialect dialects.Dialect, tableMapper, columnMapper names.Mapper, cacherMgr *caches.Manager) *Parser {
 	return &Parser{
 		identifier:   identifier,
 		dialect:      dialect,
-		tableMapper:  tableMapper,
-		columnMapper: columnMapper,
+		TableMapper:  tableMapper,
+		ColumnMapper: columnMapper,
 		handlers:     defaultTagHandlers,
 		cacherMgr:    cacherMgr,
 	}
@@ -53,7 +54,7 @@ func (parser *Parser) MapType(v reflect.Value) (*schemas.Table, error) {
 	t := v.Type()
 	table := schemas.NewEmptyTable()
 	table.Type = t
-	table.Name = names.GetTableName(parser.tableMapper, v)
+	table.Name = names.GetTableName(parser.TableMapper, v)
 
 	var idFieldColName string
 	var hasCacheTag, hasNoCacheTag bool
@@ -170,7 +171,7 @@ func (parser *Parser) MapType(v reflect.Value) (*schemas.Table, error) {
 					col.Length2 = col.SQLType.DefaultLength2
 				}
 				if col.Name == "" {
-					col.Name = parser.columnMapper.Obj2Table(t.Field(i).Name)
+					col.Name = parser.ColumnMapper.Obj2Table(t.Field(i).Name)
 				}
 
 				if ctx.isUnique {
@@ -195,7 +196,7 @@ func (parser *Parser) MapType(v reflect.Value) (*schemas.Table, error) {
 			} else {
 				sqlType = schemas.Type2SQLType(fieldType)
 			}
-			col = schemas.NewColumn(parser.columnMapper.Obj2Table(t.Field(i).Name),
+			col = schemas.NewColumn(parser.ColumnMapper.Obj2Table(t.Field(i).Name),
 				t.Field(i).Name, sqlType, sqlType.DefaultLength,
 				sqlType.DefaultLength2, true)
 

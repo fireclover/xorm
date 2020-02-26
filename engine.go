@@ -37,9 +37,7 @@ type Engine struct {
 	db      *core.DB
 	dialect dialects.Dialect
 
-	ColumnMapper names.Mapper
-	TableMapper  names.Mapper
-	Tables       map[reflect.Type]*schemas.Table
+	Tables map[reflect.Type]*schemas.Table
 
 	mutex *sync.RWMutex
 
@@ -151,12 +149,12 @@ func (engine *Engine) SetMapper(mapper names.Mapper) {
 
 // SetTableMapper set the table name mapping rule
 func (engine *Engine) SetTableMapper(mapper names.Mapper) {
-	engine.TableMapper = mapper
+	engine.tagParser.TableMapper = mapper
 }
 
 // SetColumnMapper set the column name mapping rule
 func (engine *Engine) SetColumnMapper(mapper names.Mapper) {
-	engine.ColumnMapper = mapper
+	engine.tagParser.ColumnMapper = mapper
 }
 
 // SupportInsertMany If engine's database support batch insert records like
@@ -1333,12 +1331,12 @@ func (engine *Engine) formatTime(sqlTypeName string, t time.Time) (v interface{}
 
 // GetColumnMapper returns the column name mapper
 func (engine *Engine) GetColumnMapper() names.Mapper {
-	return engine.ColumnMapper
+	return engine.tagParser.ColumnMapper
 }
 
 // GetTableMapper returns the table name mapper
 func (engine *Engine) GetTableMapper() names.Mapper {
-	return engine.TableMapper
+	return engine.tagParser.TableMapper
 }
 
 // GetTZLocation returns time zone of the application

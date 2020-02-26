@@ -78,7 +78,7 @@ func (engine *Engine) tbNameNoSchema(tablename interface{}) string {
 				v := rValue(f)
 				t := v.Type()
 				if t.Kind() == reflect.Struct {
-					table = names.GetTableName(engine.TableMapper, v)
+					table = names.GetTableName(engine.GetTableMapper(), v)
 				} else {
 					table = engine.Quote(fmt.Sprintf("%v", f))
 				}
@@ -96,12 +96,12 @@ func (engine *Engine) tbNameNoSchema(tablename interface{}) string {
 		return tablename.(string)
 	case reflect.Value:
 		v := tablename.(reflect.Value)
-		return names.GetTableName(engine.TableMapper, v)
+		return names.GetTableName(engine.GetTableMapper(), v)
 	default:
 		v := rValue(tablename)
 		t := v.Type()
 		if t.Kind() == reflect.Struct {
-			return names.GetTableName(engine.TableMapper, v)
+			return names.GetTableName(engine.GetTableMapper(), v)
 		}
 		return engine.Quote(fmt.Sprintf("%v", tablename))
 	}

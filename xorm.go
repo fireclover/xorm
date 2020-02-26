@@ -80,8 +80,8 @@ func NewEngine(driverName string, dataSourceName string) (*Engine, error) {
 	logger := log.NewSimpleLogger(os.Stdout)
 	logger.SetLevel(log.LOG_INFO)
 	engine.SetLogger(logger)
-	engine.SetMapper(names.NewCacheMapper(new(names.SnakeMapper)))
-	engine.tagParser = tags.NewParser("xorm", dialect, engine.TableMapper, engine.ColumnMapper, engine.cacherMgr)
+	mapper := names.NewCacheMapper(new(names.SnakeMapper))
+	engine.tagParser = tags.NewParser("xorm", dialect, mapper, mapper, engine.cacherMgr)
 
 	runtime.SetFinalizer(engine, close)
 
