@@ -191,6 +191,7 @@ steps:
     TEST_COCKROACH_USERNAME: root
     TEST_COCKROACH_PASSWORD:
   commands:
+  - sleep 10
   - make test-cockroach
   - TEST_CACHE_ENABLE=true make test-cockroach
   when:
@@ -286,7 +287,6 @@ services:
 - name: cockroach
   pull: default
   image: cockroachdb/cockroach:v19.2.4
-  hostname: cockroach
   commands:
   - /cockroach/cockroach start --insecure
   when:
