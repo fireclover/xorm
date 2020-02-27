@@ -751,7 +751,8 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 			return statement
 		}
 
-		aliasName := statement.dialect.Quoter().Trim(tp.TableName())
+		fields := strings.Split(tp.TableName(), ".")
+		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
 		aliasName = schemas.CommonQuoter.Trim(aliasName)
 
 		fmt.Fprintf(&buf, "(%s) %s ON %v", subSQL, aliasName, condition)
@@ -763,7 +764,8 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 			return statement
 		}
 
-		aliasName := statement.dialect.Quoter().Trim(tp.TableName())
+		fields := strings.Split(tp.TableName(), ".")
+		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
 		aliasName = schemas.CommonQuoter.Trim(aliasName)
 
 		fmt.Fprintf(&buf, "(%s) %s ON %v", subSQL, aliasName, condition)
