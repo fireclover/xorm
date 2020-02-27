@@ -5,6 +5,7 @@
 package dialects
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -60,7 +61,7 @@ type Dialect interface {
 	IndexCheckSQL(tableName, idxName string) (string, []interface{})
 	TableCheckSQL(tableName string) (string, []interface{})
 
-	IsColumnExist(tableName string, colName string) (bool, error)
+	IsColumnExist(ctx context.Context, tableName string, colName string) (bool, error)
 
 	CreateTableSQL(table *schemas.Table, tableName, storeEngine, charset string) string
 	DropTableSQL(tableName string) string
@@ -71,12 +72,9 @@ type Dialect interface {
 
 	ForUpdateSQL(query string) string
 
-	// CreateTableIfNotExists(table *Table, tableName, storeEngine, charset string) error
-	// MustDropTable(tableName string) error
-
-	GetColumns(tableName string) ([]string, map[string]*schemas.Column, error)
-	GetTables() ([]*schemas.Table, error)
-	GetIndexes(tableName string) (map[string]*schemas.Index, error)
+	GetColumns(ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error)
+	GetTables(ctx context.Context) ([]*schemas.Table, error)
+	GetIndexes(ctx context.Context, tableName string) (map[string]*schemas.Index, error)
 
 	Filters() []Filter
 	SetParams(params map[string]string)
@@ -196,9 +194,9 @@ func (db *Base) DropTableSQL(tableName string) string {
 	return fmt.Sprintf("DROP TABLE IF EXISTS %s", quote(tableName))
 }
 
-func (db *Base) HasRecords(query string, args ...interface{}) (bool, error) {
+func (db *Base) HasRecords(ctx context.Context, query string, args ...interface{}) (bool, error) {
 	db.LogSQL(query, args)
-	rows, err := db.DB().Query(query, args...)
+	rows, err := db.DB().QueryContext(ctx, query, args...)
 	if err != nil {
 		return false, err
 	}
@@ -210,7 +208,7 @@ func (db *Base) HasRecords(query string, args ...interface{}) (bool, error) {
 	return false, nil
 }
 
-func (db *Base) IsColumnExist(tableName, colName string) (bool, error) {
+func (db *Base) IsColumnExist(ctx context.Context, tableName, colName string) (bool, error) {
 	quote := db.dialect.Quoter().Quote
 	query := fmt.Sprintf(
 		"SELECT %v FROM %v.%v WHERE %v = ? AND %v = ? AND %v = ?",
@@ -221,7 +219,7 @@ func (db *Base) IsColumnExist(tableName, colName string) (bool, error) {
 		quote("TABLE_NAME"),
 		quote("COLUMN_NAME"),
 	)
-	return db.HasRecords(query, db.uri.DBName, tableName, colName)
+	return db.HasRecords(ctx, query, db.uri.DBName, tableName, colName)
 }
 
 /*
