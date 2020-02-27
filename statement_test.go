@@ -234,8 +234,12 @@ func TestUpdateIgnoreOnlyFromDBFields(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	record := assertGetRecord()
-	record.OnlyFromDBField = "test"
-	testEngine.Update(record)
+	assertGetRecord()
+
+	_, err = testEngine.ID(1).Update(&TestOnlyFromDBField{
+		OnlyToDBField:   "b",
+		OnlyFromDBField: "test",
+	})
+	assert.NoError(t, err)
 	assertGetRecord()
 }

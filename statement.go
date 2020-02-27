@@ -587,10 +587,6 @@ func (statement *Statement) SetExpr(column string, expression interface{}) *Stat
 	return statement
 }
 
-func (statement *Statement) quoteColumnMap() []string {
-	return statement.dialect.Quoter().Strings(statement.columnMap)
-}
-
 // Distinct generates "DISTINCT col1, col2 " statement
 func (statement *Statement) Distinct(columns ...string) *Statement {
 	statement.IsDistinct = true
