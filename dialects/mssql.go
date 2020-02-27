@@ -511,9 +511,9 @@ func (db *mssql) CreateTableSQL(table *schemas.Table, tableName, storeEngine, ch
 	for _, colName := range table.ColumnsSeq() {
 		col := table.GetColumn(colName)
 		if col.IsPrimaryKey && len(pkList) == 1 {
-			sql += String(db, col)
+			sql += db.String(col)
 		} else {
-			sql += StringNoPk(db, col)
+			sql += db.StringNoPk(col)
 		}
 		sql = strings.TrimSpace(sql)
 		sql += ", "

@@ -593,7 +593,7 @@ func (db *oracle) CreateTableSQL(table *schemas.Table, tableName, storeEngine, c
 		/*if col.IsPrimaryKey && len(pkList) == 1 {
 			sql += col.String(b.dialect)
 		} else {*/
-		sql += StringNoPk(db, col)
+		sql += db.StringNoPk(col)
 		// }
 		sql = strings.TrimSpace(sql)
 		sql += ", "
