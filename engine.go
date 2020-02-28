@@ -37,7 +37,7 @@ type Engine struct {
 	showSQL      bool
 	showExecTime bool
 
-	logger     log.Logger
+	logger     log.ContextLogger
 	TZLocation *time.Location // The timezone of the application
 	DatabaseTZ *time.Location // The timezone of the database
 
@@ -84,15 +84,16 @@ func (engine *Engine) ShowExecTime(show ...bool) {
 }
 
 // Logger return the logger interface
-func (engine *Engine) Logger() log.Logger {
+func (engine *Engine) Logger() log.ContextLogger {
 	return engine.logger
 }
 
 // SetLogger set the new logger
-func (engine *Engine) SetLogger(logger log.Logger) {
+func (engine *Engine) SetLogger(logger log.ContextLogger) {
 	engine.logger = logger
 	engine.showSQL = logger.IsShowSQL()
 	engine.dialect.SetLogger(logger)
+	engine.db.Logger = logger
 }
 
 // SetLogLevel sets the logger level
@@ -253,17 +254,6 @@ func (engine *Engine) Ping() error {
 	session := engine.NewSession()
 	defer session.Close()
 	return session.Ping()
-}
-
-// logSQL save sql
-func (engine *Engine) logSQL(sqlStr string, sqlArgs ...interface{}) {
-	if engine.showSQL && !engine.showExecTime {
-		if len(sqlArgs) > 0 {
-			engine.logger.Infof("[SQL] %v %#v", sqlStr, sqlArgs)
-		} else {
-			engine.logger.Infof("[SQL] %v", sqlStr)
-		}
-	}
 }
 
 // SQL method let's you manually write raw SQL and operate
@@ -763,7 +753,7 @@ func (engine *Engine) IsTableExist(beanOrTableName interface{}) (bool, error) {
 }
 
 // IDOf get id from one struct
-func (engine *Engine) IDOf(bean interface{}) schemas.PK {
+func (engine *Engine) IDOf(bean interface{}) (schemas.PK, error) {
 	return engine.IDOfV(reflect.ValueOf(bean))
 }
 
@@ -773,13 +763,8 @@ func (engine *Engine) TableName(bean interface{}, includeSchema ...bool) string 
 }
 
 // IDOfV get id from one value of struct
-func (engine *Engine) IDOfV(rv reflect.Value) schemas.PK {
-	pk, err := engine.idOfV(rv)
-	if err != nil {
-		engine.logger.Error(err)
-		return nil
-	}
-	return pk
+func (engine *Engine) IDOfV(rv reflect.Value) (schemas.PK, error) {
+	return engine.idOfV(rv)
 }
 
 func (engine *Engine) idOfV(rv reflect.Value) (schemas.PK, error) {
@@ -1216,8 +1201,7 @@ func (engine *Engine) Import(r io.Reader) ([]sql.Result, error) {
 	for scanner.Scan() {
 		query := strings.Trim(scanner.Text(), " \t\n\r")
 		if len(query) > 0 {
-			engine.logSQL(query)
-			result, err := engine.DB().Exec(query)
+			result, err := engine.DB().ExecContext(engine.defaultContext, query)
 			results = append(results, result)
 			if err != nil {
 				return nil, err

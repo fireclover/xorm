@@ -135,7 +135,7 @@ func (eg *EngineGroup) SetDefaultCacher(cacher caches.Cacher) {
 }
 
 // SetLogger set the new logger
-func (eg *EngineGroup) SetLogger(logger log.Logger) {
+func (eg *EngineGroup) SetLogger(logger log.ContextLogger) {
 	eg.Engine.SetLogger(logger)
 	for i := 0; i < len(eg.slaves); i++ {
 		eg.slaves[i].SetLogger(logger)

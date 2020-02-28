@@ -98,7 +98,7 @@ type EngineInterface interface {
 	SetConnMaxLifetime(time.Duration)
 	SetColumnMapper(names.Mapper)
 	SetDefaultCacher(caches.Cacher)
-	SetLogger(logger log.Logger)
+	SetLogger(logger log.ContextLogger)
 	SetLogLevel(log.LogLevel)
 	SetMapper(names.Mapper)
 	SetMaxOpenConns(int)

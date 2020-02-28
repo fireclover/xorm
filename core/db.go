@@ -12,7 +12,9 @@ import (
 	"reflect"
 	"regexp"
 	"sync"
+	"time"
 
+	"xorm.io/xorm/log"
 	"xorm.io/xorm/names"
 )
 
@@ -81,6 +83,7 @@ type DB struct {
 	Mapper            names.Mapper
 	reflectCache      map[reflect.Type]*cacheStruct
 	reflectCacheMutex sync.RWMutex
+	Logger            log.ContextLogger
 }
 
 // Open opens a database
@@ -120,7 +123,20 @@ func (db *DB) reflectNew(typ reflect.Type) reflect.Value {
 
 // QueryContext overwrites sql.DB.QueryContext
 func (db *DB) QueryContext(ctx context.Context, query string, args ...interface{}) (*Rows, error) {
+	start := time.Now()
+	db.Logger.BeforeSQL(log.LogContext{
+		Ctx:  ctx,
+		SQL:  query,
+		Args: args,
+	})
 	rows, err := db.DB.QueryContext(ctx, query, args...)
+	db.Logger.AfterSQL(log.LogContext{
+		Ctx:         ctx,
+		SQL:         query,
+		Args:        args,
+		ExecuteTime: time.Now().Sub(start),
+		Err:         err,
+	})
 	if err != nil {
 		if rows != nil {
 			rows.Close()
@@ -209,7 +225,7 @@ func (db *DB) ExecMapContext(ctx context.Context, query string, mp interface{}) 
 	if err != nil {
 		return nil, err
 	}
-	return db.DB.ExecContext(ctx, query, args...)
+	return db.ExecContext(ctx, query, args...)
 }
 
 func (db *DB) ExecMap(query string, mp interface{}) (sql.Result, error) {
@@ -221,7 +237,25 @@ func (db *DB) ExecStructContext(ctx context.Context, query string, st interface{
 	if err != nil {
 		return nil, err
 	}
-	return db.DB.ExecContext(ctx, query, args...)
+	return db.ExecContext(ctx, query, args...)
+}
+
+func (db *DB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	start := time.Now()
+	db.Logger.BeforeSQL(log.LogContext{
+		Ctx:  ctx,
+		SQL:  query,
+		Args: args,
+	})
+	res, err := db.DB.ExecContext(ctx, query, args...)
+	db.Logger.AfterSQL(log.LogContext{
+		Ctx:         ctx,
+		SQL:         query,
+		Args:        args,
+		ExecuteTime: time.Now().Sub(start),
+		Err:         err,
+	})
+	return res, err
 }
 
 func (db *DB) ExecStruct(query string, st interface{}) (sql.Result, error) {

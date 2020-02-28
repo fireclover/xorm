@@ -6,27 +6,26 @@ package log
 
 import (
 	"context"
-	"fmt"
 	"time"
 )
 
 // LogContext represents a log context
 type LogContext struct {
 	Ctx         context.Context
-	LogLevel    LogLevel
-	LogData     string        // log content or SQL
+	SQL         string        // log content or SQL
 	Args        []interface{} // if it's a SQL, it's the arguments
-	IsSQL       bool
 	ExecuteTime time.Duration
+	Err         error // SQL executed error
 }
 
 // ContextLogger represents a logger interface with context
 type ContextLogger interface {
-	Debug(ctx LogContext)
-	Error(ctx LogContext)
-	Info(ctx LogContext)
-	Warn(ctx LogContext)
-	Before(context LogContext)
+	Debugf(format string, v ...interface{})
+	Errorf(format string, v ...interface{})
+	Infof(format string, v ...interface{})
+	Warnf(format string, v ...interface{})
+	BeforeSQL(context LogContext)
+	AfterSQL(context LogContext)
 
 	Level() LogLevel
 	SetLevel(l LogLevel)
@@ -44,29 +43,40 @@ type LoggerAdapter struct {
 	logger Logger
 }
 
-func (l *LoggerAdapter) Before(ctx LogContext) {}
-
-func (l *LoggerAdapter) Debug(ctx LogContext) {
-	l.logger.Debug(ctx.LogData)
+func NewLoggerAdapter(logger Logger) ContextLogger {
+	return &LoggerAdapter{
+		logger: logger,
+	}
 }
 
-func (l *LoggerAdapter) Error(ctx LogContext) {
-	l.logger.Error(ctx.LogData)
-}
+func (l *LoggerAdapter) BeforeSQL(ctx LogContext) {}
 
-func (l *LoggerAdapter) Info(ctx LogContext) {
-	if !l.logger.IsShowSQL() && ctx.IsSQL {
+func (l *LoggerAdapter) AfterSQL(ctx LogContext) {
+	if !l.logger.IsShowSQL() {
 		return
 	}
-	if ctx.IsSQL {
-		l.logger.Info(fmt.Sprintf("[SQL] %v %v", ctx.LogData, ctx.Args))
+
+	if ctx.ExecuteTime > 0 {
+		l.logger.Infof("[SQL] %v %v - %v", ctx.SQL, ctx.Args, ctx.ExecuteTime)
 	} else {
-		l.logger.Info(ctx.LogData)
+		l.logger.Infof("[SQL] %v %v", ctx.SQL, ctx.Args)
 	}
 }
 
-func (l *LoggerAdapter) Warn(ctx LogContext) {
-	l.logger.Warn(ctx.LogData)
+func (l *LoggerAdapter) Debugf(format string, v ...interface{}) {
+	l.logger.Debugf(format, v...)
+}
+
+func (l *LoggerAdapter) Errorf(format string, v ...interface{}) {
+	l.logger.Errorf(format, v...)
+}
+
+func (l *LoggerAdapter) Infof(format string, v ...interface{}) {
+	l.logger.Infof(format, v...)
+}
+
+func (l *LoggerAdapter) Warnf(format string, v ...interface{}) {
+	l.logger.Warnf(format, v...)
 }
 
 func (l *LoggerAdapter) Level() LogLevel {
