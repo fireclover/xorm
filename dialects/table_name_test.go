@@ -22,9 +22,9 @@ func (mcc *MCC) TableName() string {
 	return "mcc"
 }
 
-func TestTableName1(t *testing.T) {
+func TestFullTableName(t *testing.T) {
 	dialect := QueryDialect("mysql")
 
-	assert.EqualValues(t, "mcc", TableName(dialect, names.SnakeMapper{}, MCC))
-	assert.EqualValues(t, "mcc", TableName(dialect, names.SnakeMapper{}, "mcc"))
+	assert.EqualValues(t, "mcc", FullTableName(dialect, names.SnakeMapper{}, &MCC{}))
+	assert.EqualValues(t, "mcc", FullTableName(dialect, names.SnakeMapper{}, "mcc"))
 }
