@@ -395,11 +395,11 @@ func (db *mysql) GetColumns(ctx context.Context, tableName string) ([]string, ma
 			colType = "DOUBLE"
 		}
       
-      	if strings.Contains(colType, "INT UNSIGNED") {
+		if strings.Contains(colType, "INT UNSIGNED") {
 			colType = strings.TrimRight(colType, " UNSIGNED")
 		}
 
-      	col.Length = len1
+		col.Length = len1
 		col.Length2 = len2
 		if _, ok := schemas.SqlTypes[colType]; ok {
 			col.SQLType = schemas.SQLType{Name: colType, DefaultLength: len1, DefaultLength2: len2}
