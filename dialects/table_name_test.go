@@ -7,7 +7,6 @@ package dialects
 import (
 	"testing"
 
-	
 	"xorm.io/xorm/names"
 
 	"github.com/stretchr/testify/assert"
@@ -27,5 +26,5 @@ func TestTableName1(t *testing.T) {
 	dialect := QueryDialect("mysql")
 
 	assert.EqualValues(t, "mcc", TableName(dialect, names.SnakeMapper{}, MCC))
-	assert.EqualValues(t, "mcc", TableName(dialect, names.SnakeMapper{},"mcc")
+	assert.EqualValues(t, "mcc", TableName(dialect, names.SnakeMapper{}, "mcc"))
 }
