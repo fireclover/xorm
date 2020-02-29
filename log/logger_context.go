@@ -18,14 +18,26 @@ type LogContext struct {
 	Err         error // SQL executed error
 }
 
+type SQLLogger interface {
+	BeforeSQL(context LogContext)
+	AfterSQL(context LogContext)
+}
+
+type DiscardSQLLogger struct{}
+
+var _ SQLLogger = &DiscardSQLLogger{}
+
+func (DiscardSQLLogger) BeforeSQL(LogContext) {}
+func (DiscardSQLLogger) AfterSQL(LogContext)  {}
+
 // ContextLogger represents a logger interface with context
 type ContextLogger interface {
+	SQLLogger
+
 	Debugf(format string, v ...interface{})
 	Errorf(format string, v ...interface{})
 	Infof(format string, v ...interface{})
 	Warnf(format string, v ...interface{})
-	BeforeSQL(context LogContext)
-	AfterSQL(context LogContext)
 
 	Level() LogLevel
 	SetLevel(l LogLevel)

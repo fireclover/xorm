@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"xorm.io/xorm/core"
-	"xorm.io/xorm/log"
 	"xorm.io/xorm/schemas"
 )
 
@@ -34,7 +33,6 @@ type URI struct {
 
 // a dialect is a driver's wrapper
 type Dialect interface {
-	SetLogger(logger log.ContextLogger)
 	Init(*core.DB, *URI, string, string) error
 	URI() *URI
 	DB() *core.DB
@@ -92,16 +90,11 @@ type Base struct {
 	dialect        Dialect
 	driverName     string
 	dataSourceName string
-	logger         log.ContextLogger
 	uri            *URI
 }
 
 func (b *Base) DB() *core.DB {
 	return b.db
-}
-
-func (b *Base) SetLogger(logger log.ContextLogger) {
-	b.logger = logger
 }
 
 func (b *Base) DefaultSchema() string {

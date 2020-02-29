@@ -83,7 +83,7 @@ type DB struct {
 	Mapper            names.Mapper
 	reflectCache      map[reflect.Type]*cacheStruct
 	reflectCacheMutex sync.RWMutex
-	Logger            log.ContextLogger
+	Logger            log.SQLLogger
 }
 
 // Open opens a database

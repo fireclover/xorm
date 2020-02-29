@@ -31,22 +31,16 @@ import (
 // Engine is the major struct of xorm, it means a database manager.
 // Commonly, an application only need one engine
 type Engine struct {
-	db      *core.DB
-	dialect dialects.Dialect
+	cacherMgr      *caches.Manager
+	db             *core.DB
+	defaultContext context.Context
+	dialect        dialects.Dialect
+	engineGroup    *EngineGroup
+	logger         log.ContextLogger
+	tagParser      *tags.Parser
 
-	//showSQL      bool
-	//showExecTime bool
-
-	logger     log.ContextLogger
 	TZLocation *time.Location // The timezone of the application
 	DatabaseTZ *time.Location // The timezone of the database
-
-	engineGroup *EngineGroup
-
-	defaultContext context.Context
-
-	tagParser *tags.Parser
-	cacherMgr *caches.Manager
 }
 
 func (engine *Engine) SetCacher(tableName string, cacher caches.Cacher) {
@@ -67,16 +61,12 @@ func (engine *Engine) BufferSize(size int) *Session {
 // ShowSQL show SQL statement or not on logger if log level is great than INFO
 func (engine *Engine) ShowSQL(show ...bool) {
 	engine.logger.ShowSQL(show...)
-}
-
-// ShowExecTime show SQL statement and execute time or not on logger if log level is great than INFO
-/*func (engine *Engine) ShowExecTime(show ...bool) {
-	if len(show) == 0 {
-		engine.showExecTime = true
+	if engine.logger.IsShowSQL() {
+		engine.db.Logger = engine.logger
 	} else {
-		engine.showExecTime = show[0]
+		engine.db.Logger = &log.DiscardSQLLogger{}
 	}
-}*/
+}
 
 // Logger return the logger interface
 func (engine *Engine) Logger() log.ContextLogger {
@@ -93,9 +83,11 @@ func (engine *Engine) SetLogger(logger interface{}) {
 		realLogger = t
 	}
 	engine.logger = realLogger
-	//engine.showSQL = realLogger.IsShowSQL()
-	engine.dialect.SetLogger(realLogger)
-	engine.db.Logger = realLogger
+	if realLogger.IsShowSQL() {
+		engine.db.Logger = realLogger
+	} else {
+		engine.db.Logger = &log.DiscardSQLLogger{}
+	}
 }
 
 // SetLogLevel sets the logger level
