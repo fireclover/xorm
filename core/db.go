@@ -124,19 +124,23 @@ func (db *DB) reflectNew(typ reflect.Type) reflect.Value {
 // QueryContext overwrites sql.DB.QueryContext
 func (db *DB) QueryContext(ctx context.Context, query string, args ...interface{}) (*Rows, error) {
 	start := time.Now()
-	db.Logger.BeforeSQL(log.LogContext{
-		Ctx:  ctx,
-		SQL:  query,
-		Args: args,
-	})
+	if db.Logger != nil {
+		db.Logger.BeforeSQL(log.LogContext{
+			Ctx:  ctx,
+			SQL:  query,
+			Args: args,
+		})
+	}
 	rows, err := db.DB.QueryContext(ctx, query, args...)
-	db.Logger.AfterSQL(log.LogContext{
-		Ctx:         ctx,
-		SQL:         query,
-		Args:        args,
-		ExecuteTime: time.Now().Sub(start),
-		Err:         err,
-	})
+	if db.Logger != nil {
+		db.Logger.AfterSQL(log.LogContext{
+			Ctx:         ctx,
+			SQL:         query,
+			Args:        args,
+			ExecuteTime: time.Now().Sub(start),
+			Err:         err,
+		})
+	}
 	if err != nil {
 		if rows != nil {
 			rows.Close()
@@ -242,19 +246,23 @@ func (db *DB) ExecStructContext(ctx context.Context, query string, st interface{
 
 func (db *DB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	start := time.Now()
-	db.Logger.BeforeSQL(log.LogContext{
-		Ctx:  ctx,
-		SQL:  query,
-		Args: args,
-	})
+	if db.Logger != nil {
+		db.Logger.BeforeSQL(log.LogContext{
+			Ctx:  ctx,
+			SQL:  query,
+			Args: args,
+		})
+	}
 	res, err := db.DB.ExecContext(ctx, query, args...)
-	db.Logger.AfterSQL(log.LogContext{
-		Ctx:         ctx,
-		SQL:         query,
-		Args:        args,
-		ExecuteTime: time.Now().Sub(start),
-		Err:         err,
-	})
+	if db.Logger != nil {
+		db.Logger.AfterSQL(log.LogContext{
+			Ctx:         ctx,
+			SQL:         query,
+			Args:        args,
+			ExecuteTime: time.Now().Sub(start),
+			Err:         err,
+		})
+	}
 	return res, err
 }
 

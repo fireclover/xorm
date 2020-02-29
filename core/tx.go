@@ -7,6 +7,9 @@ package core
 import (
 	"context"
 	"database/sql"
+	"time"
+
+	"xorm.io/xorm/log"
 )
 
 type Tx struct {
@@ -64,7 +67,7 @@ func (tx *Tx) ExecMapContext(ctx context.Context, query string, mp interface{}) 
 	if err != nil {
 		return nil, err
 	}
-	return tx.Tx.ExecContext(ctx, query, args...)
+	return tx.ExecContext(ctx, query, args...)
 }
 
 func (tx *Tx) ExecMap(query string, mp interface{}) (sql.Result, error) {
@@ -76,7 +79,29 @@ func (tx *Tx) ExecStructContext(ctx context.Context, query string, st interface{
 	if err != nil {
 		return nil, err
 	}
-	return tx.Tx.ExecContext(ctx, query, args...)
+	return tx.ExecContext(ctx, query, args...)
+}
+
+func (tx *Tx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	start := time.Now()
+	if tx.db.Logger != nil {
+		tx.db.Logger.BeforeSQL(log.LogContext{
+			Ctx:  ctx,
+			SQL:  query,
+			Args: args,
+		})
+	}
+	res, err := tx.Tx.ExecContext(ctx, query, args...)
+	if tx.db.Logger != nil {
+		tx.db.Logger.AfterSQL(log.LogContext{
+			Ctx:         ctx,
+			SQL:         query,
+			Args:        args,
+			ExecuteTime: time.Now().Sub(start),
+			Err:         err,
+		})
+	}
+	return res, err
 }
 
 func (tx *Tx) ExecStruct(query string, st interface{}) (sql.Result, error) {
@@ -84,8 +109,28 @@ func (tx *Tx) ExecStruct(query string, st interface{}) (sql.Result, error) {
 }
 
 func (tx *Tx) QueryContext(ctx context.Context, query string, args ...interface{}) (*Rows, error) {
+	start := time.Now()
+	if tx.db.Logger != nil {
+		tx.db.Logger.BeforeSQL(log.LogContext{
+			Ctx:  ctx,
+			SQL:  query,
+			Args: args,
+		})
+	}
 	rows, err := tx.Tx.QueryContext(ctx, query, args...)
+	if tx.db.Logger != nil {
+		tx.db.Logger.AfterSQL(log.LogContext{
+			Ctx:         ctx,
+			SQL:         query,
+			Args:        args,
+			ExecuteTime: time.Now().Sub(start),
+			Err:         err,
+		})
+	}
 	if err != nil {
+		if rows != nil {
+			rows.Close()
+		}
 		return nil, err
 	}
 	return &Rows{rows, tx.db}, nil
