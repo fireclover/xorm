@@ -188,14 +188,6 @@ func (eg *EngineGroup) SetTableMapper(mapper names.Mapper) {
 	}
 }
 
-// ShowExecTime show SQL statement and execute time or not on logger if log level is great than INFO
-/*func (eg *EngineGroup) ShowExecTime(show ...bool) {
-	eg.Engine.ShowExecTime(show...)
-	for i := 0; i < len(eg.slaves); i++ {
-		eg.slaves[i].ShowExecTime(show...)
-	}
-}*/
-
 // ShowSQL show SQL statement or not on logger if log level is great than INFO
 func (eg *EngineGroup) ShowSQL(show ...bool) {
 	eg.Engine.ShowSQL(show...)

@@ -118,12 +118,12 @@ func (engine *Engine) SetMapper(mapper names.Mapper) {
 
 // SetTableMapper set the table name mapping rule
 func (engine *Engine) SetTableMapper(mapper names.Mapper) {
-	engine.tagParser.TableMapper = mapper
+	engine.tagParser.SetTableMapper(mapper)
 }
 
 // SetColumnMapper set the column name mapping rule
 func (engine *Engine) SetColumnMapper(mapper names.Mapper) {
-	engine.tagParser.ColumnMapper = mapper
+	engine.tagParser.SetColumnMapper(mapper)
 }
 
 // SupportInsertMany If engine's database support batch insert records like
@@ -320,7 +320,7 @@ func (engine *Engine) DBMetas() ([]*schemas.Table, error) {
 }
 
 // DumpAllToFile dump database all table structs and data to a file
-func (engine *Engine) DumpAllToFile(fp string, tp ...dialects.DBType) error {
+func (engine *Engine) DumpAllToFile(fp string, tp ...schemas.DBType) error {
 	f, err := os.Create(fp)
 	if err != nil {
 		return err
@@ -330,7 +330,7 @@ func (engine *Engine) DumpAllToFile(fp string, tp ...dialects.DBType) error {
 }
 
 // DumpAll dump database all table structs and data to w
-func (engine *Engine) DumpAll(w io.Writer, tp ...dialects.DBType) error {
+func (engine *Engine) DumpAll(w io.Writer, tp ...schemas.DBType) error {
 	tables, err := engine.DBMetas()
 	if err != nil {
 		return err
@@ -339,7 +339,7 @@ func (engine *Engine) DumpAll(w io.Writer, tp ...dialects.DBType) error {
 }
 
 // DumpTablesToFile dump specified tables to SQL file.
-func (engine *Engine) DumpTablesToFile(tables []*schemas.Table, fp string, tp ...dialects.DBType) error {
+func (engine *Engine) DumpTablesToFile(tables []*schemas.Table, fp string, tp ...schemas.DBType) error {
 	f, err := os.Create(fp)
 	if err != nil {
 		return err
@@ -349,12 +349,12 @@ func (engine *Engine) DumpTablesToFile(tables []*schemas.Table, fp string, tp ..
 }
 
 // DumpTables dump specify tables to io.Writer
-func (engine *Engine) DumpTables(tables []*schemas.Table, w io.Writer, tp ...dialects.DBType) error {
+func (engine *Engine) DumpTables(tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
 	return engine.dumpTables(tables, w, tp...)
 }
 
 // dumpTables dump database all table structs and data to w with specify db type
-func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...dialects.DBType) error {
+func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
 	var dialect dialects.Dialect
 	var distDBName string
 	if len(tp) == 0 {
@@ -480,7 +480,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...dia
 		}
 
 		// FIXME: Hack for postgres
-		if string(dialect.DBType()) == schemas.POSTGRES && table.AutoIncrColumn() != nil {
+		if dialect.DBType() == schemas.POSTGRES && table.AutoIncrColumn() != nil {
 			_, err = io.WriteString(w, "SELECT setval('"+table.Name+"_id_seq', COALESCE((SELECT MAX("+table.AutoIncrColumn().Name+") + 1 FROM "+dialect.Quoter().Quote(table.Name)+"), 1), false);\n")
 			if err != nil {
 				return err
@@ -723,13 +723,9 @@ func (t *Table) IsValid() bool {
 }
 
 // TableInfo get table info according to bean's content
-func (engine *Engine) TableInfo(bean interface{}) (*Table, error) {
+func (engine *Engine) TableInfo(bean interface{}) (*schemas.Table, error) {
 	v := utils.ReflectValue(bean)
-	tb, err := engine.tagParser.MapType(v)
-	if err != nil {
-		return nil, err
-	}
-	return &Table{tb, dialects.FullTableName(engine.dialect, engine.GetTableMapper(), bean)}, nil
+	return engine.tagParser.ParseWithCache(v)
 }
 
 // IsTableEmpty if a table has any reocrd
@@ -763,7 +759,7 @@ func (engine *Engine) IDOfV(rv reflect.Value) (schemas.PK, error) {
 
 func (engine *Engine) idOfV(rv reflect.Value) (schemas.PK, error) {
 	v := reflect.Indirect(rv)
-	table, err := engine.tagParser.MapType(v)
+	table, err := engine.tagParser.ParseWithCache(v)
 	if err != nil {
 		return nil, err
 	}
@@ -861,7 +857,7 @@ func (engine *Engine) ClearCache(beans ...interface{}) error {
 
 // UnMapType remove table from tables cache
 func (engine *Engine) UnMapType(t reflect.Type) {
-	engine.tagParser.ClearTable(t)
+	engine.tagParser.ClearCacheTable(t)
 }
 
 // Sync the new struct changes to database, this method will automatically add
@@ -874,7 +870,7 @@ func (engine *Engine) Sync(beans ...interface{}) error {
 	for _, bean := range beans {
 		v := utils.ReflectValue(bean)
 		tableNameNoSchema := dialects.FullTableName(engine.dialect, engine.GetTableMapper(), bean)
-		table, err := engine.tagParser.MapType(v)
+		table, err := engine.tagParser.ParseWithCache(v)
 		if err != nil {
 			return err
 		}
@@ -1222,12 +1218,12 @@ func (engine *Engine) formatColTime(col *schemas.Column, t time.Time) (v interfa
 
 // GetColumnMapper returns the column name mapper
 func (engine *Engine) GetColumnMapper() names.Mapper {
-	return engine.tagParser.ColumnMapper
+	return engine.tagParser.GetColumnMapper()
 }
 
 // GetTableMapper returns the table name mapper
 func (engine *Engine) GetTableMapper() names.Mapper {
-	return engine.tagParser.TableMapper
+	return engine.tagParser.GetTableMapper()
 }
 
 // GetTZLocation returns time zone of the application

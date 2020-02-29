@@ -698,7 +698,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 					}
 				}
 			} else if session.statement.UseCascade {
-				table, err := session.engine.tagParser.MapType(*fieldValue)
+				table, err := session.engine.tagParser.ParseWithCache(*fieldValue)
 				if err != nil {
 					return nil, err
 				}

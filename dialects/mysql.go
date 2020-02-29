@@ -303,16 +303,20 @@ func (db *mysql) IndexCheckSQL(tableName, idxName string) (string, []interface{}
 	return sql, args
 }
 
-/*func (db *mysql) ColumnCheckSql(tableName, colName string) (string, []interface{}) {
-	args := []interface{}{db.DbName, tableName, colName}
-	sql := "SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? AND `COLUMN_NAME` = ?"
-	return sql, args
-}*/
-
 func (db *mysql) TableCheckSQL(tableName string) (string, []interface{}) {
 	args := []interface{}{db.uri.DBName, tableName}
 	sql := "SELECT `TABLE_NAME` from `INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? and `TABLE_NAME`=?"
 	return sql, args
+}
+
+func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
+	quoter := db.dialect.Quoter()
+	sql := fmt.Sprintf("ALTER TABLE %v ADD %v", quoter.Quote(tableName),
+		db.String(col))
+	if len(col.Comment) > 0 {
+		sql += " COMMENT '" + col.Comment + "'"
+	}
+	return sql
 }
 
 func (db *mysql) GetColumns(ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {

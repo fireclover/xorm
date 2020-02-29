@@ -207,7 +207,7 @@ func (session *Session) bytes2Value(col *schemas.Column, fieldValue *reflect.Val
 				v = x
 				fieldValue.Set(reflect.ValueOf(v).Convert(fieldType))
 			} else if session.statement.UseCascade {
-				table, err := session.engine.tagParser.MapType(*fieldValue)
+				table, err := session.engine.tagParser.ParseWithCache(*fieldValue)
 				if err != nil {
 					return err
 				}
@@ -488,7 +488,7 @@ func (session *Session) bytes2Value(col *schemas.Column, fieldValue *reflect.Val
 			default:
 				if session.statement.UseCascade {
 					structInter := reflect.New(fieldType.Elem())
-					table, err := session.engine.tagParser.MapType(structInter.Elem())
+					table, err := session.engine.tagParser.ParseWithCache(structInter.Elem())
 					if err != nil {
 						return err
 					}
@@ -599,7 +599,7 @@ func (session *Session) value2Interface(col *schemas.Column, fieldValue reflect.
 				return v.Value()
 			}
 
-			fieldTable, err := session.engine.tagParser.MapType(fieldValue)
+			fieldTable, err := session.engine.tagParser.ParseWithCache(fieldValue)
 			if err != nil {
 				return nil, err
 			}
