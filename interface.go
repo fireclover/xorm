@@ -98,7 +98,7 @@ type EngineInterface interface {
 	SetConnMaxLifetime(time.Duration)
 	SetColumnMapper(names.Mapper)
 	SetDefaultCacher(caches.Cacher)
-	SetLogger(logger log.ContextLogger)
+	SetLogger(logger interface{})
 	SetLogLevel(log.LogLevel)
 	SetMapper(names.Mapper)
 	SetMaxOpenConns(int)
@@ -107,7 +107,7 @@ type EngineInterface interface {
 	SetTableMapper(names.Mapper)
 	SetTZDatabase(tz *time.Location)
 	SetTZLocation(tz *time.Location)
-	ShowExecTime(...bool)
+	//ShowExecTime(...bool)
 	ShowSQL(show ...bool)
 	Sync(...interface{}) error
 	Sync2(...interface{}) error

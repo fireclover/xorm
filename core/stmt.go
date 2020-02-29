@@ -48,7 +48,7 @@ func (s *Stmt) ExecMapContext(ctx context.Context, mp interface{}) (sql.Result, 
 	for k, i := range s.names {
 		args[i] = vv.Elem().MapIndex(reflect.ValueOf(k)).Interface()
 	}
-	return s.Stmt.ExecContext(ctx, args...)
+	return s.ExecContext(ctx, args...)
 }
 
 func (s *Stmt) ExecMap(mp interface{}) (sql.Result, error) {
@@ -65,11 +65,15 @@ func (s *Stmt) ExecStructContext(ctx context.Context, st interface{}) (sql.Resul
 	for k, i := range s.names {
 		args[i] = vv.Elem().FieldByName(k).Interface()
 	}
-	return s.Stmt.ExecContext(ctx, args...)
+	return s.ExecContext(ctx, args...)
 }
 
 func (s *Stmt) ExecStruct(st interface{}) (sql.Result, error) {
 	return s.ExecStructContext(context.Background(), st)
+}
+
+func (s *Stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+	return s.Stmt.ExecContext(ctx, args)
 }
 
 func (s *Stmt) QueryContext(ctx context.Context, args ...interface{}) (*Rows, error) {

@@ -34,8 +34,8 @@ type Engine struct {
 	db      *core.DB
 	dialect dialects.Dialect
 
-	showSQL      bool
-	showExecTime bool
+	//showSQL      bool
+	//showExecTime bool
 
 	logger     log.ContextLogger
 	TZLocation *time.Location // The timezone of the application
@@ -67,21 +67,16 @@ func (engine *Engine) BufferSize(size int) *Session {
 // ShowSQL show SQL statement or not on logger if log level is great than INFO
 func (engine *Engine) ShowSQL(show ...bool) {
 	engine.logger.ShowSQL(show...)
-	if len(show) == 0 {
-		engine.showSQL = true
-	} else {
-		engine.showSQL = show[0]
-	}
 }
 
 // ShowExecTime show SQL statement and execute time or not on logger if log level is great than INFO
-func (engine *Engine) ShowExecTime(show ...bool) {
+/*func (engine *Engine) ShowExecTime(show ...bool) {
 	if len(show) == 0 {
 		engine.showExecTime = true
 	} else {
 		engine.showExecTime = show[0]
 	}
-}
+}*/
 
 // Logger return the logger interface
 func (engine *Engine) Logger() log.ContextLogger {
@@ -89,11 +84,18 @@ func (engine *Engine) Logger() log.ContextLogger {
 }
 
 // SetLogger set the new logger
-func (engine *Engine) SetLogger(logger log.ContextLogger) {
-	engine.logger = logger
-	engine.showSQL = logger.IsShowSQL()
-	engine.dialect.SetLogger(logger)
-	engine.db.Logger = logger
+func (engine *Engine) SetLogger(logger interface{}) {
+	var realLogger log.ContextLogger
+	switch t := logger.(type) {
+	case log.Logger:
+		realLogger = log.NewLoggerAdapter(t)
+	case log.ContextLogger:
+		realLogger = t
+	}
+	engine.logger = realLogger
+	//engine.showSQL = realLogger.IsShowSQL()
+	engine.dialect.SetLogger(realLogger)
+	engine.db.Logger = realLogger
 }
 
 // SetLogLevel sets the logger level

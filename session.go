@@ -82,7 +82,7 @@ func (session *Session) Init() {
 		session.engine.DatabaseTZ,
 	)
 
-	session.showSQL = session.engine.showSQL
+	//session.showSQL = session.engine.showSQL
 	session.isAutoCommit = true
 	session.isCommitedOrRollbacked = false
 	session.isAutoClose = false
@@ -865,17 +865,6 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 func (session *Session) saveLastSQL(sql string, args ...interface{}) {
 	session.lastSQL = sql
 	session.lastSQLArgs = args
-	session.logSQL(sql, args...)
-}
-
-func (session *Session) logSQL(sqlStr string, sqlArgs ...interface{}) {
-	if session.showSQL && !session.engine.showExecTime {
-		if len(sqlArgs) > 0 {
-			session.engine.logger.Infof("[SQL] %v %#v", sqlStr, sqlArgs)
-		} else {
-			session.engine.logger.Infof("[SQL] %v", sqlStr)
-		}
-	}
 }
 
 // LastSQL returns last query information
