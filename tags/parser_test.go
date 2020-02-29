@@ -1,4 +1,4 @@
-// Copyright 2017 The Xorm Authors. All rights reserved.
+// Copyright 2020 The Xorm Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -35,6 +35,10 @@ func TestParseTableName(t *testing.T) {
 	assert.EqualValues(t, "parse_table_name1", table.Name)
 
 	table, err = parser.Parse(reflect.ValueOf(new(ParseTableName2)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "p_parseTableName", table.Name)
+
+	table, err = parser.Parse(reflect.ValueOf(ParseTableName2{}))
 	assert.NoError(t, err)
 	assert.EqualValues(t, "p_parseTableName", table.Name)
 }

@@ -63,15 +63,16 @@ func (session *Session) Commit() error {
 			SQL: "COMMIT",
 		})
 		err := session.tx.Commit()
-		if err != nil {
-			return err
-		}
 		session.engine.logger.AfterSQL(log.LogContext{
 			Ctx:         session.ctx,
 			SQL:         "COMMIT",
 			ExecuteTime: time.Now().Sub(start),
 			Err:         err,
 		})
+
+		if err != nil {
+			return err
+		}
 
 		// handle processors after tx committed
 		closureCallFunc := func(closuresPtr *[]func(interface{}), bean interface{}) {
