@@ -18,7 +18,22 @@ type Tx struct {
 }
 
 func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
+	start := time.Now()
+	if db.Logger != nil {
+		db.Logger.BeforeSQL(log.LogContext{
+			Ctx: ctx,
+			SQL: "BEGIN TRANSACTION",
+		})
+	}
 	tx, err := db.DB.BeginTx(ctx, opts)
+	if db.Logger != nil {
+		db.Logger.AfterSQL(log.LogContext{
+			Ctx:         ctx,
+			SQL:         "BEGIN TRANSACTION",
+			ExecuteTime: time.Now().Sub(start),
+			Err:         err,
+		})
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -26,11 +41,7 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 }
 
 func (db *DB) Begin() (*Tx, error) {
-	tx, err := db.DB.Begin()
-	if err != nil {
-		return nil, err
-	}
-	return &Tx{tx, db}, nil
+	return db.BeginTx(context.Background(), nil)
 }
 
 func (tx *Tx) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
@@ -42,11 +53,26 @@ func (tx *Tx) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 		return "?"
 	})
 
+	start := time.Now()
+	if tx.db.Logger != nil {
+		tx.db.Logger.BeforeSQL(log.LogContext{
+			Ctx: ctx,
+			SQL: "PREPARE",
+		})
+	}
 	stmt, err := tx.Tx.PrepareContext(ctx, query)
+	if tx.db.Logger != nil {
+		tx.db.Logger.AfterSQL(log.LogContext{
+			Ctx:         ctx,
+			SQL:         "PREPARE",
+			ExecuteTime: time.Now().Sub(start),
+			Err:         err,
+		})
+	}
 	if err != nil {
 		return nil, err
 	}
-	return &Stmt{stmt, tx.db, names}, nil
+	return &Stmt{stmt, tx.db, names, query}, nil
 }
 
 func (tx *Tx) Prepare(query string) (*Stmt, error) {

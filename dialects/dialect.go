@@ -45,7 +45,6 @@ type Dialect interface {
 	IsReserved(string) bool
 	Quoter() schemas.Quoter
 
-	RollBackStr() string
 	AutoIncrStr() string
 
 	SupportInsertMany() bool
@@ -176,10 +175,6 @@ func (b *Base) ShowCreateNull() bool {
 
 func (b *Base) DataSourceName() string {
 	return b.dataSourceName
-}
-
-func (db *Base) RollBackStr() string {
-	return "ROLL BACK"
 }
 
 func (db *Base) SupportDropIfExists() bool {
