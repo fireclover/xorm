@@ -13,7 +13,7 @@ import (
 
 func TestAlwaysQuoteTo(t *testing.T) {
 	var (
-		quoter = Quoter{'[', ']', AlwaysReverse}
+		quoter = Quoter{'[', ']', AlwaysReserve}
 		kases  = []struct {
 			expected string
 			value    string
@@ -84,7 +84,7 @@ func TestReversedQuoteTo(t *testing.T) {
 
 func TestNoQuoteTo(t *testing.T) {
 	var (
-		quoter = Quoter{'[', ']', AlwaysNoReverse}
+		quoter = Quoter{'[', ']', AlwaysNoReserve}
 		kases  = []struct {
 			expected string
 			value    string
@@ -117,19 +117,19 @@ func TestNoQuoteTo(t *testing.T) {
 
 func TestJoin(t *testing.T) {
 	cols := []string{"f1", "f2", "f3"}
-	quoter := Quoter{'[', ']', AlwaysReverse}
+	quoter := Quoter{'[', ']', AlwaysReserve}
 
 	assert.EqualValues(t, "[a],[b]", quoter.Join([]string{"a", " b"}, ","))
 
 	assert.EqualValues(t, "[f1], [f2], [f3]", quoter.Join(cols, ", "))
 
-	quoter.IsReverse = AlwaysNoReverse
+	quoter.IsReserved = AlwaysNoReserve
 	assert.EqualValues(t, "f1, f2, f3", quoter.Join(cols, ", "))
 }
 
 func TestStrings(t *testing.T) {
 	cols := []string{"f1", "f2", "t3.f3"}
-	quoter := Quoter{'[', ']', AlwaysReverse}
+	quoter := Quoter{'[', ']', AlwaysReserve}
 
 	quotedCols := quoter.Strings(cols)
 	assert.EqualValues(t, []string{"[f1]", "[f2]", "[t3].[f3]"}, quotedCols)
@@ -143,6 +143,6 @@ func TestTrim(t *testing.T) {
 
 	for src, dst := range kases {
 		assert.EqualValues(t, src, CommonQuoter.Trim(src))
-		assert.EqualValues(t, dst, Quoter{'[', ']', AlwaysReverse}.Trim(src))
+		assert.EqualValues(t, dst, Quoter{'[', ']', AlwaysReserve}.Trim(src))
 	}
 }
