@@ -210,7 +210,6 @@ var (
 
 type mssql struct {
 	Base
-	quoter schemas.Quoter
 }
 
 func (db *mssql) Init(d *core.DB, uri *URI) error {

@@ -47,7 +47,6 @@ func (s *QuoteFilter) Do(sql string) string {
 		}
 	}
 	return buf.String()
-
 }
 
 // SeqFilter filter SQL replace ?, ? ... to $1, $2 ...
@@ -72,7 +71,6 @@ func convertQuestionMark(sql, prefix string, start int) string {
 		}
 	}
 	return buf.String()
-
 }
 
 func (s *SeqFilter) Do(sql string) string {
