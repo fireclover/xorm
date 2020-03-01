@@ -9,7 +9,7 @@ import (
 )
 
 func TestQuoteFilter_Do(t *testing.T) {
-	f := QuoteFilter{schemas.Quoter{"[", "]"}}
+	f := QuoteFilter{schemas.Quoter{'[', ']', schemas.AlwaysReverse}}
 	sql := "SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? AND `COLUMN_NAME` = ?"
 	res := f.Do(sql)
 	assert.EqualValues(t,
