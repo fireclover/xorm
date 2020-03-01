@@ -10,12 +10,29 @@ import (
 
 func TestQuoteFilter_Do(t *testing.T) {
 	f := QuoteFilter{schemas.Quoter{'[', ']', schemas.AlwaysReverse}}
-	sql := "SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? AND `COLUMN_NAME` = ?"
-	res := f.Do(sql)
-	assert.EqualValues(t,
-		"SELECT [COLUMN_NAME] FROM [INFORMATION_SCHEMA].[COLUMNS] WHERE [TABLE_SCHEMA] = ? AND [TABLE_NAME] = ? AND [COLUMN_NAME] = ?",
-		res,
-	)
+	var kases = []struct {
+		source   string
+		expected string
+	}{
+		{
+			"SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? AND `COLUMN_NAME` = ?",
+			"SELECT [COLUMN_NAME] FROM [INFORMATION_SCHEMA].[COLUMNS] WHERE [TABLE_SCHEMA] = ? AND [TABLE_NAME] = ? AND [COLUMN_NAME] = ?",
+		},
+		{
+			"SELECT 'abc```test```''', `a` FROM b",
+			"SELECT 'abc```test```''', [a] FROM b",
+		},
+		{
+			"UPDATE table SET `a` = ~ `a`, `b`='abc`'",
+			"UPDATE table SET [a] = ~ [a], [b]='abc`'",
+		},
+	}
+
+	for _, kase := range kases {
+		t.Run(kase.source, func(t *testing.T) {
+			assert.EqualValues(t, kase.expected, f.Do(kase.source))
+		})
+	}
 }
 
 func TestSeqFilter(t *testing.T) {
