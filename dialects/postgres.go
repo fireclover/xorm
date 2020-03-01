@@ -766,6 +766,8 @@ var (
 		"YES":                              true,
 		"ZONE":                             true,
 	}
+
+	postgresQuoter = schemas.Quoter{'"', '"', schemas.AlwaysReverse}
 )
 
 const postgresPublicSchema = "public"
@@ -775,6 +777,7 @@ type postgres struct {
 }
 
 func (db *postgres) Init(d *core.DB, uri *URI) error {
+	db.quoter = postgresQuoter
 	err := db.Base.Init(d, db, uri)
 	if err != nil {
 		return err
@@ -783,6 +786,23 @@ func (db *postgres) Init(d *core.DB, uri *URI) error {
 		db.uri.Schema = postgresPublicSchema
 	}
 	return nil
+}
+
+func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
+	switch quotePolicy {
+	case QuotePolicyNone:
+		var q = postgresQuoter
+		q.IsReverse = schemas.AlwaysNoReverse
+		db.quoter = q
+	case QuotePolicyReserved:
+		var q = postgresQuoter
+		q.IsReverse = db.IsReserved
+		db.quoter = q
+	case QuotePolicyAlways:
+		fallthrough
+	default:
+		db.quoter = postgresQuoter
+	}
 }
 
 func (db *postgres) DefaultSchema() string {
@@ -857,12 +877,8 @@ func (db *postgres) SupportInsertMany() bool {
 }
 
 func (db *postgres) IsReserved(name string) bool {
-	_, ok := postgresReservedWords[name]
+	_, ok := postgresReservedWords[strings.ToUpper(name)]
 	return ok
-}
-
-func (db *postgres) Quoter() schemas.Quoter {
-	return schemas.Quoter{`"`, `"`}
 }
 
 func (db *postgres) AutoIncrStr() string {

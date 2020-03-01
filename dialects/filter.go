@@ -26,14 +26,13 @@ func (s *QuoteFilter) Do(sql string) string {
 		return sql
 	}
 
-	prefix, suffix := s.quoter[0][0], s.quoter[1][0]
 	raw := []byte(sql)
 	for i, cnt := 0, 0; i < len(raw); i = i + 1 {
 		if raw[i] == '`' {
 			if cnt%2 == 0 {
-				raw[i] = prefix
+				raw[i] = s.quoter.Prefix
 			} else {
-				raw[i] = suffix
+				raw[i] = s.quoter.Suffix
 			}
 			cnt++
 		}

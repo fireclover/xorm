@@ -204,13 +204,17 @@ var (
 		"EXIT":                           true,
 		"PROC":                           true,
 	}
+
+	mssqlQuoter = schemas.Quoter{'[', ']', schemas.AlwaysReverse}
 )
 
 type mssql struct {
 	Base
+	quoter schemas.Quoter
 }
 
 func (db *mssql) Init(d *core.DB, uri *URI) error {
+	db.quoter = mssqlQuoter
 	return db.Base.Init(d, db, uri)
 }
 
@@ -283,12 +287,25 @@ func (db *mssql) SupportInsertMany() bool {
 }
 
 func (db *mssql) IsReserved(name string) bool {
-	_, ok := mssqlReservedWords[name]
+	_, ok := mssqlReservedWords[strings.ToUpper(name)]
 	return ok
 }
 
-func (db *mssql) Quoter() schemas.Quoter {
-	return schemas.Quoter{"[", "]"}
+func (db *mssql) SetQuotePolicy(quotePolicy QuotePolicy) {
+	switch quotePolicy {
+	case QuotePolicyNone:
+		var q = mssqlQuoter
+		q.IsReverse = schemas.AlwaysNoReverse
+		db.quoter = q
+	case QuotePolicyReserved:
+		var q = mssqlQuoter
+		q.IsReverse = db.IsReserved
+		db.quoter = q
+	case QuotePolicyAlways:
+		fallthrough
+	default:
+		db.quoter = mssqlQuoter
+	}
 }
 
 func (db *mssql) SupportEngine() bool {
