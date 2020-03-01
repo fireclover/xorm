@@ -30,15 +30,24 @@ func (s *QuoteFilter) Do(sql string) string {
 	buf.Grow(len(sql))
 
 	var beginSingleQuote bool
-	var prefix = true
 	for i := 0; i < len(sql); i++ {
 		if !beginSingleQuote && sql[i] == '`' {
-			if prefix {
+			var j = i + 1
+			for ; j < len(sql); j++ {
+				if sql[j] == '`' {
+					break
+				}
+			}
+			word := sql[i+1 : j]
+			isReserved := s.quoter.IsReserved(word)
+			if isReserved {
 				buf.WriteByte(s.quoter.Prefix)
-			} else {
+			}
+			buf.WriteString(word)
+			if isReserved {
 				buf.WriteByte(s.quoter.Suffix)
 			}
-			prefix = !prefix
+			i = j
 		} else {
 			if sql[i] == '\'' {
 				beginSingleQuote = !beginSingleQuote

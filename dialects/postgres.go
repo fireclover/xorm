@@ -767,7 +767,7 @@ var (
 		"ZONE":                             true,
 	}
 
-	postgresQuoter = schemas.Quoter{'"', '"', schemas.AlwaysReverse}
+	postgresQuoter = schemas.Quoter{'"', '"', schemas.AlwaysReserve}
 )
 
 const postgresPublicSchema = "public"
@@ -792,11 +792,11 @@ func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
 		var q = postgresQuoter
-		q.IsReverse = schemas.AlwaysNoReverse
+		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
 		var q = postgresQuoter
-		q.IsReverse = db.IsReserved
+		q.IsReserved = db.IsReserved
 		db.quoter = q
 	case QuotePolicyAlways:
 		fallthrough

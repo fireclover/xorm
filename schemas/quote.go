@@ -10,23 +10,23 @@ import (
 
 // Quoter represents a quoter to the SQL table name and column name
 type Quoter struct {
-	Prefix    byte
-	Suffix    byte
-	IsReverse func(string) bool
+	Prefix     byte
+	Suffix     byte
+	IsReserved func(string) bool
 }
 
 var (
 	// AlwaysFalseReverse always think it's not a reverse word
-	AlwaysNoReverse = func(string) bool { return false }
+	AlwaysNoReserve = func(string) bool { return false }
 
 	// AlwaysReverse always reverse the word
-	AlwaysReverse = func(string) bool { return true }
+	AlwaysReserve = func(string) bool { return true }
 
 	// CommanQuoteMark represnets the common quote mark
 	CommanQuoteMark byte = '`'
 
 	// CommonQuoter represetns a common quoter
-	CommonQuoter = Quoter{CommanQuoteMark, CommanQuoteMark, AlwaysReverse}
+	CommonQuoter = Quoter{CommanQuoteMark, CommanQuoteMark, AlwaysReserve}
 )
 
 func (q Quoter) IsEmpty() bool {
@@ -141,8 +141,8 @@ func (q Quoter) quoteWordTo(buf *strings.Builder, word string) error {
 		return err
 	}
 
-	isReverse := q.IsReverse(realWord)
-	if isReverse {
+	isReserved := q.IsReserved(realWord)
+	if isReserved {
 		if err := buf.WriteByte(q.Prefix); err != nil {
 			return err
 		}
@@ -150,7 +150,7 @@ func (q Quoter) quoteWordTo(buf *strings.Builder, word string) error {
 	if _, err := buf.WriteString(realWord); err != nil {
 		return err
 	}
-	if isReverse {
+	if isReserved {
 		return buf.WriteByte(q.Suffix)
 	}
 

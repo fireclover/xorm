@@ -499,7 +499,7 @@ var (
 		"ZONE":                      true,
 	}
 
-	oracleQuoter = schemas.Quoter{'[', ']', schemas.AlwaysReverse}
+	oracleQuoter = schemas.Quoter{'[', ']', schemas.AlwaysReserve}
 )
 
 type oracle struct {
@@ -623,11 +623,11 @@ func (db *oracle) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
 		var q = oracleQuoter
-		q.IsReverse = schemas.AlwaysNoReverse
+		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
 		var q = oracleQuoter
-		q.IsReverse = db.IsReserved
+		q.IsReserved = db.IsReserved
 		db.quoter = q
 	case QuotePolicyAlways:
 		fallthrough

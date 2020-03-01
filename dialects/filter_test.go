@@ -9,7 +9,7 @@ import (
 )
 
 func TestQuoteFilter_Do(t *testing.T) {
-	f := QuoteFilter{schemas.Quoter{'[', ']', schemas.AlwaysReverse}}
+	f := QuoteFilter{schemas.Quoter{'[', ']', schemas.AlwaysReserve}}
 	var kases = []struct {
 		source   string
 		expected string

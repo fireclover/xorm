@@ -205,7 +205,7 @@ var (
 		"PROC":                           true,
 	}
 
-	mssqlQuoter = schemas.Quoter{'[', ']', schemas.AlwaysReverse}
+	mssqlQuoter = schemas.Quoter{'[', ']', schemas.AlwaysReserve}
 )
 
 type mssql struct {
@@ -294,11 +294,11 @@ func (db *mssql) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
 		var q = mssqlQuoter
-		q.IsReverse = schemas.AlwaysNoReverse
+		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
 		var q = mssqlQuoter
-		q.IsReverse = db.IsReserved
+		q.IsReserved = db.IsReserved
 		db.quoter = q
 	case QuotePolicyAlways:
 		fallthrough

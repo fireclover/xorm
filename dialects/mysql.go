@@ -162,7 +162,7 @@ var (
 		"ZEROFILL":     true,
 	}
 
-	mysqlQuoter = schemas.Quoter{'`', '`', schemas.AlwaysReverse}
+	mysqlQuoter = schemas.Quoter{'`', '`', schemas.AlwaysReserve}
 )
 
 type mysql struct {
@@ -461,11 +461,11 @@ func (db *mysql) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
 		var q = mysqlQuoter
-		q.IsReverse = schemas.AlwaysNoReverse
+		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
 		var q = mysqlQuoter
-		q.IsReverse = db.IsReserved
+		q.IsReserved = db.IsReserved
 		db.quoter = q
 	case QuotePolicyAlways:
 		fallthrough

@@ -144,7 +144,7 @@ var (
 		"WITHOUT":           true,
 	}
 
-	sqlite3Quoter = schemas.Quoter{'`', '`', schemas.AlwaysReverse}
+	sqlite3Quoter = schemas.Quoter{'`', '`', schemas.AlwaysReserve}
 )
 
 type sqlite3 struct {
@@ -160,11 +160,11 @@ func (db *sqlite3) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
 		var q = sqlite3Quoter
-		q.IsReverse = schemas.AlwaysNoReverse
+		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
 		var q = sqlite3Quoter
-		q.IsReverse = db.IsReserved
+		q.IsReserved = db.IsReserved
 		db.quoter = q
 	case QuotePolicyAlways:
 		fallthrough
@@ -266,18 +266,24 @@ func (db *sqlite3) ForUpdateSQL(query string) string {
 }
 
 func (db *sqlite3) IsColumnExist(ctx context.Context, tableName, colName string) (bool, error) {
-	args := []interface{}{tableName}
-	query := "SELECT name FROM sqlite_master WHERE type='table' and name = ? and ((sql like '%`" + colName + "`%') or (sql like '%[" + colName + "]%'))"
-
-	rows, err := db.DB().QueryContext(ctx, query, args...)
+	query := "SELECT * FROM " + tableName + " LIMIT 0"
+	rows, err := db.DB().QueryContext(ctx, query)
 	if err != nil {
 		return false, err
 	}
 	defer rows.Close()
 
-	if rows.Next() {
-		return true, nil
+	cols, err := rows.Columns()
+	if err != nil {
+		return false, err
 	}
+
+	for _, col := range cols {
+		if strings.EqualFold(col, colName) {
+			return true, nil
+		}
+	}
+
 	return false, nil
 }
 
