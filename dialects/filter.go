@@ -26,18 +26,27 @@ func (s *QuoteFilter) Do(sql string) string {
 		return sql
 	}
 
-	raw := []byte(sql)
-	for i, cnt := 0, 0; i < len(raw); i = i + 1 {
-		if raw[i] == '`' {
-			if cnt%2 == 0 {
-				raw[i] = s.quoter.Prefix
+	var buf strings.Builder
+	buf.Grow(len(sql))
+
+	var inSingleQuote bool
+	var prefix = true
+	for i := 0; i < len(sql); i++ {
+		if sql[i] == '\'' && (i == 0 || sql[i-1] != '\\') {
+			inSingleQuote = !inSingleQuote
+		}
+		if !inSingleQuote && sql[i] == '`' {
+			if prefix {
+				buf.WriteByte(s.quoter.Prefix)
 			} else {
-				raw[i] = s.quoter.Suffix
+				buf.WriteByte(s.quoter.Suffix)
 			}
-			cnt++
+			prefix = !prefix
+		} else {
+			buf.WriteByte(sql[i])
 		}
 	}
-	return string(raw)
+	return buf.String()
 
 }
 
@@ -48,15 +57,17 @@ type SeqFilter struct {
 }
 
 func convertQuestionMark(sql, prefix string, start int) string {
-	var buf strings.Builder
-	var beginSingleQuote bool
-	var index = start
-	for _, c := range sql {
+	var (
+		buf              strings.Builder
+		beginSingleQuote bool
+		index            = start
+	)
+	for i, c := range sql {
 		if !beginSingleQuote && c == '?' {
 			buf.WriteString(fmt.Sprintf("%s%v", prefix, index))
 			index++
 		} else {
-			if c == '\'' {
+			if c == '\'' && (i > 0 && sql[i-1] != '\\') {
 				beginSingleQuote = !beginSingleQuote
 			}
 			buf.WriteRune(c)
