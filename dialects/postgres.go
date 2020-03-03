@@ -995,7 +995,6 @@ WHERE c.relkind = 'r'::char AND c.relname = $1%s AND f.attnum > 0 ORDER BY f.att
 			return nil, nil, err
 		}
 
-		// fmt.Println(args, colName, isNullable, dataType, maxLenStr, colDefault, isPK, isUnique)
 		var maxLen int
 		if maxLenStr != nil {
 			maxLen, err = strconv.Atoi(*maxLenStr)
@@ -1007,7 +1006,22 @@ WHERE c.relkind = 'r'::char AND c.relname = $1%s AND f.attnum > 0 ORDER BY f.att
 		col.Name = strings.Trim(colName, `" `)
 
 		if colDefault != nil {
-			col.Default = *colDefault
+			var theDefault = *colDefault
+			// cockroach has type with the default value with :::
+			// and postgres with ::, we should remove them before store them
+			idx := strings.Index(theDefault, ":::")
+			if idx == -1 {
+				idx = strings.Index(theDefault, "::")
+			}
+			if idx > -1 {
+				theDefault = theDefault[:idx]
+			}
+
+			if strings.HasSuffix(theDefault, "+00:00'") {
+				theDefault = theDefault[:len(theDefault)-7] + "'"
+			}
+
+			col.Default = theDefault
 			col.DefaultIsEmpty = false
 			if strings.HasPrefix(col.Default, "nextval(") {
 				col.IsAutoIncrement = true
