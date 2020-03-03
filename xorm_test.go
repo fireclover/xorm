@@ -37,9 +37,9 @@ var (
 	splitter           = flag.String("splitter", ";", "the splitter on connstr for cluster")
 	schema             = flag.String("schema", "", "specify the schema")
 	ignoreSelectUpdate = flag.Bool("ignore_select_update", false, "ignore select update if implementation difference, only for tidb")
-
-	tableMapper names.Mapper
-	colMapper   names.Mapper
+	ingoreUpdateLimit  = flag.Bool("ignore_update_limit", false, "ignore update limit if implementation difference, only for cockroach")
+	tableMapper        names.Mapper
+	colMapper          names.Mapper
 )
 
 func createEngine(dbType, connStr string) error {
