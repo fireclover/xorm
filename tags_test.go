@@ -5,7 +5,6 @@
 package xorm
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -326,36 +325,14 @@ func TestExtends3(t *testing.T) {
 		Join("LEFT", []string{typeTableName, "type"}, "`type`.`"+mapper("Id")+"`="+msgTableName+".`"+mapper("Id")+"`").
 		Find(&list)
 	assert.NoError(t, err)
-
-	if len(list) != 1 {
-		err = errors.New(fmt.Sprintln("should have 1 message, got", len(list)))
-		t.Error(err)
-		panic(err)
-	}
-
-	if list[0].Message.Id != msg.Id {
-		err = errors.New(fmt.Sprintln("should message equal", list[0].Message, msg))
-		t.Error(err)
-		panic(err)
-	}
-
-	if list[0].Sender.Id != sender.Id || list[0].Sender.Name != sender.Name {
-		err = errors.New(fmt.Sprintln("should sender equal", list[0].Sender, sender))
-		t.Error(err)
-		panic(err)
-	}
-
-	if list[0].Receiver.Id != receiver.Id || list[0].Receiver.Name != receiver.Name {
-		err = errors.New(fmt.Sprintln("should receiver equal", list[0].Receiver, receiver))
-		t.Error(err)
-		panic(err)
-	}
-
-	if list[0].Type.Id != msgtype.Id || list[0].Type.Name != msgtype.Name {
-		err = errors.New(fmt.Sprintln("should msgtype equal", list[0].Type, msgtype))
-		t.Error(err)
-		panic(err)
-	}
+	assert.EqualValues(t, 1, len(list))
+	assert.EqualValues(t, list[0].Message.Id, msg.Id)
+	assert.EqualValues(t, list[0].Sender.Id, sender.Id)
+	assert.EqualValues(t, list[0].Sender.Name, sender.Name)
+	assert.EqualValues(t, list[0].Receiver.Id, receiver.Id)
+	assert.EqualValues(t, list[0].Receiver.Name, receiver.Name)
+	assert.EqualValues(t, list[0].Type.Id, msgtype.Id)
+	assert.EqualValues(t, list[0].Type.Name, msgtype.Name)
 }
 
 func TestExtends4(t *testing.T) {
@@ -410,30 +387,12 @@ func TestExtends4(t *testing.T) {
 		Join("LEFT", typeTableName, typeTableName+".`"+mapper("Id")+"`="+msgTableName+".`"+mapper("Id")+"`").
 		Find(&list)
 	assert.NoError(t, err)
-
-	if len(list) != 1 {
-		err = errors.New(fmt.Sprintln("should have 1 message, got", len(list)))
-		t.Error(err)
-		panic(err)
-	}
-
-	if list[0].Message.Id != msg.Id {
-		err = errors.New(fmt.Sprintln("should message equal", list[0].Message, msg))
-		t.Error(err)
-		panic(err)
-	}
-
-	if list[0].MessageUser.Id != sender.Id || list[0].MessageUser.Name != sender.Name {
-		err = errors.New(fmt.Sprintln("should sender equal", list[0].MessageUser, sender))
-		t.Error(err)
-		panic(err)
-	}
-
-	if list[0].MessageType.Id != msgtype.Id || list[0].MessageType.Name != msgtype.Name {
-		err = errors.New(fmt.Sprintln("should msgtype equal", list[0].MessageType, msgtype))
-		t.Error(err)
-		panic(err)
-	}
+	assert.EqualValues(t, len(list), 1)
+	assert.EqualValues(t, list[0].Message.Id, msg.Id)
+	assert.EqualValues(t, list[0].MessageUser.Id, sender.Id)
+	assert.EqualValues(t, list[0].MessageUser.Name, sender.Name)
+	assert.EqualValues(t, list[0].MessageType.Id, msgtype.Id)
+	assert.EqualValues(t, list[0].MessageType.Name, msgtype.Name)
 }
 
 type Size struct {
@@ -1240,45 +1199,23 @@ func TestVersion1(t *testing.T) {
 	ver := &VersionS{Name: "sfsfdsfds"}
 	_, err = testEngine.Insert(ver)
 	assert.NoError(t, err)
-	fmt.Println(ver)
-	if ver.Ver != 1 {
-		err = errors.New("insert error")
-		t.Error(err)
-		panic(err)
-	}
+	assert.EqualValues(t, ver.Ver, 1)
 
 	newVer := new(VersionS)
 	has, err := testEngine.ID(ver.Id).Get(newVer)
 	assert.NoError(t, err)
-
-	if !has {
-		t.Error(fmt.Errorf("no version id is %v", ver.Id))
-		panic(err)
-	}
-	fmt.Println(newVer)
-	if newVer.Ver != 1 {
-		err = errors.New("insert error")
-		t.Error(err)
-		panic(err)
-	}
+	assert.True(t, has)
+	assert.EqualValues(t, newVer.Ver, 1)
 
 	newVer.Name = "-------"
 	_, err = testEngine.ID(ver.Id).Update(newVer)
 	assert.NoError(t, err)
-	if newVer.Ver != 2 {
-		err = errors.New("update should set version back to struct")
-		t.Error(err)
-	}
+	assert.EqualValues(t, newVer.Ver, 2)
 
 	newVer = new(VersionS)
 	has, err = testEngine.ID(ver.Id).Get(newVer)
 	assert.NoError(t, err)
-	fmt.Println(newVer)
-	if newVer.Ver != 2 {
-		err = errors.New("update error")
-		t.Error(err)
-		panic(err)
-	}
+	assert.EqualValues(t, newVer.Ver, 2)
 }
 
 func TestVersion2(t *testing.T) {
@@ -1296,15 +1233,8 @@ func TestVersion2(t *testing.T) {
 	}
 	_, err = testEngine.Insert(vers)
 	assert.NoError(t, err)
-
-	fmt.Println(vers)
-
 	for _, v := range vers {
-		if v.Ver != 1 {
-			err := errors.New("version should be 1")
-			t.Error(err)
-			panic(err)
-		}
+		assert.EqualValues(t, v.Ver, 1)
 	}
 }
 
@@ -1327,45 +1257,23 @@ func TestVersion3(t *testing.T) {
 	ver := &VersionUintS{Name: "sfsfdsfds"}
 	_, err = testEngine.Insert(ver)
 	assert.NoError(t, err)
-	fmt.Println(ver)
-	if ver.Ver != 1 {
-		err = errors.New("insert error")
-		t.Error(err)
-		panic(err)
-	}
+	assert.EqualValues(t, ver.Ver, 1)
 
 	newVer := new(VersionUintS)
 	has, err := testEngine.ID(ver.Id).Get(newVer)
 	assert.NoError(t, err)
-
-	if !has {
-		t.Error(fmt.Errorf("no version id is %v", ver.Id))
-		panic(err)
-	}
-	fmt.Println(newVer)
-	if newVer.Ver != 1 {
-		err = errors.New("insert error")
-		t.Error(err)
-		panic(err)
-	}
+	assert.True(t, has)
+	assert.EqualValues(t, newVer.Ver, 1)
 
 	newVer.Name = "-------"
 	_, err = testEngine.ID(ver.Id).Update(newVer)
 	assert.NoError(t, err)
-	if newVer.Ver != 2 {
-		err = errors.New("update should set version back to struct")
-		t.Error(err)
-	}
+	assert.EqualValues(t, newVer.Ver, 2)
 
 	newVer = new(VersionUintS)
 	has, err = testEngine.ID(ver.Id).Get(newVer)
 	assert.NoError(t, err)
-	fmt.Println(newVer)
-	if newVer.Ver != 2 {
-		err = errors.New("update error")
-		t.Error(err)
-		panic(err)
-	}
+	assert.EqualValues(t, newVer.Ver, 2)
 }
 
 func TestVersion4(t *testing.T) {
@@ -1383,14 +1291,7 @@ func TestVersion4(t *testing.T) {
 	}
 	_, err = testEngine.Insert(vers)
 	assert.NoError(t, err)
-
-	fmt.Println(vers)
-
 	for _, v := range vers {
-		if v.Ver != 1 {
-			err := errors.New("version should be 1")
-			t.Error(err)
-			panic(err)
-		}
+		assert.EqualValues(t, v.Ver, 1)
 	}
 }

@@ -5,7 +5,6 @@
 package xorm
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -291,10 +290,7 @@ func TestUpdate1(t *testing.T) {
 	var ori Userinfo
 	has, err := testEngine.Get(&ori)
 	assert.NoError(t, err)
-	if !has {
-		t.Error(errors.New("not exist"))
-		panic(errors.New("not exist"))
-	}
+	assert.True(t, has)
 
 	// update by id
 	user := Userinfo{Username: "xxx", Height: 1.2}
@@ -318,10 +314,7 @@ func TestUpdate1(t *testing.T) {
 	{
 		user := &Userinfo{Username: "not null data", Height: 180.5}
 		_, err := testEngine.Insert(user)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 		userID := user.Uid
 
 		has, err := testEngine.ID(userID).
@@ -362,10 +355,7 @@ func TestUpdate1(t *testing.T) {
 
 	defer func() {
 		err = testEngine.DropTables(&Article{})
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 	}()
 
 	a := &Article{0, "1", "2", "3", "4", "5", 2}

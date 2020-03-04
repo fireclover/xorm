@@ -77,16 +77,8 @@ func TestNullStructInsert(t *testing.T) {
 	if true {
 		item := new(NullType)
 		_, err := testEngine.Insert(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(item)
-		if item.Id != 1 {
-			err = errors.New("insert error")
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
+		assert.EqualValues(t, item.Id, 1)
 	}
 
 	if true {
@@ -97,16 +89,8 @@ func TestNullStructInsert(t *testing.T) {
 			IsMan:  sql.NullBool{Bool: true, Valid: true},
 		}
 		_, err := testEngine.Insert(&item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(item)
-		if item.Id != 2 {
-			err = errors.New("insert error")
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
+		assert.EqualValues(t, item.Id, 2)
 	}
 
 	if true {
@@ -125,11 +109,7 @@ func TestNullStructInsert(t *testing.T) {
 		}
 
 		_, err := testEngine.Insert(&items)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(items)
+		assert.NoError(t, err)
 	}
 }
 
@@ -171,30 +151,16 @@ func TestNullStructUpdate(t *testing.T) {
 		item.Height = sql.NullFloat64{Float64: 0, Valid: false} // update to NULL
 
 		affected, err := testEngine.ID(2).Cols("age", "height", "is_man").Update(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		if affected != 1 {
-			err := errors.New("update failed")
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
+		assert.EqualValues(t, affected, 1)
 	}
 
 	if true { // 测试In update
 		item := new(NullType)
 		item.Age = sql.NullInt64{Int64: 23, Valid: true}
 		affected, err := testEngine.In("id", 3, 4).Cols("age", "height", "is_man").Update(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		if affected != 2 {
-			err := errors.New("update failed")
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
+		assert.EqualValues(t, affected, 2)
 	}
 
 	if true { // 测试where
@@ -204,10 +170,7 @@ func TestNullStructUpdate(t *testing.T) {
 		item.Age = sql.NullInt64{Int64: 34, Valid: true}
 
 		_, err := testEngine.Where("age > ?", 34).Update(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 	}
 
 	if true { // 修改全部时，插入空值
@@ -219,10 +182,7 @@ func TestNullStructUpdate(t *testing.T) {
 		}
 
 		_, err := testEngine.AllCols().ID(6).Update(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 		fmt.Println(item)
 	}
 
@@ -263,63 +223,33 @@ func TestNullStructFind(t *testing.T) {
 	if true {
 		item := new(NullType)
 		has, err := testEngine.ID(1).Get(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		if !has {
-			t.Error(errors.New("no find id 1"))
-			panic(err)
-		}
-		fmt.Println(item)
-		if item.Id != 1 || item.Name.Valid || item.Age.Valid || item.Height.Valid ||
-			item.IsMan.Valid {
-			err = errors.New("insert error")
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, item.Id, 1)
+		assert.False(t, item.Name.Valid)
+		assert.False(t, item.Age.Valid)
+		assert.False(t, item.Height.Valid)
+		assert.False(t, item.IsMan.Valid)
 	}
 
 	if true {
 		item := new(NullType)
 		item.Id = 2
-
 		has, err := testEngine.Get(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		if !has {
-			t.Error(errors.New("no find id 2"))
-			panic(err)
-		}
-		fmt.Println(item)
+		assert.NoError(t, err)
+		assert.True(t, has)
 	}
 
 	if true {
 		item := make([]NullType, 0)
-
 		err := testEngine.ID(2).Find(&item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-
-		fmt.Println(item)
+		assert.NoError(t, err)
 	}
 
 	if true {
 		item := make([]NullType, 0)
-
 		err := testEngine.Asc("age").Find(&item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-
-		for k, v := range item {
-			fmt.Println(k, v)
-		}
+		assert.NoError(t, err)
 	}
 }
 
@@ -334,10 +264,7 @@ func TestNullStructIterate(t *testing.T) {
 				fmt.Println(i, nultype)
 				return nil
 			})
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 	}
 }
 
@@ -348,10 +275,7 @@ func TestNullStructCount(t *testing.T) {
 	if true {
 		item := new(NullType)
 		total, err := testEngine.Where("age IS NOT NULL").Count(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 		fmt.Println(total)
 	}
 }
@@ -367,10 +291,7 @@ func TestNullStructRows(t *testing.T) {
 
 	for rows.Next() {
 		err = rows.Scan(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 		fmt.Println(item)
 	}
 }
