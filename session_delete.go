@@ -6,8 +6,8 @@ package xorm
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
+	"time"
 
 	"xorm.io/xorm/caches"
 	"xorm.io/xorm/schemas"
@@ -98,119 +98,31 @@ func (session *Session) Delete(bean interface{}) (int64, error) {
 		processor.BeforeDelete()
 	}
 
-	condSQL, condArgs, err := session.statement.GenConds(bean)
+	realSQL, deleteSQL, condArgs, err := session.statement.GenDeleteSQL(bean)
 	if err != nil {
 		return 0, err
 	}
-	pLimitN := session.statement.LimitN
-	if len(condSQL) == 0 && (pLimitN == nil || *pLimitN == 0) {
-		return 0, ErrNeedDeletedCond
+
+	argsForCache := make([]interface{}, 0, len(condArgs)*2)
+	copy(argsForCache, condArgs)
+	argsForCache = append(condArgs, argsForCache...)
+
+	if !session.statement.GetUnscoped() && session.statement.RefTable.DeletedColumn() != nil {
+		deletedColumn := session.statement.RefTable.DeletedColumn()
+
+		session.afterClosures = append(session.afterClosures, func(col *schemas.Column, tz *time.Location) func(interface{}) {
+			return func(bean interface{}) {
+				t := time.Now().In(tz)
+				setColumnTime(bean, col, t)
+			}
+		}(deletedColumn, session.engine.TZLocation))
 	}
 
 	var tableNameNoQuote = session.statement.TableName()
-	var tableName = session.engine.Quote(tableNameNoQuote)
-	var table = session.statement.RefTable
-	var deleteSQL string
-	if len(condSQL) > 0 {
-		deleteSQL = fmt.Sprintf("DELETE FROM %v WHERE %v", tableName, condSQL)
-	} else {
-		deleteSQL = fmt.Sprintf("DELETE FROM %v", tableName)
-	}
-
-	var orderSQL string
-	if len(session.statement.OrderStr) > 0 {
-		orderSQL += fmt.Sprintf(" ORDER BY %s", session.statement.OrderStr)
-	}
-	if pLimitN != nil && *pLimitN > 0 {
-		limitNValue := *pLimitN
-		orderSQL += fmt.Sprintf(" LIMIT %d", limitNValue)
-	}
-
-	if len(orderSQL) > 0 {
-		switch session.engine.dialect.DBType() {
-		case schemas.POSTGRES:
-			inSQL := fmt.Sprintf("ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQL)
-			if len(condSQL) > 0 {
-				deleteSQL += " AND " + inSQL
-			} else {
-				deleteSQL += " WHERE " + inSQL
-			}
-		case schemas.SQLITE:
-			inSQL := fmt.Sprintf("rowid IN (SELECT rowid FROM %s%s)", tableName, orderSQL)
-			if len(condSQL) > 0 {
-				deleteSQL += " AND " + inSQL
-			} else {
-				deleteSQL += " WHERE " + inSQL
-			}
-			// TODO: how to handle delete limit on mssql?
-		case schemas.MSSQL:
-			return 0, ErrNotImplemented
-		default:
-			deleteSQL += orderSQL
-		}
-	}
-
-	var realSQL string
-	argsForCache := make([]interface{}, 0, len(condArgs)*2)
-	if session.statement.GetUnscoped() || table.DeletedColumn() == nil { // tag "deleted" is disabled
-		realSQL = deleteSQL
-		copy(argsForCache, condArgs)
-		argsForCache = append(condArgs, argsForCache...)
-	} else {
-		// !oinume! sqlStrForCache and argsForCache is needed to behave as executing "DELETE FROM ..." for caches.
-		copy(argsForCache, condArgs)
-		argsForCache = append(condArgs, argsForCache...)
-
-		deletedColumn := table.DeletedColumn()
-		realSQL = fmt.Sprintf("UPDATE %v SET %v = ? WHERE %v",
-			session.engine.Quote(session.statement.TableName()),
-			session.engine.Quote(deletedColumn.Name),
-			condSQL)
-
-		if len(orderSQL) > 0 {
-			switch session.engine.dialect.DBType() {
-			case schemas.POSTGRES:
-				inSQL := fmt.Sprintf("ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQL)
-				if len(condSQL) > 0 {
-					realSQL += " AND " + inSQL
-				} else {
-					realSQL += " WHERE " + inSQL
-				}
-			case schemas.SQLITE:
-				inSQL := fmt.Sprintf("rowid IN (SELECT rowid FROM %s%s)", tableName, orderSQL)
-				if len(condSQL) > 0 {
-					realSQL += " AND " + inSQL
-				} else {
-					realSQL += " WHERE " + inSQL
-				}
-				// TODO: how to handle delete limit on mssql?
-			case schemas.MSSQL:
-				return 0, ErrNotImplemented
-			default:
-				realSQL += orderSQL
-			}
-		}
-
-		// !oinume! Insert nowTime to the head of session.statement.Params
-		condArgs = append(condArgs, "")
-		paramsLen := len(condArgs)
-		copy(condArgs[1:paramsLen], condArgs[0:paramsLen-1])
-
-		val, t := session.engine.nowTime(deletedColumn)
-		condArgs[0] = val
-
-		var colName = deletedColumn.Name
-		session.afterClosures = append(session.afterClosures, func(bean interface{}) {
-			col := table.GetColumn(colName)
-			setColumnTime(bean, col, t)
-		})
-	}
-
 	if cacher := session.engine.GetCacher(tableNameNoQuote); cacher != nil && session.statement.UseCache {
-		session.cacheDelete(table, tableNameNoQuote, deleteSQL, argsForCache...)
+		session.cacheDelete(session.statement.RefTable, tableNameNoQuote, deleteSQL, argsForCache...)
 	}
 
-	session.statement.RefTable = table
 	res, err := session.exec(realSQL, condArgs...)
 	if err != nil {
 		return 0, err

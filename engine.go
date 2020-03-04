@@ -1211,10 +1211,6 @@ func (engine *Engine) nowTime(col *schemas.Column) (interface{}, time.Time) {
 	return dialects.FormatTime(engine.dialect, col.SQLType.Name, t.In(tz)), t.In(engine.TZLocation)
 }
 
-func (engine *Engine) formatColTime(col *schemas.Column, t time.Time) (v interface{}) {
-	return dialects.FormatColumnTime(engine.dialect, engine.DatabaseTZ, col, t)
-}
-
 // GetColumnMapper returns the column name mapper
 func (engine *Engine) GetColumnMapper() names.Mapper {
 	return engine.tagParser.GetColumnMapper()
