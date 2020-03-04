@@ -275,25 +275,16 @@ func TestExtends3(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.DropTables(&Message{}, &MessageUser{}, &MessageType{})
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	err = testEngine.CreateTables(&Message{}, &MessageUser{}, &MessageType{})
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	var sender = MessageUser{Name: "sender"}
 	var receiver = MessageUser{Name: "receiver"}
 	var msgtype = MessageType{Name: "type"}
 	_, err = testEngine.Insert(&sender, &receiver, &msgtype)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	msg := Message{
 		MessageBase: MessageBase{
@@ -371,24 +362,15 @@ func TestExtends4(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.DropTables(&Message{}, &MessageUser{}, &MessageType{})
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	err = testEngine.CreateTables(&Message{}, &MessageUser{}, &MessageType{})
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	var sender = MessageUser{Name: "sender"}
 	var msgtype = MessageType{Name: "type"}
 	_, err = testEngine.Insert(&sender, &msgtype)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	msg := Message{
 		MessageBase: MessageBase{
@@ -427,10 +409,7 @@ func TestExtends4(t *testing.T) {
 	err = session.Table(msgTableName).Join("LEFT", userTableName, userTableName+".`"+mapper("Id")+"`="+msgTableName+".`"+mapper("Uid")+"`").
 		Join("LEFT", typeTableName, typeTableName+".`"+mapper("Id")+"`="+msgTableName+".`"+mapper("Id")+"`").
 		Find(&list)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	if len(list) != 1 {
 		err = errors.New(fmt.Sprintln("should have 1 message, got", len(list)))
@@ -473,16 +452,10 @@ type Book struct {
 func TestExtends5(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 	err := testEngine.DropTables(&Book{}, &Size{})
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	err = testEngine.CreateTables(&Size{}, &Book{})
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	var sc = Size{Width: 0.2, Height: 0.4}
 	var so = Size{Width: 0.2, Height: 0.8}
@@ -547,10 +520,7 @@ func TestExtends5(t *testing.T) {
 			bookTableName+".`Size`=s.`id`",
 		).
 		Find(&list)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	for _, book := range list {
 		if ok := assert.Equal(t, books[book.ID].SizeClosed.Width, book.SizeClosed.Width); !ok {
@@ -1262,23 +1232,14 @@ func TestVersion1(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.DropTables(new(VersionS))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	err = testEngine.CreateTables(new(VersionS))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	ver := &VersionS{Name: "sfsfdsfds"}
 	_, err = testEngine.Insert(ver)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	fmt.Println(ver)
 	if ver.Ver != 1 {
 		err = errors.New("insert error")
@@ -1288,10 +1249,7 @@ func TestVersion1(t *testing.T) {
 
 	newVer := new(VersionS)
 	has, err := testEngine.ID(ver.Id).Get(newVer)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	if !has {
 		t.Error(fmt.Errorf("no version id is %v", ver.Id))
@@ -1306,10 +1264,7 @@ func TestVersion1(t *testing.T) {
 
 	newVer.Name = "-------"
 	_, err = testEngine.ID(ver.Id).Update(newVer)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	if newVer.Ver != 2 {
 		err = errors.New("update should set version back to struct")
 		t.Error(err)
@@ -1317,10 +1272,7 @@ func TestVersion1(t *testing.T) {
 
 	newVer = new(VersionS)
 	has, err = testEngine.ID(ver.Id).Get(newVer)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	fmt.Println(newVer)
 	if newVer.Ver != 2 {
 		err = errors.New("update error")
@@ -1333,26 +1285,17 @@ func TestVersion2(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.DropTables(new(VersionS))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	err = testEngine.CreateTables(new(VersionS))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	var vers = []VersionS{
 		{Name: "sfsfdsfds"},
 		{Name: "xxxxx"},
 	}
 	_, err = testEngine.Insert(vers)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	fmt.Println(vers)
 
@@ -1376,23 +1319,14 @@ func TestVersion3(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.DropTables(new(VersionUintS))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	err = testEngine.CreateTables(new(VersionUintS))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	ver := &VersionUintS{Name: "sfsfdsfds"}
 	_, err = testEngine.Insert(ver)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	fmt.Println(ver)
 	if ver.Ver != 1 {
 		err = errors.New("insert error")
@@ -1402,10 +1336,7 @@ func TestVersion3(t *testing.T) {
 
 	newVer := new(VersionUintS)
 	has, err := testEngine.ID(ver.Id).Get(newVer)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	if !has {
 		t.Error(fmt.Errorf("no version id is %v", ver.Id))
@@ -1420,10 +1351,7 @@ func TestVersion3(t *testing.T) {
 
 	newVer.Name = "-------"
 	_, err = testEngine.ID(ver.Id).Update(newVer)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	if newVer.Ver != 2 {
 		err = errors.New("update should set version back to struct")
 		t.Error(err)
@@ -1431,10 +1359,7 @@ func TestVersion3(t *testing.T) {
 
 	newVer = new(VersionUintS)
 	has, err = testEngine.ID(ver.Id).Get(newVer)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	fmt.Println(newVer)
 	if newVer.Ver != 2 {
 		err = errors.New("update error")
@@ -1447,26 +1372,17 @@ func TestVersion4(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.DropTables(new(VersionUintS))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	err = testEngine.CreateTables(new(VersionUintS))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	var vers = []VersionUintS{
 		{Name: "sfsfdsfds"},
 		{Name: "xxxxx"},
 	}
 	_, err = testEngine.Insert(vers)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	fmt.Println(vers)
 

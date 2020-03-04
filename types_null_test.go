@@ -60,20 +60,14 @@ func TestCreateNullStructTable(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.CreateTables(new(NullType))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestDropNullStructTable(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.DropTables(new(NullType))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestNullStructInsert(t *testing.T) {
@@ -368,10 +362,7 @@ func TestNullStructRows(t *testing.T) {
 
 	item := new(NullType)
 	rows, err := testEngine.Where("id > ?", 1).Rows(item)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	defer rows.Close()
 
 	for rows.Next() {
@@ -391,14 +382,8 @@ func TestNullStructDelete(t *testing.T) {
 	item := new(NullType)
 
 	_, err := testEngine.ID(1).Delete(item)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	_, err = testEngine.Where("id > ?", 1).Delete(item)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 }
