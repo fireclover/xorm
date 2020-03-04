@@ -64,7 +64,7 @@ func (engine *Engine) BufferSize(size int) *Session {
 // ShowSQL show SQL statement or not on logger if log level is great than INFO
 func (engine *Engine) ShowSQL(show ...bool) {
 	engine.logger.ShowSQL(show...)
-	engine.db.Logger = engine.logger
+	engine.DB().Logger = engine.logger
 }
 
 // Logger return the logger interface
@@ -82,7 +82,7 @@ func (engine *Engine) SetLogger(logger interface{}) {
 		realLogger = t
 	}
 	engine.logger = realLogger
-	engine.db.Logger = realLogger
+	engine.DB().Logger = realLogger
 }
 
 // SetLogLevel sets the logger level
@@ -167,17 +167,17 @@ func (engine *Engine) AutoIncrStr() string {
 
 // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 func (engine *Engine) SetConnMaxLifetime(d time.Duration) {
-	engine.db.SetConnMaxLifetime(d)
+	engine.DB().SetConnMaxLifetime(d)
 }
 
 // SetMaxOpenConns is only available for go 1.2+
 func (engine *Engine) SetMaxOpenConns(conns int) {
-	engine.db.SetMaxOpenConns(conns)
+	engine.DB().SetMaxOpenConns(conns)
 }
 
 // SetMaxIdleConns set the max idle connections on pool, default is 2
 func (engine *Engine) SetMaxIdleConns(conns int) {
-	engine.db.SetMaxIdleConns(conns)
+	engine.DB().SetMaxIdleConns(conns)
 }
 
 // SetDefaultCacher set the default cacher. Xorm's default not enable cacher.
@@ -218,7 +218,7 @@ func (engine *Engine) NewDB() (*core.DB, error) {
 
 // DB return the wrapper of sql.DB
 func (engine *Engine) DB() *core.DB {
-	return engine.db
+	return engine.dialect.DB()
 }
 
 // Dialect return database dialect
@@ -235,7 +235,7 @@ func (engine *Engine) NewSession() *Session {
 
 // Close the engine
 func (engine *Engine) Close() error {
-	return engine.db.Close()
+	return engine.DB().Close()
 }
 
 // Ping tests if database is alive

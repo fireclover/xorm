@@ -31,7 +31,7 @@ type URI struct {
 
 // Dialect represents a kind of database
 type Dialect interface {
-	Init(*core.DB, *URI /*, string, string*/) error
+	Init(*core.DB, *URI) error
 	URI() *URI
 	DB() *core.DB
 	DBType() schemas.DBType
