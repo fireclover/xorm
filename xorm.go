@@ -54,7 +54,7 @@ func NewEngine(driverName string, dataSourceName string) (*Engine, error) {
 		return nil, err
 	}
 
-	err = dialect.Init(db, uri, driverName, dataSourceName)
+	err = dialect.Init(db, uri /*, driverName, dataSourceName*/)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +70,8 @@ func NewEngine(driverName string, dataSourceName string) (*Engine, error) {
 		defaultContext: context.Background(),
 		cacherMgr:      cacherMgr,
 		tagParser:      tagParser,
+		driverName:     driverName,
+		dataSourceName: dataSourceName,
 	}
 
 	if uri.DBType == schemas.SQLITE {

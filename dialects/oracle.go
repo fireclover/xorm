@@ -504,8 +504,8 @@ type oracle struct {
 	Base
 }
 
-func (db *oracle) Init(d *core.DB, uri *URI, drivername, dataSourceName string) error {
-	return db.Base.Init(d, db, uri, drivername, dataSourceName)
+func (db *oracle) Init(d *core.DB, uri *URI /*, drivername, dataSourceName string*/) error {
+	return db.Base.Init(d, db, uri /*, drivername, dataSourceName*/)
 }
 
 func (db *oracle) SQLType(c *schemas.Column) string {

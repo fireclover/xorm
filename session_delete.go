@@ -98,7 +98,7 @@ func (session *Session) Delete(bean interface{}) (int64, error) {
 		processor.BeforeDelete()
 	}
 
-	realSQL, deleteSQL, condArgs, err := session.statement.GenDeleteSQL(bean)
+	realSQL, deleteSQL, condArgs, now, err := session.statement.GenDeleteSQL(bean)
 	if err != nil {
 		return 0, err
 	}
@@ -110,12 +110,11 @@ func (session *Session) Delete(bean interface{}) (int64, error) {
 	if !session.statement.GetUnscoped() && session.statement.RefTable.DeletedColumn() != nil {
 		deletedColumn := session.statement.RefTable.DeletedColumn()
 
-		session.afterClosures = append(session.afterClosures, func(col *schemas.Column, tz *time.Location) func(interface{}) {
+		session.afterClosures = append(session.afterClosures, func(col *schemas.Column, t time.Time) func(interface{}) {
 			return func(bean interface{}) {
-				t := time.Now().In(tz)
 				setColumnTime(bean, col, t)
 			}
-		}(deletedColumn, session.engine.TZLocation))
+		}(deletedColumn, now.In(session.engine.TZLocation)))
 	}
 
 	var tableNameNoQuote = session.statement.TableName()

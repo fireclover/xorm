@@ -39,6 +39,9 @@ type Engine struct {
 	logger         log.ContextLogger
 	tagParser      *tags.Parser
 
+	driverName     string
+	dataSourceName string
+
 	TZLocation *time.Location // The timezone of the application
 	DatabaseTZ *time.Location // The timezone of the database
 }
@@ -94,12 +97,12 @@ func (engine *Engine) SetDisableGlobalCache(disable bool) {
 
 // DriverName return the current sql driver's name
 func (engine *Engine) DriverName() string {
-	return engine.dialect.DriverName()
+	return engine.driverName
 }
 
 // DataSourceName return the current connection string
 func (engine *Engine) DataSourceName() string {
-	return engine.dialect.DataSourceName()
+	return engine.dataSourceName
 }
 
 // SetMapper set the name mapping rules
@@ -210,7 +213,7 @@ func (engine *Engine) MapCacher(bean interface{}, cacher caches.Cacher) error {
 
 // NewDB provides an interface to operate database directly
 func (engine *Engine) NewDB() (*core.DB, error) {
-	return dialects.OpenDialect(engine.dialect)
+	return core.Open(engine.driverName, engine.dataSourceName)
 }
 
 // DB return the wrapper of sql.DB
@@ -364,7 +367,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 		if dialect == nil {
 			return errors.New("Unsupported database type")
 		}
-		dialect.Init(nil, engine.dialect.URI(), "", "")
+		dialect.Init(nil, engine.dialect.URI())
 		distDBName = string(tp[0])
 	}
 

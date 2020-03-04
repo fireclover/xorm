@@ -210,8 +210,8 @@ type mssql struct {
 	Base
 }
 
-func (db *mssql) Init(d *core.DB, uri *URI, drivername, dataSourceName string) error {
-	return db.Base.Init(d, db, uri, drivername, dataSourceName)
+func (db *mssql) Init(d *core.DB, uri *URI /*, drivername, dataSourceName string*/) error {
+	return db.Base.Init(d, db, uri /*, drivername, dataSourceName*/)
 }
 
 func (db *mssql) SQLType(c *schemas.Column) string {

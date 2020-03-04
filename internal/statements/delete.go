@@ -22,14 +22,14 @@ var (
 )
 
 // GenDeleteSQL generated delete SQL according conditions
-func (statement *Statement) GenDeleteSQL(bean interface{}) (string, string, []interface{}, error) {
+func (statement *Statement) GenDeleteSQL(bean interface{}) (string, string, []interface{}, *time.Time, error) {
 	condSQL, condArgs, err := statement.GenConds(bean)
 	if err != nil {
-		return "", "", nil, err
+		return "", "", nil, nil, err
 	}
 	pLimitN := statement.LimitN
 	if len(condSQL) == 0 && (pLimitN == nil || *pLimitN == 0) {
-		return "", "", nil, ErrNeedDeletedCond
+		return "", "", nil, nil, ErrNeedDeletedCond
 	}
 
 	var tableNameNoQuote = statement.TableName()
@@ -69,63 +69,57 @@ func (statement *Statement) GenDeleteSQL(bean interface{}) (string, string, []in
 			}
 			// TODO: how to handle delete limit on mssql?
 		case schemas.MSSQL:
-			return "", "", nil, ErrNotImplemented
+			return "", "", nil, nil, ErrNotImplemented
 		default:
 			deleteSQL += orderSQL
 		}
 	}
 
 	var realSQL string
-	argsForCache := make([]interface{}, 0, len(condArgs)*2)
 	if statement.GetUnscoped() || table.DeletedColumn() == nil { // tag "deleted" is disabled
-		realSQL = deleteSQL
-		copy(argsForCache, condArgs)
-		argsForCache = append(condArgs, argsForCache...)
-	} else {
-		// !oinume! sqlStrForCache and argsForCache is needed to behave as executing "DELETE FROM ..." for caches.
-		copy(argsForCache, condArgs)
-		argsForCache = append(condArgs, argsForCache...)
-
-		deletedColumn := table.DeletedColumn()
-		realSQL = fmt.Sprintf("UPDATE %v SET %v = ? WHERE %v",
-			statement.quote(statement.TableName()),
-			statement.quote(deletedColumn.Name),
-			condSQL)
-
-		if len(orderSQL) > 0 {
-			switch statement.dialect.DBType() {
-			case schemas.POSTGRES:
-				inSQL := fmt.Sprintf("ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQL)
-				if len(condSQL) > 0 {
-					realSQL += " AND " + inSQL
-				} else {
-					realSQL += " WHERE " + inSQL
-				}
-			case schemas.SQLITE:
-				inSQL := fmt.Sprintf("rowid IN (SELECT rowid FROM %s%s)", tableName, orderSQL)
-				if len(condSQL) > 0 {
-					realSQL += " AND " + inSQL
-				} else {
-					realSQL += " WHERE " + inSQL
-				}
-				// TODO: how to handle delete limit on mssql?
-			case schemas.MSSQL:
-				return "", "", nil, ErrNotImplemented
-			default:
-				realSQL += orderSQL
-			}
-		}
-
-		// !oinume! Insert nowTime to the head of statement.Params
-		condArgs = append(condArgs, "")
-		paramsLen := len(condArgs)
-		copy(condArgs[1:paramsLen], condArgs[0:paramsLen-1])
-
-		now := ColumnNow(deletedColumn, statement.defaultTimeZone)
-		val := dialects.FormatTime(statement.dialect, deletedColumn.SQLType.Name, now)
-		condArgs[0] = val
+		return deleteSQL, deleteSQL, condArgs, nil, nil
 	}
-	return realSQL, deleteSQL, condArgs, nil
+
+	deletedColumn := table.DeletedColumn()
+	realSQL = fmt.Sprintf("UPDATE %v SET %v = ? WHERE %v",
+		statement.quote(statement.TableName()),
+		statement.quote(deletedColumn.Name),
+		condSQL)
+
+	if len(orderSQL) > 0 {
+		switch statement.dialect.DBType() {
+		case schemas.POSTGRES:
+			inSQL := fmt.Sprintf("ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQL)
+			if len(condSQL) > 0 {
+				realSQL += " AND " + inSQL
+			} else {
+				realSQL += " WHERE " + inSQL
+			}
+		case schemas.SQLITE:
+			inSQL := fmt.Sprintf("rowid IN (SELECT rowid FROM %s%s)", tableName, orderSQL)
+			if len(condSQL) > 0 {
+				realSQL += " AND " + inSQL
+			} else {
+				realSQL += " WHERE " + inSQL
+			}
+			// TODO: how to handle delete limit on mssql?
+		case schemas.MSSQL:
+			return "", "", nil, nil, ErrNotImplemented
+		default:
+			realSQL += orderSQL
+		}
+	}
+
+	// !oinume! Insert nowTime to the head of statement.Params
+	condArgs = append(condArgs, "")
+	paramsLen := len(condArgs)
+	copy(condArgs[1:paramsLen], condArgs[0:paramsLen-1])
+
+	now := ColumnNow(deletedColumn, statement.defaultTimeZone)
+	val := dialects.FormatTime(statement.dialect, deletedColumn.SQLType.Name, now)
+	condArgs[0] = val
+
+	return realSQL, deleteSQL, condArgs, &now, nil
 }
 
 // ColumnNow returns the current time for a column
