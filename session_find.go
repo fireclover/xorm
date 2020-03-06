@@ -65,13 +65,14 @@ func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...inte
 
 func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{}) error {
 	defer session.resetStatement()
-
 	if session.statement.LastError != nil {
 		return session.statement.LastError
 	}
 
 	sliceValue := reflect.Indirect(reflect.ValueOf(rowsSlicePtr))
-	if sliceValue.Kind() != reflect.Slice && sliceValue.Kind() != reflect.Map {
+	var isSlice = sliceValue.Kind() == reflect.Slice
+	var isMap = sliceValue.Kind() == reflect.Map
+	if !isSlice && !isMap {
 		return errors.New("needs a pointer to a slice or a map")
 	}
 
@@ -124,6 +125,12 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 
 				autoCond = session.statement.CondDeleted(col)
 			}
+		}
+	}
+
+	if isMap && !session.statement.ColumnMap.IsEmpty() {
+		for _, k := range session.statement.RefTable.PrimaryKeys {
+			session.statement.ColumnMap.Add(k)
 		}
 	}
 
