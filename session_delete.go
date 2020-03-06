@@ -6,11 +6,19 @@ package xorm
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
-	"time"
 
 	"xorm.io/xorm/caches"
 	"xorm.io/xorm/schemas"
+)
+
+var (
+	// ErrNeedDeletedCond delete needs less one condition error
+	ErrNeedDeletedCond = errors.New("Delete action needs at least one condition")
+
+	// ErrNotImplemented not implemented
+	ErrNotImplemented = errors.New("Not implemented")
 )
 
 func (session *Session) cacheDelete(table *schemas.Table, tableName, sqlStr string, args ...interface{}) error {
@@ -98,30 +106,119 @@ func (session *Session) Delete(bean interface{}) (int64, error) {
 		processor.BeforeDelete()
 	}
 
-	realSQL, deleteSQL, condArgs, now, err := session.statement.GenDeleteSQL(bean)
+	condSQL, condArgs, err := session.statement.GenConds(bean)
 	if err != nil {
 		return 0, err
 	}
-
-	argsForCache := make([]interface{}, 0, len(condArgs)*2)
-	copy(argsForCache, condArgs)
-	argsForCache = append(condArgs, argsForCache...)
-
-	if !session.statement.GetUnscoped() && session.statement.RefTable.DeletedColumn() != nil {
-		deletedColumn := session.statement.RefTable.DeletedColumn()
-
-		session.afterClosures = append(session.afterClosures, func(col *schemas.Column, t time.Time) func(interface{}) {
-			return func(bean interface{}) {
-				setColumnTime(bean, col, t)
-			}
-		}(deletedColumn, now.In(session.engine.TZLocation)))
+	pLimitN := session.statement.LimitN
+	if len(condSQL) == 0 && (pLimitN == nil || *pLimitN == 0) {
+		return 0, ErrNeedDeletedCond
 	}
 
 	var tableNameNoQuote = session.statement.TableName()
-	if cacher := session.engine.GetCacher(tableNameNoQuote); cacher != nil && session.statement.UseCache {
-		session.cacheDelete(session.statement.RefTable, tableNameNoQuote, deleteSQL, argsForCache...)
+	var tableName = session.engine.Quote(tableNameNoQuote)
+	var table = session.statement.RefTable
+	var deleteSQL string
+	if len(condSQL) > 0 {
+		deleteSQL = fmt.Sprintf("DELETE FROM %v WHERE %v", tableName, condSQL)
+	} else {
+		deleteSQL = fmt.Sprintf("DELETE FROM %v", tableName)
 	}
 
+	var orderSQL string
+	if len(session.statement.OrderStr) > 0 {
+		orderSQL += fmt.Sprintf(" ORDER BY %s", session.statement.OrderStr)
+	}
+	if pLimitN != nil && *pLimitN > 0 {
+		limitNValue := *pLimitN
+		orderSQL += fmt.Sprintf(" LIMIT %d", limitNValue)
+	}
+
+	if len(orderSQL) > 0 {
+		switch session.engine.dialect.DBType() {
+		case schemas.POSTGRES:
+			inSQL := fmt.Sprintf("ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQL)
+			if len(condSQL) > 0 {
+				deleteSQL += " AND " + inSQL
+			} else {
+				deleteSQL += " WHERE " + inSQL
+			}
+		case schemas.SQLITE:
+			inSQL := fmt.Sprintf("rowid IN (SELECT rowid FROM %s%s)", tableName, orderSQL)
+			if len(condSQL) > 0 {
+				deleteSQL += " AND " + inSQL
+			} else {
+				deleteSQL += " WHERE " + inSQL
+			}
+			// TODO: how to handle delete limit on mssql?
+		case schemas.MSSQL:
+			return 0, ErrNotImplemented
+		default:
+			deleteSQL += orderSQL
+		}
+	}
+
+	var realSQL string
+	argsForCache := make([]interface{}, 0, len(condArgs)*2)
+	if session.statement.GetUnscoped() || table.DeletedColumn() == nil { // tag "deleted" is disabled
+		realSQL = deleteSQL
+		copy(argsForCache, condArgs)
+		argsForCache = append(condArgs, argsForCache...)
+	} else {
+		// !oinume! sqlStrForCache and argsForCache is needed to behave as executing "DELETE FROM ..." for caches.
+		copy(argsForCache, condArgs)
+		argsForCache = append(condArgs, argsForCache...)
+
+		deletedColumn := table.DeletedColumn()
+		realSQL = fmt.Sprintf("UPDATE %v SET %v = ? WHERE %v",
+			session.engine.Quote(session.statement.TableName()),
+			session.engine.Quote(deletedColumn.Name),
+			condSQL)
+
+		if len(orderSQL) > 0 {
+			switch session.engine.dialect.DBType() {
+			case schemas.POSTGRES:
+				inSQL := fmt.Sprintf("ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQL)
+				if len(condSQL) > 0 {
+					realSQL += " AND " + inSQL
+				} else {
+					realSQL += " WHERE " + inSQL
+				}
+			case schemas.SQLITE:
+				inSQL := fmt.Sprintf("rowid IN (SELECT rowid FROM %s%s)", tableName, orderSQL)
+				if len(condSQL) > 0 {
+					realSQL += " AND " + inSQL
+				} else {
+					realSQL += " WHERE " + inSQL
+				}
+				// TODO: how to handle delete limit on mssql?
+			case schemas.MSSQL:
+				return 0, ErrNotImplemented
+			default:
+				realSQL += orderSQL
+			}
+		}
+
+		// !oinume! Insert nowTime to the head of session.statement.Params
+		condArgs = append(condArgs, "")
+		paramsLen := len(condArgs)
+		copy(condArgs[1:paramsLen], condArgs[0:paramsLen-1])
+
+		val, t := session.engine.nowTime(deletedColumn)
+		condArgs[0] = val
+
+		var colName = deletedColumn.Name
+		session.afterClosures = append(session.afterClosures, func(bean interface{}) {
+			col := table.GetColumn(colName)
+			setColumnTime(bean, col, t)
+		})
+	}
+
+	if cacher := session.engine.GetCacher(tableNameNoQuote); cacher != nil && session.statement.UseCache {
+		session.cacheDelete(table, tableNameNoQuote, deleteSQL, argsForCache...)
+	}
+
+	session.statement.RefTable = table
 	res, err := session.exec(realSQL, condArgs...)
 	if err != nil {
 		return 0, err
