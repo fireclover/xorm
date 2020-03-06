@@ -139,7 +139,7 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 		return err
 	}
 
-	if session.canCache() {
+	if session.statement.ColumnMap.IsEmpty() && session.canCache() {
 		if cacher := session.engine.GetCacher(session.statement.TableName()); cacher != nil &&
 			!session.statement.IsDistinct &&
 			!session.statement.GetUnscoped() {
