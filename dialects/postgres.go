@@ -788,6 +788,18 @@ func (db *postgres) Init(d *core.DB, uri *URI) error {
 	return nil
 }
 
+func (db *postgres) needQuote(name string) bool {
+	if db.IsReserved(name) {
+		return true
+	}
+	for _, c := range name {
+		if c >= 'A' && c <= 'Z' {
+			return true
+		}
+	}
+	return false
+}
+
 func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
@@ -796,7 +808,7 @@ func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 		db.quoter = q
 	case QuotePolicyReserved:
 		var q = postgresQuoter
-		q.IsReserved = db.IsReserved
+		q.IsReserved = db.needQuote
 		db.quoter = q
 	case QuotePolicyAlways:
 		fallthrough
