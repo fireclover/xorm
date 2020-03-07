@@ -944,10 +944,10 @@ func (db *postgres) IndexCheckSQL(tableName, idxName string) (string, []interfac
 
 func (db *postgres) IsTableExist(ctx context.Context, tableName string) (bool, error) {
 	if len(db.uri.Schema) == 0 {
-		return db.HasRecords(ctx, `SELECT tablename FROM pg_tables WHERE tablename = ?`, tableName)
+		return db.HasRecords(ctx, `SELECT tablename FROM pg_tables WHERE tablename = $1`, tableName)
 	}
 
-	return db.HasRecords(ctx, `SELECT tablename FROM pg_tables WHERE schemaname = ? AND tablename = ?`,
+	return db.HasRecords(ctx, `SELECT tablename FROM pg_tables WHERE schemaname = $1 AND tablename = $2`,
 		db.uri.Schema, tableName)
 }
 

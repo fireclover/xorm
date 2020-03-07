@@ -288,7 +288,7 @@ func (db *mysql) IndexCheckSQL(tableName, idxName string) (string, []interface{}
 
 func (db *mysql) IsTableExist(ctx context.Context, tableName string) (bool, error) {
 	sql := "SELECT `TABLE_NAME` from `INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? and `TABLE_NAME`=?"
-	return db.HasRecords(ctx, sql)
+	return db.HasRecords(ctx, sql, db.uri.DBName, tableName)
 }
 
 func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
