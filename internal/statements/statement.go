@@ -562,7 +562,7 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
 		aliasName = schemas.CommonQuoter.Trim(aliasName)
 
-		fmt.Fprintf(&buf, "(%s) %s ON %v", subSQL, aliasName, condition)
+		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), aliasName, statement.ReplaceQuote(condition))
 		statement.joinArgs = append(statement.joinArgs, subQueryArgs...)
 	case *builder.Builder:
 		subSQL, subQueryArgs, err := tp.ToSQL()
@@ -575,7 +575,7 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
 		aliasName = schemas.CommonQuoter.Trim(aliasName)
 
-		fmt.Fprintf(&buf, "(%s) %s ON %v", subSQL, aliasName, condition)
+		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), aliasName, statement.ReplaceQuote(condition))
 		statement.joinArgs = append(statement.joinArgs, subQueryArgs...)
 	default:
 		tbName := dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), tablename, true)
@@ -584,7 +584,7 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 			statement.dialect.Quoter().QuoteTo(&buf, tbName)
 			tbName = buf.String()
 		}
-		fmt.Fprintf(&buf, "%s ON %v", tbName, condition)
+		fmt.Fprintf(&buf, "%s ON %v", tbName, statement.ReplaceQuote(condition))
 	}
 
 	statement.JoinStr = buf.String()
