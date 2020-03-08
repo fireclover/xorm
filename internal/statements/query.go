@@ -193,7 +193,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 		distinct = "DISTINCT "
 	}
 
-	condSQL, condArgs, err := builder.ToSQL(statement.cond)
+	condSQL, condArgs, err := statement.GenCondSQL(statement.cond)
 	if err != nil {
 		return "", nil, err
 	}
@@ -332,7 +332,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 		}
 
 		if statement.Conds().IsValid() {
-			condSQL, condArgs, err := builder.ToSQL(statement.Conds())
+			condSQL, condArgs, err := statement.GenCondSQL(statement.Conds())
 			if err != nil {
 				return "", nil, err
 			}

@@ -100,11 +100,23 @@ func (statement *Statement) omitStr() string {
 
 // GenRawSQL generates correct raw sql
 func (statement *Statement) GenRawSQL() string {
-	if statement.RawSQL == "" || statement.dialect.URI().DBType == schemas.MYSQL ||
-		statement.dialect.URI().DBType == schemas.SQLITE {
-		return statement.RawSQL
+	return statement.ReplaceQuote(statement.RawSQL)
+}
+
+func (statement *Statement) GenCondSQL(condOrBuilder interface{}) (string, []interface{}, error) {
+	condSQL, condArgs, err := builder.ToSQL(condOrBuilder)
+	if err != nil {
+		return "", nil, err
 	}
-	return statement.dialect.Quoter().Replace(statement.RawSQL)
+	return statement.ReplaceQuote(condSQL), condArgs, nil
+}
+
+func (statement *Statement) ReplaceQuote(sql string) string {
+	if sql == "" || statement.dialect.URI().DBType == schemas.MYSQL ||
+		statement.dialect.URI().DBType == schemas.SQLITE {
+		return sql
+	}
+	return statement.dialect.Quoter().Replace(sql)
 }
 
 func (statement *Statement) SetContextCache(ctxCache contexts.ContextCache) {
@@ -357,7 +369,11 @@ func (statement *Statement) Decr(column string, arg ...interface{}) *Statement {
 
 // SetExpr Generate  "Update ... Set column = {expression}" statement
 func (statement *Statement) SetExpr(column string, expression interface{}) *Statement {
-	statement.ExprColumns.addParam(column, expression)
+	if e, ok := expression.(string); ok {
+		statement.ExprColumns.addParam(column, statement.dialect.Quoter().Replace(e))
+	} else {
+		statement.ExprColumns.addParam(column, expression)
+	}
 	return statement
 }
 
@@ -935,7 +951,7 @@ func (statement *Statement) GenConds(bean interface{}) (string, []interface{}, e
 		return "", nil, err
 	}
 
-	return builder.ToSQL(statement.cond)
+	return statement.GenCondSQL(statement.cond)
 }
 
 func (statement *Statement) quoteColumnStr(columnStr string) string {
