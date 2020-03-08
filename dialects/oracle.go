@@ -793,7 +793,7 @@ func (db *oracle) GetIndexes(ctx context.Context, tableName string) (map[string]
 
 func (db *oracle) Filters() []Filter {
 	return []Filter{
-		&QuoteFilter{db.Quoter()},
+		/*&QuoteFilter{db.Quoter()},*/
 		&SeqFilter{Prefix: ":", Start: 1},
 	}
 }

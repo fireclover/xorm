@@ -98,6 +98,15 @@ func (statement *Statement) omitStr() string {
 	return statement.dialect.Quoter().Join(statement.OmitColumnMap, " ,")
 }
 
+// GenRawSQL generates correct raw sql
+func (statement *Statement) GenRawSQL() string {
+	if statement.RawSQL == "" || statement.dialect.URI().DBType == schemas.MYSQL ||
+		statement.dialect.URI().DBType == schemas.SQLITE {
+		return statement.RawSQL
+	}
+	return statement.dialect.Quoter().Replace(statement.RawSQL)
+}
+
 func (statement *Statement) SetContextCache(ctxCache contexts.ContextCache) {
 	statement.Context = ctxCache
 }

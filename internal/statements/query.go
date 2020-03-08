@@ -20,7 +20,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 	}
 
 	if statement.RawSQL != "" {
-		return statement.RawSQL, statement.RawParams, nil
+		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
 	if len(statement.TableName()) <= 0 {
@@ -74,7 +74,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 
 func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (string, []interface{}, error) {
 	if statement.RawSQL != "" {
-		return statement.RawSQL, statement.RawParams, nil
+		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
 	statement.SetRefBean(bean)
@@ -153,7 +153,7 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 
 func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interface{}, error) {
 	if statement.RawSQL != "" {
-		return statement.RawSQL, statement.RawParams, nil
+		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
 	var condArgs []interface{}
@@ -313,7 +313,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 
 func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interface{}, error) {
 	if statement.RawSQL != "" {
-		return statement.RawSQL, statement.RawParams, nil
+		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
 	var sqlStr string
@@ -382,7 +382,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 
 func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interface{}, error) {
 	if statement.RawSQL != "" {
-		return statement.RawSQL, statement.RawParams, nil
+		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
 	var sqlStr string
