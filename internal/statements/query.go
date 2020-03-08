@@ -16,7 +16,7 @@ import (
 
 func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []interface{}, error) {
 	if len(sqlOrArgs) > 0 {
-		return ConvertSQLOrArgs(sqlOrArgs...)
+		return statement.ConvertSQLOrArgs(sqlOrArgs...)
 	}
 
 	if statement.RawSQL != "" {

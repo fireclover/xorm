@@ -959,7 +959,15 @@ func (statement *Statement) quoteColumnStr(columnStr string) string {
 	return statement.dialect.Quoter().Join(columns, ",")
 }
 
-func ConvertSQLOrArgs(sqlOrArgs ...interface{}) (string, []interface{}, error) {
+func (statement *Statement) ConvertSQLOrArgs(sqlOrArgs ...interface{}) (string, []interface{}, error) {
+	sql, args, err := convertSQLOrArgs(sqlOrArgs...)
+	if err != nil {
+		return "", nil, err
+	}
+	return statement.ReplaceQuote(sql), args, nil
+}
+
+func convertSQLOrArgs(sqlOrArgs ...interface{}) (string, []interface{}, error) {
 	switch sqlOrArgs[0].(type) {
 	case string:
 		return sqlOrArgs[0].(string), sqlOrArgs[1:], nil
