@@ -392,7 +392,7 @@ func (statement *Statement) ForUpdate() *Statement {
 
 // Select replace select
 func (statement *Statement) Select(str string) *Statement {
-	statement.SelectStr = str
+	statement.SelectStr = statement.ReplaceQuote(str)
 	return statement
 }
 
@@ -483,7 +483,7 @@ func (statement *Statement) OrderBy(order string) *Statement {
 	if len(statement.OrderStr) > 0 {
 		statement.OrderStr += ", "
 	}
-	statement.OrderStr += order
+	statement.OrderStr += statement.ReplaceQuote(order)
 	return statement
 }
 
