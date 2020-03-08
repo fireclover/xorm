@@ -603,13 +603,13 @@ func (statement *Statement) tbNameNoSchema(table *schemas.Table) string {
 
 // GroupBy generate "Group By keys" statement
 func (statement *Statement) GroupBy(keys string) *Statement {
-	statement.GroupByStr = keys
+	statement.GroupByStr = statement.ReplaceQuote(keys)
 	return statement
 }
 
 // Having generate "Having conditions" statement
 func (statement *Statement) Having(conditions string) *Statement {
-	statement.HavingStr = fmt.Sprintf("HAVING %v", conditions)
+	statement.HavingStr = fmt.Sprintf("HAVING %v", statement.ReplaceQuote(conditions))
 	return statement
 }
 
