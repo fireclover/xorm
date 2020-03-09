@@ -50,6 +50,9 @@ func IsZero(k interface{}) bool {
 }
 
 func IsValueZero(v reflect.Value) bool {
+	if IsZero(v) {
+		return true
+	}
 	if IsZero(v.Interface()) {
 		return true
 	}

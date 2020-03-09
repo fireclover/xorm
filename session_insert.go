@@ -567,7 +567,7 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 		}
 		fieldValue := *fieldValuePtr
 
-		if col.IsAutoIncrement && fieldValue.IsZero() {
+		if col.IsAutoIncrement && utils.IsValueZero(fieldValue) {
 			continue
 		}
 
