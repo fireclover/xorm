@@ -83,6 +83,8 @@ func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (stri
 	for _, colName := range columns {
 		if !strings.Contains(colName, " ") && !strings.Contains(colName, "(") {
 			colName = statement.quote(colName)
+		} else {
+			colName = statement.ReplaceQuote(colName)
 		}
 		sumStrs = append(sumStrs, fmt.Sprintf("COALESCE(sum(%s),0)", colName))
 	}
