@@ -6,6 +6,7 @@ package xorm
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -1311,11 +1312,18 @@ func TestIndexes(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
 	assert.EqualValues(t, 3, len(tables[0].Columns()))
-	assert.EqualValues(t, testEngine.GetColumnMapper().Obj2Table("Id"),
-		tables[0].Columns()[0].Name)
-	assert.EqualValues(t, testEngine.GetColumnMapper().Obj2Table("Name"),
-		tables[0].Columns()[1].Name)
-	assert.EqualValues(t, testEngine.GetColumnMapper().Obj2Table("Email"),
-		tables[0].Columns()[2].Name)
+	slice1 := []string{
+		testEngine.GetColumnMapper().Obj2Table("Id"),
+		testEngine.GetColumnMapper().Obj2Table("Name"),
+		testEngine.GetColumnMapper().Obj2Table("Email"),
+	}
+	slice2 := []string{
+		tables[0].Columns()[0].Name,
+		tables[0].Columns()[1].Name,
+		tables[0].Columns()[2].Name,
+	}
+	sort.Strings(slice1)
+	sort.Strings(slice2)
+	assert.EqualValues(t, slice1, slice2)
 	assert.EqualValues(t, 3, len(tables[0].Indexes))
 }
