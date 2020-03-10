@@ -1311,6 +1311,11 @@ func TestIndexes(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
 	assert.EqualValues(t, 3, len(tables[0].Columns()))
-	assert.EqualValues(t, testEngine.GetTableMapper().tables[0].Columns()[0].Name)
+	assert.EqualValues(t, testEngine.GetColumnMapper().Obj2Table("Id"),
+		tables[0].Columns()[0].Name)
+	assert.EqualValues(t, testEngine.GetColumnMapper().Obj2Table("Name"),
+		tables[0].Columns()[1].Name)
+	assert.EqualValues(t, testEngine.GetColumnMapper().Obj2Table("Email"),
+		tables[0].Columns()[2].Name)
 	assert.EqualValues(t, 3, len(tables[0].Indexes))
 }
