@@ -286,7 +286,6 @@ func (engine *Engine) loadTableInfo(table *schemas.Table) error {
 	var seq int
 	for _, index := range indexes {
 		for _, name := range index.Cols {
-			seq++
 			if col := table.GetColumn(name); col != nil {
 				col.Indexes[index.Name] = index.Type
 			} else {
