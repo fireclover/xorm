@@ -43,8 +43,10 @@ func (MyGetCustomTableImpletation) TableName() string {
 
 type TestTableNameStruct struct{}
 
+const getTestTableName = "my_test_table_name_struct"
+
 func (t *TestTableNameStruct) TableName() string {
-	return "my_test_table_name_struct"
+	return getTestTableName
 }
 
 func TestGetTableName(t *testing.T) {
@@ -85,17 +87,37 @@ func TestGetTableName(t *testing.T) {
 		},
 		{
 			SnakeMapper{},
-			reflect.ValueOf(MyGetCustomTableImpletation{}),
-			getCustomTableName,
+			reflect.ValueOf(new(TestTableNameStruct)),
+			new(TestTableNameStruct).TableName(),
 		},
 		{
 			SnakeMapper{},
 			reflect.ValueOf(new(TestTableNameStruct)),
-			new(TestTableNameStruct).TableName(),
+			getTestTableName,
+		},
+		{
+			SnakeMapper{},
+			reflect.ValueOf(TestTableNameStruct{}),
+			getTestTableName,
 		},
 	}
 
 	for _, kase := range kases {
 		assert.EqualValues(t, kase.expectedTableName, GetTableName(kase.mapper, kase.v))
 	}
+}
+
+type OAuth2Application struct {
+}
+
+// TableName sets the table name to `oauth2_application`
+func (app *OAuth2Application) TableName() string {
+	return "oauth2_application"
+}
+
+func TestGonicMapperCustomTable(t *testing.T) {
+	assert.EqualValues(t, "oauth2_application",
+		GetTableName(LintGonicMapper, reflect.ValueOf(new(OAuth2Application))))
+	assert.EqualValues(t, "oauth2_application",
+		GetTableName(LintGonicMapper, reflect.ValueOf(OAuth2Application{})))
 }
