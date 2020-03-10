@@ -156,7 +156,6 @@ var (
 		Uuid:       TEXT_TYPE,
 		Clob:       TEXT_TYPE,
 		SysName:    TEXT_TYPE,
-		Array:      TEXT_TYPE,
 
 		Date:          TIME_TYPE,
 		DateTime:      TIME_TYPE,
