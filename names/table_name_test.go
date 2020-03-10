@@ -5,6 +5,7 @@
 package names
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -120,4 +121,20 @@ func TestGonicMapperCustomTable(t *testing.T) {
 		GetTableName(LintGonicMapper, reflect.ValueOf(new(OAuth2Application))))
 	assert.EqualValues(t, "oauth2_application",
 		GetTableName(LintGonicMapper, reflect.ValueOf(OAuth2Application{})))
+}
+
+type MyTable struct {
+	Idx int
+}
+
+func (t *MyTable) TableName() string {
+	return fmt.Sprintf("mytable_%d", t.Idx)
+}
+
+func TestMyTable(t *testing.T) {
+	var table MyTable
+	for i := 0; i < 10; i++ {
+		table.Idx = i
+		assert.EqualValues(t, fmt.Sprintf("mytable_%d", i), GetTableName(SameMapper{}, reflect.ValueOf(&table)))
+	}
 }
