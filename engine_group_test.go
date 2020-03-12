@@ -9,12 +9,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"xorm.io/xorm/log"
+	"xorm.io/xorm/schemas"
 )
 
 func TestEngineGroup(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	master := testEngine.(*Engine)
+	if master.Dialect().URI().DBType == schemas.SQLITE {
+		t.Skip()
+		return
+	}
+
 	eg, err := NewEngineGroup(master, []*Engine{master})
 	assert.NoError(t, err)
 
