@@ -6,7 +6,6 @@ package xorm
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -1174,12 +1173,18 @@ func (engine *Engine) Import(r io.Reader) ([]sql.Result, error) {
 	var lastError error
 	scanner := bufio.NewScanner(r)
 
+	var inSingleQuote bool
 	semiColSpliter := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if atEOF && len(data) == 0 {
 			return 0, nil, nil
 		}
-		if i := bytes.IndexByte(data, ';'); i >= 0 {
-			return i + 1, data[0:i], nil
+		for i, b := range data {
+			if b == '\'' {
+				inSingleQuote = !inSingleQuote
+			}
+			if !inSingleQuote && b == ';' {
+				return i + 1, data[0:i], nil
+			}
 		}
 		// If we're at EOF, we have a final, non-terminated line. Return it.
 		if atEOF {
