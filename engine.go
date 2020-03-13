@@ -388,6 +388,10 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 				return err
 			}
 		}
+		if len(table.PKColumns()) > 0 && engine.dialect.URI().DBType == schemas.MSSQL {
+			fmt.Fprintf(w, "SET IDENTITY_INSERT [%s] ON;\n", table.Name)
+		}
+
 		for _, index := range table.Indexes {
 			_, err = io.WriteString(w, dialect.CreateIndexSQL(table.Name, index)+";\n")
 			if err != nil {
