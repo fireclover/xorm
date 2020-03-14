@@ -5,7 +5,6 @@
 package xorm
 
 import (
-	"bufio"
 	"context"
 	"database/sql"
 	"errors"
@@ -1163,55 +1162,16 @@ func (engine *Engine) SumsInt(bean interface{}, colNames ...string) ([]int64, er
 
 // ImportFile SQL DDL file
 func (engine *Engine) ImportFile(ddlPath string) ([]sql.Result, error) {
-	file, err := os.Open(ddlPath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	return engine.Import(file)
+	session := engine.NewSession()
+	defer session.Close()
+	return session.ImportFile(ddlPath)
 }
 
 // Import SQL DDL from io.Reader
 func (engine *Engine) Import(r io.Reader) ([]sql.Result, error) {
-	var results []sql.Result
-	var lastError error
-	scanner := bufio.NewScanner(r)
-
-	var inSingleQuote bool
-	semiColSpliter := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if atEOF && len(data) == 0 {
-			return 0, nil, nil
-		}
-		for i, b := range data {
-			if b == '\'' {
-				inSingleQuote = !inSingleQuote
-			}
-			if !inSingleQuote && b == ';' {
-				return i + 1, data[0:i], nil
-			}
-		}
-		// If we're at EOF, we have a final, non-terminated line. Return it.
-		if atEOF {
-			return len(data), data, nil
-		}
-		// Request more data.
-		return 0, nil, nil
-	}
-
-	scanner.Split(semiColSpliter)
-
-	for scanner.Scan() {
-		query := strings.Trim(scanner.Text(), " \t\n\r")
-		if len(query) > 0 {
-			result, err := engine.DB().ExecContext(engine.defaultContext, query)
-			results = append(results, result)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return results, lastError
+	session := engine.NewSession()
+	defer session.Close()
+	return session.Import(r)
 }
 
 // nowTime return current time

@@ -90,6 +90,10 @@ func TestDump(t *testing.T) {
 
 	assert.NoError(t, prepareEngine())
 
-	_, err := testEngine.ImportFile(fp)
+	sess := testEngine.NewSession()
+	defer sess.Close()
+	assert.NoError(t, sess.Begin())
+	_, err := sess.ImportFile(fp)
 	assert.NoError(t, err)
+	assert.NoError(t, sess.Commit())
 }
