@@ -1,10 +1,8 @@
-package xorm
+package dialects
 
 import (
 	"reflect"
 	"testing"
-
-	"xorm.io/core"
 )
 
 func TestParseOracleConnStr(t *testing.T) {
@@ -21,15 +19,15 @@ func TestParseOracleConnStr(t *testing.T) {
 		{"user/pass", "", false},
 		{"", "", false},
 	}
-	driver := core.QueryDriver("oci8")
+	driver := QueryDriver("oci8")
 	for _, test := range tests {
 		t.Run(test.in, func(t *testing.T) {
 			driver := driver
 			uri, err := driver.Parse("oci8", test.in)
 			if err != nil && test.valid {
 				t.Errorf("%q got unexpected error: %s", test.in, err)
-			} else if err == nil && !reflect.DeepEqual(test.expected, uri.DbName) {
-				t.Errorf("%q got: %#v want: %#v", test.in, uri.DbName, test.expected)
+			} else if err == nil && !reflect.DeepEqual(test.expected, uri.DBName) {
+				t.Errorf("%q got: %#v want: %#v", test.in, uri.DBName, test.expected)
 			}
 		})
 	}
