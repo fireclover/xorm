@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"testing"
 
-	"xorm.io/builder"
 	"github.com/stretchr/testify/assert"
+	"xorm.io/builder"
 )
 
 func isFloatEq(i, j float64, precision int) bool {
@@ -271,6 +271,30 @@ func TestWithTableName(t *testing.T) {
 	assert.EqualValues(t, 2, total)
 
 	total, err = testEngine.OrderBy("id desc").Count(CountWithTableName{})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, total)
+}
+
+func TestCountWithSelectCols(t *testing.T) {
+	assert.NoError(t, prepareEngine())
+
+	assertSync(t, new(CountWithTableName))
+
+	_, err := testEngine.Insert(&CountWithTableName{
+		Name: "orderby",
+	})
+	assert.NoError(t, err)
+
+	_, err = testEngine.Insert(CountWithTableName{
+		Name: "limit",
+	})
+	assert.NoError(t, err)
+
+	total, err := testEngine.Cols("id").Count(new(CountWithTableName))
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, total)
+
+	total, err = testEngine.Select("count(id)").Count(CountWithTableName{})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }

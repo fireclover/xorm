@@ -6,7 +6,6 @@ package xorm
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -210,14 +209,6 @@ func TestCustomTableName(t *testing.T) {
 	assert.NoError(t, testEngine.CreateTables(c))
 }
 
-func TestDump(t *testing.T) {
-	assert.NoError(t, prepareEngine())
-
-	fp := testEngine.Dialect().URI().DbName + ".sql"
-	os.Remove(fp)
-	assert.NoError(t, testEngine.DumpAllToFile(fp))
-}
-
 type IndexOrUnique struct {
 	Id        int64
 	Index     int `xorm:"index"`
@@ -260,16 +251,10 @@ func TestCharst(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	err := testEngine.DropTables("user_charset")
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	err = testEngine.Charset("utf8").Table("user_charset").CreateTable(&Userinfo{})
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestSync2_1(t *testing.T) {

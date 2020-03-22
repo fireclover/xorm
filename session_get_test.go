@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"xorm.io/core"
+	"xorm.io/xorm/contexts"
+	"xorm.io/xorm/schemas"
 )
 
 func TestGetVar(t *testing.T) {
@@ -153,7 +154,7 @@ func TestGetVar(t *testing.T) {
 	assert.Equal(t, "1.5", fmt.Sprintf("%.1f", money))
 
 	var money2 float64
-	if testEngine.Dialect().DBType() == core.MSSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		has, err = testEngine.SQL("SELECT TOP 1 money FROM " + testEngine.TableName("get_var", true)).Get(&money2)
 	} else {
 		has, err = testEngine.SQL("SELECT money FROM " + testEngine.TableName("get_var", true) + " LIMIT 1").Get(&money2)
@@ -178,7 +179,7 @@ func TestGetVar(t *testing.T) {
 	assert.Equal(t, "1.5", valuesString["money"])
 
 	// for mymysql driver, interface{} will be []byte, so ignore it currently
-	if testEngine.Dialect().DriverName() != "mymysql" {
+	if testEngine.DriverName() != "mymysql" {
 		var valuesInter = make(map[string]interface{})
 		has, err = testEngine.Table("get_var").Where("id = ?", 1).Select("*").Get(&valuesInter)
 		assert.NoError(t, err)
@@ -233,7 +234,7 @@ func TestGetStruct(t *testing.T) {
 	defer session.Close()
 
 	var err error
-	if testEngine.Dialect().DBType() == core.MSSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		err = session.Begin()
 		assert.NoError(t, err)
 		_, err = session.Exec("SET IDENTITY_INSERT userinfo_get ON")
@@ -242,7 +243,7 @@ func TestGetStruct(t *testing.T) {
 	cnt, err := session.Insert(&UserinfoGet{Uid: 2})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
-	if testEngine.Dialect().DBType() == core.MSSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		err = session.Commit()
 		assert.NoError(t, err)
 	}
@@ -334,13 +335,13 @@ func TestJSONString(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, js.Id)
-	assert.EqualValues(t, `["1","2"]`, js.Content)
+	assert.True(t, `["1","2"]` == js.Content || `["1", "2"]` == js.Content)
 
 	var jss []JsonString
 	err = testEngine.Table("json_json").Find(&jss)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(jss))
-	assert.EqualValues(t, `["1","2"]`, jss[0].Content)
+	assert.True(t, `["1","2"]` == jss[0].Content || `["1", "2"]` == jss[0].Content)
 }
 
 func TestGetActionMapping(t *testing.T) {
@@ -417,7 +418,7 @@ func TestContextGet(t *testing.T) {
 	sess := testEngine.NewSession()
 	defer sess.Close()
 
-	context := NewMemoryContextCache()
+	context := contexts.NewMemoryContextCache()
 
 	var c2 ContextGetStruct
 	has, err := sess.ID(1).NoCache().ContextCache(context).Get(&c2)
@@ -452,7 +453,7 @@ func TestContextGet2(t *testing.T) {
 	_, err := testEngine.Insert(&ContextGetStruct2{Name: "1"})
 	assert.NoError(t, err)
 
-	context := NewMemoryContextCache()
+	context := contexts.NewMemoryContextCache()
 
 	var c2 ContextGetStruct2
 	has, err := testEngine.ID(1).NoCache().ContextCache(context).Get(&c2)
@@ -480,7 +481,7 @@ type MyGetCustomTableImpletation struct {
 
 const getCustomTableName = "GetCustomTableInterface"
 
-func (m *MyGetCustomTableImpletation) TableName() string {
+func (MyGetCustomTableImpletation) TableName() string {
 	return getCustomTableName
 }
 

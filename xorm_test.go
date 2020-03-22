@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"testing"
@@ -18,7 +17,11 @@ import (
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/ziutek/mymysql/godrv"
-	"xorm.io/core"
+	"xorm.io/xorm/caches"
+	"xorm.io/xorm/dialects"
+	"xorm.io/xorm/log"
+	"xorm.io/xorm/names"
+	"xorm.io/xorm/schemas"
 )
 
 var (
@@ -30,14 +33,15 @@ var (
 	showSQL            = flag.Bool("show_sql", true, "show generated SQLs")
 	ptrConnStr         = flag.String("conn_str", "./test.db?cache=shared&mode=rwc", "test database connection string")
 	mapType            = flag.String("map_type", "snake", "indicate the name mapping")
-	cache              = flag.Bool("cache", false, "if enable cache")
+	cacheFlag          = flag.Bool("cache", false, "if enable cache")
 	cluster            = flag.Bool("cluster", false, "if this is a cluster")
 	splitter           = flag.String("splitter", ";", "the splitter on connstr for cluster")
 	schema             = flag.String("schema", "", "specify the schema")
 	ignoreSelectUpdate = flag.Bool("ignore_select_update", false, "ignore select update if implementation difference, only for tidb")
-
-	tableMapper core.IMapper
-	colMapper   core.IMapper
+	ingoreUpdateLimit  = flag.Bool("ignore_update_limit", false, "ignore update limit if implementation difference, only for cockroach")
+	quotePolicyStr     = flag.String("quote", "always", "quote could be always, none, reversed")
+	tableMapper        names.Mapper
+	colMapper          names.Mapper
 )
 
 func createEngine(dbType, connStr string) error {
@@ -45,8 +49,8 @@ func createEngine(dbType, connStr string) error {
 		var err error
 
 		if !*cluster {
-			switch strings.ToLower(dbType) {
-			case core.MSSQL:
+			switch schemas.DBType(strings.ToLower(dbType)) {
+			case schemas.MSSQL:
 				db, err := sql.Open(dbType, strings.Replace(connStr, "xorm_test", "master", -1))
 				if err != nil {
 					return err
@@ -56,12 +60,12 @@ func createEngine(dbType, connStr string) error {
 				}
 				db.Close()
 				*ignoreSelectUpdate = true
-			case core.POSTGRES:
-				db, err := sql.Open(dbType, connStr)
+			case schemas.POSTGRES:
+				db, err := sql.Open(dbType, strings.Replace(connStr, "xorm_test", "postgres", -1))
 				if err != nil {
 					return err
 				}
-				rows, err := db.Query(fmt.Sprintf("SELECT 1 FROM pg_database WHERE datname = 'xorm_test'"))
+				rows, err := db.Query("SELECT 1 FROM pg_database WHERE datname = 'xorm_test'")
 				if err != nil {
 					return fmt.Errorf("db.Query: %v", err)
 				}
@@ -73,13 +77,19 @@ func createEngine(dbType, connStr string) error {
 					}
 				}
 				if *schema != "" {
+					db.Close()
+					db, err = sql.Open(dbType, connStr)
+					if err != nil {
+						return err
+					}
+					defer db.Close()
 					if _, err = db.Exec("CREATE SCHEMA IF NOT EXISTS " + *schema); err != nil {
 						return fmt.Errorf("CREATE SCHEMA: %v", err)
 					}
 				}
 				db.Close()
 				*ignoreSelectUpdate = true
-			case core.MYSQL:
+			case schemas.MYSQL:
 				db, err := sql.Open(dbType, strings.Replace(connStr, "xorm_test", "mysql", -1))
 				if err != nil {
 					return err
@@ -107,21 +117,29 @@ func createEngine(dbType, connStr string) error {
 			testEngine.SetSchema(*schema)
 		}
 		testEngine.ShowSQL(*showSQL)
-		testEngine.SetLogLevel(core.LOG_DEBUG)
-		if *cache {
-			cacher := NewLRUCacher(NewMemoryStore(), 100000)
+		testEngine.SetLogLevel(log.LOG_DEBUG)
+		if *cacheFlag {
+			cacher := caches.NewLRUCacher(caches.NewMemoryStore(), 100000)
 			testEngine.SetDefaultCacher(cacher)
 		}
 
 		if len(*mapType) > 0 {
 			switch *mapType {
 			case "snake":
-				testEngine.SetMapper(core.SnakeMapper{})
+				testEngine.SetMapper(names.SnakeMapper{})
 			case "same":
-				testEngine.SetMapper(core.SameMapper{})
+				testEngine.SetMapper(names.SameMapper{})
 			case "gonic":
-				testEngine.SetMapper(core.LintGonicMapper)
+				testEngine.SetMapper(names.LintGonicMapper)
 			}
+		}
+
+		if *quotePolicyStr == "none" {
+			testEngine.SetQuotePolicy(dialects.QuotePolicyNone)
+		} else if *quotePolicyStr == "reserved" {
+			testEngine.SetQuotePolicy(dialects.QuotePolicyReserved)
+		} else {
+			testEngine.SetQuotePolicy(dialects.QuotePolicyAlways)
 		}
 	}
 
@@ -158,7 +176,7 @@ func TestMain(m *testing.M) {
 		}
 	} else {
 		if ptrConnStr == nil {
-			log.Fatal("you should indicate conn string")
+			fmt.Println("you should indicate conn string")
 			return
 		}
 		connString = *ptrConnStr
@@ -175,7 +193,8 @@ func TestMain(m *testing.M) {
 		fmt.Println("testing", dbType, connString)
 
 		if err := prepareEngine(); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			os.Exit(1)
 			return
 		}
 

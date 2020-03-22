@@ -5,12 +5,12 @@
 package xorm
 
 import (
-	"errors"
-	"fmt"
 	"testing"
 	"time"
 
-	"xorm.io/core"
+	"xorm.io/xorm/internal/utils"
+	"xorm.io/xorm/names"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,8 +64,10 @@ func TestJoinLimit(t *testing.T) {
 
 func assertSync(t *testing.T, beans ...interface{}) {
 	for _, bean := range beans {
-		assert.NoError(t, testEngine.DropTables(bean))
-		assert.NoError(t, testEngine.Sync2(bean))
+		t.Run(testEngine.TableName(bean, true), func(t *testing.T) {
+			assert.NoError(t, testEngine.DropTables(bean))
+			assert.NoError(t, testEngine.Sync2(bean))
+		})
 	}
 }
 
@@ -75,19 +77,11 @@ func TestWhere(t *testing.T) {
 	assertSync(t, new(Userinfo))
 
 	users := make([]Userinfo, 0)
-	err := testEngine.Where("(id) > ?", 2).Find(&users)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
-	fmt.Println(users)
+	err := testEngine.Where("id > ?", 2).Find(&users)
+	assert.NoError(t, err)
 
-	err = testEngine.Where("(id) > ?", 2).And("(id) < ?", 10).Find(&users)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
-	fmt.Println(users)
+	err = testEngine.Where("id > ?", 2).And("id < ?", 10).Find(&users)
+	assert.NoError(t, err)
 }
 
 func TestFind(t *testing.T) {
@@ -98,9 +92,6 @@ func TestFind(t *testing.T) {
 
 	err := testEngine.Find(&users)
 	assert.NoError(t, err)
-	for _, user := range users {
-		fmt.Println(user)
-	}
 
 	users2 := make([]Userinfo, 0)
 	var tbName = testEngine.Quote(testEngine.TableName(new(Userinfo), true))
@@ -116,10 +107,6 @@ func TestFind2(t *testing.T) {
 
 	err := testEngine.Find(&users)
 	assert.NoError(t, err)
-
-	for _, user := range users {
-		fmt.Println(user)
-	}
 }
 
 type Team struct {
@@ -195,15 +182,29 @@ func TestFindMap(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 	assertSync(t, new(Userinfo))
 
+	cnt, err := testEngine.Insert(&Userinfo{
+		Username:   "lunny",
+		Departname: "depart1",
+		IsMan:      true,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
 	users := make(map[int64]Userinfo)
-	err := testEngine.Find(&users)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
-	for _, user := range users {
-		fmt.Println(user)
-	}
+	err = testEngine.Find(&users)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(users))
+	assert.EqualValues(t, "lunny", users[1].Username)
+	assert.EqualValues(t, "depart1", users[1].Departname)
+	assert.True(t, users[1].IsMan)
+
+	users = make(map[int64]Userinfo)
+	err = testEngine.Cols("username, departname").Find(&users)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(users))
+	assert.EqualValues(t, "lunny", users[1].Username)
+	assert.EqualValues(t, "depart1", users[1].Departname)
+	assert.False(t, users[1].IsMan)
 }
 
 func TestFindMap2(t *testing.T) {
@@ -212,13 +213,7 @@ func TestFindMap2(t *testing.T) {
 
 	users := make(map[int64]*Userinfo)
 	err := testEngine.Find(&users)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
-	for id, user := range users {
-		fmt.Println(id, user)
-	}
+	assert.NoError(t, err)
 }
 
 func TestDistinct(t *testing.T) {
@@ -236,8 +231,6 @@ func TestDistinct(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(users))
 
-	fmt.Println(users)
-
 	type Depart struct {
 		Departname string
 	}
@@ -245,12 +238,7 @@ func TestDistinct(t *testing.T) {
 	users2 := make([]Depart, 0)
 	err = testEngine.Distinct(departname).Table(new(Userinfo)).Find(&users2)
 	assert.NoError(t, err)
-	if len(users2) != 1 {
-		fmt.Println(len(users2))
-		t.Error(err)
-		panic(errors.New("should be one record"))
-	}
-	fmt.Println(users2)
+	assert.EqualValues(t, 1, len(users2))
 }
 
 func TestOrder(t *testing.T) {
@@ -260,12 +248,10 @@ func TestOrder(t *testing.T) {
 	users := make([]Userinfo, 0)
 	err := testEngine.OrderBy("id desc").Find(&users)
 	assert.NoError(t, err)
-	fmt.Println(users)
 
 	users2 := make([]Userinfo, 0)
 	err = testEngine.Asc("id", "username").Desc("height").Find(&users2)
 	assert.NoError(t, err)
-	fmt.Println(users2)
 }
 
 func TestGroupBy(t *testing.T) {
@@ -284,60 +270,46 @@ func TestHaving(t *testing.T) {
 	users := make([]Userinfo, 0)
 	err := testEngine.GroupBy("username").Having("username='xlw'").Find(&users)
 	assert.NoError(t, err)
-	fmt.Println(users)
-
-	/*users = make([]Userinfo, 0)
-	err = testEngine.Cols("id, username").GroupBy("username").Having("username='xlw'").Find(&users)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
-	fmt.Println(users)*/
 }
 
 func TestOrderSameMapper(t *testing.T) {
 	assert.NoError(t, prepareEngine())
-	testEngine.UnMapType(rValue(new(Userinfo)).Type())
+	testEngine.UnMapType(utils.ReflectValue(new(Userinfo)).Type())
 
 	mapper := testEngine.GetTableMapper()
-	testEngine.SetMapper(core.SameMapper{})
+	testEngine.SetMapper(names.SameMapper{})
 
 	defer func() {
-		testEngine.UnMapType(rValue(new(Userinfo)).Type())
+		testEngine.UnMapType(utils.ReflectValue(new(Userinfo)).Type())
 		testEngine.SetMapper(mapper)
 	}()
 
 	assertSync(t, new(Userinfo))
 
 	users := make([]Userinfo, 0)
-	err := testEngine.OrderBy("(id) desc").Find(&users)
+	err := testEngine.OrderBy("id desc").Find(&users)
 	assert.NoError(t, err)
-	fmt.Println(users)
 
 	users2 := make([]Userinfo, 0)
-	err = testEngine.Asc("(id)", "Username").Desc("Height").Find(&users2)
+	err = testEngine.Asc("id", "Username").Desc("Height").Find(&users2)
 	assert.NoError(t, err)
-	fmt.Println(users2)
 }
 
 func TestHavingSameMapper(t *testing.T) {
 	assert.NoError(t, prepareEngine())
-	testEngine.UnMapType(rValue(new(Userinfo)).Type())
+	testEngine.UnMapType(utils.ReflectValue(new(Userinfo)).Type())
 
 	mapper := testEngine.GetTableMapper()
-	testEngine.SetMapper(core.SameMapper{})
+	testEngine.SetMapper(names.SameMapper{})
 	defer func() {
-		testEngine.UnMapType(rValue(new(Userinfo)).Type())
+		testEngine.UnMapType(utils.ReflectValue(new(Userinfo)).Type())
 		testEngine.SetMapper(mapper)
 	}()
 	assertSync(t, new(Userinfo))
 
 	users := make([]Userinfo, 0)
 	err := testEngine.GroupBy("`Username`").Having("`Username`='xlw'").Find(&users)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(users)
+	assert.NoError(t, err)
 }
 
 func TestFindInts(t *testing.T) {
@@ -347,39 +319,24 @@ func TestFindInts(t *testing.T) {
 	userinfo := testEngine.GetTableMapper().Obj2Table("Userinfo")
 	var idsInt64 []int64
 	err := testEngine.Table(userinfo).Cols("id").Desc("id").Find(&idsInt64)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(idsInt64)
+	assert.NoError(t, err)
 
 	var idsInt32 []int32
 	err = testEngine.Table(userinfo).Cols("id").Desc("id").Find(&idsInt32)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(idsInt32)
+	assert.NoError(t, err)
 
 	var idsInt []int
 	err = testEngine.Table(userinfo).Cols("id").Desc("id").Find(&idsInt)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(idsInt)
+	assert.NoError(t, err)
 
 	var idsUint []uint
 	err = testEngine.Table(userinfo).Cols("id").Desc("id").Find(&idsUint)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(idsUint)
+	assert.NoError(t, err)
 
 	type MyInt int
 	var idsMyInt []MyInt
 	err = testEngine.Table(userinfo).Cols("id").Desc("id").Find(&idsMyInt)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(idsMyInt)
+	assert.NoError(t, err)
 }
 
 func TestFindStrings(t *testing.T) {
@@ -389,10 +346,7 @@ func TestFindStrings(t *testing.T) {
 	username := testEngine.GetColumnMapper().Obj2Table("Username")
 	var idsString []string
 	err := testEngine.Table(userinfo).Cols(username).Desc("id").Find(&idsString)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(idsString)
+	assert.NoError(t, err)
 }
 
 func TestFindMyString(t *testing.T) {
@@ -403,10 +357,7 @@ func TestFindMyString(t *testing.T) {
 
 	var idsMyString []MyString
 	err := testEngine.Table(userinfo).Cols(username).Desc("id").Find(&idsMyString)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(idsMyString)
+	assert.NoError(t, err)
 }
 
 func TestFindInterface(t *testing.T) {
@@ -417,10 +368,7 @@ func TestFindInterface(t *testing.T) {
 	username := testEngine.GetColumnMapper().Obj2Table("Username")
 	var idsInterface []interface{}
 	err := testEngine.Table(userinfo).Cols(username).Desc("id").Find(&idsInterface)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(idsInterface)
+	assert.NoError(t, err)
 }
 
 func TestFindSliceBytes(t *testing.T) {
@@ -430,12 +378,7 @@ func TestFindSliceBytes(t *testing.T) {
 	userinfo := testEngine.GetTableMapper().Obj2Table("Userinfo")
 	var ids [][][]byte
 	err := testEngine.Table(userinfo).Desc("id").Find(&ids)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, record := range ids {
-		fmt.Println(record)
-	}
+	assert.NoError(t, err)
 }
 
 func TestFindSlicePtrString(t *testing.T) {
@@ -445,12 +388,7 @@ func TestFindSlicePtrString(t *testing.T) {
 	userinfo := testEngine.GetTableMapper().Obj2Table("Userinfo")
 	var ids [][]*string
 	err := testEngine.Table(userinfo).Desc("id").Find(&ids)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, record := range ids {
-		fmt.Println(record)
-	}
+	assert.NoError(t, err)
 }
 
 func TestFindMapBytes(t *testing.T) {
@@ -460,12 +398,7 @@ func TestFindMapBytes(t *testing.T) {
 	userinfo := testEngine.GetTableMapper().Obj2Table("Userinfo")
 	var ids []map[string][]byte
 	err := testEngine.Table(userinfo).Desc("id").Find(&ids)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, record := range ids {
-		fmt.Println(record)
-	}
+	assert.NoError(t, err)
 }
 
 func TestFindMapPtrString(t *testing.T) {
@@ -476,9 +409,6 @@ func TestFindMapPtrString(t *testing.T) {
 	var ids []map[string]*string
 	err := testEngine.Table(userinfo).Desc("id").Find(&ids)
 	assert.NoError(t, err)
-	for _, record := range ids {
-		fmt.Println(record)
-	}
 }
 
 func TestFindBit(t *testing.T) {
@@ -788,8 +718,12 @@ func TestFindJoin(t *testing.T) {
 		DeviceId int64
 	}
 
+	type Order struct {
+		Id int64
+	}
+
 	assert.NoError(t, prepareEngine())
-	assertSync(t, new(SceneItem), new(DeviceUserPrivrels))
+	assertSync(t, new(SceneItem), new(DeviceUserPrivrels), new(Order))
 
 	var scenes []SceneItem
 	err := testEngine.Join("LEFT OUTER", "device_user_privrels", "device_user_privrels.device_id=scene_item.device_id").
@@ -800,4 +734,96 @@ func TestFindJoin(t *testing.T) {
 	err = testEngine.Join("LEFT OUTER", new(DeviceUserPrivrels), "device_user_privrels.device_id=scene_item.device_id").
 		Where("scene_item.type=?", 3).Or("device_user_privrels.user_id=?", 339).Find(&scenes)
 	assert.NoError(t, err)
+
+	scenes = make([]SceneItem, 0)
+	err = testEngine.Join("INNER", "order", "`scene_item`.device_id=`order`.id").Find(&scenes)
+	assert.NoError(t, err)
+}
+
+func TestJoinFindLimit(t *testing.T) {
+	type JoinFindLimit1 struct {
+		Id   int64
+		Name string
+	}
+
+	type JoinFindLimit2 struct {
+		Id   int64
+		Eid  int64 `xorm:"index"`
+		Name string
+	}
+
+	assert.NoError(t, prepareEngine())
+	assertSync(t, new(JoinFindLimit1), new(JoinFindLimit2))
+
+	var finds []JoinFindLimit1
+	err := testEngine.Join("INNER", new(JoinFindLimit2), "join_find_limit2.eid=join_find_limit1.id").
+		Limit(10, 10).Find(&finds)
+	assert.NoError(t, err)
+}
+
+func TestMoreExtends(t *testing.T) {
+	type MoreExtendsUsers struct {
+		ID        int64     `xorm:"id autoincr pk" json:"id"`
+		Name      string    `xorm:"name not null" json:"name"`
+		CreatedAt time.Time `xorm:"created not null" json:"created_at"`
+		UpdatedAt time.Time `xorm:"updated not null" json:"updated_at"`
+		DeletedAt time.Time `xorm:"deleted" json:"deleted_at"`
+	}
+
+	type MoreExtendsBooks struct {
+		ID        int64     `xorm:"id autoincr pk" json:"id"`
+		Name      string    `xorm:"name not null" json:"name"`
+		UserID    int64     `xorm:"user_id not null" json:"user_id"`
+		CreatedAt time.Time `xorm:"created not null" json:"created_at"`
+		UpdatedAt time.Time `xorm:"updated not null" json:"updated_at"`
+		DeletedAt time.Time `xorm:"deleted" json:"deleted_at"`
+	}
+
+	type MoreExtendsBooksExtend struct {
+		MoreExtendsBooks `xorm:"extends"`
+		Users            MoreExtendsUsers `xorm:"extends" json:"users"`
+	}
+
+	assert.NoError(t, prepareEngine())
+	assertSync(t, new(MoreExtendsUsers), new(MoreExtendsBooks))
+
+	var books []MoreExtendsBooksExtend
+	err := testEngine.Table("more_extends_books").Select("more_extends_books.*, more_extends_users.*").
+		Join("INNER", "more_extends_users", "more_extends_books.user_id = more_extends_users.id").
+		Where("more_extends_books.name LIKE ?", "abc").
+		Limit(10, 10).
+		Find(&books)
+	assert.NoError(t, err)
+
+	books = make([]MoreExtendsBooksExtend, 0, len(books))
+	err = testEngine.Table("more_extends_books").
+		Alias("m").
+		Select("m.*, more_extends_users.*").
+		Join("INNER", "more_extends_users", "m.user_id = more_extends_users.id").
+		Where("m.name LIKE ?", "abc").
+		Limit(10, 10).
+		Find(&books)
+	assert.NoError(t, err)
+}
+
+func TestDistinctAndCols(t *testing.T) {
+	type DistinctAndCols struct {
+		Id   int64
+		Name string
+	}
+
+	assert.NoError(t, prepareEngine())
+	assertSync(t, new(DistinctAndCols))
+
+	cnt, err := testEngine.Insert(&DistinctAndCols{
+		Name: "test",
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var names []string
+	err = testEngine.Table("distinct_and_cols").Cols("name").Distinct("name").Find(&names)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(names))
+	assert.EqualValues(t, "test", names[0])
 }

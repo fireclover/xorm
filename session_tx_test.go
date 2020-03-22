@@ -9,23 +9,21 @@ import (
 	"testing"
 	"time"
 
-	"xorm.io/core"
 	"github.com/stretchr/testify/assert"
+	"xorm.io/xorm/internal/utils"
+	"xorm.io/xorm/names"
 )
 
 func TestTransaction(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 	assertSync(t, new(Userinfo))
 
-	counter := func() {
-		total, err := testEngine.Count(&Userinfo{})
-		if err != nil {
-			t.Error(err)
-		}
-		fmt.Printf("----now total %v records\n", total)
+	counter := func(t *testing.T) {
+		_, err := testEngine.Count(&Userinfo{})
+		assert.NoError(t, err)
 	}
 
-	counter()
+	counter(t)
 	//defer counter()
 
 	session := testEngine.NewSession()
@@ -39,7 +37,7 @@ func TestTransaction(t *testing.T) {
 	assert.NoError(t, err)
 
 	user2 := Userinfo{Username: "yyy"}
-	_, err = session.Where("(id) = ?", 0).Update(&user2)
+	_, err = session.Where("id = ?", 0).Update(&user2)
 	assert.NoError(t, err)
 
 	_, err = session.Delete(&user2)
@@ -55,9 +53,7 @@ func TestCombineTransaction(t *testing.T) {
 
 	counter := func() {
 		total, err := testEngine.Count(&Userinfo{})
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
 		fmt.Printf("----now total %v records\n", total)
 	}
 
@@ -88,10 +84,10 @@ func TestCombineTransactionSameMapper(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	oldMapper := testEngine.GetColumnMapper()
-	testEngine.UnMapType(rValue(new(Userinfo)).Type())
-	testEngine.SetMapper(core.SameMapper{})
+	testEngine.UnMapType(utils.ReflectValue(new(Userinfo)).Type())
+	testEngine.SetMapper(names.SameMapper{})
 	defer func() {
-		testEngine.UnMapType(rValue(new(Userinfo)).Type())
+		testEngine.UnMapType(utils.ReflectValue(new(Userinfo)).Type())
 		testEngine.SetMapper(oldMapper)
 	}()
 
@@ -99,9 +95,7 @@ func TestCombineTransactionSameMapper(t *testing.T) {
 
 	counter := func() {
 		total, err := testEngine.Count(&Userinfo{})
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
 		fmt.Printf("----now total %v records\n", total)
 	}
 
@@ -119,7 +113,7 @@ func TestCombineTransactionSameMapper(t *testing.T) {
 	assert.NoError(t, err)
 
 	user2 := Userinfo{Username: "zzz"}
-	_, err = session.Where("(id) = ?", 0).Update(&user2)
+	_, err = session.Where("id = ?", 0).Update(&user2)
 	assert.NoError(t, err)
 
 	_, err = session.Exec("delete from  "+testEngine.TableName("`Userinfo`", true)+" where `Username` = ?", user2.Username)

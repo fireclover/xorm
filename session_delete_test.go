@@ -8,7 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"xorm.io/core"
+	"xorm.io/xorm/caches"
+	"xorm.io/xorm/schemas"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +28,7 @@ func TestDelete(t *testing.T) {
 	defer session.Close()
 
 	var err error
-	if testEngine.Dialect().DBType() == core.MSSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		err = session.Begin()
 		assert.NoError(t, err)
 		_, err = session.Exec("SET IDENTITY_INSERT userinfo_delete ON")
@@ -38,7 +40,7 @@ func TestDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	if testEngine.Dialect().DBType() == core.MSSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		err = session.Commit()
 		assert.NoError(t, err)
 	}
@@ -159,7 +161,7 @@ func TestCacheDelete(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 
 	oldCacher := testEngine.GetDefaultCacher()
-	cacher := NewLRUCacher(NewMemoryStore(), 1000)
+	cacher := caches.NewLRUCacher(caches.NewMemoryStore(), 1000)
 	testEngine.SetDefaultCacher(cacher)
 
 	type CacheDeleteStruct struct {

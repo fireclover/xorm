@@ -22,7 +22,8 @@ type NullType struct {
 	Age          sql.NullInt64
 	Height       sql.NullFloat64
 	IsMan        sql.NullBool `xorm:"null"`
-	CustomStruct CustomStruct `xorm:"valchar(64) null"`
+	Nil          driver.Valuer
+	CustomStruct CustomStruct `xorm:"varchar(64) null"`
 }
 
 type CustomStruct struct {
@@ -58,85 +59,56 @@ func (m CustomStruct) Value() (driver.Value, error) {
 
 func TestCreateNullStructTable(t *testing.T) {
 	assert.NoError(t, prepareEngine())
-
 	err := testEngine.CreateTables(new(NullType))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestDropNullStructTable(t *testing.T) {
 	assert.NoError(t, prepareEngine())
-
 	err := testEngine.DropTables(new(NullType))
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestNullStructInsert(t *testing.T) {
 	assert.NoError(t, prepareEngine())
 	assertSync(t, new(NullType))
 
-	if true {
-		item := new(NullType)
-		_, err := testEngine.Insert(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(item)
-		if item.Id != 1 {
-			err = errors.New("insert error")
-			t.Error(err)
-			panic(err)
-		}
-	}
+	item1 := new(NullType)
+	_, err := testEngine.Insert(item1)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, item1.Id)
 
-	if true {
+	item := NullType{
+		Name:   sql.NullString{String: "haolei", Valid: true},
+		Age:    sql.NullInt64{Int64: 34, Valid: true},
+		Height: sql.NullFloat64{Float64: 1.72, Valid: true},
+		IsMan:  sql.NullBool{Bool: true, Valid: true},
+		Nil:    nil,
+	}
+	_, err = testEngine.Insert(&item)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, item.Id)
+
+	items := []NullType{}
+	for i := 0; i < 5; i++ {
 		item := NullType{
-			Name:   sql.NullString{String: "haolei", Valid: true},
-			Age:    sql.NullInt64{Int64: 34, Valid: true},
-			Height: sql.NullFloat64{Float64: 1.72, Valid: true},
-			IsMan:  sql.NullBool{Bool: true, Valid: true},
+			Name:         sql.NullString{String: "haolei_" + fmt.Sprint(i+1), Valid: true},
+			Age:          sql.NullInt64{Int64: 30 + int64(i), Valid: true},
+			Height:       sql.NullFloat64{Float64: 1.5 + 1.1*float64(i), Valid: true},
+			IsMan:        sql.NullBool{Bool: true, Valid: true},
+			CustomStruct: CustomStruct{i, i + 1, i + 2},
+			Nil:          nil,
 		}
-		_, err := testEngine.Insert(&item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(item)
-		if item.Id != 2 {
-			err = errors.New("insert error")
-			t.Error(err)
-			panic(err)
-		}
+		items = append(items, item)
 	}
 
-	if true {
-		items := []NullType{}
+	_, err = testEngine.Insert(&items)
+	assert.NoError(t, err)
 
-		for i := 0; i < 5; i++ {
-			item := NullType{
-				Name:         sql.NullString{String: "haolei_" + fmt.Sprint(i+1), Valid: true},
-				Age:          sql.NullInt64{Int64: 30 + int64(i), Valid: true},
-				Height:       sql.NullFloat64{Float64: 1.5 + 1.1*float64(i), Valid: true},
-				IsMan:        sql.NullBool{Bool: true, Valid: true},
-				CustomStruct: CustomStruct{i, i + 1, i + 2},
-			}
-
-			items = append(items, item)
-		}
-
-		_, err := testEngine.Insert(&items)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(items)
-	}
+	items = make([]NullType, 0, 7)
+	err = testEngine.Find(&items)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 7, len(items))
 }
 
 func TestNullStructUpdate(t *testing.T) {
@@ -177,30 +149,16 @@ func TestNullStructUpdate(t *testing.T) {
 		item.Height = sql.NullFloat64{Float64: 0, Valid: false} // update to NULL
 
 		affected, err := testEngine.ID(2).Cols("age", "height", "is_man").Update(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		if affected != 1 {
-			err := errors.New("update failed")
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, affected)
 	}
 
 	if true { // 测试In update
 		item := new(NullType)
 		item.Age = sql.NullInt64{Int64: 23, Valid: true}
 		affected, err := testEngine.In("id", 3, 4).Cols("age", "height", "is_man").Update(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		if affected != 2 {
-			err := errors.New("update failed")
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
+		assert.EqualValues(t, 2, affected)
 	}
 
 	if true { // 测试where
@@ -210,10 +168,7 @@ func TestNullStructUpdate(t *testing.T) {
 		item.Age = sql.NullInt64{Int64: 34, Valid: true}
 
 		_, err := testEngine.Where("age > ?", 34).Update(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 	}
 
 	if true { // 修改全部时，插入空值
@@ -225,13 +180,8 @@ func TestNullStructUpdate(t *testing.T) {
 		}
 
 		_, err := testEngine.AllCols().ID(6).Update(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(item)
+		assert.NoError(t, err)
 	}
-
 }
 
 func TestNullStructFind(t *testing.T) {
@@ -269,63 +219,33 @@ func TestNullStructFind(t *testing.T) {
 	if true {
 		item := new(NullType)
 		has, err := testEngine.ID(1).Get(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		if !has {
-			t.Error(errors.New("no find id 1"))
-			panic(err)
-		}
-		fmt.Println(item)
-		if item.Id != 1 || item.Name.Valid || item.Age.Valid || item.Height.Valid ||
-			item.IsMan.Valid {
-			err = errors.New("insert error")
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, item.Id, 1)
+		assert.False(t, item.Name.Valid)
+		assert.False(t, item.Age.Valid)
+		assert.False(t, item.Height.Valid)
+		assert.False(t, item.IsMan.Valid)
 	}
 
 	if true {
 		item := new(NullType)
 		item.Id = 2
-
 		has, err := testEngine.Get(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		if !has {
-			t.Error(errors.New("no find id 2"))
-			panic(err)
-		}
-		fmt.Println(item)
+		assert.NoError(t, err)
+		assert.True(t, has)
 	}
 
 	if true {
 		item := make([]NullType, 0)
-
 		err := testEngine.ID(2).Find(&item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-
-		fmt.Println(item)
+		assert.NoError(t, err)
 	}
 
 	if true {
 		item := make([]NullType, 0)
-
 		err := testEngine.Asc("age").Find(&item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-
-		for k, v := range item {
-			fmt.Println(k, v)
-		}
+		assert.NoError(t, err)
 	}
 }
 
@@ -340,10 +260,7 @@ func TestNullStructIterate(t *testing.T) {
 				fmt.Println(i, nultype)
 				return nil
 			})
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
+		assert.NoError(t, err)
 	}
 }
 
@@ -353,12 +270,8 @@ func TestNullStructCount(t *testing.T) {
 
 	if true {
 		item := new(NullType)
-		total, err := testEngine.Where("age IS NOT NULL").Count(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(total)
+		_, err := testEngine.Where("age IS NOT NULL").Count(item)
+		assert.NoError(t, err)
 	}
 }
 
@@ -368,19 +281,12 @@ func TestNullStructRows(t *testing.T) {
 
 	item := new(NullType)
 	rows, err := testEngine.Where("id > ?", 1).Rows(item)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 	defer rows.Close()
 
 	for rows.Next() {
 		err = rows.Scan(item)
-		if err != nil {
-			t.Error(err)
-			panic(err)
-		}
-		fmt.Println(item)
+		assert.NoError(t, err)
 	}
 }
 
@@ -391,14 +297,8 @@ func TestNullStructDelete(t *testing.T) {
 	item := new(NullType)
 
 	_, err := testEngine.ID(1).Delete(item)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	_, err = testEngine.Where("id > ?", 1).Delete(item)
-	if err != nil {
-		t.Error(err)
-		panic(err)
-	}
+	assert.NoError(t, err)
 }

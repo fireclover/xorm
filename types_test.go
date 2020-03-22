@@ -9,7 +9,10 @@ import (
 	"fmt"
 	"testing"
 
-	"xorm.io/core"
+	"xorm.io/xorm/convert"
+	"xorm.io/xorm/internal/json"
+	"xorm.io/xorm/schemas"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,29 +119,36 @@ type ConvConfig struct {
 }
 
 func (s *ConvConfig) FromDB(data []byte) error {
-	return DefaultJSONHandler.Unmarshal(data, s)
+	if data == nil {
+		s = nil
+		return nil
+	}
+	return json.DefaultJSONHandler.Unmarshal(data, s)
 }
 
 func (s *ConvConfig) ToDB() ([]byte, error) {
-	return DefaultJSONHandler.Marshal(s)
+	if s == nil {
+		return nil, nil
+	}
+	return json.DefaultJSONHandler.Marshal(s)
 }
 
 type SliceType []*ConvConfig
 
 func (s *SliceType) FromDB(data []byte) error {
-	return DefaultJSONHandler.Unmarshal(data, s)
+	return json.DefaultJSONHandler.Unmarshal(data, s)
 }
 
 func (s *SliceType) ToDB() ([]byte, error) {
-	return DefaultJSONHandler.Marshal(s)
+	return json.DefaultJSONHandler.Marshal(s)
 }
 
 type ConvStruct struct {
 	Conv  ConvString
 	Conv2 *ConvString
 	Cfg1  ConvConfig
-	Cfg2  *ConvConfig     `xorm:"TEXT"`
-	Cfg3  core.Conversion `xorm:"BLOB"`
+	Cfg2  *ConvConfig        `xorm:"TEXT"`
+	Cfg3  convert.Conversion `xorm:"BLOB"`
 	Slice SliceType
 }
 
@@ -181,6 +191,30 @@ func TestConversion(t *testing.T) {
 	assert.EqualValues(t, 2, len(c1.Slice))
 	assert.EqualValues(t, *c.Slice[0], *c1.Slice[0])
 	assert.EqualValues(t, *c.Slice[1], *c1.Slice[1])
+
+	cnt, err := testEngine.Where("1=1").Delete(new(ConvStruct))
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	c.Cfg2 = nil
+
+	_, err = testEngine.Insert(c)
+	assert.NoError(t, err)
+
+	c2 := new(ConvStruct)
+	has, err = testEngine.Get(c2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, "prefix---tttt", string(c2.Conv))
+	assert.NotNil(t, c2.Conv2)
+	assert.EqualValues(t, "prefix---"+s, *c2.Conv2)
+	assert.EqualValues(t, c.Cfg1, c2.Cfg1)
+	assert.Nil(t, c2.Cfg2)
+	assert.NotNil(t, c2.Cfg3)
+	assert.EqualValues(t, *c.Cfg3.(*ConvConfig), *c2.Cfg3.(*ConvConfig))
+	assert.EqualValues(t, 2, len(c2.Slice))
+	assert.EqualValues(t, *c.Slice[0], *c2.Slice[0])
+	assert.EqualValues(t, *c.Slice[1], *c2.Slice[1])
 }
 
 type MyInt int
@@ -267,14 +301,14 @@ type Status struct {
 }
 
 var (
-	_        core.Conversion   = &Status{}
-	Registed Status            = Status{"Registed", "white"}
-	Approved Status            = Status{"Approved", "green"}
-	Removed  Status            = Status{"Removed", "red"}
-	Statuses map[string]Status = map[string]Status{
-		Registed.Name: Registed,
-		Approved.Name: Approved,
-		Removed.Name:  Removed,
+	_          convert.Conversion = &Status{}
+	Registered Status             = Status{"Registered", "white"}
+	Approved   Status             = Status{"Approved", "green"}
+	Removed    Status             = Status{"Removed", "red"}
+	Statuses   map[string]Status  = map[string]Status{
+		Registered.Name: Registered,
+		Approved.Name:   Approved,
+		Removed.Name:    Removed,
 	}
 )
 
@@ -311,18 +345,18 @@ func TestCustomType2(t *testing.T) {
 	session := testEngine.NewSession()
 	defer session.Close()
 
-	if testEngine.Dialect().DBType() == core.MSSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		err = session.Begin()
 		assert.NoError(t, err)
 		_, err = session.Exec("set IDENTITY_INSERT " + tableName + " on")
 		assert.NoError(t, err)
 	}
 
-	cnt, err := session.Insert(&UserCus{1, "xlw", Registed})
+	cnt, err := session.Insert(&UserCus{1, "xlw", Registered})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	if testEngine.Dialect().DBType() == core.MSSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		err = session.Commit()
 		assert.NoError(t, err)
 	}
@@ -335,7 +369,7 @@ func TestCustomType2(t *testing.T) {
 	fmt.Println(user)
 
 	users := make([]UserCus, 0)
-	err = testEngine.Where("`"+testEngine.GetColumnMapper().Obj2Table("Status")+"` = ?", "Registed").Find(&users)
+	err = testEngine.Where("`"+testEngine.GetColumnMapper().Obj2Table("Status")+"` = ?", "Registered").Find(&users)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(users))
 
