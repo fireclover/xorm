@@ -817,10 +817,6 @@ func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 	}
 }
 
-func (db *postgres) DefaultSchema() string {
-	return postgresPublicSchema
-}
-
 func (db *postgres) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
