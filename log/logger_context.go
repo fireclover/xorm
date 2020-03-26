@@ -70,8 +70,8 @@ func (l *LoggerAdapter) BeforeSQL(ctx LogContext) {}
 func (l *LoggerAdapter) AfterSQL(ctx LogContext) {
 	var sessionPart string
 	v := ctx.Ctx.Value(SessionIDKey)
-	if v != nil {
-		sessionPart = fmt.Sprintf(" [%s]", v.(string))
+	if key, ok := v.(string); ok {
+		sessionPart = fmt.Sprintf(" [%s]", key)
 	}
 	if ctx.ExecuteTime > 0 {
 		l.logger.Infof("[SQL]%s %s %v - %v", sessionPart, ctx.SQL, ctx.Args, ctx.ExecuteTime)
