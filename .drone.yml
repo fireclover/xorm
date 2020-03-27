@@ -3,12 +3,13 @@ kind: pipeline
 name: testing
 steps:
 - name: test-vet
-  image: golang:1.11
+  image: golang:1.11 # The lowest golang requirement
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
   commands:
     - make vet
+    - make test
   when:
     event:
     - push
@@ -20,11 +21,9 @@ steps:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
   commands:
-  - make test
   - make test-sqlite
   - TEST_CACHE_ENABLE=true make test-sqlite
   - TEST_QUOTE_POLICY=reserved make test-sqlite
-
   when:
     event:
     - push
