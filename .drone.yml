@@ -8,7 +8,7 @@ steps:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
   commands:
-    - go vet
+    - make vet
   when:
     event:
     - push
@@ -20,12 +20,10 @@ steps:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
   commands:
+  - make test
   - make test-sqlite
   - TEST_CACHE_ENABLE=true make test-sqlite
   - TEST_QUOTE_POLICY=reserved make test-sqlite
-  - go test ./caches/... ./contexts/... ./convert/... ./core/... ./dialects/... \
-    ./log/... ./migrate/... ./names/... ./schemas/... ./tags/... \
-    ./internal/json/... ./internal/statements/... ./internal/utils/... \
 
   when:
     event:
