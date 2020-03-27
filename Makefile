@@ -51,7 +51,7 @@ build: go-check $(GO_SOURCES)
 .PHONY: clean
 clean:
 	$(GO) clean -i ./...
-	rm -rf *.sql *.log test.db *coverage.out coverage.all
+	rm -rf *.sql *.log test.db *coverage.out coverage.all integrations/*.sql
 
 .PHONY: coverage
 coverage:
