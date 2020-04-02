@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"xorm.io/xorm/caches"
+	"xorm.io/xorm/core"
 	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/log"
 	"xorm.io/xorm/names"
@@ -140,6 +141,13 @@ func (eg *EngineGroup) SetLogger(logger interface{}) {
 	eg.Engine.SetLogger(logger)
 	for i := 0; i < len(eg.slaves); i++ {
 		eg.slaves[i].SetLogger(logger)
+	}
+}
+
+func (eg *EngineGroup) AddHook(hook core.Hook) {
+	eg.Engine.AddHook(hook)
+	for i := 0; i < len(eg.slaves); i++ {
+		eg.slaves[i].AddHook(hook)
 	}
 }
 

@@ -3,7 +3,14 @@ package core
 import (
 	"context"
 	"database/sql"
+
+	"xorm.io/xorm/log"
 )
+
+type Hook interface {
+	BeforeProcess(ctx context.Context, query string, args ...interface{}) (context.Context, error)
+	AfterProcess(logContext *log.LogContext) error
+}
 
 // Queryer represents an interface to query a SQL to get data from database
 type Queryer interface {

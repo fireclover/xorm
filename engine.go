@@ -1287,6 +1287,10 @@ func (engine *Engine) SetSchema(schema string) {
 	engine.dialect.URI().SetSchema(schema)
 }
 
+func (engine *Engine) AddHook(hook core.Hook) {
+	engine.db.AddHook(hook)
+}
+
 // Unscoped always disable struct tag "deleted"
 func (engine *Engine) Unscoped() *Session {
 	session := engine.NewSession()

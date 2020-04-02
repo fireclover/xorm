@@ -6,6 +6,7 @@ package log
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 )
@@ -15,6 +16,7 @@ type LogContext struct {
 	Ctx         context.Context
 	SQL         string        // log content or SQL
 	Args        []interface{} // if it's a SQL, it's the arguments
+	Result      sql.Result
 	ExecuteTime time.Duration
 	Err         error // SQL executed error
 }

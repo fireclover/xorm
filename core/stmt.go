@@ -30,28 +30,21 @@ func (db *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 		i++
 		return "?"
 	})
-
+	logCtx := log.LogContext{
+		Ctx: ctx,
+		SQL: "PREPARE",
+	}
 	start := time.Now()
-	showSQL := db.NeedLogSQL(ctx)
-	if showSQL {
-		db.Logger.BeforeSQL(log.LogContext{
-			Ctx: ctx,
-			SQL: "PREPARE",
-		})
-	}
-	stmt, err := db.DB.PrepareContext(ctx, query)
-	if showSQL {
-		db.Logger.AfterSQL(log.LogContext{
-			Ctx:         ctx,
-			SQL:         "PREPARE",
-			ExecuteTime: time.Now().Sub(start),
-			Err:         err,
-		})
-	}
+	ctx, err := db.beforeProcess(logCtx)
 	if err != nil {
 		return nil, err
 	}
-
+	stmt, err := db.DB.PrepareContext(ctx, query)
+	logCtx.Err = err
+	logCtx.ExecuteTime = time.Now().Sub(start)
+	if err := db.afterProcess(logCtx); err != nil {
+		return nil, err
+	}
 	return &Stmt{stmt, db, names, query}, nil
 }
 
@@ -94,49 +87,40 @@ func (s *Stmt) ExecStruct(st interface{}) (sql.Result, error) {
 }
 
 func (s *Stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+	logCtx := log.LogContext{
+		Ctx:  ctx,
+		SQL:  s.query,
+		Args: args,
+	}
 	start := time.Now()
-	showSQL := s.db.NeedLogSQL(ctx)
-	if showSQL {
-		s.db.Logger.BeforeSQL(log.LogContext{
-			Ctx:  ctx,
-			SQL:  s.query,
-			Args: args,
-		})
+	ctx, err := s.db.beforeProcess(logCtx)
+	if err != nil {
+		return nil, err
 	}
 	res, err := s.Stmt.ExecContext(ctx, args)
-	if showSQL {
-		s.db.Logger.AfterSQL(log.LogContext{
-			Ctx:         ctx,
-			SQL:         s.query,
-			Args:        args,
-			ExecuteTime: time.Now().Sub(start),
-			Err:         err,
-		})
+	logCtx.ExecuteTime = time.Now().Sub(start)
+	logCtx.Err = err
+	if err := s.db.afterProcess(logCtx); err != nil {
+		return nil, err
 	}
-	return res, err
+	return res, nil
 }
 
 func (s *Stmt) QueryContext(ctx context.Context, args ...interface{}) (*Rows, error) {
+	logCtx := log.LogContext{
+		Ctx:  ctx,
+		SQL:  s.query,
+		Args: args,
+	}
 	start := time.Now()
-	showSQL := s.db.NeedLogSQL(ctx)
-	if showSQL {
-		s.db.Logger.BeforeSQL(log.LogContext{
-			Ctx:  ctx,
-			SQL:  s.query,
-			Args: args,
-		})
+	ctx, err := s.db.beforeProcess(logCtx)
+	if err != nil {
+		return nil, err
 	}
 	rows, err := s.Stmt.QueryContext(ctx, args...)
-	if showSQL {
-		s.db.Logger.AfterSQL(log.LogContext{
-			Ctx:         ctx,
-			SQL:         s.query,
-			Args:        args,
-			ExecuteTime: time.Now().Sub(start),
-			Err:         err,
-		})
-	}
-	if err != nil {
+	logCtx.ExecuteTime = time.Now().Sub(start)
+	logCtx.Err = err
+	if err := s.db.afterProcess(logCtx); err != nil {
 		return nil, err
 	}
 	return &Rows{rows, s.db}, nil
