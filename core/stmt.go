@@ -9,9 +9,8 @@ import (
 	"database/sql"
 	"errors"
 	"reflect"
-	"time"
 
-	"xorm.io/xorm/log"
+	"xorm.io/xorm/contexts"
 )
 
 // Stmt reprents a stmt objects
@@ -30,19 +29,14 @@ func (db *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 		i++
 		return "?"
 	})
-	logCtx := log.LogContext{
-		Ctx: ctx,
-		SQL: "PREPARE",
-	}
-	start := time.Now()
-	ctx, err := db.beforeProcess(logCtx)
+	hookCtx := contexts.NewContextHook(ctx, "PREPARE", nil)
+	ctx, err := db.beforeProcess(hookCtx)
 	if err != nil {
 		return nil, err
 	}
 	stmt, err := db.DB.PrepareContext(ctx, query)
-	logCtx.Err = err
-	logCtx.ExecuteTime = time.Now().Sub(start)
-	if err := db.afterProcess(logCtx); err != nil {
+	hookCtx.End(ctx, nil, err)
+	if err := db.afterProcess(hookCtx); err != nil {
 		return nil, err
 	}
 	return &Stmt{stmt, db, names, query}, nil
@@ -87,40 +81,28 @@ func (s *Stmt) ExecStruct(st interface{}) (sql.Result, error) {
 }
 
 func (s *Stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
-	logCtx := log.LogContext{
-		Ctx:  ctx,
-		SQL:  s.query,
-		Args: args,
-	}
-	start := time.Now()
-	ctx, err := s.db.beforeProcess(logCtx)
+	hookCtx := contexts.NewContextHook(ctx, s.query, args)
+	ctx, err := s.db.beforeProcess(hookCtx)
 	if err != nil {
 		return nil, err
 	}
 	res, err := s.Stmt.ExecContext(ctx, args)
-	logCtx.ExecuteTime = time.Now().Sub(start)
-	logCtx.Err = err
-	if err := s.db.afterProcess(logCtx); err != nil {
+	hookCtx.End(ctx, res, err)
+	if err := s.db.afterProcess(hookCtx); err != nil {
 		return nil, err
 	}
 	return res, nil
 }
 
 func (s *Stmt) QueryContext(ctx context.Context, args ...interface{}) (*Rows, error) {
-	logCtx := log.LogContext{
-		Ctx:  ctx,
-		SQL:  s.query,
-		Args: args,
-	}
-	start := time.Now()
-	ctx, err := s.db.beforeProcess(logCtx)
+	hookCtx := contexts.NewContextHook(ctx, s.query, args)
+	ctx, err := s.db.beforeProcess(hookCtx)
 	if err != nil {
 		return nil, err
 	}
 	rows, err := s.Stmt.QueryContext(ctx, args...)
-	logCtx.ExecuteTime = time.Now().Sub(start)
-	logCtx.Err = err
-	if err := s.db.afterProcess(logCtx); err != nil {
+	hookCtx.End(ctx, nil, err)
+	if err := s.db.afterProcess(hookCtx); err != nil {
 		return nil, err
 	}
 	return &Rows{rows, s.db}, nil

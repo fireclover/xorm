@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"xorm.io/xorm/caches"
-	"xorm.io/xorm/core"
+	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/log"
 	"xorm.io/xorm/names"
@@ -79,7 +79,7 @@ func (eg *EngineGroup) Close() error {
 	return nil
 }
 
-// Context returned a group session
+// ContextHook returned a group session
 func (eg *EngineGroup) Context(ctx context.Context) *Session {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
@@ -144,7 +144,7 @@ func (eg *EngineGroup) SetLogger(logger interface{}) {
 	}
 }
 
-func (eg *EngineGroup) AddHook(hook core.Hook) {
+func (eg *EngineGroup) AddHook(hook contexts.Hook) {
 	eg.Engine.AddHook(hook)
 	for i := 0; i < len(eg.slaves); i++ {
 		eg.slaves[i].AddHook(hook)

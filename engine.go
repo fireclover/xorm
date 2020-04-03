@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"xorm.io/xorm/caches"
+	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/internal/utils"
@@ -1287,7 +1288,7 @@ func (engine *Engine) SetSchema(schema string) {
 	engine.dialect.URI().SetSchema(schema)
 }
 
-func (engine *Engine) AddHook(hook core.Hook) {
+func (engine *Engine) AddHook(hook contexts.Hook) {
 	engine.db.AddHook(hook)
 }
 
@@ -1302,7 +1303,7 @@ func (engine *Engine) tbNameWithSchema(v string) string {
 	return dialects.TableNameWithSchema(engine.dialect, v)
 }
 
-// Context creates a session with the context
+// ContextHook creates a session with the context
 func (engine *Engine) Context(ctx context.Context) *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true
