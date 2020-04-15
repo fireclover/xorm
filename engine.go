@@ -147,6 +147,8 @@ func (engine *Engine) SetLogger(logger interface{}) {
 		realLogger = log.NewLoggerAdapter(t)
 	case log.ContextLogger:
 		realLogger = t
+	default:
+		panic("SetLogger got invalid logger, use log.Logger or log.ContextLogger")
 	}
 	engine.logger = realLogger
 	engine.DB().Logger = realLogger
