@@ -5,6 +5,7 @@
 package xorm
 
 import (
+	"database/sql"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -62,6 +63,60 @@ func value2String(rawValue *reflect.Value) (str string, err error) {
 		str = strconv.FormatBool(vv.Bool())
 	case reflect.Complex128, reflect.Complex64:
 		str = fmt.Sprintf("%v", vv.Complex())
+	/* TODO: unsupported types below
+	   case reflect.Map:
+	   case reflect.Ptr:
+	   case reflect.Uintptr:
+	   case reflect.UnsafePointer:
+	   case reflect.Chan, reflect.Func, reflect.Interface:
+	*/
+	default:
+		err = fmt.Errorf("Unsupported struct type %v", vv.Type().Name())
+	}
+	return
+}
+
+func value2Interface(columnType *sql.ColumnType, rawValue *reflect.Value) (inter interface{}, err error) {
+	aa := reflect.TypeOf((*rawValue).Interface())
+	vv := reflect.ValueOf((*rawValue).Interface())
+
+	switch aa.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		inter = vv.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		inter = vv.Uint()
+	case reflect.Float32, reflect.Float64:
+		inter = vv.Float()
+	case reflect.String:
+		inter = vv.String()
+	case reflect.Array, reflect.Slice:
+		switch columnType.DatabaseTypeName() {
+		case schemas.Varchar, schemas.Text, schemas.Char, schemas.NVarchar, schemas.NChar:
+			data := rawValue.Interface().([]byte)
+			return string(data), nil
+		case schemas.Bit, schemas.TinyInt, schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer, schemas.BigInt:
+			data := rawValue.Interface().([]byte)
+			return strconv.ParseInt(string(data), 10, 64)
+		case schemas.Float, schemas.Double, schemas.Decimal:
+			data := rawValue.Interface().([]byte)
+			return strconv.ParseFloat(string(data), 10)
+		case schemas.DateTime, schemas.Time, schemas.TimeStamp:
+			data := rawValue.Interface().([]byte)
+			return string(data), nil
+		default:
+			return rawValue.Interface(), nil
+		}
+	// time type
+	case reflect.Struct:
+		if aa.ConvertibleTo(schemas.TimeType) {
+			inter = vv.Convert(schemas.TimeType).Interface().(time.Time).Format(time.RFC3339Nano)
+		} else {
+			err = fmt.Errorf("Unsupported struct type %v", vv.Type().Name())
+		}
+	case reflect.Bool:
+		inter = vv.Bool()
+	case reflect.Complex128, reflect.Complex64:
+		inter = vv.Complex()
 	/* TODO: unsupported types below
 	   case reflect.Map:
 	   case reflect.Ptr:
@@ -206,6 +261,12 @@ func (session *Session) QuerySliceString(sqlOrArgs ...interface{}) ([][]string, 
 func row2mapInterface(rows *core.Rows, fields []string) (resultsMap map[string]interface{}, err error) {
 	resultsMap = make(map[string]interface{}, len(fields))
 	scanResultContainers := make([]interface{}, len(fields))
+
+	columnTypes, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+
 	for i := 0; i < len(fields); i++ {
 		var scanResultContainer interface{}
 		scanResultContainers[i] = &scanResultContainer
@@ -215,8 +276,20 @@ func row2mapInterface(rows *core.Rows, fields []string) (resultsMap map[string]i
 	}
 
 	for ii, key := range fields {
-		resultsMap[key] = reflect.Indirect(reflect.ValueOf(scanResultContainers[ii])).Interface()
+		rawValue := reflect.Indirect(reflect.ValueOf(scanResultContainers[ii]))
+		if rawValue.Interface() == nil {
+			resultsMap[key] = nil
+			continue
+		}
+
+		if data, err := value2Interface(columnTypes[ii], &rawValue); err == nil {
+			resultsMap[key] = data
+
+		} else {
+			return nil, err
+		}
 	}
+
 	return
 }
 
