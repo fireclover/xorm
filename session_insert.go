@@ -166,6 +166,9 @@ func (session *Session) innerInsertMulti(rowsSlicePtr interface{}) (int64, error
 			}
 			if (col.IsCreated || col.IsUpdated) && session.statement.UseAutoTime {
 				val, t := session.engine.nowTime(col)
+				if at, ok := session.statement.IsAutoTimer(fieldValue, t); ok {
+					val = at
+				}
 				args = append(args, val)
 
 				var colName = col.Name
@@ -539,6 +542,9 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 		if (col.IsCreated || col.IsUpdated) && session.statement.UseAutoTime /*&& isZero(fieldValue.Interface())*/ {
 			// if time is non-empty, then set to auto time
 			val, t := session.engine.nowTime(col)
+			if at, ok := session.statement.IsAutoTimer(fieldValue, t); ok {
+				val = at
+			}
 			args = append(args, val)
 
 			var colName = col.Name

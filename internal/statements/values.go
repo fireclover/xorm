@@ -152,3 +152,44 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 		return fieldValue.Interface(), nil
 	}
 }
+
+// IsAutoTimer a field value of a struct implements AutoTimer interface
+func (statement *Statement) IsAutoTimer(fieldValue reflect.Value, t time.Time) (interface{}, bool) {
+	fieldType := fieldValue.Type()
+	if fieldValue.CanAddr() {
+		if fieldType.Kind() == reflect.Ptr {
+			// log.Println("[IsAutoTimer] is ptr")
+			if !fieldValue.IsZero() {
+				fieldValue = fieldValue.Elem()
+				fieldType = fieldValue.Type()
+			} else {
+				fieldValue = reflect.Zero(fieldType)
+			}
+		}
+
+		// log.Printf("[IsAutoTimer].1 type=%v,kind=%v,addr=%v\n", fieldValue.Type(), fieldValue.Type().Kind(), fieldValue.CanAddr())
+		if fieldValue.CanAddr() {
+			if fieldConvert, ok := fieldValue.Addr().Interface().(convert.AutoTimer); ok {
+				val, err := fieldConvert.AutoTime(t)
+				if err != nil {
+					return nil, false
+				}
+				// log.Println("[IsAutoTimer] Addr.OK")
+				return val, true
+			}
+			// log.Println("[IsAutoTimer] Addr.Fail")
+			return nil, false
+		}
+		// log.Printf("[IsAutoTimer].2 type=%v,addr=%v\n", fieldValue.Type(), fieldValue.CanAddr())
+		if fieldConvert, ok := fieldValue.Interface().(convert.AutoTimer); ok {
+			val, err := fieldConvert.AutoTime(t)
+			if err != nil {
+				return nil, false
+			}
+			// log.Println("[IsAutoTimer] OK")
+			return val, true
+		}
+	}
+	// log.Println("[IsAutoTimer] Fail")
+	return nil, false
+}

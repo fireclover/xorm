@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"xorm.io/xorm/convert"
 	"xorm.io/xorm/schemas"
 )
 
@@ -31,6 +32,15 @@ func setColumnTime(bean interface{}, col *schemas.Column, t time.Time) {
 	v, err := col.ValueOf(bean)
 	if err != nil {
 		return
+	}
+	if v.CanSet() {
+		if fieldConvert, ok := v.Addr().Interface().(convert.AutoTimer); ok {
+			_, err := fieldConvert.AutoTime(t)
+			if err != nil {
+				return
+			}
+			return
+		}
 	}
 	if v.CanSet() {
 		switch v.Type().Kind() {

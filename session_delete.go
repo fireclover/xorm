@@ -201,6 +201,14 @@ func (session *Session) Delete(bean interface{}) (int64, error) {
 		copy(condArgs[1:paramsLen], condArgs[0:paramsLen-1])
 
 		val, t := session.engine.nowTime(deletedColumn)
+		fieldValuePtr, err := deletedColumn.ValueOf(bean)
+		if err != nil {
+			return 0, err
+		}
+		fieldValue := *fieldValuePtr
+		if at, ok := session.statement.IsAutoTimer(fieldValue, t); ok {
+			val = at
+		}
 		condArgs[0] = val
 
 		var colName = deletedColumn.Name

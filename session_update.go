@@ -206,6 +206,14 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 			colNames = append(colNames, session.engine.Quote(table.Updated)+" = ?")
 			col := table.UpdatedColumn()
 			val, t := session.engine.nowTime(col)
+			fieldValuePtr, err := col.ValueOf(bean)
+			if err != nil {
+				return 0, err
+			}
+			fieldValue := *fieldValuePtr
+			if at, ok := session.statement.IsAutoTimer(fieldValue, t); ok {
+				val = at
+			}
 			args = append(args, val)
 
 			var colName = col.Name
@@ -505,6 +513,14 @@ func (session *Session) genUpdateColumns(bean interface{}) ([]string, []interfac
 		if col.IsUpdated && session.statement.UseAutoTime /*&& isZero(fieldValue.Interface())*/ {
 			// if time is non-empty, then set to auto time
 			val, t := session.engine.nowTime(col)
+			fieldValuePtr, err := col.ValueOf(bean)
+			if err != nil {
+				return nil, nil, err
+			}
+			fieldValue := *fieldValuePtr
+			if at, ok := session.statement.IsAutoTimer(fieldValue, t); ok {
+				val = at
+			}
 			args = append(args, val)
 
 			var colName = col.Name
