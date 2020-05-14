@@ -96,11 +96,18 @@ func TestAutoTimerStructUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	// update
 	item.Description = "updated"
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	_, err = testEngine.ID(id).Update(&item)
 	assert.NoError(t, err)
-	assert.Greater(t, item.UpdatedAt, item.CreatedAt)
-	assert.Nil(t, item.DeletedAt)
+	// get
+	var result AutoTimerStruct
+	has, err := testEngine.ID(id).Unscoped().Get(&result)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.NotEmpty(t, result.CreatedAt)
+	assert.NotEmpty(t, result.UpdatedAt)
+	assert.Nil(t, result.DeletedAt)
+	assert.Greater(t, int64(result.UpdatedAt), int64(result.CreatedAt))
 }
 
 func TestAutoTimerStructDelete(t *testing.T) {
@@ -119,7 +126,7 @@ func TestAutoTimerStructDelete(t *testing.T) {
 	assert.NoError(t, err)
 	// get
 	var result AutoTimerStruct
-	has, err := testEngine.ID(id).Get(&result)
+	has, err := testEngine.ID(id).Unscoped().Get(&result)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.NotEmpty(t, result.CreatedAt)
