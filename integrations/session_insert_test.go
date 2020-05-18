@@ -7,8 +7,10 @@ package integrations
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
+	"xorm.io/xorm/schemas"
 
 	"xorm.io/xorm"
 
@@ -45,6 +47,26 @@ func TestInsertMulti(t *testing.T) {
 		append([]TestMulti{}, TestMulti{1, "test1"}, TestMulti{2, "test2"}, TestMulti{3, "test3"}))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 3, num)
+
+	if schemas.DBType(strings.ToLower(dbType)) == schemas.POSTGRES {
+		type TestMultiPG struct {
+			Id   int64  `xorm:"int(11) pk"`
+			Name string `xorm:"varchar(255)"`
+		}
+		assert.NoError(t, testEngine.Sync2(new(TestMultiPG)))
+
+		var data []TestMultiPG
+		for i := 1; i < 655360; i++ {
+			data = append(data, TestMultiPG{
+				Id:   int64(i),
+				Name: fmt.Sprintf("test %d", i),
+			})
+		}
+
+		num, err := insertMultiDatas(655359, data)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 655359, num)
+	}
 }
 
 func insertMultiDatas(step int, datas interface{}) (num int64, err error) {
