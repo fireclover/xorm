@@ -98,7 +98,7 @@ func b2s(b []byte) string {
 }
 
 func snakeCasedNameNew(name string) string {
-	newstr := make([]byte, 0)
+	newstr := make([]byte, 0, len(name))
 	for i := 0; i < len(name); i++ {
 		c := name[i]
 		if isUpper := 'A' <= c && c <= 'Z'; isUpper {
