@@ -7,6 +7,7 @@ package names
 import (
 	"strings"
 	"sync"
+	"unsafe"
 )
 
 // Mapper represents a name convertation between struct's fields name and table's column name
@@ -90,6 +91,26 @@ func snakeCasedName(name string) string {
 	}
 
 	return string(newstr)
+}
+
+func b2s(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+func snakeCasedNameNew(name string) string {
+	newstr := make([]byte, 0)
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if isUpper := 'A' <= c && c <= 'Z'; isUpper {
+			if i > 0 {
+				newstr = append(newstr, '_')
+			}
+			c += 'a' - 'A'
+		}
+		newstr = append(newstr, c)
+	}
+
+	return b2s(newstr)
 }
 
 func (mapper SnakeMapper) Obj2Table(name string) string {
