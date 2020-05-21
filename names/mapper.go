@@ -78,27 +78,12 @@ func (m SameMapper) Table2Obj(t string) string {
 type SnakeMapper struct {
 }
 
-func snakeCasedName(name string) string {
-	newstr := make([]rune, 0)
-	for idx, chr := range name {
-		if isUpper := 'A' <= chr && chr <= 'Z'; isUpper {
-			if idx > 0 {
-				newstr = append(newstr, '_')
-			}
-			chr -= ('A' - 'a')
-		}
-		newstr = append(newstr, chr)
-	}
-
-	return string(newstr)
-}
-
 func b2s(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-func snakeCasedNameNew(name string) string {
-	newstr := make([]byte, 0, len(name))
+func snakeCasedName(name string) string {
+	newstr := make([]byte, 0, len(name)+1)
 	for i := 0; i < len(name); i++ {
 		c := name[i]
 		if isUpper := 'A' <= c && c <= 'Z'; isUpper {
