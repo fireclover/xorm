@@ -63,6 +63,9 @@ func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...inte
 	if session.statement.LimitN != nil {
 		session.statement.LimitN = nil
 	}
+	if session.statement.Start > 0 {
+		session.statement.Start = 0
+	}
 
 	// session has stored the conditions so we use `unscoped` to avoid duplicated condition.
 	return session.Unscoped().Count(reflect.New(sliceElementType).Interface())
