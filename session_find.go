@@ -60,6 +60,9 @@ func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...inte
 	if session.statement.OrderStr != "" {
 		session.statement.OrderStr = ""
 	}
+	if session.statement.LimitN != nil {
+		session.statement.LimitN = nil
+	}
 
 	// session has stored the conditions so we use `unscoped` to avoid duplicated condition.
 	return session.Unscoped().Count(reflect.New(sliceElementType).Interface())
