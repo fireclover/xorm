@@ -83,7 +83,7 @@ func (session *Session) cacheDelete(table *schemas.Table, tableName, sqlStr stri
 }
 
 // Delete records, bean's non-empty fields are conditions
-func (session *Session) Delete(bean interface{}) (int64, error) {
+func (session *Session) Delete(beans ...interface{}) (int64, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -92,20 +92,31 @@ func (session *Session) Delete(bean interface{}) (int64, error) {
 		return 0, session.statement.LastError
 	}
 
-	if err := session.statement.SetRefBean(bean); err != nil {
-		return 0, err
+	var (
+		condSQL  string
+		condArgs []interface{}
+		err      error
+	)
+	if len(beans) > 0 {
+		bean := beans[0]
+		if err = session.statement.SetRefBean(bean); err != nil {
+			return 0, err
+		}
+
+		executeBeforeClosures(session, bean)
+
+		if processor, ok := interface{}(bean).(BeforeDeleteProcessor); ok {
+			processor.BeforeDelete()
+		}
+
+		condSQL, condArgs, err = session.statement.GenConds(bean)
+	} else {
+		condSQL, condArgs, err = session.statement.GenCondSQL(session.statement.Conds())
 	}
-
-	executeBeforeClosures(session, bean)
-
-	if processor, ok := interface{}(bean).(BeforeDeleteProcessor); ok {
-		processor.BeforeDelete()
-	}
-
-	condSQL, condArgs, err := session.statement.GenConds(bean)
 	if err != nil {
 		return 0, err
 	}
+
 	pLimitN := session.statement.LimitN
 	if len(condSQL) == 0 && (pLimitN == nil || *pLimitN == 0) {
 		return 0, ErrNeedDeletedCond
@@ -230,8 +241,8 @@ func (session *Session) Delete(bean interface{}) (int64, error) {
 		}
 	} else {
 		lenAfterClosures := len(session.afterClosures)
-		if lenAfterClosures > 0 {
-			if value, has := session.afterDeleteBeans[bean]; has && value != nil {
+		if lenAfterClosures > 0 && len(beans) > 0 {
+			if value, has := session.afterDeleteBeans[beans[0]]; has && value != nil {
 				*value = append(*value, session.afterClosures...)
 			} else {
 				afterClosures := make([]func(interface{}), lenAfterClosures)
