@@ -188,6 +188,24 @@ func (db *mysql) Init(uri *URI) error {
 	return db.Base.Init(db, uri)
 }
 
+func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (string, error) {
+	rows, err := queryer.QueryContext(ctx, "SELECT VERSION()")
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var version string
+	if !rows.Next() {
+		return "", errors.New("Unknow version")
+	}
+
+	if err := rows.Scan(&version); err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
 func (db *mysql) SetParams(params map[string]string) {
 	rowFormat, ok := params["rowFormat"]
 	if ok {

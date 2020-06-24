@@ -788,6 +788,24 @@ func (db *postgres) Init(uri *URI) error {
 	return db.Base.Init(db, uri)
 }
 
+func (db *postgres) Version(ctx context.Context, queryer core.Queryer) (string, error) {
+	rows, err := queryer.QueryContext(ctx, "SELECT version()")
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var version string
+	if !rows.Next() {
+		return "", errors.New("Unknow version")
+	}
+
+	if err := rows.Scan(&version); err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
 func (db *postgres) getSchema() string {
 	if db.uri.Schema != "" {
 		return db.uri.Schema

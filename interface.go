@@ -79,6 +79,7 @@ type EngineInterface interface {
 
 	Before(func(interface{})) *Session
 	Charset(charset string) *Session
+	DBVersion() (string, error)
 	ClearCache(...interface{}) error
 	Context(context.Context) *Session
 	CreateTables(...interface{}) error
