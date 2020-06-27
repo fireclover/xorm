@@ -8,9 +8,9 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
-	"regexp"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 
 	"xorm.io/xorm/internal/utils"

@@ -333,14 +333,14 @@ func TestSync2_Default(t *testing.T) {
 
 func TestDropTableCols(t *testing.T) {
 	type TestDropTableCols struct {
-		Id       int64
-		UserId   int64  `xorm:"default(1)"`
-		ToDrop   bool   `xorm:"default(true)"`
-		Name     string `xorm:"default('my_name')"`
+		Id     int64
+		UserId int64  `xorm:"default(1)"`
+		ToDrop bool   `xorm:"default(true)"`
+		Name   string `xorm:"default('my_name')"`
 	}
 
 	assert.NoError(t, prepareEngine())
 	assert.NoError(t, testEngine.Sync2(new(TestDropTableCols)))
-	assert.NoError(t, testEngine.DropTableCols(new(TestDropTableCols),"name", "to_drop"))
+	assert.NoError(t, testEngine.DropTableCols(new(TestDropTableCols), "name", "to_drop"))
 	//ToDo: TEST if cols still exist
 }

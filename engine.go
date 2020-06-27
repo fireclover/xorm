@@ -1020,11 +1020,11 @@ func (engine *Engine) DropTableCols(bean interface{}, cols ...string) error {
 		return err
 	}
 
-		err = session.dropTableCols(bean, cols)
-		if err != nil {
-			session.Rollback()
-			return err
-		}
+	err = session.dropTableCols(bean, cols)
+	if err != nil {
+		session.Rollback()
+		return err
+	}
 	return session.Commit()
 }
 
