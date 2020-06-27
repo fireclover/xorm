@@ -140,8 +140,8 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 
 	// TODO: This will not work if there are foreign keys
 
-	switch session.engine.dialect.DBType() {
-	case core.SQLITE:
+	switch session.engine.dialect.URI().DBType {
+	case schemas.SQLITE:
 		// First drop the indexes on the columns
 		res, errIndex := session.Query(fmt.Sprintf("PRAGMA index_list(`%s`)", tableName))
 		if errIndex != nil {
@@ -216,7 +216,7 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `new_%s_new` RENAME TO `%s`", tableName, tableName)); err != nil {
 			return err
 		}
-	case core.POSTGRES:
+	case schemas.POSTGRES:
 		columns := ""
 		for _, col := range cols {
 			if columns != "" {
@@ -227,7 +227,7 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `%s` %s", tableName, columns)); err != nil {
 			return fmt.Errorf("Drop table `%s` columns %v: %v", tableName, cols, err)
 		}
-	case core.MYSQL:
+	case schemas.MYSQL:
 		// Drop indexes on columns first
 		sql := fmt.Sprintf("SHOW INDEX FROM %s WHERE column_name IN ('%s')", tableName, strings.Join(cols, "','"))
 		res, err := session.Query(sql)
@@ -255,7 +255,7 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `%s` %s", tableName, columns)); err != nil {
 			return fmt.Errorf("Drop table `%s` columns %v: %v", tableName, cols, err)
 		}
-	case core.MSSQL:
+	case schemas.MSSQL:
 		columns := ""
 		for _, col := range cols {
 			if columns != "" {
@@ -282,7 +282,7 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 		}
 
 		return session.Commit()
-	case core.ORACLE:
+	case schemas.ORACLE:
 		return fmt.Errorf("not implemented for oracle")
 	default:
 		return fmt.Errorf("unrecognized DB")
