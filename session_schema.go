@@ -216,6 +216,7 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `new_%s_new` RENAME TO `%s`", tableName, tableName)); err != nil {
 			return err
 		}
+
 	case schemas.POSTGRES:
 		columns := ""
 		for _, col := range cols {
@@ -227,6 +228,7 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `%s` %s", tableName, columns)); err != nil {
 			return fmt.Errorf("Drop table `%s` columns %v: %v", tableName, cols, err)
 		}
+
 	case schemas.MYSQL:
 		// Drop indexes on columns first
 		sql := fmt.Sprintf("SHOW INDEX FROM %s WHERE column_name IN ('%s')", tableName, strings.Join(cols, "','"))
@@ -255,6 +257,7 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 		if _, err := session.Exec(fmt.Sprintf("ALTER TABLE `%s` %s", tableName, columns)); err != nil {
 			return fmt.Errorf("Drop table `%s` columns %v: %v", tableName, cols, err)
 		}
+
 	case schemas.MSSQL:
 		columns := ""
 		for _, col := range cols {
@@ -281,9 +284,9 @@ func (session *Session) dropTableCols(beanOrTableName interface{}, cols []string
 			return fmt.Errorf("Drop table `%s` columns %v: %v", tableName, cols, err)
 		}
 
-		return session.Commit()
 	case schemas.ORACLE:
 		return fmt.Errorf("not implemented for oracle")
+
 	default:
 		return fmt.Errorf("unrecognized DB")
 	}

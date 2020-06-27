@@ -340,8 +340,8 @@ func TestDropTableCols(t *testing.T) {
 	}
 
 	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestDropTableCols))
 
-	assert.NoError(t, testEngine.Sync2(new(TestDropTableCols)))
 	schema, err := testEngine.TableInfo(new(TestDropTableCols))
 	assert.NoError(t, err)
 	assert.NotNil(t, schema.GetColumn("to_drop"))
