@@ -339,8 +339,15 @@ func TestDropTableCols(t *testing.T) {
 		Name   string `xorm:"default('my_name')"`
 	}
 
-	assert.NoError(t, prepareEngine())
+	assert.NoError(t, PrepareEngine())
+
 	assert.NoError(t, testEngine.Sync2(new(TestDropTableCols)))
+	schema, err := testEngine.TableInfo(new(TestDropTableCols))
+	assert.NoError(t, err)
+	assert.NotNil(t, schema.GetColumn("to_drop"))
+
 	assert.NoError(t, testEngine.DropTableCols(new(TestDropTableCols), "name", "to_drop"))
-	//ToDo: TEST if cols still exist
+	schema, err = testEngine.TableInfo(new(TestDropTableCols))
+	assert.NoError(t, err)
+	assert.Nil(t, schema.GetColumn("to_drop"))
 }
