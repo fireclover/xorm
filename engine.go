@@ -417,7 +417,8 @@ func formatColumnValue(dstDialect dialects.Dialect, d interface{}, col *schemas.
 		return "NULL"
 	}
 
-	if dq, ok := d.(bool); ok && dstDialect.URI().DBType == schemas.SQLITE {
+	if dq, ok := d.(bool); ok && (dstDialect.URI().DBType == schemas.SQLITE ||
+		dstDialect.URI().DBType == schemas.MSSQL) {
 		if dq {
 			return "1"
 		}
