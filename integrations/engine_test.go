@@ -101,13 +101,15 @@ func TestDump(t *testing.T) {
 
 	assertSync(t, new(TestDumpStruct))
 
-	testEngine.Insert([]TestDumpStruct{
+	cnt, err := testEngine.Insert([]TestDumpStruct{
 		{Name: "1", IsMan: true},
 		{Name: "2\n"},
 		{Name: "3;"},
 		{Name: "4\n;\n''"},
 		{Name: "5'\n"},
 	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 5, cnt)
 
 	fp := fmt.Sprintf("%v.sql", testEngine.Dialect().URI().DBType)
 	os.Remove(fp)
@@ -118,7 +120,7 @@ func TestDump(t *testing.T) {
 	sess := testEngine.NewSession()
 	defer sess.Close()
 	assert.NoError(t, sess.Begin())
-	_, err := sess.ImportFile(fp)
+	_, err = sess.ImportFile(fp)
 	assert.NoError(t, err)
 	assert.NoError(t, sess.Commit())
 

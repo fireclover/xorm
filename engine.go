@@ -424,10 +424,15 @@ func formatColumnValue(dstDialect dialects.Dialect, d interface{}, col *schemas.
 		return "0"
 	}
 
-	if col.SQLType.IsText() || col.SQLType.IsTime() {
+	if col.SQLType.IsText() {
+		var v = fmt.Sprintf("%s", d)
+		return "'" + strings.Replace(v, "'", "''", -1) + "'"
+	} else if col.SQLType.IsTime() {
 		var v = fmt.Sprintf("%s", d)
 		if strings.HasSuffix(v, " +0000 UTC") {
 			return fmt.Sprintf("'%s'", v[0:len(v)-len(" +0000 UTC")])
+		} else if strings.HasSuffix(v, " +0000 +0000") {
+			return fmt.Sprintf("'%s'", v[0:len(v)-len(" +0000 +0000")])
 		}
 		return "'" + strings.Replace(v, "'", "''", -1) + "'"
 	} else if col.SQLType.IsBlob() {
