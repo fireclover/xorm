@@ -101,13 +101,15 @@ func newSessionID() string {
 
 func newSession(engine *Engine) *Session {
 	var ctx context.Context
+	var sessionID string
 	if engine.logSessionID {
-		ctx = context.WithValue(engine.defaultContext, log.SessionIDKey, newSessionID())
+		sessionID = newSessionID()
+		ctx = context.WithValue(engine.defaultContext, log.SessionIDKey, sessionID)
 	} else {
 		ctx = engine.defaultContext
 	}
 
-	return &Session{
+	session := &Session{
 		ctx:    ctx,
 		engine: engine,
 		tx:     nil,
@@ -136,6 +138,10 @@ func newSession(engine *Engine) *Session {
 
 		sessionType: engineSession,
 	}
+	if engine.logSessionID {
+		ctx = context.WithValue(engine.defaultContext, sessionID, session)
+	}
+	return session
 }
 
 // Close release the connection from pool
