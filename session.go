@@ -139,7 +139,7 @@ func newSession(engine *Engine) *Session {
 		sessionType: engineSession,
 	}
 	if engine.logSessionID {
-		ctx = context.WithValue(engine.defaultContext, sessionID, session)
+		session.ctx = context.WithValue(session.ctx, sessionID, session)
 	}
 	return session
 }
@@ -169,6 +169,10 @@ func (session *Session) Close() error {
 
 func (session *Session) db() *core.DB {
 	return session.engine.db
+}
+
+func (session *Session) Engine() *Engine {
+	return session.engine
 }
 
 func (session *Session) getQueryer() core.Queryer {
