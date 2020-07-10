@@ -803,6 +803,16 @@ func (db *postgres) Version(ctx context.Context, queryer core.Queryer) (string, 
 	if err := rows.Scan(&version); err != nil {
 		return "", err
 	}
+
+	// 	Postgress: 9.5.22 on x86_64-pc-linux-gnu (Debian 9.5.22-1.pgdg90+1), compiled by gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516, 64-bit
+	// CockroachDB CCL v19.2.4 (x86_64-unknown-linux-gnu, built
+	if strings.HasPrefix(version, "CockroachDB") {
+
+	} else {
+		versions := strings.Split(version, " ")
+		version = versions[0]
+	}
+
 	return version, nil
 }
 

@@ -203,6 +203,9 @@ func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (string, err
 	if err := rows.Scan(&version); err != nil {
 		return "", err
 	}
+
+	// TiDB: 5.7.25-TiDB-v3.0.3
+
 	return version, nil
 }
 
