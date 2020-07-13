@@ -101,10 +101,8 @@ func newSessionID() string {
 
 func newSession(engine *Engine) *Session {
 	var ctx context.Context
-	var sessionID string
 	if engine.logSessionID {
-		sessionID = newSessionID()
-		ctx = context.WithValue(engine.defaultContext, log.SessionIDKey, sessionID)
+		ctx = context.WithValue(engine.defaultContext, log.SessionIDKey,  newSessionID())
 	} else {
 		ctx = engine.defaultContext
 	}
@@ -139,7 +137,7 @@ func newSession(engine *Engine) *Session {
 		sessionType: engineSession,
 	}
 	if engine.logSessionID {
-		session.ctx = context.WithValue(session.ctx, sessionID, session)
+		session.ctx = context.WithValue(session.ctx, log.SessionKey, session)
 	}
 	return session
 }
