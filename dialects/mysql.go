@@ -335,7 +335,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 			col.Nullable = true
 		}
 
-		if colDefault != nil {
+		if colDefault != nil && *colDefault != "NULL" {
 			col.Default = *colDefault
 			col.DefaultIsEmpty = false
 		} else {
@@ -404,9 +404,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		}
 
 		if !col.DefaultIsEmpty {
-			if col.SQLType.IsText() {
-				col.Default = "'" + col.Default + "'"
-			} else if col.SQLType.IsTime() && col.Default != "CURRENT_TIMESTAMP" {
+			if col.SQLType.IsTime() && col.Default != "CURRENT_TIMESTAMP" {
 				col.Default = "'" + col.Default + "'"
 			}
 		}
