@@ -280,7 +280,7 @@ services:
 
 - name: mariadb
   pull: default
-  image: mariadb:10.5
+  image: mariadb:10.4
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
