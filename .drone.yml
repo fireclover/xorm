@@ -279,16 +279,16 @@ services:
     - pull_request
 
 - name: mariadb
-    pull: default
-    image: mariadb:10.5
-    environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: yes
-      MYSQL_DATABASE: xorm_test
-    when:
-      event:
-      - push
-      - tag
-      - pull_request
+  pull: default
+  image: mariadb:10.5
+  environment:
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    MYSQL_DATABASE: xorm_test
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
 
 - name: pgsql
   pull: default
