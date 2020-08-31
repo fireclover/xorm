@@ -317,7 +317,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		" `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT`, " +
 		alreadyQuoted + " AS NEEDS_QUOTE " +
 		"FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ?" +
-		" ORDER BY `INFORMATION_SCHEMA`.`COLUMNS`.ORDINAL_POSITION"
+		" ORDER BY `COLUMNS`.ORDINAL_POSITION"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
