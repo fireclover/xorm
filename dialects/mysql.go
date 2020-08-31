@@ -307,12 +307,12 @@ func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
 
 func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
 	args := []interface{}{db.uri.DBName, tableName}
-	alreadyQuoted := `(INSTR(VERSION(), 'maria') > 0 &&
-		(SUBSTRING_INDEX(VERSION(), '.', 1) > 10 ||
-			(SUBSTRING_INDEX(VERSION(), '.', 1) = 10 &&
-				(SUBSTRING_INDEX(SUBSTRING(VERSION(), 4), '.', 1) > 2 ||
-					(SUBSTRING_INDEX(SUBSTRING(VERSION(), 4), '.', 1) = 2 &&
-						SUBSTRING_INDEX(SUBSTRING(VERSION(), 6), '-', 1) >= 7)))))`
+	alreadyQuoted := "(INSTR(VERSION(), 'maria') > 0 && " +
+		"(SUBSTRING_INDEX(VERSION(), '.', 1) > 10 || " +
+		"(SUBSTRING_INDEX(VERSION(), '.', 1) = 10 && " +
+		"(SUBSTRING_INDEX(SUBSTRING(VERSION(), 4), '.', 1) > 2 || " +
+		"(SUBSTRING_INDEX(SUBSTRING(VERSION(), 4), '.', 1) = 2 && " +
+		"SUBSTRING_INDEX(SUBSTRING(VERSION(), 6), '-', 1) >= 7)))))"
 	s := "SELECT `COLUMN_NAME`, `IS_NULLABLE`, `COLUMN_DEFAULT`, `COLUMN_TYPE`," +
 		" `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT`, " +
 		alreadyQuoted + " AS NEEDS_QUOTE " +
