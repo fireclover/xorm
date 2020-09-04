@@ -102,6 +102,9 @@ func TestSyncTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
 	assert.EqualValues(t, "sync_table1", tables[0].Name)
+	tableInfo, err := testEngine.TableInfo(new(SyncTable1))
+	assert.NoError(t, err)
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 
 	assert.NoError(t, testEngine.Sync2(new(SyncTable2)))
 
@@ -109,6 +112,9 @@ func TestSyncTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
 	assert.EqualValues(t, "sync_table1", tables[0].Name)
+	tableInfo, err = testEngine.TableInfo(new(SyncTable2))
+	assert.NoError(t, err)
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 
 	assert.NoError(t, testEngine.Sync2(new(SyncTable3)))
 
@@ -116,6 +122,9 @@ func TestSyncTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
 	assert.EqualValues(t, "sync_table1", tables[0].Name)
+	tableInfo, err = testEngine.TableInfo(new(SyncTable3))
+	assert.NoError(t, err)
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 }
 
 func TestSyncTable2(t *testing.T) {
