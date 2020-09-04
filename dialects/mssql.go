@@ -229,7 +229,7 @@ func (db *mssql) SetParams(params map[string]string) {
 		var t = strings.ToUpper(defaultVarchar)
 		switch t {
 		case "NVARCHAR", "VARCHAR":
-			db.defaultVarchar = defaultVarchar
+			db.defaultVarchar = t
 		default:
 			db.defaultVarchar = "VARCHAR"
 		}
