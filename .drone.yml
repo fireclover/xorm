@@ -195,7 +195,7 @@ steps:
   image: golang:1.12
   depends_on:
     - test-mssql
-    environment:
+  environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
     TEST_MSSQL_HOST: mssql
