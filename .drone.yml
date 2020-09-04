@@ -193,7 +193,9 @@ steps:
 - name: test-mssql-nvarchar
   pull: default
   image: golang:1.12
-  environment:
+  depends_on:
+    - test-mssql
+    environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
     TEST_MSSQL_HOST: mssql
