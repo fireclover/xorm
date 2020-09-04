@@ -424,8 +424,14 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 			col.SQLType = schemas.SQLType{Name: schemas.TimeStampz, DefaultLength: 0, DefaultLength2: 0}
 		case "NVARCHAR":
 			col.SQLType = schemas.SQLType{Name: schemas.NVarchar, DefaultLength: 0, DefaultLength2: 0}
+			col.Length /= 2
+			col.Length2 /= 2
 		case "IMAGE":
 			col.SQLType = schemas.SQLType{Name: schemas.VarBinary, DefaultLength: 0, DefaultLength2: 0}
+		case "NCHAR":
+			col.Length /= 2
+			col.Length2 /= 2
+			fallthrough
 		default:
 			if _, ok := schemas.SqlTypes[ct]; ok {
 				col.SQLType = schemas.SQLType{Name: ct, DefaultLength: 0, DefaultLength2: 0}
