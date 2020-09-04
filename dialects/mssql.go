@@ -285,7 +285,7 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 	case schemas.MediumInt:
 		res = schemas.Int
 	case schemas.Text, schemas.MediumText, schemas.TinyText, schemas.LongText, schemas.Json:
-		res = schemas.Varchar + "(MAX)"
+		res = db.defaultVarchar + "(MAX)"
 	case schemas.Double:
 		res = schemas.Real
 	case schemas.Uuid:
