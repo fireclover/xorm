@@ -190,6 +190,28 @@ steps:
     - push
     - pull_request
 
+- name: test-mssql-nvarchar
+  pull: default
+  image: golang:1.12
+  environment:
+    GO111MODULE: "on"
+    GOPROXY: "https://goproxy.cn"
+    TEST_MSSQL_HOST: mssql
+    TEST_MSSQL_DBNAME: xorm_test
+    TEST_MSSQL_USERNAME: sa
+    TEST_MSSQL_PASSWORD: "yourStrong(!)Password"
+    TEST_MSSQL_DEFAULT_VARCHAR: nvarchar
+    TEST_MSSQL_DEFAULT_CHAR: nchar
+  commands:
+  - make test-mssql
+  - TEST_CACHE_ENABLE=true make test-mssql
+  - TEST_QUOTE_POLICY=reserved make test-mssql
+  - TEST_MSSQL_DEFAULT_VARCHAR=NVARCHAR TEST_MSSQL_DEFAULT_CHAR=NCHAR make test-mssql
+  when:
+    event:
+    - push
+    - pull_request
+
 - name: test-tidb
   pull: default
   image: golang:1.12
