@@ -152,6 +152,61 @@ func TestSyncTable2(t *testing.T) {
 	assert.EqualValues(t, colMapper.Obj2Table("NewCol"), tables[0].Columns()[3].Name)
 }
 
+type SyncTable4 struct {
+	Id   int64
+	Name string
+	Text string `xorm:"TEXT"`
+	Char byte   `xorm:"CHAR"`
+}
+
+func (s *SyncTable4) TableName() string {
+	return "sync_table1"
+}
+
+func TestSyncTable3(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	assert.NoError(t, testEngine.Sync2(new(SyncTable4)))
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(tables))
+	assert.EqualValues(t, "sync_table1", tables[0].Name)
+	tableInfo, err := testEngine.TableInfo(new(SyncTable4))
+	assert.NoError(t, err)
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
+
+	if *doNVarcharTest {
+		var oldDefaultVarchar string
+		var oldDefaultChar string
+		oldDefaultVarchar, *defaultVarchar = *defaultVarchar, "nvarchar"
+		oldDefaultChar, *defaultChar = *defaultChar, "nchar"
+		testEngine.Dialect().SetParams(map[string]string{
+			"DEFAULT_VARCHAR": *defaultVarchar,
+			"DEFAULT_CHAR":    *defaultChar,
+		})
+		defer func() {
+			*defaultVarchar = oldDefaultVarchar
+			*defaultChar = oldDefaultChar
+			testEngine.Dialect().SetParams(map[string]string{
+				"DEFAULT_VARCHAR": *defaultVarchar,
+				"DEFAULT_CHAR":    *defaultChar,
+			})
+		}()
+		assert.NoError(t, PrepareEngine())
+
+		assert.NoError(t, testEngine.Sync2(new(SyncTable4)))
+
+		tables, err := testEngine.DBMetas()
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, len(tables))
+		assert.EqualValues(t, "sync_table1", tables[0].Name)
+		tableInfo, err := testEngine.TableInfo(new(SyncTable4))
+		assert.NoError(t, err)
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
+	}
+}
+
 func TestIsTableExist(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
