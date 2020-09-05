@@ -169,6 +169,8 @@ func TestSyncTable3(t *testing.T) {
 	tableInfo, err := testEngine.TableInfo(new(SyncTable5))
 	assert.NoError(t, err)
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("text")), testEngine.Dialect().SQLType(tableInfo.GetColumn("text")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("char")))
 
 	if *doNVarcharTest {
 		var oldDefaultVarchar string
@@ -196,6 +198,8 @@ func TestSyncTable3(t *testing.T) {
 		tableInfo, err := testEngine.TableInfo(new(SyncTable5))
 		assert.NoError(t, err)
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("text")), testEngine.Dialect().SQLType(tableInfo.GetColumn("text")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("char")))
 	}
 }
 
