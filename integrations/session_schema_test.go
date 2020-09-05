@@ -157,7 +157,7 @@ func TestSyncTable3(t *testing.T) {
 		Id   int64
 		Name string
 		Text string `xorm:"TEXT"`
-		Char byte   `xorm:"CHAR"`
+		Char byte   `xorm:"CHAR(1)"`
 	}
 
 	assert.NoError(t, PrepareEngine())
@@ -197,9 +197,9 @@ func TestSyncTable3(t *testing.T) {
 		assert.NoError(t, err)
 		tableInfo, err := testEngine.TableInfo(new(SyncTable5))
 		assert.NoError(t, err)
-		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
-		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("text")), testEngine.Dialect().SQLType(tableInfo.GetColumn("text")))
-		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("char")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("name")), testEngine.Dialect().SQLType(tables[0].GetColumn("name")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("text")), testEngine.Dialect().SQLType(tables[0].GetColumn("text")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("char")), testEngine.Dialect().SQLType(tables[0].GetColumn("char")))
 	}
 }
 
