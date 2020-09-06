@@ -170,11 +170,11 @@ func TestSyncTable3(t *testing.T) {
 	assert.NoError(t, err)
 	tableInfo, err := testEngine.TableInfo(new(SyncTable5))
 	assert.NoError(t, err)
-	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
-	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("text")), testEngine.Dialect().SQLType(tableInfo.GetColumn("text")))
-	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("char")))
-	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")))
-	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("ten_varchar")), testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_varchar")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("name")), testEngine.Dialect().SQLType(tables[0].GetColumn("name")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("text")), testEngine.Dialect().SQLType(tables[0].GetColumn("text")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("char")), testEngine.Dialect().SQLType(tables[0].GetColumn("char")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_var_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_var_char")))
 
 	if *doNVarcharTest {
 		var oldDefaultVarchar string
@@ -204,8 +204,8 @@ func TestSyncTable3(t *testing.T) {
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("name")), testEngine.Dialect().SQLType(tables[0].GetColumn("name")))
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("text")), testEngine.Dialect().SQLType(tables[0].GetColumn("text")))
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("char")), testEngine.Dialect().SQLType(tables[0].GetColumn("char")))
-		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")))
-		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("ten_varchar")), testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_varchar")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_var_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_var_char")))
 	}
 }
 
