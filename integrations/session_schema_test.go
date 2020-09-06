@@ -154,10 +154,12 @@ func TestSyncTable2(t *testing.T) {
 
 func TestSyncTable3(t *testing.T) {
 	type SyncTable5 struct {
-		Id   int64
-		Name string
-		Text string `xorm:"TEXT"`
-		Char byte   `xorm:"CHAR(1)"`
+		Id         int64
+		Name       string
+		Text       string   `xorm:"TEXT"`
+		Char       byte     `xorm:"CHAR(1)"`
+		TenChar    [10]byte `xorm:"CHAR(10)"`
+		TenVarChar string   `xorm:"VARCHAR(10)"`
 	}
 
 	assert.NoError(t, PrepareEngine())
@@ -171,6 +173,8 @@ func TestSyncTable3(t *testing.T) {
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("text")), testEngine.Dialect().SQLType(tableInfo.GetColumn("text")))
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("char")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("ten_varchar")), testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_varchar")))
 
 	if *doNVarcharTest {
 		var oldDefaultVarchar string
@@ -200,6 +204,8 @@ func TestSyncTable3(t *testing.T) {
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("name")), testEngine.Dialect().SQLType(tables[0].GetColumn("name")))
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("text")), testEngine.Dialect().SQLType(tables[0].GetColumn("text")))
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("char")), testEngine.Dialect().SQLType(tables[0].GetColumn("char")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")), testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("ten_varchar")), testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_varchar")))
 	}
 }
 
