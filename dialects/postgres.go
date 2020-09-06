@@ -857,6 +857,10 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 		res = schemas.Real
 	case schemas.TinyText, schemas.MediumText, schemas.LongText:
 		res = schemas.Text
+	case schemas.Char:
+		res = schemas.Varchar
+	case schemas.NChar:
+		res = schemas.Varchar
 	case schemas.NVarchar:
 		res = schemas.Varchar
 	case schemas.Uuid:
