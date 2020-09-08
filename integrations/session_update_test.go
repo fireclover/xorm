@@ -188,6 +188,9 @@ func TestForUpdate(t *testing.T) {
 
 	// lock is NOT used
 	wg.Add(1)
+
+	wg2 := &sync.WaitGroup{}
+	wg2.Add(1)
 	go func() {
 		f3 := new(ForUpdate)
 		session3.Where("id = ?", 1)
@@ -201,10 +204,10 @@ func TestForUpdate(t *testing.T) {
 			t.Errorf("read lock failed")
 		}
 		wg.Done()
+		wg2.Done()
 	}()
 
-	// wait for go rountines
-	time.Sleep(50 * time.Millisecond)
+	wg2.Wait()
 
 	f := new(ForUpdate)
 	f.Name = "updated by session1"
