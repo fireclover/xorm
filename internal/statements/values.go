@@ -36,18 +36,20 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 		}
 	}
 
-	if fieldConvert, ok := fieldValue.Interface().(convert.Conversion); ok {
-		data, err := fieldConvert.ToDB()
-		if err != nil {
-			return nil, err
+	if !fieldValue.IsNil() {
+		if fieldConvert, ok := fieldValue.Interface().(convert.Conversion); ok {
+			data, err := fieldConvert.ToDB()
+			if err != nil {
+				return nil, err
+			}
+			if col.SQLType.IsBlob() {
+				return data, nil
+			}
+			if nil == data {
+				return nil, nil
+			}
+			return string(data), nil
 		}
-		if col.SQLType.IsBlob() {
-			return data, nil
-		}
-		if nil == data {
-			return nil, nil
-		}
-		return string(data), nil
 	}
 
 	fieldType := fieldValue.Type()
