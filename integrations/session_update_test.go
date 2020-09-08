@@ -1390,4 +1390,10 @@ func TestNilFromDB(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = testEngine.Insert(&TestTable1{
+		UpdateTime: time.Now(),
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
 }
