@@ -1350,3 +1350,44 @@ func TestUpdateMultiplePK(t *testing.T) {
 	_, err = testEngine.ID(&MySlice{test.Id, test.Name}).Update(test)
 	assert.NoError(t, err)
 }
+
+type TestFieldType1 struct {
+	cb []byte
+}
+
+func (a *TestFieldType1) FromDB(src []byte) error {
+	a.cb = src
+	return nil
+}
+
+func (a TestFieldType1) ToDB() ([]byte, error) {
+	return a.cb, nil
+}
+
+type TestTable1 struct {
+	Id         int64
+	Field1     *TestFieldType1 `xorm:"text"`
+	UpdateTime time.Time
+}
+
+func TestNilFromDB(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestTable1))
+
+	cnt, err := testEngine.Insert(&TestTable1{
+		Field1: &TestFieldType1{
+			cb: []byte("string"),
+		},
+		UpdateTime: time.Now(),
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = testEngine.Update(TestTable1{
+		UpdateTime: time.Now(),
+	}, TestTable1{
+		Id: 1,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+}
