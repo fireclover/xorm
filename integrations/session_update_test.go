@@ -1384,7 +1384,7 @@ func TestNilFromDB(t *testing.T) {
 	assert.EqualValues(t, 1, cnt)
 
 	cnt, err = testEngine.Update(TestTable1{
-		UpdateTime: time.Now(),
+		UpdateTime: time.Now().Add(time.Second),
 	}, TestTable1{
 		Id: 1,
 	})
