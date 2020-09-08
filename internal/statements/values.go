@@ -36,7 +36,8 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 		}
 	}
 
-	if !fieldValue.IsNil() {
+	isNil := fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil()
+	if !isNil {
 		if fieldConvert, ok := fieldValue.Interface().(convert.Conversion); ok {
 			data, err := fieldConvert.ToDB()
 			if err != nil {
