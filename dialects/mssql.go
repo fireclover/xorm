@@ -390,10 +390,12 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	s := `select a.name as name, b.name as ctype,a.max_length,a.precision,a.scale,a.is_nullable as nullable,
 		  "default_is_null" = (CASE WHEN c.text is null THEN 1 ELSE 0 END),
 	      replace(replace(isnull(c.text,''),'(',''),')','') as vdefault,
-		  ISNULL(p.is_primary_key, 0), a.is_identity as is_identity
+		  ISNULL(p.is_primary_key, 0), a.is_identity as is_identity,
+          ISNULL(g.[value], ' ') AS comment
           from sys.columns a 
 		  left join sys.types b on a.user_type_id=b.user_type_id
           left join sys.syscomments c on a.default_object_id=c.id
+          LEFT join sys.extended_properties  g on a.object_id=g.major_id AND a.column_id=g.minor_id
 		  LEFT OUTER JOIN (SELECT i.object_id, ic.column_id, i.is_primary_key
 			FROM sys.indexes i
 		  LEFT JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
@@ -410,10 +412,10 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	cols := make(map[string]*schemas.Column)
 	colSeq := make([]string, 0)
 	for rows.Next() {
-		var name, ctype, vdefault string
+		var name, ctype, vdefault, comment string
 		var maxLen, precision, scale int
 		var nullable, isPK, defaultIsNull, isIncrement bool
-		err = rows.Scan(&name, &ctype, &maxLen, &precision, &scale, &nullable, &defaultIsNull, &vdefault, &isPK, &isIncrement)
+		err = rows.Scan(&name, &ctype, &maxLen, &precision, &scale, &nullable, &defaultIsNull, &vdefault, &isPK, &isIncrement, &comment)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -428,6 +430,7 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		}
 		col.IsPrimaryKey = isPK
 		col.IsAutoIncrement = isIncrement
+		col.Comment = comment
 		ct := strings.ToUpper(ctype)
 		if ct == "DECIMAL" {
 			col.Length = precision
