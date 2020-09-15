@@ -215,7 +215,7 @@ steps:
   - test-postgres-schema
   environment:
     TEST_PGSQL_HOST: pgsql
-    TEST_PGSQL_DBNAME: pgx_test
+    TEST_PGSQL_DBNAME: xorm_test
     TEST_PGSQL_USERNAME: postgres
     TEST_PGSQL_PASSWORD: postgres
   commands:
@@ -234,7 +234,7 @@ steps:
   environment:
     TEST_PGSQL_HOST: pgsql
     TEST_PGSQL_SCHEMA: xorm
-    TEST_PGSQL_DBNAME: pgx_test
+    TEST_PGSQL_DBNAME: xorm_test
     TEST_PGSQL_USERNAME: postgres
     TEST_PGSQL_PASSWORD: postgres
   commands:
