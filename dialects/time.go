@@ -18,8 +18,15 @@ func FormatTime(dialect Dialect, sqlTypeName string, t time.Time) (v interface{}
 		v = s[11:19]
 	case schemas.Date:
 		v = t.Format("2006-01-02")
-	case schemas.DateTime, schemas.TimeStamp, schemas.Varchar: // !DarthPestilane! format time when sqlTypeName is schemas.Varchar.
+	case schemas.Varchar: // !DarthPestilane! format time when sqlTypeName is schemas.Varchar.
 		v = t.Format("2006-01-02 15:04:05")
+	case schemas.TimeStamp, schemas.DateTime:
+		dbType := dialect.URI().DBType
+		if dbType == schemas.POSTGRES || dbType == schemas.MYSQL {
+			v = t.Format("2006-01-02T15:04:05.999999")
+		} else {
+			v = t.Format("2006-01-02 15:04:05")
+		}
 	case schemas.TimeStampz:
 		if dialect.URI().DBType == schemas.MSSQL {
 			v = t.Format("2006-01-02T15:04:05.9999999Z07:00")
