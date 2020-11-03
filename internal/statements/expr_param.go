@@ -21,46 +21,47 @@ func (err ErrUnsupportedExprType) Error() string {
 	return fmt.Sprintf("Unsupported expression type: %v", err.tp)
 }
 
-type exprParam struct {
-	colName string
-	arg     interface{}
+// Expr represents an SQL express
+type Expr struct {
+	ColName string
+	Arg     interface{}
 }
 
-type exprParams struct {
-	ColNames []string
-	Args     []interface{}
+type exprParams []Expr
+
+func (exprs exprParams) ColNames() []string {
+	var cols = make([]string, 0, len(exprs))
+	for _, expr := range exprs {
+		cols = append(cols, expr.ColName)
+	}
+	return cols
 }
 
-func (exprs *exprParams) Len() int {
-	return len(exprs.ColNames)
+func (exprs exprParams) addParam(colName string, arg interface{}) {
+	exprs = append(exprs, Expr{colName, arg})
 }
 
-func (exprs *exprParams) addParam(colName string, arg interface{}) {
-	exprs.ColNames = append(exprs.ColNames, colName)
-	exprs.Args = append(exprs.Args, arg)
-}
-
-func (exprs *exprParams) IsColExist(colName string) bool {
-	for _, name := range exprs.ColNames {
-		if strings.EqualFold(schemas.CommonQuoter.Trim(name), schemas.CommonQuoter.Trim(colName)) {
+func (exprs exprParams) IsColExist(colName string) bool {
+	for _, expr := range exprs {
+		if strings.EqualFold(schemas.CommonQuoter.Trim(expr.ColName), schemas.CommonQuoter.Trim(colName)) {
 			return true
 		}
 	}
 	return false
 }
 
-func (exprs *exprParams) getByName(colName string) (exprParam, bool) {
-	for i, name := range exprs.ColNames {
-		if strings.EqualFold(name, colName) {
-			return exprParam{name, exprs.Args[i]}, true
+func (exprs exprParams) getByName(colName string) (Expr, bool) {
+	for _, expr := range exprs {
+		if strings.EqualFold(expr.ColName, colName) {
+			return expr, true
 		}
 	}
-	return exprParam{}, false
+	return Expr{}, false
 }
 
-func (exprs *exprParams) WriteArgs(w *builder.BytesWriter) error {
-	for i, expr := range exprs.Args {
-		switch arg := expr.(type) {
+func (exprs exprParams) WriteArgs(w *builder.BytesWriter) error {
+	for i, expr := range exprs {
+		switch arg := expr.Arg.(type) {
 		case *builder.Builder:
 			if _, err := w.WriteString("("); err != nil {
 				return err
@@ -84,7 +85,7 @@ func (exprs *exprParams) WriteArgs(w *builder.BytesWriter) error {
 			}
 			w.Append(arg)
 		}
-		if i != len(exprs.Args)-1 {
+		if i != len(exprs)-1 {
 			if _, err := w.WriteString(","); err != nil {
 				return err
 			}
@@ -93,16 +94,16 @@ func (exprs *exprParams) WriteArgs(w *builder.BytesWriter) error {
 	return nil
 }
 
-func (exprs *exprParams) writeNameArgs(w *builder.BytesWriter) error {
-	for i, colName := range exprs.ColNames {
-		if _, err := w.WriteString(colName); err != nil {
+func (exprs exprParams) writeNameArgs(w *builder.BytesWriter) error {
+	for i, expr := range exprs {
+		if _, err := w.WriteString(expr.ColName); err != nil {
 			return err
 		}
 		if _, err := w.WriteString("="); err != nil {
 			return err
 		}
 
-		switch arg := exprs.Args[i].(type) {
+		switch arg := expr.Arg.(type) {
 		case *builder.Builder:
 			if _, err := w.WriteString("("); err != nil {
 				return err
@@ -114,10 +115,10 @@ func (exprs *exprParams) writeNameArgs(w *builder.BytesWriter) error {
 				return err
 			}
 		default:
-			w.Append(exprs.Args[i])
+			w.Append(expr.Arg)
 		}
 
-		if i+1 != len(exprs.ColNames) {
+		if i+1 != len(exprs) {
 			if _, err := w.WriteString(","); err != nil {
 				return err
 			}
