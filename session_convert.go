@@ -176,7 +176,11 @@ func (session *Session) bytes2Value(col *schemas.Column, fieldValue *reflect.Val
 					}
 					x = t.Unix()
 				} else if len(sdata) == 19 {
-					t, err := time.Parse("2006-01-02 15:04:05", sdata)
+					var parseFormat = "2006-01-02 15:04:05"
+					if sdata[10] == 'T' {
+						parseFormat = "2006-01-02T15:04:05"
+					}
+					t, err := time.Parse(parseFormat, sdata)
 					if err != nil {
 						return fmt.Errorf("arg %v as int: %s", key, err.Error())
 					}
