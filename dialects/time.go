@@ -26,8 +26,10 @@ func FormatTime(dialect Dialect, sqlTypeName string, t time.Time) (v interface{}
 		} else {
 			v = t.Format(time.RFC3339Nano)
 		}
-	case schemas.BigInt, schemas.Int:
+	case schemas.Int:
 		v = t.Unix()
+	case schemas.BigInt: //Add mill-seconds
+		v = t.UnixNano()/1e6
 	default:
 		v = t
 	}
