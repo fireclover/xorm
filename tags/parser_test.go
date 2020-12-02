@@ -44,12 +44,6 @@ func TestParseTableName(t *testing.T) {
 }
 
 func TestUnexportField(t *testing.T) {
-
-	type VanilaStruct struct {
-		private int
-		Public  int
-	}
-
 	parser := NewParser(
 		"xorm",
 		dialects.QueryDialect("mysql"),
@@ -58,6 +52,10 @@ func TestUnexportField(t *testing.T) {
 		caches.NewManager(),
 	)
 
+	type VanilaStruct struct {
+		private int
+		Public  int
+	}
 	table, err := parser.Parse(reflect.ValueOf(new(VanilaStruct)))
 	assert.NoError(t, err)
 	assert.EqualValues(t, "vanila_struct", table.Name)
@@ -72,7 +70,6 @@ func TestUnexportField(t *testing.T) {
 		private int `xorm:"private"`
 		Public  int `xorm:"-"`
 	}
-
 	table, err = parser.Parse(reflect.ValueOf(new(TaggedStruct)))
 	assert.NoError(t, err)
 	assert.EqualValues(t, "tagged_struct", table.Name)
