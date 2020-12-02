@@ -42,3 +42,43 @@ func TestParseTableName(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, "p_parseTableName", table.Name)
 }
+
+type VanilaStruct struct {
+	private int
+	Public  int
+}
+
+type TaggedStruct struct {
+	private int `xorm:"private"`
+	Public  int `xorm:"-"`
+}
+
+func TestUnexportField(t *testing.T) {
+	parser := NewParser(
+		"xorm",
+		dialects.QueryDialect("mysql"),
+		names.SnakeMapper{},
+		names.SnakeMapper{},
+		caches.NewManager(),
+	)
+
+	table, err := parser.Parse(reflect.ValueOf(new(VanilaStruct)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "vanila_struct", table.Name)
+	assert.EqualValues(t, 1, len(table.Columns()))
+
+	for _, v := range table.Columns() {
+		assert.EqualValues(t, "public", v.Name)
+		assert.NotEqual(t, "private", v.Name)
+	}
+
+	table, err = parser.Parse(reflect.ValueOf(new(TaggedStruct)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "tagged_struct", table.Name)
+	assert.EqualValues(t, 1, len(table.Columns()))
+
+	for _, v := range table.Columns() {
+		assert.EqualValues(t, "private", v.Name)
+		assert.NotEqual(t, "public", v.Name)
+	}
+}
