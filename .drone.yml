@@ -16,6 +16,12 @@ steps:
     - push
     - pull_request
 
+---
+kind: pipeline
+name: test-sqlite
+depends_on:
+  - testing
+steps:
 - name: test-sqlite
   image: golang:1.12
   environment:
@@ -30,6 +36,12 @@ steps:
     - push
     - pull_request
 
+---
+kind: pipeline
+name: test-mysql
+depends_on:
+  - test-sqlite
+steps:
 - name: test-mysql
   image: golang:1.12
   environment:
@@ -48,26 +60,7 @@ steps:
     event:
     - push
     - pull_request
-
-- name: test-mysql8
-  image: golang:1.12
-  environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
-    TEST_MYSQL_HOST: mysql8
-    TEST_MYSQL_CHARSET: utf8mb4
-    TEST_MYSQL_DBNAME: xorm_test
-    TEST_MYSQL_USERNAME: root
-    TEST_MYSQL_PASSWORD:
-  commands:
-  - make test-mysql
-  - TEST_CACHE_ENABLE=true make test-mysql
-  - TEST_QUOTE_POLICY=reserved make test-mysql
-  when:
-    event:
-    - push
-    - pull_request
-
+  
 - name: test-mysql-utf8mb4
   image: golang:1.12
   depends_on:
@@ -109,7 +102,62 @@ steps:
     event:
     - push
     - pull_request
+services:
+- name: mysql
+  pull: default
+  image: mysql:5.7
+  environment:
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    MYSQL_DATABASE: xorm_test
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
 
+---
+kind: pipeline
+name: test-mysql8
+depends_on:
+  - test-mysql
+steps:
+- name: test-mysql8
+  image: golang:1.12
+  environment:
+    GO111MODULE: "on"
+    GOPROXY: "https://goproxy.cn"
+    TEST_MYSQL_HOST: mysql8
+    TEST_MYSQL_CHARSET: utf8mb4
+    TEST_MYSQL_DBNAME: xorm_test
+    TEST_MYSQL_USERNAME: root
+    TEST_MYSQL_PASSWORD:
+  commands:
+  - make test-mysql
+  - TEST_CACHE_ENABLE=true make test-mysql
+  - TEST_QUOTE_POLICY=reserved make test-mysql
+  when:
+    event:
+    - push
+    - pull_request
+services:
+- name: mysql8
+  pull: default
+  image: mysql:8.0
+  environment:
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    MYSQL_DATABASE: xorm_test
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
+
+---
+kind: pipeline
+name: test-mariadb
+depends_on:
+  - test-mysql8
+steps:
 - name: test-mariadb
   image: golang:1.12
   environment:
@@ -128,7 +176,25 @@ steps:
     event:
     - push
     - pull_request
+services:
+- name: mariadb
+  pull: default
+  image: mariadb:10.4
+  environment:
+    MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    MYSQL_DATABASE: xorm_test
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
 
+---
+kind: pipeline
+name: test-postgres
+depends_on:
+  - test-mariadb
+steps:
 - name: test-postgres
   pull: default
   image: golang:1.12
@@ -169,7 +235,26 @@ steps:
     event:
     - push
     - pull_request
+services:
+- name: pgsql
+  pull: default
+  image: postgres:9.5
+  environment:
+    POSTGRES_DB: xorm_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
 
+---
+kind: pipeline
+name: test-mssql
+depends_on:
+  - test-postgres
+steps:
 - name: test-mssql
   pull: default
   image: golang:1.12
@@ -189,7 +274,26 @@ steps:
     event:
     - push
     - pull_request
+services:
+- name: mssql
+  pull: default
+  image: microsoft/mssql-server-linux:latest
+  environment:
+    ACCEPT_EULA: Y
+    SA_PASSWORD: yourStrong(!)Password
+    MSSQL_PID: Developer
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
 
+---
+kind: pipeline
+name: test-tidb
+depends_on:
+  - test-mssql
+steps:
 - name: test-tidb
   pull: default
   image: golang:1.12
@@ -208,7 +312,22 @@ steps:
     event:
     - push
     - pull_request
+services:
+- name: tidb
+  pull: default
+  image: pingcap/tidb:v3.0.3
+  when:
+    event:
+    - push
+    - tag
+    - pull_request
 
+---
+kind: pipeline
+name: test-cockroach
+depends_on:
+  - test-tidb
+steps:
 - name: test-cockroach
   pull: default
   image: golang:1.13
@@ -227,104 +346,7 @@ steps:
     event:
     - push
     - pull_request
-
-- name: merge_coverage
-  pull: default
-  image: golang:1.12
-  environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
-  depends_on:
-  - test-vet
-  - test-sqlite
-  - test-mysql
-  - test-mysql8
-  - test-mymysql
-  - test-postgres
-  - test-postgres-schema
-  - test-mssql
-  - test-tidb
-  - test-cockroach
-  commands:
-  - make coverage
-  when:
-    event:
-    - push
-    - pull_request
-
 services:
-
-- name: mysql
-  pull: default
-  image: mysql:5.7
-  environment:
-    MYSQL_ALLOW_EMPTY_PASSWORD: yes
-    MYSQL_DATABASE: xorm_test
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
-
-- name: mysql8
-  pull: default
-  image: mysql:8.0
-  environment:
-    MYSQL_ALLOW_EMPTY_PASSWORD: yes
-    MYSQL_DATABASE: xorm_test
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
-
-- name: mariadb
-  pull: default
-  image: mariadb:10.4
-  environment:
-    MYSQL_ALLOW_EMPTY_PASSWORD: yes
-    MYSQL_DATABASE: xorm_test
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
-
-- name: pgsql
-  pull: default
-  image: postgres:9.5
-  environment:
-    POSTGRES_DB: xorm_test
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: postgres
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
-
-- name: mssql
-  pull: default
-  image: microsoft/mssql-server-linux:latest
-  environment:
-    ACCEPT_EULA: Y
-    SA_PASSWORD: yourStrong(!)Password
-    MSSQL_PID: Developer
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
-
-- name: tidb
-  pull: default
-  image: pingcap/tidb:v3.0.3
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
-
 - name: cockroach
   pull: default
   image: cockroachdb/cockroach:v19.2.4
@@ -334,4 +356,32 @@ services:
     event:
     - push
     - tag
+    - pull_request
+
+---
+kind: pipeline
+name: merge_coverage
+depends_on:
+  - testing
+  - test-sqlite
+  - test-mysql
+  - test-mysql8
+  - test-mymysql
+  - test-postgres
+  - test-postgres-schema
+  - test-mssql
+  - test-tidb
+  - test-cockroach
+steps:
+- name: merge_coverage
+  pull: default
+  image: golang:1.12
+  environment:
+    GO111MODULE: "on"
+    GOPROXY: "https://goproxy.cn"
+  commands:
+  - make coverage
+  when:
+    event:
+    - push
     - pull_request
