@@ -31,10 +31,6 @@ steps:
   - make test-sqlite
   - TEST_CACHE_ENABLE=true make test-sqlite
   - TEST_QUOTE_POLICY=reserved make test-sqlite
-  when:
-    event:
-    - push
-    - pull_request
 
 ---
 kind: pipeline
@@ -56,10 +52,6 @@ steps:
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
-  when:
-    event:
-    - push
-    - pull_request
   
 - name: test-mysql-utf8mb4
   image: golang:1.12
@@ -77,10 +69,6 @@ steps:
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
-  when:
-    event:
-    - push
-    - pull_request
 
 - name: test-mymysql
   pull: default
@@ -98,10 +86,7 @@ steps:
   - make test-mymysql
   - TEST_CACHE_ENABLE=true make test-mymysql
   - TEST_QUOTE_POLICY=reserved make test-mymysql
-  when:
-    event:
-    - push
-    - pull_request
+
 services:
 - name: mysql
   pull: default
@@ -109,11 +94,6 @@ services:
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
 
 ---
 kind: pipeline
@@ -135,10 +115,7 @@ steps:
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
-  when:
-    event:
-    - push
-    - pull_request
+
 services:
 - name: mysql8
   pull: default
@@ -146,11 +123,6 @@ services:
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
 
 ---
 kind: pipeline
@@ -172,10 +144,7 @@ steps:
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
-  when:
-    event:
-    - push
-    - pull_request
+
 services:
 - name: mariadb
   pull: default
@@ -183,11 +152,6 @@ services:
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
 
 ---
 kind: pipeline
@@ -209,10 +173,6 @@ steps:
   - make test-postgres
   - TEST_CACHE_ENABLE=true make test-postgres
   - TEST_QUOTE_POLICY=reserved make test-postgres
-  when:
-    event:
-    - push
-    - pull_request
 
 - name: test-postgres-schema
   pull: default
@@ -231,10 +191,7 @@ steps:
   - make test-postgres
   - TEST_CACHE_ENABLE=true make test-postgres
   - TEST_QUOTE_POLICY=reserved make test-postgres
-  when:
-    event:
-    - push
-    - pull_request
+
 services:
 - name: pgsql
   pull: default
@@ -243,11 +200,6 @@ services:
     POSTGRES_DB: xorm_test
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: postgres
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
 
 ---
 kind: pipeline
@@ -270,10 +222,7 @@ steps:
   - TEST_CACHE_ENABLE=true make test-mssql
   - TEST_QUOTE_POLICY=reserved make test-mssql
   - TEST_MSSQL_DEFAULT_VARCHAR=NVARCHAR TEST_MSSQL_DEFAULT_CHAR=NCHAR make test-mssql
-  when:
-    event:
-    - push
-    - pull_request
+
 services:
 - name: mssql
   pull: default
@@ -282,11 +231,6 @@ services:
     ACCEPT_EULA: Y
     SA_PASSWORD: yourStrong(!)Password
     MSSQL_PID: Developer
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
 
 ---
 kind: pipeline
@@ -308,19 +252,11 @@ steps:
   - make test-tidb
   - TEST_CACHE_ENABLE=true make test-tidb
   - TEST_QUOTE_POLICY=reserved make test-tidb
-  when:
-    event:
-    - push
-    - pull_request
+
 services:
 - name: tidb
   pull: default
   image: pingcap/tidb:v3.0.3
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
 
 ---
 kind: pipeline
@@ -342,21 +278,13 @@ steps:
   - sleep 10
   - make test-cockroach
   - TEST_CACHE_ENABLE=true make test-cockroach
-  when:
-    event:
-    - push
-    - pull_request
+
 services:
 - name: cockroach
   pull: default
   image: cockroachdb/cockroach:v19.2.4
   commands:
   - /cockroach/cockroach start --insecure
-  when:
-    event:
-    - push
-    - tag
-    - pull_request
 
 ---
 kind: pipeline
@@ -382,6 +310,8 @@ steps:
   commands:
   - make coverage
   when:
+    branch:
+      - master
     event:
-    - push
-    - pull_request
+      - push
+      - pull_request
