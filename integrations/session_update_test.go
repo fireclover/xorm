@@ -462,7 +462,7 @@ func TestUpdateIncrDecr(t *testing.T) {
 
 type UpdatedUpdate struct {
 	Id      int64
-	Updated time.Time `xorm:"updated"`
+	Updated time.Time `xorm:"updated datetime(6)"`
 }
 
 type UpdatedUpdate2 struct {
@@ -834,8 +834,8 @@ func TestCreatedUpdated2(t *testing.T) {
 	type CreatedUpdatedStruct struct {
 		Id       int64
 		Name     string
-		CreateAt time.Time `xorm:"created" json:"create_at"`
-		UpdateAt time.Time `xorm:"updated" json:"update_at"`
+		CreateAt time.Time `xorm:"created datetime(6)" json:"create_at"`
+		UpdateAt time.Time `xorm:"updated datetime(6)" json:"update_at"`
 	}
 
 	assertSync(t, new(CreatedUpdatedStruct))

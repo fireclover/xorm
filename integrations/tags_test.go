@@ -7,7 +7,6 @@ package integrations
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -1104,7 +1103,7 @@ func TestTagTime(t *testing.T) {
 	type TagUTCStruct struct {
 		Id      int64
 		Name    string
-		Created time.Time `xorm:"created utc"`
+		Created time.Time `xorm:"created utc datetime(6)"`
 	}
 
 	assertSync(t, new(TagUTCStruct))
@@ -1128,8 +1127,7 @@ func TestTagTime(t *testing.T) {
 	has, err = testEngine.Table("tag_u_t_c_struct").Cols("created").Get(&tm)
 	assert.NoError(t, err)
 	assert.True(t, has)
-	assert.EqualValues(t, s.Created.UTC().Format("2006-01-02 15:04:05"),
-		strings.Replace(strings.Replace(tm, "T", " ", -1), "Z", "", -1))
+	assert.EqualValues(t, s.Created.UTC().Format("2006-01-02 15:04:05.999999"), tm)
 }
 
 func TestTagAutoIncr(t *testing.T) {

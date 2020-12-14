@@ -174,8 +174,8 @@ type DefaultInsert struct {
 	Id      int64
 	Status  int `xorm:"default -1"`
 	Name    string
-	Created time.Time `xorm:"created"`
-	Updated time.Time `xorm:"updated"`
+	Created time.Time `xorm:"created datetime(6)"`
+	Updated time.Time `xorm:"updated datetime(6)"`
 }
 
 func TestInsertDefault(t *testing.T) {
@@ -227,7 +227,7 @@ func TestInsertDefault2(t *testing.T) {
 
 type CreatedInsert struct {
 	Id      int64
-	Created time.Time `xorm:"created"`
+	Created time.Time `xorm:"created datetime(6)"`
 }
 
 type CreatedInsert2 struct {
@@ -384,7 +384,7 @@ func TestDefaultTime3(t *testing.T) {
 
 type MyJSONTime struct {
 	Id      int64    `json:"id"`
-	Created JSONTime `xorm:"created" json:"created_at"`
+	Created JSONTime `xorm:"created datetime(6)" json:"created_at"`
 }
 
 func TestCreatedJsonTime(t *testing.T) {

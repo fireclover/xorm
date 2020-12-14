@@ -195,7 +195,7 @@ func TestUnscopeDelete(t *testing.T) {
 	type UnscopeDeleteStruct struct {
 		Id        int64
 		Name      string
-		DeletedAt time.Time `xorm:"deleted"`
+		DeletedAt time.Time `xorm:"deleted datetime(6)"`
 	}
 
 	assertSync(t, new(UnscopeDeleteStruct))

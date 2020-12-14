@@ -10,9 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"xorm.io/xorm/internal/utils"
-
 	"github.com/stretchr/testify/assert"
+	"xorm.io/xorm/internal/utils"
 )
 
 func formatTime(t time.Time) string {
@@ -23,8 +22,8 @@ func TestTimeUserTime(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
 	type TimeUser struct {
-		Id       string
-		OperTime time.Time
+		Id       string    `xorm:"id"`
+		OperTime time.Time `xorm:"datetime(6)"`
 	}
 
 	assertSync(t, new(TimeUser))
@@ -60,7 +59,7 @@ func TestTimeUserTimeDiffLoc(t *testing.T) {
 
 	type TimeUser2 struct {
 		Id       string
-		OperTime time.Time
+		OperTime time.Time `xorm:"datetime(6)"`
 	}
 
 	assertSync(t, new(TimeUser2))
@@ -90,7 +89,7 @@ func TestTimeUserCreated(t *testing.T) {
 
 	type UserCreated struct {
 		Id        string
-		CreatedAt time.Time `xorm:"created"`
+		CreatedAt time.Time `xorm:"created datetime(6)"`
 	}
 
 	assertSync(t, new(UserCreated))
@@ -125,7 +124,7 @@ func TestTimeUserCreatedDiffLoc(t *testing.T) {
 
 	type UserCreated2 struct {
 		Id        string
-		CreatedAt time.Time `xorm:"created"`
+		CreatedAt time.Time `xorm:"created datetime(6)"`
 	}
 
 	assertSync(t, new(UserCreated2))
@@ -154,8 +153,8 @@ func TestTimeUserUpdated(t *testing.T) {
 
 	type UserUpdated struct {
 		Id        string
-		CreatedAt time.Time `xorm:"created"`
-		UpdatedAt time.Time `xorm:"updated"`
+		CreatedAt time.Time `xorm:"created datetime(6)"`
+		UpdatedAt time.Time `xorm:"updated datetime(6)"`
 	}
 
 	assertSync(t, new(UserUpdated))
@@ -211,8 +210,8 @@ func TestTimeUserUpdatedDiffLoc(t *testing.T) {
 
 	type UserUpdated2 struct {
 		Id        string
-		CreatedAt time.Time `xorm:"created"`
-		UpdatedAt time.Time `xorm:"updated"`
+		CreatedAt time.Time `xorm:"created datetime(6)"`
+		UpdatedAt time.Time `xorm:"updated datetime(6)"`
 	}
 
 	assertSync(t, new(UserUpdated2))
@@ -262,9 +261,9 @@ func TestTimeUserDeleted(t *testing.T) {
 
 	type UserDeleted struct {
 		Id           string
-		CreatedAt    time.Time `xorm:"created"`
-		UpdatedAt    time.Time `xorm:"updated"`
-		DeletedAt    time.Time `xorm:"deleted"`
+		CreatedAt    time.Time `xorm:"created datetime(6)"`
+		UpdatedAt    time.Time `xorm:"updated datetime(6)"`
+		DeletedAt    time.Time `xorm:"deleted datetime(6)"`
 		CreatedAtStr string    `xorm:"datetime created"`
 		UpdatedAtStr string    `xorm:"datetime updated"`
 	}
@@ -318,9 +317,9 @@ func TestTimeUserDeletedDiffLoc(t *testing.T) {
 
 	type UserDeleted2 struct {
 		Id        string
-		CreatedAt time.Time `xorm:"created"`
-		UpdatedAt time.Time `xorm:"updated"`
-		DeletedAt time.Time `xorm:"deleted"`
+		CreatedAt time.Time `xorm:"created datetime(6)"`
+		UpdatedAt time.Time `xorm:"updated datetime(6)"`
+		DeletedAt time.Time `xorm:"deleted datetime(6)"`
 	}
 
 	assertSync(t, new(UserDeleted2))
@@ -389,9 +388,9 @@ func TestCustomTimeUserDeleted(t *testing.T) {
 
 	type UserDeleted3 struct {
 		Id        string
-		CreatedAt JSONDate `xorm:"created"`
-		UpdatedAt JSONDate `xorm:"updated"`
-		DeletedAt JSONDate `xorm:"deleted"`
+		CreatedAt JSONDate `xorm:"created datetime(6)"`
+		UpdatedAt JSONDate `xorm:"updated datetime(6)"`
+		DeletedAt JSONDate `xorm:"deleted datetime(6)"`
 	}
 
 	assertSync(t, new(UserDeleted3))
@@ -442,9 +441,9 @@ func TestCustomTimeUserDeletedDiffLoc(t *testing.T) {
 
 	type UserDeleted4 struct {
 		Id        string
-		CreatedAt JSONDate `xorm:"created"`
-		UpdatedAt JSONDate `xorm:"updated"`
-		DeletedAt JSONDate `xorm:"deleted"`
+		CreatedAt JSONDate `xorm:"created datetime(6)"`
+		UpdatedAt JSONDate `xorm:"updated datetime(6)"`
+		DeletedAt JSONDate `xorm:"deleted datetime(6)"`
 	}
 
 	assertSync(t, new(UserDeleted4))
