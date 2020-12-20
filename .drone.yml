@@ -294,6 +294,7 @@ depends_on:
   - test-sqlite
   - test-mysql
   - test-mysql8
+  - test-mariadb
   - test-postgres
   - test-mssql
   - test-tidb
