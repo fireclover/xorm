@@ -3,7 +3,7 @@ kind: pipeline
 name: testing
 steps:
 - name: test-vet
-  image: golang:1.11 # The lowest golang requirement
+  image: golang:1.13 # The lowest golang requirement
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -23,7 +23,7 @@ depends_on:
   - testing
 steps:
 - name: test-sqlite
-  image: golang:1.12
+  image: golang:1.13
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -39,7 +39,7 @@ depends_on:
   - test-sqlite
 steps:
 - name: test-mysql
-  image: golang:1.12
+  image: golang:1.13
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -54,7 +54,7 @@ steps:
   - TEST_QUOTE_POLICY=reserved make test-mysql
   
 - name: test-mysql-utf8mb4
-  image: golang:1.12
+  image: golang:1.13
   depends_on:
   - test-mysql
   environment:
@@ -72,7 +72,7 @@ steps:
 
 - name: test-mymysql
   pull: default
-  image: golang:1.12
+  image: golang:1.13
   depends_on:
     - test-mysql-utf8mb4
   environment:
@@ -102,7 +102,7 @@ depends_on:
   - test-mysql
 steps:
 - name: test-mysql8
-  image: golang:1.12
+  image: golang:1.13
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -131,7 +131,7 @@ depends_on:
   - test-mysql8
 steps:
 - name: test-mariadb
-  image: golang:1.12
+  image: golang:1.13
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -161,7 +161,7 @@ depends_on:
 steps:
 - name: test-postgres
   pull: default
-  image: golang:1.12
+  image: golang:1.13
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -176,7 +176,7 @@ steps:
 
 - name: test-postgres-schema
   pull: default
-  image: golang:1.12
+  image: golang:1.13
   depends_on:
   - test-postgres
   environment:
@@ -209,7 +209,7 @@ depends_on:
 steps:
 - name: test-mssql
   pull: default
-  image: golang:1.12
+  image: golang:1.13
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -240,7 +240,7 @@ depends_on:
 steps:
 - name: test-tidb
   pull: default
-  image: golang:1.12
+  image: golang:1.13
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
@@ -301,7 +301,7 @@ depends_on:
 steps:
 - name: merge_coverage
   pull: default
-  image: golang:1.12
+  image: golang:1.13
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.cn"
