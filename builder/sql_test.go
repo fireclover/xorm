@@ -11,7 +11,7 @@ import (
 	"os"
 	"testing"
 
-	"gitea.com/xorm/sqlfiddle"
+	"gitea.com/laixyz/xorm/sqlfiddle"
 	"github.com/stretchr/testify/assert"
 )
 
