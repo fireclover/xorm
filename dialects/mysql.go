@@ -389,9 +389,12 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		}
 		if colType == "FLOAT UNSIGNED" {
 			colType = "FLOAT"
-		}
-		if colType == "DOUBLE UNSIGNED" {
+		} else if colType == "DOUBLE UNSIGNED" {
 			colType = "DOUBLE"
+		} else {
+			if strings.Index(colType, "UNSIGNED") > 0 {
+				colType = strings.Replace(colType, " UNSIGNED", "_UNSIGNED", -1)
+			}
 		}
 		col.Length = len1
 		col.Length2 = len2
@@ -418,6 +421,14 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 			} else if col.SQLType.IsTime() && !alreadyQuoted && col.Default != "CURRENT_TIMESTAMP" {
 				col.Default = "'" + col.Default + "'"
 			}
+		}
+		switch strings.ToLower(col.Name) {
+		case "created_at", "created":
+			col.IsCreated = true
+		case "updated_at", "updated":
+			col.IsUpdated = true
+		case "deleted_at", "deleted":
+			col.IsDeleted = true
 		}
 		cols[col.Name] = col
 		colSeq = append(colSeq, col.Name)

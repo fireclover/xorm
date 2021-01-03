@@ -76,6 +76,13 @@ var (
 	Int       = "INT"
 	Integer   = "INTEGER"
 	BigInt    = "BIGINT"
+	// 新增对mysql unsigned 的支撑
+	UTinyInt   = "TINYINT_UNSIGNED"
+	USmallInt  = "SMALLINT_UNSIGNED"
+	UMediumInt = "MEDIUMINT_UNSIGNED"
+	UInt       = "INT_UNSIGNED"
+	UBigInt    = "BIGINT_UNSIGNED"
+	// -- end
 
 	Enum = "ENUM"
 	Set  = "SET"
@@ -138,6 +145,12 @@ var (
 		Int:       NUMERIC_TYPE,
 		Integer:   NUMERIC_TYPE,
 		BigInt:    NUMERIC_TYPE,
+
+		UTinyInt:   NUMERIC_TYPE,
+		USmallInt:  NUMERIC_TYPE,
+		UMediumInt: NUMERIC_TYPE,
+		UInt:       NUMERIC_TYPE,
+		UBigInt:    NUMERIC_TYPE,
 
 		Enum:  TEXT_TYPE,
 		Set:   TEXT_TYPE,
@@ -273,10 +286,22 @@ var (
 // Type2SQLType generate SQLType acorrding Go's type
 func Type2SQLType(t reflect.Type) (st SQLType) {
 	switch k := t.Kind(); k {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
+	case reflect.Int, reflect.Int32:
 		st = SQLType{Int, 0, 0}
-	case reflect.Int64, reflect.Uint64:
+	case reflect.Int16:
+		st = SQLType{SmallInt, 0, 0}
+	case reflect.Uint16:
+		st = SQLType{USmallInt, 0, 0}
+	case reflect.Uint:
+		st = SQLType{UInt, 0, 0}
+	case reflect.Int8:
+		st = SQLType{TinyInt, 0, 0}
+	case reflect.Uint8:
+		st = SQLType{UTinyInt, 0, 0}
+	case reflect.Int64:
 		st = SQLType{BigInt, 0, 0}
+	case reflect.Uint64:
+		st = SQLType{UBigInt, 0, 0}
 	case reflect.Float32:
 		st = SQLType{Float, 0, 0}
 	case reflect.Float64:
@@ -312,8 +337,18 @@ func Type2SQLType(t reflect.Type) (st SQLType) {
 func SQLType2Type(st SQLType) reflect.Type {
 	name := strings.ToUpper(st.Name)
 	switch name {
-	case Bit, TinyInt, SmallInt, MediumInt, Int, Integer, Serial:
-		return reflect.TypeOf(1)
+	case SmallInt:
+		return reflect.TypeOf(int16(1))
+	case USmallInt:
+		return reflect.TypeOf(uint16(1))
+	case MediumInt, Int, Integer, Serial:
+		return reflect.TypeOf(int32(1))
+	case Bit, TinyInt:
+		return reflect.TypeOf(int8(1))
+	case UTinyInt:
+		return reflect.TypeOf(uint8(1))
+	case UBigInt:
+		return reflect.TypeOf(uint64(1))
 	case BigInt, BigSerial:
 		return reflect.TypeOf(int64(1))
 	case Float, Real:
