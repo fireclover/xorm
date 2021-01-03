@@ -1,14 +1,14 @@
-module xorm.io/xorm
+module gitea.com/laixyz/xorm
 
-go 1.11
+go 1.15
 
 require (
-	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc
+	gitea.com/xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a
+	github.com/denisenkom/go-mssqldb v0.9.0
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/lib/pq v1.7.0
-	github.com/mattn/go-sqlite3 v1.14.0
-	github.com/stretchr/testify v1.4.0
+	github.com/lib/pq v1.9.0
+	github.com/mattn/go-sqlite3 v1.14.6
+	github.com/stretchr/testify v1.6.1
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/ziutek/mymysql v1.5.4
-	xorm.io/builder v0.3.7
 )

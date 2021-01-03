@@ -12,12 +12,12 @@ import (
 	"strings"
 	"testing"
 
-	"xorm.io/xorm"
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
+	"gitea.com/laixyz/xorm"
+	"gitea.com/laixyz/xorm/caches"
+	"gitea.com/laixyz/xorm/dialects"
+	"gitea.com/laixyz/xorm/log"
+	"gitea.com/laixyz/xorm/names"
+	"gitea.com/laixyz/xorm/schemas"
 )
 
 var (

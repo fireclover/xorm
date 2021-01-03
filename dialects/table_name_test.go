@@ -7,7 +7,7 @@ package dialects
 import (
 	"testing"
 
-	"xorm.io/xorm/names"
+	"gitea.com/laixyz/xorm/names"
 
 	"github.com/stretchr/testify/assert"
 )

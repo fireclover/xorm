@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	"reflect"
 
-	"xorm.io/xorm/core"
+	"gitea.com/laixyz/xorm/core"
 )
 
 func (session *Session) queryPreprocess(sqlStr *string, paramStr ...interface{}) {

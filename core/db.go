@@ -13,9 +13,9 @@ import (
 	"regexp"
 	"sync"
 
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
+	"gitea.com/laixyz/xorm/contexts"
+	"gitea.com/laixyz/xorm/log"
+	"gitea.com/laixyz/xorm/names"
 )
 
 var (

@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"gitea.com/laixyz/xorm"
+	"gitea.com/laixyz/xorm/internal/statements"
+	"gitea.com/laixyz/xorm/internal/utils"
+	"gitea.com/laixyz/xorm/names"
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm"
-	"xorm.io/xorm/internal/statements"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/names"
 )
 
 func TestUpdateMap(t *testing.T) {

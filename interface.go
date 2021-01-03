@@ -10,12 +10,12 @@ import (
 	"reflect"
 	"time"
 
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
+	"gitea.com/laixyz/xorm/caches"
+	"gitea.com/laixyz/xorm/contexts"
+	"gitea.com/laixyz/xorm/dialects"
+	"gitea.com/laixyz/xorm/log"
+	"gitea.com/laixyz/xorm/names"
+	"gitea.com/laixyz/xorm/schemas"
 )
 
 // Interface defines the interface which Engine, EngineGroup and Session will implementate.

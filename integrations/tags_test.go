@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"gitea.com/laixyz/xorm/internal/utils"
+	"gitea.com/laixyz/xorm/names"
+	"gitea.com/laixyz/xorm/schemas"
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
 )
 
 type tempUser struct {

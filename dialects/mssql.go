@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"gitea.com/laixyz/xorm/core"
+	"gitea.com/laixyz/xorm/schemas"
 )
 
 var (

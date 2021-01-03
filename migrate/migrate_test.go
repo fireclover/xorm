@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"gitea.com/laixyz/xorm"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm"
 )
 
 type Person struct {

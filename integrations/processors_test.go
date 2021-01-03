@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	"xorm.io/xorm"
+	"gitea.com/laixyz/xorm"
 
 	"github.com/stretchr/testify/assert"
 )

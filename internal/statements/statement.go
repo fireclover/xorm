@@ -12,14 +12,14 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/builder"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
-	"xorm.io/xorm/tags"
+	"gitea.com/laixyz/xorm/builder"
+	"gitea.com/laixyz/xorm/contexts"
+	"gitea.com/laixyz/xorm/convert"
+	"gitea.com/laixyz/xorm/dialects"
+	"gitea.com/laixyz/xorm/internal/json"
+	"gitea.com/laixyz/xorm/internal/utils"
+	"gitea.com/laixyz/xorm/schemas"
+	"gitea.com/laixyz/xorm/tags"
 )
 
 var (

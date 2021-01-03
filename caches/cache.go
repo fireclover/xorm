@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/schemas"
+	"gitea.com/laixyz/xorm/schemas"
 )
 
 const (

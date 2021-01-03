@@ -11,9 +11,9 @@ import (
 	"reflect"
 	"strconv"
 
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
+	"gitea.com/laixyz/xorm/caches"
+	"gitea.com/laixyz/xorm/internal/utils"
+	"gitea.com/laixyz/xorm/schemas"
 )
 
 // Get retrieve one record from database, bean's non-empty fields

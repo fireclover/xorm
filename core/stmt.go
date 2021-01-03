@@ -10,7 +10,7 @@ import (
 	"errors"
 	"reflect"
 
-	"xorm.io/xorm/contexts"
+	"gitea.com/laixyz/xorm/contexts"
 )
 
 // Stmt reprents a stmt objects

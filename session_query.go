@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"gitea.com/laixyz/xorm/core"
+	"gitea.com/laixyz/xorm/schemas"
 )
 
 // Query runs a raw sql and return records as []map[string][]byte

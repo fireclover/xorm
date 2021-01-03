@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"testing"
 
-	"xorm.io/xorm"
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/internal/json"
-	"xorm.io/xorm/schemas"
+	"gitea.com/laixyz/xorm"
+	"gitea.com/laixyz/xorm/convert"
+	"gitea.com/laixyz/xorm/internal/json"
+	"gitea.com/laixyz/xorm/schemas"
 
 	"github.com/stretchr/testify/assert"
 )

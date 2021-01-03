@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"testing"
 
+	"gitea.com/laixyz/xorm/builder"
 	"github.com/stretchr/testify/assert"
-	"xorm.io/builder"
 )
 
 func TestBuilder(t *testing.T) {

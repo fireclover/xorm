@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"gitea.com/laixyz/xorm/core"
+	"gitea.com/laixyz/xorm/schemas"
 )
 
 // URI represents an uri to visit database

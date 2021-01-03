@@ -17,15 +17,15 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
-	"xorm.io/xorm/tags"
+	"gitea.com/laixyz/xorm/caches"
+	"gitea.com/laixyz/xorm/contexts"
+	"gitea.com/laixyz/xorm/core"
+	"gitea.com/laixyz/xorm/dialects"
+	"gitea.com/laixyz/xorm/internal/utils"
+	"gitea.com/laixyz/xorm/log"
+	"gitea.com/laixyz/xorm/names"
+	"gitea.com/laixyz/xorm/schemas"
+	"gitea.com/laixyz/xorm/tags"
 )
 
 // Engine is the major struct of xorm, it means a database manager.
