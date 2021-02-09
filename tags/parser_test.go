@@ -12,6 +12,7 @@ import (
 	"xorm.io/xorm/caches"
 	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/names"
+	"xorm.io/xorm/schemas"
 )
 
 type ParseTableName1 struct{}
@@ -79,4 +80,29 @@ func TestUnexportField(t *testing.T) {
 		assert.EqualValues(t, "private", col.Name)
 		assert.NotEqual(t, "public", col.Name)
 	}
+}
+
+type ParseTableName3 struct {
+	Name string `orm:"varchar(50)"`
+}
+
+func TestParseTableNameWithOtherIdentifier(t *testing.T) {
+	parser := NewParser(
+		"xorm",
+		dialects.QueryDialect("mysql"),
+		names.SnakeMapper{},
+		names.SnakeMapper{},
+		caches.NewManager(),
+	)
+	parser.SetIdentifier("orm")
+	table, err := parser.Parse(reflect.ValueOf(new(ParseTableName3)))
+	assert.NoError(t, err)
+	cols := table.Columns()
+	assert.EqualValues(t, 1, len(cols))
+	assert.EqualValues(t, "name", cols[0].Name)
+	assert.EqualValues(t, schemas.SQLType{
+		Name: "VARCHAR",
+	}, cols[0].SQLType)
+	assert.EqualValues(t, 50, cols[0].Length)
+	assert.EqualValues(t, true, cols[0].Nullable)
 }

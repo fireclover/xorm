@@ -183,6 +183,10 @@ func (engine *Engine) SetDisableGlobalCache(disable bool) {
 	engine.cacherMgr.SetDisableGlobalCache(disable)
 }
 
+func (engine *Engine) SetTagIdentifier(tagName string) {
+	engine.tagParser.SetIdentifier(tagName)
+}
+
 // DriverName return the current sql driver's name
 func (engine *Engine) DriverName() string {
 	return engine.driverName

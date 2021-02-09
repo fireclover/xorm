@@ -34,6 +34,7 @@ type Parser struct {
 	tableCache   sync.Map // map[reflect.Type]*schemas.Table
 }
 
+// NewParser create a new tag parser
 func NewParser(identifier string, dialect dialects.Dialect, tableMapper, columnMapper names.Mapper, cacherMgr *caches.Manager) *Parser {
 	return &Parser{
 		identifier:   identifier,
@@ -45,24 +46,34 @@ func NewParser(identifier string, dialect dialects.Dialect, tableMapper, columnM
 	}
 }
 
+// GetTableMapper returns the table mapper
 func (parser *Parser) GetTableMapper() names.Mapper {
 	return parser.tableMapper
 }
 
+// SetTableMapper sets table mapper
 func (parser *Parser) SetTableMapper(mapper names.Mapper) {
 	parser.ClearCaches()
 	parser.tableMapper = mapper
 }
 
+// GetColumnMapper returns the column mapper
 func (parser *Parser) GetColumnMapper() names.Mapper {
 	return parser.columnMapper
 }
 
+// SetColumnMapper set column mapper
 func (parser *Parser) SetColumnMapper(mapper names.Mapper) {
 	parser.ClearCaches()
 	parser.columnMapper = mapper
 }
 
+// SetIdentifier set tag identifier
+func (parser *Parser) SetIdentifier(tagName string) {
+	parser.identifier = tagName
+}
+
+// ParseWithCache parse with cache
 func (parser *Parser) ParseWithCache(v reflect.Value) (*schemas.Table, error) {
 	t := v.Type()
 	tableI, ok := parser.tableCache.Load(t)
