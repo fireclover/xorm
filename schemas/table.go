@@ -14,6 +14,7 @@ import (
 // Table represents a database table
 type Table struct {
 	Name          string
+	ObjectId      string
 	Type          reflect.Type
 	columnsSeq    []string
 	columnsMap    map[string][]*Column

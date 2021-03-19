@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
-	"xorm.io/xorm/tags"
+	"gitea.com/nikos06/xorm/caches"
+	"gitea.com/nikos06/xorm/dialects"
+	"gitea.com/nikos06/xorm/names"
+	"gitea.com/nikos06/xorm/schemas"
+	"gitea.com/nikos06/xorm/tags"
 
 	_ "github.com/mattn/go-sqlite3"
 )

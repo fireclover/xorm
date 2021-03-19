@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/xorm/core"
+	"gitea.com/nikos06/xorm/schemas"
 )
 
 // from http://www.postgresql.org/docs/current/static/sql-keywords-appendix.html
@@ -833,6 +833,9 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 	case schemas.Bit:
 		res = schemas.Boolean
 		return res
+	case schemas.SmallInt:
+		res = schemas.SmallInt
+		c.Length = 0
 	case schemas.MediumInt, schemas.Int, schemas.Integer:
 		if c.IsAutoIncrement {
 			return schemas.Serial
@@ -851,10 +854,14 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 		return schemas.Bytea
 	case schemas.DateTime:
 		res = schemas.TimeStamp
+		c.Length = 0
+	case schemas.DateTime2:
+		res = schemas.TimeStamp
 	case schemas.TimeStampz:
 		return "timestamp with time zone"
 	case schemas.Float:
-		res = schemas.Real
+		res = schemas.Float
+		c.Length = 0
 	case schemas.TinyText, schemas.MediumText, schemas.LongText:
 		res = schemas.Text
 	case schemas.NChar:
@@ -867,6 +874,11 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 		return schemas.Bytea
 	case schemas.Double:
 		return "DOUBLE PRECISION"
+	case schemas.UniqueIdentifier:
+		return schemas.Uuid
+	case schemas.Money:
+		res = t
+		c.Length = 0
 	default:
 		if c.IsAutoIncrement {
 			return schemas.Serial

@@ -10,7 +10,7 @@ Installation
 
 Make sure you have installed Go 1.11+ and then:
 
-    go get xorm.io/xorm
+    go get gitea.com/nikos06/xorm
 
 Create Engine
 

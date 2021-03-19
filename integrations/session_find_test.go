@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/names"
+	"gitea.com/nikos06/xorm/internal/utils"
+	"gitea.com/nikos06/xorm/names"
 
 	"github.com/stretchr/testify/assert"
 )

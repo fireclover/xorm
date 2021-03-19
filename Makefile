@@ -1,4 +1,4 @@
-IMPORT := xorm.io/xorm
+IMPORT := gitea.com/nikos06/xorm
 export GO111MODULE=on
 
 GO ?= go
@@ -7,7 +7,7 @@ TAGS ?=
 SED_INPLACE := sed -i
 
 GOFILES := $(shell find . -name "*.go" -type f)
-INTEGRATION_PACKAGES := xorm.io/xorm/integrations
+INTEGRATION_PACKAGES := gitea.com/nikos06/xorm/integrations
 PACKAGES ?= $(filter-out $(INTEGRATION_PACKAGES),$(shell $(GO) list ./...))
 
 TEST_COCKROACH_HOST ?= cockroach:26257

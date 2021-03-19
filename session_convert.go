@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/internal/json"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/xorm/convert"
+	"gitea.com/nikos06/xorm/internal/json"
+	"gitea.com/nikos06/xorm/internal/utils"
+	"gitea.com/nikos06/xorm/schemas"
 )
 
 func (session *Session) str2Time(col *schemas.Column, data string) (outTime time.Time, outErr error) {

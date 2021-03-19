@@ -10,10 +10,10 @@ import (
 	"reflect"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/internal/statements"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/xorm/caches"
+	"gitea.com/nikos06/xorm/internal/statements"
+	"gitea.com/nikos06/xorm/internal/utils"
+	"gitea.com/nikos06/xorm/schemas"
 )
 
 const (

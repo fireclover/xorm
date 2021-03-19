@@ -17,15 +17,17 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
-	"xorm.io/xorm/tags"
+	"github.com/alexbrainman/odbc"
+
+	"gitea.com/nikos06/xorm/caches"
+	"gitea.com/nikos06/xorm/contexts"
+	"gitea.com/nikos06/xorm/core"
+	"gitea.com/nikos06/xorm/dialects"
+	"gitea.com/nikos06/xorm/internal/utils"
+	"gitea.com/nikos06/xorm/log"
+	"gitea.com/nikos06/xorm/names"
+	"gitea.com/nikos06/xorm/schemas"
+	"gitea.com/nikos06/xorm/tags"
 )
 
 // Engine is the major struct of xorm, it means a database manager.
@@ -359,7 +361,7 @@ func (engine *Engine) NoAutoCondition(no ...bool) *Session {
 }
 
 func (engine *Engine) loadTableInfo(table *schemas.Table) error {
-	colSeq, cols, err := engine.dialect.GetColumns(engine.db, engine.defaultContext, table.Name)
+	colSeq, cols, err := engine.dialect.GetColumns(engine.db, engine.defaultContext, table.ObjectId)
 	if err != nil {
 		return err
 	}
@@ -405,6 +407,7 @@ func (engine *Engine) DBMetas() ([]*schemas.Table, error) {
 		if err = engine.loadTableInfo(table); err != nil {
 			return nil, err
 		}
+		engine.logger.Debugf("Loaded schema for table %s", table.Name)
 	}
 	return tables, nil
 }
@@ -445,6 +448,15 @@ func (engine *Engine) DumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 
 func formatColumnValue(dstDialect dialects.Dialect, d interface{}, col *schemas.Column) string {
 	if d == nil {
+		if !col.Nullable {
+			if col.SQLType.IsText() {
+				return "''"
+			} else if col.SQLType.IsTime() {
+				return "0000-00-00 00:00:00"
+			} else if col.SQLType.IsNumeric() {
+				return "0"
+			}
+		}
 		return "NULL"
 	}
 
@@ -519,6 +531,41 @@ func formatColumnValue(dstDialect dialects.Dialect, d interface{}, col *schemas.
 	return s
 }
 
+func isPrimaryKeyIdentity(table *schemas.Table) bool {
+	pkColumns := table.PKColumns()
+	if len(pkColumns) > 1 || len(pkColumns) <= 0 {
+		return false
+	}
+	switch t := pkColumns[0].SQLType.Name; t {
+	case schemas.Serial:
+		return false
+	case schemas.BigSerial:
+		return false
+	case schemas.TinyInt:
+		return true
+	case schemas.SmallInt:
+		return true
+	case schemas.MediumInt:
+		return true
+	case schemas.Int:
+		return true
+	case schemas.Integer:
+		return true
+	case schemas.BigInt:
+		return true
+	case schemas.Decimal:
+		return true
+	case schemas.Numeric:
+		return true
+	case schemas.SmallMoney:
+		return true
+	case schemas.Money:
+		return true
+	default:
+		return false
+	}
+}
+
 // dumpTables dump database all table structs and data to w with specify db type
 func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
 	var dstDialect dialects.Dialect
@@ -566,7 +613,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 				return err
 			}
 		}
-		if len(table.PKColumns()) > 0 && dstDialect.URI().DBType == schemas.MSSQL {
+		if dstDialect.URI().DBType == schemas.MSSQL && isPrimaryKeyIdentity(table) {
 			fmt.Fprintf(w, "SET IDENTITY_INSERT [%s] ON;\n", table.Name)
 		}
 
@@ -583,6 +630,12 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 
 		rows, err := engine.DB().QueryContext(engine.defaultContext, "SELECT "+colNames+" FROM "+engine.Quote(originalTableName))
 		if err != nil {
+			if odbcErr, ok := err.(*odbc.Error); ok {
+				if odbcErr.Diag[0].NativeError==40000 {
+					engine.logger.Errorf("Unable to dump records from table %s: %s", tableName, odbcErr)
+					continue
+				}
+			}
 			return err
 		}
 		defer rows.Close()
@@ -613,13 +666,17 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 			}
 		}
 
-		// FIXME: Hack for postgres
-		if dstDialect.URI().DBType == schemas.POSTGRES && table.AutoIncrColumn() != nil {
-			_, err = io.WriteString(w, "SELECT setval('"+tableName+"_id_seq', COALESCE((SELECT MAX("+table.AutoIncrColumn().Name+") + 1 FROM "+dstDialect.Quoter().Quote(tableName)+"), 1), false);\n")
-			if err != nil {
-				return err
-			}
+		if err := rows.Err(); err != nil {
+			return err
 		}
+
+		// FIXME: Hack for postgres
+		//if dstDialect.URI().DBType == schemas.POSTGRES && table.AutoIncrColumn() != nil {
+		//	_, err = io.WriteString(w, "SELECT setval('"+tableName+"_id_seq', COALESCE((SELECT MAX("+table.AutoIncrColumn().Name+") + 1 FROM "+dstDialect.Quoter().Quote(tableName)+"), 1), false);\n")
+		//	if err != nil {
+		//		return err
+		//	}
+		//}
 	}
 	return nil
 }

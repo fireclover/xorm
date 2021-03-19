@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
-	"xorm.io/xorm/tags"
+	"gitea.com/nikos06/xorm/contexts"
+	"gitea.com/nikos06/xorm/convert"
+	"gitea.com/nikos06/xorm/dialects"
+	"gitea.com/nikos06/xorm/internal/json"
+	"gitea.com/nikos06/xorm/internal/utils"
+	"gitea.com/nikos06/xorm/schemas"
+	"gitea.com/nikos06/xorm/tags"
 )
 
 var (

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/xorm/schemas"
 )
 
 func quoteNeeded(a interface{}) bool {

@@ -8,7 +8,7 @@ import (
 	"context"
 	"database/sql"
 
-	"xorm.io/xorm/contexts"
+	"gitea.com/nikos06/xorm/contexts"
 )
 
 var (

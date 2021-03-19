@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/xorm/core"
+	"gitea.com/nikos06/xorm/schemas"
 )
 
 var (

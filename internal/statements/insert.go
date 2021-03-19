@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/schemas"
 )
 
 func (statement *Statement) writeInsertOutput(buf *strings.Builder, table *schemas.Table) error {

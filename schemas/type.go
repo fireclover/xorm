@@ -100,6 +100,7 @@ var (
 
 	Date          = "DATE"
 	DateTime      = "DATETIME"
+	DateTime2     = "DATETIME2"
 	SmallDateTime = "SMALLDATETIME"
 	Time          = "TIME"
 	TimeStamp     = "TIMESTAMP"
@@ -166,6 +167,7 @@ var (
 
 		Date:          TIME_TYPE,
 		DateTime:      TIME_TYPE,
+		DateTime2:     TIME_TYPE,
 		Time:          TIME_TYPE,
 		TimeStamp:     TIME_TYPE,
 		TimeStampz:    TIME_TYPE,
@@ -333,7 +335,7 @@ func SQLType2Type(st SQLType) reflect.Type {
 		return reflect.TypeOf([]byte{})
 	case Bool:
 		return reflect.TypeOf(true)
-	case DateTime, Date, Time, TimeStamp, TimeStampz, SmallDateTime, Year:
+	case DateTime, DateTime2, Date, Time, TimeStamp, TimeStampz, SmallDateTime, Year:
 		return reflect.TypeOf(c_TIME_DEFAULT)
 	case Decimal, Numeric, Money, SmallMoney:
 		return reflect.TypeOf("")

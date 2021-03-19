@@ -18,13 +18,13 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/internal/json"
-	"xorm.io/xorm/internal/statements"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/xorm/contexts"
+	"gitea.com/nikos06/xorm/convert"
+	"gitea.com/nikos06/xorm/core"
+	"gitea.com/nikos06/xorm/internal/json"
+	"gitea.com/nikos06/xorm/internal/statements"
+	"gitea.com/nikos06/xorm/log"
+	"gitea.com/nikos06/xorm/schemas"
 )
 
 // ErrFieldIsNotExist columns does not exist

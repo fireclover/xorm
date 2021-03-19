@@ -11,8 +11,8 @@ import (
 	"reflect"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/internal/utils"
+	"gitea.com/nikos06/xorm/core"
+	"gitea.com/nikos06/xorm/internal/utils"
 )
 
 // Rows rows wrapper a rows to

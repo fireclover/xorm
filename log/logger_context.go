@@ -7,7 +7,7 @@ package log
 import (
 	"fmt"
 
-	"xorm.io/xorm/contexts"
+	"gitea.com/nikos06/xorm/contexts"
 )
 
 // LogContext represents a log context

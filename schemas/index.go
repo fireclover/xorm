@@ -5,6 +5,7 @@
 package schemas
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"strings"
 )
@@ -31,14 +32,12 @@ func NewIndex(name string, indexType int) *Index {
 func (index *Index) XName(tableName string) string {
 	if !strings.HasPrefix(index.Name, "UQE_") &&
 		!strings.HasPrefix(index.Name, "IDX_") {
-		tableParts := strings.Split(strings.Replace(tableName, `"`, "", -1), ".")
-		tableName = tableParts[len(tableParts)-1]
 		if index.Type == UniqueType {
-			return fmt.Sprintf("UQE_%v_%v", tableName, index.Name)
+			return fmt.Sprintf("UQE_%x", sha1.Sum([]byte(tableName+index.Name)))
 		}
-		return fmt.Sprintf("IDX_%v_%v", tableName, index.Name)
+		return fmt.Sprintf("IDX_%x", sha1.Sum([]byte(tableName+index.Name)))
 	}
-	return index.Name
+	return fmt.Sprintf("%x", sha1.Sum([]byte(tableName+index.Name)))
 }
 
 // AddColumn add columns which will be composite index

@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/xorm/core"
+	"gitea.com/nikos06/xorm/schemas"
 )
 
 var (
@@ -319,6 +319,12 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 		if c.Length == -1 {
 			res += "(MAX)"
 		}
+	case schemas.UniqueIdentifier:
+		res = t
+		c.Length = 0
+	case schemas.Money:
+		res = t
+		c.Length = 0
 	default:
 		res = t
 	}
@@ -395,18 +401,18 @@ func (db *mssql) IsTableExist(queryer core.Queryer, ctx context.Context, tableNa
 func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
 	args := []interface{}{}
 	s := `select a.name as name, b.name as ctype,a.max_length,a.precision,a.scale,a.is_nullable as nullable,
-		  "default_is_null" = (CASE WHEN c.text is null THEN 1 ELSE 0 END),
-	      replace(replace(isnull(c.text,''),'(',''),')','') as vdefault,
+		  "default_is_null" = (CASE WHEN c.definition is null THEN 1 ELSE 0 END),
+	      replace(replace(isnull(c.definition,''),'(',''),')','') as vdefault,
 		  ISNULL(p.is_primary_key, 0), a.is_identity as is_identity
           from sys.columns a 
 		  left join sys.types b on a.user_type_id=b.user_type_id
-          left join sys.syscomments c on a.default_object_id=c.id
+          left join sys.sql_modules c on a.object_id=c.object_id
 		  LEFT OUTER JOIN (SELECT i.object_id, ic.column_id, i.is_primary_key
 			FROM sys.indexes i
 		  LEFT JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
 			WHERE i.is_primary_key = 1
 		) as p on p.object_id = a.object_id AND p.column_id = a.column_id
-          where a.object_id=object_id('` + tableName + `')`
+          where a.object_id='` + tableName + `')`
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
@@ -475,7 +481,7 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 
 func (db *mssql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
 	args := []interface{}{}
-	s := `select name from sysobjects where xtype ='U'`
+	s := `select name,object_id from sys.objects where type ='U'`
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
@@ -487,11 +493,13 @@ func (db *mssql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 	for rows.Next() {
 		table := schemas.NewEmptyTable()
 		var name string
-		err = rows.Scan(&name)
+		var objectId string
+		err = rows.Scan(&name, &objectId)
 		if err != nil {
 			return nil, err
 		}
 		table.Name = strings.Trim(name, "` ")
+		table.ObjectId = objectId
 		tables = append(tables, table)
 	}
 	return tables, nil
@@ -508,7 +516,7 @@ INNER JOIN SYS.INDEX_COLUMNS   IXCS
 ON IXS.OBJECT_ID=IXCS.OBJECT_ID  AND IXS.INDEX_ID = IXCS.INDEX_ID
 INNER   JOIN SYS.COLUMNS C  ON IXS.OBJECT_ID=C.OBJECT_ID
 AND IXCS.COLUMN_ID=C.COLUMN_ID
-WHERE IXS.TYPE_DESC='NONCLUSTERED' and OBJECT_NAME(IXS.OBJECT_ID) =?
+WHERE IXS.TYPE_DESC='NONCLUSTERED' and IXS.OBJECT_ID =?
 `
 
 	rows, err := queryer.QueryContext(ctx, s, args...)

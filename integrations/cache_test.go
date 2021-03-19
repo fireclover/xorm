@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"xorm.io/xorm/caches"
+	"gitea.com/nikos06/xorm/caches"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/schemas"
+	"gitea.com/nikos06/xorm/caches"
+	"gitea.com/nikos06/xorm/schemas"
 )
 
 var (
