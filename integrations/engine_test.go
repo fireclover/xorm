@@ -20,6 +20,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	_ "github.com/ziutek/mymysql/godrv"
+	_ "modernc.org/sqlite"
 )
 
 func TestPing(t *testing.T) {
@@ -185,4 +186,13 @@ func TestSetSchema(t *testing.T) {
 		testEngine.SetSchema(oldSchema)
 		assert.EqualValues(t, oldSchema, testEngine.Dialect().URI().Schema)
 	}
+}
+
+func TestImport(t *testing.T) {
+	sess := testEngine.NewSession()
+	defer sess.Close()
+	assert.NoError(t, sess.Begin())
+	_, err := sess.ImportFile("./testdata/import1.sql")
+	assert.NoError(t, err)
+	assert.NoError(t, sess.Commit())
 }
