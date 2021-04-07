@@ -604,7 +604,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 		if table.Type != nil {
 			val := reflect.New(table.Type)
 			for rows.Next() {
-				err = rows.ScanStructByName(val)
+				err = rows.ScanStructByName(val.Interface())
 				if err != nil {
 					return err
 				}
@@ -618,9 +618,9 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 				for _, d := range dstCols {
 					col := table.GetColumn(d)
 					if col == nil {
-						return errors.New("unknow column error")
+						return errors.New("unknown column error")
 					}
-					temp += "," + formatColumnValue(dstDialect, val.FieldByName(col.FieldName), col)
+					temp += "," + formatColumnValue(dstDialect, val.Elem().FieldByName(col.FieldName), col)
 				}
 				_, err = io.WriteString(w, temp[1:]+");\n")
 				if err != nil {
