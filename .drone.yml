@@ -3,12 +3,12 @@ kind: pipeline
 name: testing
 steps:
 - name: restore-cache  
-  image: drillster/drone-volume-cache  
+  image: drillster/drone-volume-cache
   settings:  
     restore: true  
     mount:  
       - $GOPATH/pkg/mod
-  volumes:  
+  volumes:
     - name: cache
       path: /cache
 
@@ -16,7 +16,7 @@ steps:
   image: golang:1.13 # The lowest golang requirement
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
   commands:
     - make vet
     - make test
@@ -25,6 +25,11 @@ steps:
     event:
     - push
     - pull_request
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -46,11 +51,16 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
   commands:
   - make test-sqlite
   - TEST_CACHE_ENABLE=true make test-sqlite
   - TEST_QUOTE_POLICY=reserved make test-sqlite
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -72,7 +82,7 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_MYSQL_HOST: mysql
     TEST_MYSQL_CHARSET: utf8
     TEST_MYSQL_DBNAME: xorm_test
@@ -89,7 +99,7 @@ steps:
   - test-mysql
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_MYSQL_HOST: mysql
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -107,7 +117,7 @@ steps:
     - test-mysql-utf8mb4
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_MYSQL_HOST: mysql:3306
     TEST_MYSQL_DBNAME: xorm_test
     TEST_MYSQL_USERNAME: root
@@ -124,6 +134,11 @@ services:
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -145,7 +160,7 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_MYSQL_HOST: mysql8
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -163,6 +178,11 @@ services:
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -184,7 +204,7 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_MYSQL_HOST: mariadb
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -202,6 +222,11 @@ services:
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -224,7 +249,7 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_PGSQL_HOST: pgsql
     TEST_PGSQL_DBNAME: xorm_test
     TEST_PGSQL_USERNAME: postgres
@@ -241,7 +266,7 @@ steps:
   - test-postgres
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_PGSQL_HOST: pgsql
     TEST_PGSQL_SCHEMA: xorm
     TEST_PGSQL_DBNAME: xorm_test
@@ -260,6 +285,11 @@ services:
     POSTGRES_DB: xorm_test
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: postgres
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -282,7 +312,7 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_MSSQL_HOST: mssql
     TEST_MSSQL_DBNAME: xorm_test
     TEST_MSSQL_USERNAME: sa
@@ -301,6 +331,11 @@ services:
     ACCEPT_EULA: Y
     SA_PASSWORD: yourStrong(!)Password
     MSSQL_PID: Developer
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -323,7 +358,7 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_TIDB_HOST: "tidb:4000"
     TEST_TIDB_DBNAME: xorm_test
     TEST_TIDB_USERNAME: root
@@ -337,6 +372,11 @@ services:
 - name: tidb
   pull: default
   image: pingcap/tidb:v3.0.3
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -359,7 +399,7 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
     TEST_COCKROACH_HOST: "cockroach:26257"
     TEST_COCKROACH_DBNAME: xorm_test
     TEST_COCKROACH_USERNAME: root
@@ -375,6 +415,11 @@ services:
   image: cockroachdb/cockroach:v19.2.4
   commands:
   - /cockroach/cockroach start --insecure
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -395,7 +440,7 @@ steps:
   image: golang:1.13
   environment:
     GO111MODULE: "on"
-    GOPROXY: "https://goproxy.cn"
+    GOPROXY: "https://goproxy.io"
   commands:
   - make coverage
   when:
