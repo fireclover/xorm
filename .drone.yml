@@ -2,6 +2,16 @@
 kind: pipeline
 name: testing
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-vet
   image: golang:1.13 # The lowest golang requirement
   environment:
@@ -22,6 +32,16 @@ name: test-sqlite
 depends_on:
   - testing
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-sqlite
   image: golang:1.13
   environment:
@@ -38,6 +58,16 @@ name: test-mysql
 depends_on:
   - test-sqlite
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-mysql
   image: golang:1.13
   environment:
@@ -101,6 +131,16 @@ name: test-mysql8
 depends_on:
   - test-mysql
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-mysql8
   image: golang:1.13
   environment:
@@ -130,6 +170,16 @@ name: test-mariadb
 depends_on:
   - test-mysql8
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-mariadb
   image: golang:1.13
   environment:
@@ -159,6 +209,16 @@ name: test-postgres
 depends_on:
   - test-mariadb
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-postgres
   pull: default
   image: golang:1.13
@@ -207,6 +267,16 @@ name: test-mssql
 depends_on:
   - test-postgres
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-mssql
   pull: default
   image: golang:1.13
@@ -238,6 +308,16 @@ name: test-tidb
 depends_on:
   - test-mssql
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-tidb
   pull: default
   image: golang:1.13
@@ -264,6 +344,16 @@ name: test-cockroach
 depends_on:
   - test-tidb
 steps:
+- name: restore-cache  
+  image: drillster/drone-volume-cache  
+  settings:  
+    restore: true  
+    mount:  
+      - $GOPATH/pkg/mod
+  volumes:  
+    - name: cache
+      path: /cache
+
 - name: test-cockroach
   pull: default
   image: golang:1.13
