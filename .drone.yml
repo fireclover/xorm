@@ -2,34 +2,60 @@
 kind: pipeline
 name: testing
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
   volumes:
-    - name: cache
-      path: /cache
+  - name: cache
+    path: /go
 
 - name: test-vet
-  image: golang:1.13 # The lowest golang requirement
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
   commands:
     - make vet
     - make test
     - make fmt-check
+  volumes:
+  - name: cache
+    path: /go
   when:
     event:
     - push
     - pull_request
 
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
+
 volumes:
   - name: cache
-    host: 
-      path: /tmp/cache
+    host:
+      path: /var/lib/cache
 
 ---
 kind: pipeline
@@ -37,30 +63,56 @@ name: test-sqlite
 depends_on:
   - testing
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache  
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
-  volumes:  
-    - name: cache
-      path: /cache
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-sqlite
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
   commands:
   - make test-sqlite
   - TEST_CACHE_ENABLE=true make test-sqlite
   - TEST_QUOTE_POLICY=reserved make test-sqlite
+  volumes:
+  - name: cache
+    path: /go
+
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 volumes:
   - name: cache
-    host: 
-      path: /tmp/cache
+    host:
+      path: /var/lib/cache
 
 ---
 kind: pipeline
@@ -68,21 +120,29 @@ name: test-mysql
 depends_on:
   - test-sqlite
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache  
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
-  volumes:  
-    - name: cache
-      path: /cache
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-mysql
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mysql
     TEST_MYSQL_CHARSET: utf8
     TEST_MYSQL_DBNAME: xorm_test
@@ -92,14 +152,20 @@ steps:
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
+  volumes:
+  - name: cache
+    path: /go
   
 - name: test-mysql-utf8mb4
-  image: golang:1.13
+  image: golang:1.15
   depends_on:
   - test-mysql
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mysql
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -109,15 +175,21 @@ steps:
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-mymysql
   pull: default
-  image: golang:1.13
+  image: golang:1.15
   depends_on:
     - test-mysql-utf8mb4
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mysql:3306
     TEST_MYSQL_DBNAME: xorm_test
     TEST_MYSQL_USERNAME: root
@@ -126,6 +198,29 @@ steps:
   - make test-mymysql
   - TEST_CACHE_ENABLE=true make test-mymysql
   - TEST_QUOTE_POLICY=reserved make test-mymysql
+  volumes:
+  - name: cache
+    path: /go
+
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
+
+volumes:
+  - name: cache
+    host:
+      path: /var/lib/cache
 
 services:
 - name: mysql
@@ -135,32 +230,35 @@ services:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
 
-volumes:
-  - name: cache
-    host: 
-      path: /tmp/cache
-
 ---
 kind: pipeline
 name: test-mysql8
 depends_on:
   - test-mysql
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache  
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
-  volumes:  
-    - name: cache
-      path: /cache
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-mysql8
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mysql8
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -170,6 +268,29 @@ steps:
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
+  volumes:
+  - name: cache
+    path: /go
+
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
+
+volumes:
+  - name: cache
+    host:
+      path: /var/lib/cache
 
 services:
 - name: mysql8
@@ -179,32 +300,35 @@ services:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
 
-volumes:
-  - name: cache
-    host: 
-      path: /tmp/cache
-
 ---
 kind: pipeline
 name: test-mariadb
 depends_on:
   - test-mysql8
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache  
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
-  volumes:  
-    - name: cache
-      path: /cache
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-mariadb
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mariadb
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -214,6 +338,29 @@ steps:
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
+  volumes:
+  - name: cache
+    path: /go
+
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
+
+volumes:
+  - name: cache
+    host:
+      path: /var/lib/cache
 
 services:
 - name: mariadb
@@ -223,33 +370,36 @@ services:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
     MYSQL_DATABASE: xorm_test
 
-volumes:
-  - name: cache
-    host: 
-      path: /tmp/cache
-
 ---
 kind: pipeline
 name: test-postgres
 depends_on:
   - test-mariadb
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache  
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
-  volumes:  
-    - name: cache
-      path: /cache
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-postgres
   pull: default
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_PGSQL_HOST: pgsql
     TEST_PGSQL_DBNAME: xorm_test
     TEST_PGSQL_USERNAME: postgres
@@ -258,15 +408,21 @@ steps:
   - make test-postgres
   - TEST_CACHE_ENABLE=true make test-postgres
   - TEST_QUOTE_POLICY=reserved make test-postgres
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-postgres-schema
   pull: default
-  image: golang:1.13
+  image: golang:1.15
   depends_on:
   - test-postgres
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_PGSQL_HOST: pgsql
     TEST_PGSQL_SCHEMA: xorm
     TEST_PGSQL_DBNAME: xorm_test
@@ -276,6 +432,29 @@ steps:
   - make test-postgres
   - TEST_CACHE_ENABLE=true make test-postgres
   - TEST_QUOTE_POLICY=reserved make test-postgres
+  volumes:
+  - name: cache
+    path: /go
+
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
+
+volumes:
+  - name: cache
+    host:
+      path: /var/lib/cache
 
 services:
 - name: pgsql
@@ -286,33 +465,36 @@ services:
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: postgres
 
-volumes:
-  - name: cache
-    host: 
-      path: /tmp/cache
-
 ---
 kind: pipeline
 name: test-mssql
 depends_on:
   - test-postgres
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache  
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
-  volumes:  
-    - name: cache
-      path: /cache
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-mssql
   pull: default
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_MSSQL_HOST: mssql
     TEST_MSSQL_DBNAME: xorm_test
     TEST_MSSQL_USERNAME: sa
@@ -322,6 +504,29 @@ steps:
   - TEST_CACHE_ENABLE=true make test-mssql
   - TEST_QUOTE_POLICY=reserved make test-mssql
   - TEST_MSSQL_DEFAULT_VARCHAR=NVARCHAR TEST_MSSQL_DEFAULT_CHAR=NCHAR make test-mssql
+  volumes:
+  - name: cache
+    path: /go
+
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
+
+volumes:
+  - name: cache
+    host:
+      path: /var/lib/cache
 
 services:
 - name: mssql
@@ -332,33 +537,36 @@ services:
     SA_PASSWORD: yourStrong(!)Password
     MSSQL_PID: Developer
 
-volumes:
-  - name: cache
-    host: 
-      path: /tmp/cache
-
 ---
 kind: pipeline
 name: test-tidb
 depends_on:
   - test-mssql
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache  
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
-  volumes:  
-    - name: cache
-      path: /cache
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-tidb
   pull: default
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_TIDB_HOST: "tidb:4000"
     TEST_TIDB_DBNAME: xorm_test
     TEST_TIDB_USERNAME: root
@@ -367,16 +575,34 @@ steps:
   - make test-tidb
   - TEST_CACHE_ENABLE=true make test-tidb
   - TEST_QUOTE_POLICY=reserved make test-tidb
+  volumes:
+  - name: cache
+    path: /go
+
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
+
+volumes:
+  - name: cache
+    host:
+      path: /var/lib/cache
 
 services:
 - name: tidb
   pull: default
   image: pingcap/tidb:v3.0.3
-
-volumes:
-  - name: cache
-    host: 
-      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -384,22 +610,30 @@ name: test-cockroach
 depends_on:
   - test-tidb
 steps:
-- name: restore-cache  
-  image: drillster/drone-volume-cache  
-  settings:  
-    restore: true  
-    mount:  
-      - $GOPATH/pkg/mod
-  volumes:  
-    - name: cache
-      path: /cache
+- name: restore-cache
+  image: meltwater/drone-cache
+  pull: always
+  settings:
+    backend: "filesystem"
+    restore: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
 
 - name: test-cockroach
   pull: default
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
+    CGO_ENABLED: 0
+    GOMODCACHE: '/drone/src/pkg.mod'
+    GOCACHE: '/drone/src/pkg.build'
     TEST_COCKROACH_HOST: "cockroach:26257"
     TEST_COCKROACH_DBNAME: xorm_test
     TEST_COCKROACH_USERNAME: root
@@ -408,6 +642,29 @@ steps:
   - sleep 10
   - make test-cockroach
   - TEST_CACHE_ENABLE=true make test-cockroach
+  volumes:
+  - name: cache
+    path: /go
+
+- name: rebuild-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - pkg.mod
+      - pkg.build
+  volumes:
+  - name: cache
+    path: /go
+
+volumes:
+  - name: cache
+    host:
+      path: /var/lib/cache
 
 services:
 - name: cockroach
@@ -415,11 +672,6 @@ services:
   image: cockroachdb/cockroach:v19.2.4
   commands:
   - /cockroach/cockroach start --insecure
-
-volumes:
-  - name: cache
-    host: 
-      path: /tmp/cache
 
 ---
 kind: pipeline
@@ -437,7 +689,7 @@ depends_on:
 steps:
 - name: merge_coverage
   pull: default
-  image: golang:1.13
+  image: golang:1.15
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
