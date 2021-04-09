@@ -69,8 +69,9 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -100,8 +101,9 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -111,8 +113,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 ---
 kind: pipeline
@@ -126,8 +127,9 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -209,8 +211,9 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -220,8 +223,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 services:
 - name: mysql
@@ -243,8 +245,9 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -279,8 +282,9 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -290,8 +294,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 services:
 - name: mysql8
@@ -313,8 +316,9 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -349,8 +353,9 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -360,8 +365,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 services:
 - name: mariadb
@@ -383,8 +387,9 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -443,8 +448,9 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -454,8 +460,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 services:
 - name: pgsql
@@ -478,8 +483,9 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -515,8 +521,9 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -526,8 +533,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 services:
 - name: mssql
@@ -550,8 +556,9 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -586,8 +593,9 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -597,8 +605,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 services:
 - name: tidb
@@ -617,8 +624,9 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -653,8 +661,9 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -664,8 +673,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 services:
 - name: cockroach
