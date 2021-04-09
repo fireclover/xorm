@@ -38,7 +38,7 @@ steps:
     - pull_request
 
 - name: rebuild-cache
-  image: meltwater/drone-cache:dev
+  image: meltwater/drone-cache
   pull: true
   settings:
     backend: "filesystem"
