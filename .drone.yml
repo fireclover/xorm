@@ -8,7 +8,7 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "cache"
+    cache_key: "volume"
     archive_format: "gzip"
     mount:
       - pkg.mod
@@ -29,9 +29,6 @@ steps:
     - make vet
     - make test
     - make fmt-check
-  volumes:
-  - name: cache
-    path: /go
   when:
     event:
     - push
