@@ -28,7 +28,6 @@ steps:
     GOCACHE: '/drone/src/pkg.build'
   commands:
     - make vet
-    - make test
     - make fmt-check
   volumes:
   - name: cache
@@ -150,6 +149,7 @@ steps:
     TEST_MYSQL_USERNAME: root
     TEST_MYSQL_PASSWORD:
   commands:
+  - make test
   - make test-mysql
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
