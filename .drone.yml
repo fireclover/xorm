@@ -84,7 +84,7 @@ steps:
   environment:
     GO111MODULE: "on"
     GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 0
+    CGO_ENABLED: 1
     GOMODCACHE: '/drone/src/pkg.mod'
     GOCACHE: '/drone/src/pkg.build'
   commands:
