@@ -6,7 +6,9 @@ GOFMT ?= gofmt -s
 TAGS ?=
 SED_INPLACE := sed -i
 
-GOFILES := $(shell find . -name "*.go" -type f)
+GO_DIRS := caches contexts integrations convert core dialects internal log migrate names schemas tags
+GOFILES := $(wildcard *.go)
+GOFILES += $(shell find $(GO_DIRS) -name "*.go" -type f)
 INTEGRATION_PACKAGES := xorm.io/xorm/integrations
 PACKAGES ?= $(filter-out $(INTEGRATION_PACKAGES),$(shell $(GO) list ./...))
 
@@ -70,6 +72,7 @@ fmt:
 .PHONY: fmt-check
 fmt-check:
 	# get all go files and run go fmt on them
+	echo $(GOFILES)
 	@diff=$$($(GOFMT) -d $(GOFILES)); \
 	if [ -n "$$diff" ]; then \
 		echo "Please run 'make fmt' and commit the result:"; \
