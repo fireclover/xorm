@@ -134,6 +134,8 @@ volumes:
 ---
 kind: pipeline
 name: test-mysql
+depends_on:
+  - testing
 steps:
 - name: restore-cache
   image: meltwater/drone-cache
