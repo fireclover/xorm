@@ -64,7 +64,7 @@ depends_on:
   - testing
 steps:
 - name: restore-cache
-  image: meltwater/drone-cache
+  image: meltwater/drone-cache:dev
   pull: always
   settings:
     backend: "filesystem"
