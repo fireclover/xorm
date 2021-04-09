@@ -10,6 +10,7 @@ steps:
     restore: true
     cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
@@ -45,6 +46,7 @@ steps:
     rebuild: true
     cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
+    filesystem_cache_root: "/go"
     mount:
       - pkg.mod
       - pkg.build
