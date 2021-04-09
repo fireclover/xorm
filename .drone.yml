@@ -8,7 +8,7 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: "cache"
     archive_format: "gzip"
     mount:
       - pkg.mod
