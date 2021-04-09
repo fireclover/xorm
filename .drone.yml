@@ -8,7 +8,7 @@ steps:
   settings:
     backend: "filesystem"
     restore: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
     mount:
       - pkg.mod
@@ -29,6 +29,9 @@ steps:
     - make vet
     - make test
     - make fmt-check
+  volumes:
+  - name: cache
+    path: /go
   when:
     event:
     - push
@@ -40,7 +43,7 @@ steps:
   settings:
     backend: "filesystem"
     rebuild: true
-    cache_key: "volume"
+    cache_key: '{{ .Repo.Name }}_{{ checksum "go.mod" }}_{{ checksum "go.sum" }}_{{ arch }}_{{ os }}'
     archive_format: "gzip"
     mount:
       - pkg.mod
@@ -51,8 +54,7 @@ steps:
 
 volumes:
   - name: cache
-    host:
-      path: /var/lib/cache
+    temp: {}
 
 ---
 kind: pipeline
