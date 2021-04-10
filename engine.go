@@ -1321,6 +1321,7 @@ func (engine *Engine) SetSchema(schema string) {
 	engine.dialect.URI().SetSchema(schema)
 }
 
+// AddHook adds a context Hook
 func (engine *Engine) AddHook(hook contexts.Hook) {
 	engine.db.AddHook(hook)
 }
@@ -1336,7 +1337,7 @@ func (engine *Engine) tbNameWithSchema(v string) string {
 	return dialects.TableNameWithSchema(engine.dialect, v)
 }
 
-// ContextHook creates a session with the context
+// Context creates a session with the context
 func (engine *Engine) Context(ctx context.Context) *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true
