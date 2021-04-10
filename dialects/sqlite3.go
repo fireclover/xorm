@@ -149,40 +149,6 @@ var (
 		Suffix:     '`',
 		IsReserved: schemas.AlwaysReserve,
 	}
-
-	sqlite3Types = map[string]int{
-		"INT":              schemas.NUMERIC_TYPE,
-		"INTEGER":          schemas.NUMERIC_TYPE,
-		"TINYINT":          schemas.NUMERIC_TYPE,
-		"SMALLINT":         schemas.NUMERIC_TYPE,
-		"MEDIUMINT":        schemas.NUMERIC_TYPE,
-		"BIGINT":           schemas.NUMERIC_TYPE,
-		"UNSIGNED BIG INT": schemas.NUMERIC_TYPE,
-		"INT2":             schemas.NUMERIC_TYPE,
-		"INT8":             schemas.NUMERIC_TYPE,
-
-		"REAL":             schemas.NUMERIC_TYPE,
-		"DOUBLE":           schemas.NUMERIC_TYPE,
-		"DOUBLE PRECISION": schemas.NUMERIC_TYPE,
-		"FLOAT":            schemas.NUMERIC_TYPE,
-		"NUMERIC":          schemas.NUMERIC_TYPE,
-		"DECIMAL":          schemas.NUMERIC_TYPE,
-		"BOOLEAN":          schemas.NUMERIC_TYPE,
-
-		"CHARACTER":         schemas.TEXT_TYPE,
-		"VARCHAR":           schemas.TEXT_TYPE,
-		"VARYING CHARACTER": schemas.TEXT_TYPE,
-		"NCHAR":             schemas.TEXT_TYPE,
-		"NATIVE CHARACTER":  schemas.TEXT_TYPE,
-		"NVARCHAR":          schemas.TEXT_TYPE,
-		"TEXT":              schemas.TEXT_TYPE,
-		"CLOB":              schemas.TEXT_TYPE,
-
-		"BLOB": schemas.BLOB_TYPE,
-
-		"DATE":     schemas.TIME_TYPE,
-		"DATETIME": schemas.TIME_TYPE,
-	}
 )
 
 type sqlite3 struct {
@@ -227,7 +193,8 @@ func (db *sqlite3) SQLType(c *schemas.Column) string {
 	case schemas.Char, schemas.Varchar, schemas.NVarchar, schemas.TinyText,
 		schemas.Text, schemas.MediumText, schemas.LongText, schemas.Json:
 		return schemas.Text
-	case schemas.Bit, schemas.TinyInt, schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer, schemas.BigInt:
+	case schemas.Bit, schemas.TinyInt, schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer, schemas.BigInt,
+		schemas.UnsignedBigInt, schemas.UnsignedInt:
 		return schemas.Integer
 	case schemas.Float, schemas.Double, schemas.Real:
 		return schemas.Real
