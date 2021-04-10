@@ -74,13 +74,14 @@ func (s *SQLType) IsXML() bool {
 
 var (
 	Bit            = "BIT"
+	UnsignedBit    = "UNSIGNED BIT"
 	TinyInt        = "TINYINT"
 	SmallInt       = "SMALLINT"
 	MediumInt      = "MEDIUMINT"
 	Int            = "INT"
+	UnsignedInt    = "UNSIGNED INT"
 	Integer        = "INTEGER"
 	BigInt         = "BIGINT"
-	UnsignedInt    = "UNSIGNED INT"
 	UnsignedBigInt = "UNSIGNED BIGINT"
 
 	Enum = "ENUM"
@@ -139,13 +140,14 @@ var (
 
 	SqlTypes = map[string]int{
 		Bit:            NUMERIC_TYPE,
+		UnsignedBit:    NUMERIC_TYPE,
 		TinyInt:        NUMERIC_TYPE,
 		SmallInt:       NUMERIC_TYPE,
 		MediumInt:      NUMERIC_TYPE,
 		Int:            NUMERIC_TYPE,
+		UnsignedInt:    NUMERIC_TYPE,
 		Integer:        NUMERIC_TYPE,
 		BigInt:         NUMERIC_TYPE,
-		UnsignedInt:    NUMERIC_TYPE,
 		UnsignedBigInt: NUMERIC_TYPE,
 
 		Enum:  TEXT_TYPE,
