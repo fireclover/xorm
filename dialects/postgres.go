@@ -1052,6 +1052,10 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 			}
 		}
 
+		if colDefault != nil && *colDefault == "unique_rowid()" { // ignore the system column added by cockroach
+			continue
+		}
+
 		col.Name = strings.Trim(colName, `" `)
 
 		if colDefault != nil {
