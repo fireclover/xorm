@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"xorm.io/xorm/schemas"
 )
 
 func TestStoreEngine(t *testing.T) {
@@ -102,6 +103,9 @@ func TestSyncTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
 	assert.EqualValues(t, "sync_table1", tables[0].Name)
+	tableInfo, err := testEngine.TableInfo(new(SyncTable1))
+	assert.NoError(t, err)
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 
 	assert.NoError(t, testEngine.Sync2(new(SyncTable2)))
 
@@ -109,6 +113,9 @@ func TestSyncTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
 	assert.EqualValues(t, "sync_table1", tables[0].Name)
+	tableInfo, err = testEngine.TableInfo(new(SyncTable2))
+	assert.NoError(t, err)
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 
 	assert.NoError(t, testEngine.Sync2(new(SyncTable3)))
 
@@ -116,6 +123,9 @@ func TestSyncTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
 	assert.EqualValues(t, "sync_table1", tables[0].Name)
+	tableInfo, err = testEngine.TableInfo(new(SyncTable3))
+	assert.NoError(t, err)
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 }
 
 func TestSyncTable2(t *testing.T) {
@@ -141,6 +151,63 @@ func TestSyncTable2(t *testing.T) {
 	assert.EqualValues(t, "sync_tablex", tables[0].Name)
 	assert.EqualValues(t, 4, len(tables[0].Columns()))
 	assert.EqualValues(t, colMapper.Obj2Table("NewCol"), tables[0].Columns()[3].Name)
+}
+
+func TestSyncTable3(t *testing.T) {
+	type SyncTable5 struct {
+		Id         int64
+		Name       string
+		Text       string   `xorm:"TEXT"`
+		Char       byte     `xorm:"CHAR(1)"`
+		TenChar    [10]byte `xorm:"CHAR(10)"`
+		TenVarChar string   `xorm:"VARCHAR(10)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+
+	assert.NoError(t, testEngine.Sync2(new(SyncTable5)))
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	tableInfo, err := testEngine.TableInfo(new(SyncTable5))
+	assert.NoError(t, err)
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("name")), testEngine.Dialect().SQLType(tables[0].GetColumn("name")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("text")), testEngine.Dialect().SQLType(tables[0].GetColumn("text")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("char")), testEngine.Dialect().SQLType(tables[0].GetColumn("char")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")))
+	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_var_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_var_char")))
+
+	if *doNVarcharTest {
+		var oldDefaultVarchar string
+		var oldDefaultChar string
+		oldDefaultVarchar, *defaultVarchar = *defaultVarchar, "nvarchar"
+		oldDefaultChar, *defaultChar = *defaultChar, "nchar"
+		testEngine.Dialect().SetParams(map[string]string{
+			"DEFAULT_VARCHAR": *defaultVarchar,
+			"DEFAULT_CHAR":    *defaultChar,
+		})
+		defer func() {
+			*defaultVarchar = oldDefaultVarchar
+			*defaultChar = oldDefaultChar
+			testEngine.Dialect().SetParams(map[string]string{
+				"DEFAULT_VARCHAR": *defaultVarchar,
+				"DEFAULT_CHAR":    *defaultChar,
+			})
+		}()
+		assert.NoError(t, PrepareEngine())
+
+		assert.NoError(t, testEngine.Sync2(new(SyncTable5)))
+
+		tables, err := testEngine.DBMetas()
+		assert.NoError(t, err)
+		tableInfo, err := testEngine.TableInfo(new(SyncTable5))
+		assert.NoError(t, err)
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("name")), testEngine.Dialect().SQLType(tables[0].GetColumn("name")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("text")), testEngine.Dialect().SQLType(tables[0].GetColumn("text")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("char")), testEngine.Dialect().SQLType(tables[0].GetColumn("char")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")))
+		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_var_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_var_char")))
+	}
 }
 
 func TestIsTableExist(t *testing.T) {
@@ -329,4 +396,31 @@ func TestSync2_Default(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(TestSync2Default))
 	assert.NoError(t, testEngine.Sync2(new(TestSync2Default)))
+}
+
+func TestModifyColum(t *testing.T) {
+	// Since SQLITE don't support modify column SQL, currrently just ignore
+	if testEngine.Dialect().URI().DBType == schemas.SQLITE {
+		return
+	}
+	type TestModifyColumn struct {
+		Id       int64
+		UserId   int64  `xorm:"default(1)"`
+		IsMember bool   `xorm:"default(true)"`
+		Name     string `xorm:"char(10)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestModifyColumn))
+
+	alterSQL := testEngine.Dialect().ModifyColumnSQL("test_modify_column", &schemas.Column{
+		Name: "name",
+		SQLType: schemas.SQLType{
+			Name: "VARCHAR",
+		},
+		Length:   16,
+		Nullable: false,
+	})
+	_, err := testEngine.Exec(alterSQL)
+	assert.NoError(t, err)
 }

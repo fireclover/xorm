@@ -502,13 +502,58 @@ func TestFindAndCountOneFunc(t *testing.T) {
 	assert.EqualValues(t, 1, cnt)
 
 	results = make([]FindAndCountStruct, 0, 1)
-	cnt, err = testEngine.Where("msg = ?", true).Limit(1).FindAndCount(&results)
+	cnt, err = testEngine.Where("1=1").Limit(1).FindAndCount(&results)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(results))
+	assert.EqualValues(t, 2, cnt)
+	assert.EqualValues(t, FindAndCountStruct{
+		Id:      1,
+		Content: "111",
+		Msg:     false,
+	}, results[0])
+
+	results = make([]FindAndCountStruct, 0, 1)
+	cnt, err = testEngine.Where("1=1").Limit(1).FindAndCount(&results)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(results))
+	assert.EqualValues(t, 2, cnt)
+	assert.EqualValues(t, FindAndCountStruct{
+		Id:      1,
+		Content: "111",
+		Msg:     false,
+	}, results[0])
+
+	results = make([]FindAndCountStruct, 0, 1)
+	cnt, err = testEngine.Where("1=1").Limit(1, 1).FindAndCount(&results)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(results))
+	assert.EqualValues(t, 2, cnt)
+	assert.EqualValues(t, FindAndCountStruct{
+		Id:      2,
+		Content: "222",
+		Msg:     true,
+	}, results[0])
+
+	results = make([]FindAndCountStruct, 0, 1)
+	cnt, err = testEngine.Where("1=1").Limit(1, 1).FindAndCount(&results)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(results))
+	assert.EqualValues(t, 2, cnt)
+	assert.EqualValues(t, FindAndCountStruct{
+		Id:      2,
+		Content: "222",
+		Msg:     true,
+	}, results[0])
+
+	results = make([]FindAndCountStruct, 0, 1)
+	cnt, err = testEngine.Where("msg = ?", true).Select("id, content, msg").
+		Limit(1).FindAndCount(&results)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(results))
 	assert.EqualValues(t, 1, cnt)
 
 	results = make([]FindAndCountStruct, 0, 1)
-	cnt, err = testEngine.Where("msg = ?", true).Select("id, content, msg").
+	cnt, err = testEngine.Where("msg = ?", true).Cols("id", "content", "msg").
 		Limit(1).FindAndCount(&results)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(results))
@@ -708,6 +753,13 @@ func TestFindExtends(t *testing.T) {
 	err = testEngine.Find(&results)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, len(results))
+
+	results = make([]FindExtendsA, 0, 2)
+	err = testEngine.Find(&results, &FindExtendsB{
+		ID: 1,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(results))
 }
 
 func TestFindExtends3(t *testing.T) {

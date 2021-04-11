@@ -101,6 +101,7 @@ type EngineInterface interface {
 	SetCacher(string, caches.Cacher)
 	SetConnMaxLifetime(time.Duration)
 	SetColumnMapper(names.Mapper)
+	SetTagIdentifier(string)
 	SetDefaultCacher(caches.Cacher)
 	SetLogger(logger interface{})
 	SetLogLevel(log.LogLevel)
@@ -120,6 +121,7 @@ type EngineInterface interface {
 	TableInfo(bean interface{}) (*schemas.Table, error)
 	TableName(interface{}, ...bool) string
 	UnMapType(reflect.Type)
+	EnableSessionID(bool)
 }
 
 var (

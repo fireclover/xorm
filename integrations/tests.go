@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -35,7 +36,10 @@ var (
 	schema             = flag.String("schema", "", "specify the schema")
 	ignoreSelectUpdate = flag.Bool("ignore_select_update", false, "ignore select update if implementation difference, only for tidb")
 	ingoreUpdateLimit  = flag.Bool("ignore_update_limit", false, "ignore update limit if implementation difference, only for cockroach")
+	doNVarcharTest     = flag.Bool("do_nvarchar_override_test", false, "do nvarchar override test in sync table, only for mssql")
 	quotePolicyStr     = flag.String("quote", "always", "quote could be always, none, reversed")
+	defaultVarchar     = flag.String("default_varchar", "varchar", "default varchar type, mssql only, could be varchar or nvarchar, default is varchar")
+	defaultChar        = flag.String("default_char", "char", "default char type, mssql only, could be char or nchar, default is char")
 	tableMapper        names.Mapper
 	colMapper          names.Mapper
 )
@@ -94,6 +98,13 @@ func createEngine(dbType, connStr string) error {
 					return fmt.Errorf("db.Exec: %v", err)
 				}
 				db.Close()
+			case schemas.SQLITE, "sqlite":
+				u, err := url.Parse(connStr)
+				if err != nil {
+					return err
+				}
+				connStr = u.Path
+				*ignoreSelectUpdate = true
 			default:
 				*ignoreSelectUpdate = true
 			}
@@ -137,6 +148,11 @@ func createEngine(dbType, connStr string) error {
 		} else {
 			testEngine.SetQuotePolicy(dialects.QuotePolicyAlways)
 		}
+
+		testEngine.Dialect().SetParams(map[string]string{
+			"DEFAULT_VARCHAR": *defaultVarchar,
+			"DEFAULT_CHAR":    *defaultChar,
+		})
 	}
 
 	tableMapper = testEngine.GetTableMapper()
@@ -156,17 +172,25 @@ func createEngine(dbType, connStr string) error {
 	return nil
 }
 
+// PrepareEngine prepare tests ORM engine
 func PrepareEngine() error {
 	return createEngine(dbType, connString)
 }
 
+// MainTest the tests entrance
 func MainTest(m *testing.M) {
 	flag.Parse()
 
 	dbType = *db
 	if *db == "sqlite3" {
 		if ptrConnStr == nil {
-			connString = "./test.db?cache=shared&mode=rwc"
+			connString = "./test_sqlite3.db?cache=shared&mode=rwc"
+		} else {
+			connString = *ptrConnStr
+		}
+	} else if *db == "sqlite" {
+		if ptrConnStr == nil {
+			connString = "./test_sqlite.db?cache=shared&mode=rwc"
 		} else {
 			connString = *ptrConnStr
 		}
