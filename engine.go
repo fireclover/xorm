@@ -601,8 +601,6 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 		}
 		defer rows.Close()
 
-		fmt.Fprintf(os.Stdout, "%s: table.Type: %T\n", dstTableName, table.Type)
-
 		if table.Type != nil {
 			val := reflect.New(table.Type)
 			for rows.Next() {
