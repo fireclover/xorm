@@ -448,6 +448,21 @@ func formatColumnValue(dstDialect dialects.Dialect, d interface{}, col *schemas.
 		return "NULL"
 	}
 
+	if dstDialect.URI().DBType == schemas.SQLITE || dstDialect.URI().DBType == schemas.MSSQL {
+		if dq, ok := d.(bool); ok {
+			if dq {
+				return "1"
+			}
+			return "0"
+		}
+		if val, ok := d.(reflect.Value); ok && val.Kind() == reflect.Bool {
+			if val.Bool() {
+				return "1"
+			}
+			return "0"
+		}
+	}
+
 	if dq, ok := d.(bool); ok && (dstDialect.URI().DBType == schemas.SQLITE ||
 		dstDialect.URI().DBType == schemas.MSSQL) {
 		if dq {
@@ -600,6 +615,8 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 			return err
 		}
 		defer rows.Close()
+
+		fmt.Fprintf(os.Stdout, "%s: table.Type: %T\n", dstTableName, table.Type)
 
 		if table.Type != nil {
 			val := reflect.New(table.Type)
