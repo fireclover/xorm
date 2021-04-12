@@ -602,9 +602,24 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 		defer rows.Close()
 
 		if table.Type != nil {
-			val := reflect.New(table.Type)
+			sess := engine.NewSession()
+			defer sess.Close()
+
+			bean := reflect.New(table.Type)
 			for rows.Next() {
-				err = rows.ScanStructByName(val.Interface())
+				fields, err := rows.Columns()
+				if err != nil {
+					return err
+				}
+				scanResults, err := sess.row2Slice(rows, fields, bean)
+				if err != nil {
+					return err
+				}
+				// close it before convert data
+				rows.Close()
+
+				dataStruct := utils.ReflectValue(bean)
+				_, err = sess.slice2Bean(scanResults, fields, bean, &dataStruct, table)
 				if err != nil {
 					return err
 				}
@@ -620,7 +635,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 					if col == nil {
 						return errors.New("unknown column error")
 					}
-					temp += "," + formatColumnValue(dstDialect, val.Elem().FieldByName(col.FieldName).Interface(), col)
+					temp += "," + formatColumnValue(dstDialect, bean.Elem().FieldByName(col.FieldName).Interface(), col)
 				}
 				_, err = io.WriteString(w, temp[1:]+");\n")
 				if err != nil {
