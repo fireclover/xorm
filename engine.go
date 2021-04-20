@@ -604,9 +604,8 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 		if table.Type != nil {
 			sess := engine.NewSession()
 			defer sess.Close()
-
-			bean := reflect.New(table.Type)
 			for rows.Next() {
+				bean := reflect.New(table.Type)
 				fields, err := rows.Columns()
 				if err != nil {
 					return err
@@ -615,11 +614,9 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 				if err != nil {
 					return err
 				}
-				// close it before convert data
-				rows.Close()
 
-				dataStruct := utils.ReflectValue(bean)
-				_, err = sess.slice2Bean(scanResults, fields, bean, &dataStruct, table)
+				dataStruct := utils.ReflectValue(bean.Interface())
+				_, err = sess.slice2Bean(scanResults, fields, bean.Interface(), &dataStruct, table)
 				if err != nil {
 					return err
 				}
