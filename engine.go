@@ -460,6 +460,11 @@ func formatColumnValue(dstDialect dialects.Dialect, d interface{}, col *schemas.
 		var v = fmt.Sprintf("%s", d)
 		return "'" + strings.Replace(v, "'", "''", -1) + "'"
 	} else if col.SQLType.IsTime() {
+		if dstDialect.URI().DBType == schemas.MSSQL && col.SQLType.Name == schemas.DateTime {
+			if t, ok := d.(time.Time); ok {
+				return "'" + t.UTC().Format("2006-01-02 15:04:05") + "'"
+			}
+		}
 		var v = fmt.Sprintf("%s", d)
 		if strings.HasSuffix(v, " +0000 UTC") {
 			return fmt.Sprintf("'%s'", v[0:len(v)-len(" +0000 UTC")])
