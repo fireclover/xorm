@@ -610,7 +610,8 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 			sess := engine.NewSession()
 			defer sess.Close()
 			for rows.Next() {
-				bean := reflect.New(table.Type)
+				beanValue := reflect.New(table.Type)
+				bean := beanValue.Interface()
 				fields, err := rows.Columns()
 				if err != nil {
 					return err
@@ -620,8 +621,8 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 					return err
 				}
 
-				dataStruct := utils.ReflectValue(bean.Interface())
-				_, err = sess.slice2Bean(scanResults, fields, bean.Interface(), &dataStruct, table)
+				dataStruct := utils.ReflectValue(bean)
+				_, err = sess.slice2Bean(scanResults, fields, bean, &dataStruct, table)
 				if err != nil {
 					return err
 				}
@@ -637,7 +638,13 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 					if col == nil {
 						return errors.New("unknown column error")
 					}
-					temp += "," + formatColumnValue(dstDialect, bean.Elem().FieldByName(col.FieldName).Interface(), col)
+
+					fields := strings.Split(col.FieldName, ".")
+					field := dataStruct
+					for _, fieldName := range fields {
+						field = field.FieldByName(fieldName)
+					}
+					temp += "," + formatColumnValue(dstDialect, field.Interface(), col)
 				}
 				_, err = io.WriteString(w, temp[1:]+");\n")
 				if err != nil {
