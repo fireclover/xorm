@@ -496,7 +496,7 @@ func formatColumnValue(dstDialect dialects.Dialect, d interface{}, col *schemas.
 				}
 				return fmt.Sprintf("%v", strconv.FormatBool(v))
 			}
-			return fmt.Sprintf("%v", d)
+			return fmt.Sprintf("%d", d)
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			if col.SQLType.Name == schemas.Bool {
 				v := reflect.ValueOf(d).Uint() > 0
@@ -508,7 +508,7 @@ func formatColumnValue(dstDialect dialects.Dialect, d interface{}, col *schemas.
 				}
 				return fmt.Sprintf("%v", strconv.FormatBool(v))
 			}
-			return fmt.Sprintf("%v", d)
+			return fmt.Sprintf("%d", d)
 		default:
 			return fmt.Sprintf("%v", d)
 		}
@@ -554,7 +554,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 	for i, table := range tables {
 		dstTable := table
 		if table.Type != nil {
-			dstTable, err = dstTableCache.Parse(reflect.New(table.Type))
+			dstTable, err = dstTableCache.Parse(reflect.New(table.Type).Elem())
 			if err != nil {
 				engine.logger.Errorf("Unable to infer table for %s in new dialect. Error: %v", table.Name)
 				dstTable = table
