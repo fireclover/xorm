@@ -131,6 +131,10 @@ volumes:
   - name: cache
     temp: {}
 
+services:
+- name: redis
+  pull: default
+  image: redis:3.0
 ---
 kind: pipeline
 name: test-mysql
