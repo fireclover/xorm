@@ -6,11 +6,13 @@ package integrations
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
+	"xorm.io/xorm"
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/schemas"
 
@@ -394,6 +396,60 @@ func TestJSONString(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(jss))
 	assert.True(t, `["1","2"]` == jss[0].Content || `["1", "2"]` == jss[0].Content)
+
+	type JsonAnonymousStruct struct {
+		Id         int64
+		JsonString `xorm:"'json_string' JSON LONGTEXT"`
+	}
+
+	assertSync(t, new(JsonAnonymousStruct))
+
+	_, err = testEngine.Insert(&JsonAnonymousStruct{
+		JsonString: JsonString{
+			Content: "1",
+		},
+	})
+	assert.NoError(t, err)
+
+	var jas JsonAnonymousStruct
+	has, err = testEngine.Get(&jas)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, 1, jas.Id)
+	assert.EqualValues(t, "1", jas.Content)
+
+	var jass []JsonAnonymousStruct
+	err = testEngine.Find(&jass)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(jass))
+	assert.EqualValues(t, "1", jass[0].Content)
+
+	type JsonStruct struct {
+		Id   int64
+		JSON JsonString `xorm:"'json_string' JSON LONGTEXT"`
+	}
+
+	assertSync(t, new(JsonStruct))
+
+	_, err = testEngine.Insert(&JsonStruct{
+		JSON: JsonString{
+			Content: "2",
+		},
+	})
+	assert.NoError(t, err)
+
+	var jst JsonStruct
+	has, err = testEngine.Get(&jst)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, 1, jst.Id)
+	assert.EqualValues(t, "2", jst.JSON.Content)
+
+	var jsts []JsonStruct
+	err = testEngine.Find(&jsts)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(jsts))
+	assert.EqualValues(t, "2", jsts[0].JSON.Content)
 }
 
 func TestGetActionMapping(t *testing.T) {
@@ -694,5 +750,19 @@ func TestGetViaMapCond(t *testing.T) {
 
 	has, err := testEngine.Where(query).Get(&r)
 	assert.NoError(t, err)
+	assert.False(t, has)
+}
+
+func TestGetNil(t *testing.T) {
+	type GetNil struct {
+		Id int64
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetNil))
+
+	var gn *GetNil
+	has, err := testEngine.Get(gn)
+	assert.True(t, errors.Is(err, xorm.ErrObjectIsNil))
 	assert.False(t, has)
 }

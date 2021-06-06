@@ -824,6 +824,11 @@ func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 	}
 }
 
+// FormatBytes formats bytes
+func (db *postgres) FormatBytes(bs []byte) string {
+	return fmt.Sprintf("E'\\x%x'", bs)
+}
+
 func (db *postgres) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
@@ -833,12 +838,12 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 	case schemas.Bit:
 		res = schemas.Boolean
 		return res
-	case schemas.MediumInt, schemas.Int, schemas.Integer:
+	case schemas.MediumInt, schemas.Int, schemas.Integer, schemas.UnsignedInt:
 		if c.IsAutoIncrement {
 			return schemas.Serial
 		}
 		return schemas.Integer
-	case schemas.BigInt:
+	case schemas.BigInt, schemas.UnsignedBigInt:
 		if c.IsAutoIncrement {
 			return schemas.BigSerial
 		}
@@ -857,6 +862,8 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 		res = schemas.Real
 	case schemas.TinyText, schemas.MediumText, schemas.LongText:
 		res = schemas.Text
+	case schemas.NChar:
+		res = schemas.Char
 	case schemas.NVarchar:
 		res = schemas.Varchar
 	case schemas.Uuid:
@@ -1015,7 +1022,7 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 
 	schema := db.getSchema()
 	if schema != "" {
-		s = fmt.Sprintf(s, "AND s.table_schema = $2")
+		s = fmt.Sprintf(s, " AND s.table_schema = $2")
 		args = append(args, schema)
 	} else {
 		s = fmt.Sprintf(s, "")
@@ -1048,6 +1055,10 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 			if err != nil {
 				return nil, nil, err
 			}
+		}
+
+		if colDefault != nil && *colDefault == "unique_rowid()" { // ignore the system column added by cockroach
+			continue
 		}
 
 		col.Name = strings.Trim(colName, `" `)
@@ -1086,8 +1097,10 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 		col.Nullable = (isNullable == "YES")
 
 		switch strings.ToLower(dataType) {
-		case "character varying", "character", "string":
+		case "character varying", "string":
 			col.SQLType = schemas.SQLType{Name: schemas.Varchar, DefaultLength: 0, DefaultLength2: 0}
+		case "character":
+			col.SQLType = schemas.SQLType{Name: schemas.Char, DefaultLength: 0, DefaultLength2: 0}
 		case "timestamp without time zone":
 			col.SQLType = schemas.SQLType{Name: schemas.DateTime, DefaultLength: 0, DefaultLength2: 0}
 		case "timestamp with time zone":

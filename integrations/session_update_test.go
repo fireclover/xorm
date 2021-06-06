@@ -12,8 +12,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"xorm.io/xorm"
+	"xorm.io/xorm/internal/statements"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/names"
+	"xorm.io/xorm/schemas"
 )
 
 func TestUpdateMap(t *testing.T) {
@@ -39,6 +41,27 @@ func TestUpdateMap(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = testEngine.Table("update_table").ID(tb.Id).Update(map[string]interface{}{
+		"name": "test2",
+		"age":  36,
+	})
+	assert.Error(t, err)
+	assert.True(t, statements.IsIDConditionWithNoTableErr(err))
+	assert.EqualValues(t, 0, cnt)
+
+	cnt, err = testEngine.Table("update_table").Update(map[string]interface{}{
+		"name": "test2",
+		"age":  36,
+	}, &UpdateTable{
+		Id: tb.Id,
+	})
+	assert.NoError(t, err)
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		assert.EqualValues(t, 0, cnt)
+	} else {
+		assert.EqualValues(t, 1, cnt)
+	}
 }
 
 func TestUpdateLimit(t *testing.T) {
@@ -179,6 +202,9 @@ func TestForUpdate(t *testing.T) {
 
 	// lock is NOT used
 	wg.Add(1)
+
+	wg2 := &sync.WaitGroup{}
+	wg2.Add(1)
 	go func() {
 		f3 := new(ForUpdate)
 		session3.Where("id = ?", 1)
@@ -192,10 +218,10 @@ func TestForUpdate(t *testing.T) {
 			t.Errorf("read lock failed")
 		}
 		wg.Done()
+		wg2.Done()
 	}()
 
-	// wait for go rountines
-	time.Sleep(50 * time.Millisecond)
+	wg2.Wait()
 
 	f := new(ForUpdate)
 	f.Name = "updated by session1"
@@ -988,7 +1014,7 @@ func TestUpdateMapContent(t *testing.T) {
 	assert.EqualValues(t, false, c2.IsMan)
 	assert.EqualValues(t, 2, c2.Gender)
 
-	cnt, err = testEngine.Table(testEngine.TableName(new(UpdateMapContent))).ID(c.Id).Update(map[string]interface{}{
+	cnt, err = testEngine.Table(new(UpdateMapContent)).ID(c.Id).Update(map[string]interface{}{
 		"age":    15,
 		"is_man": true,
 		"gender": 1,
@@ -1340,4 +1366,51 @@ func TestUpdateMultiplePK(t *testing.T) {
 	test.Value = "5"
 	_, err = testEngine.ID(&MySlice{test.Id, test.Name}).Update(test)
 	assert.NoError(t, err)
+}
+
+type TestFieldType1 struct {
+	cb []byte
+}
+
+func (a *TestFieldType1) FromDB(src []byte) error {
+	a.cb = src
+	return nil
+}
+
+func (a TestFieldType1) ToDB() ([]byte, error) {
+	return a.cb, nil
+}
+
+type TestTable1 struct {
+	Id         int64
+	Field1     *TestFieldType1 `xorm:"text"`
+	UpdateTime time.Time
+}
+
+func TestNilFromDB(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestTable1))
+
+	cnt, err := testEngine.Insert(&TestTable1{
+		Field1: &TestFieldType1{
+			cb: []byte("string"),
+		},
+		UpdateTime: time.Now(),
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = testEngine.Update(TestTable1{
+		UpdateTime: time.Now().Add(time.Second),
+	}, TestTable1{
+		Id: 1,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = testEngine.Insert(&TestTable1{
+		UpdateTime: time.Now(),
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
 }

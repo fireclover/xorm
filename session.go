@@ -107,7 +107,7 @@ func newSession(engine *Engine) *Session {
 		ctx = engine.defaultContext
 	}
 
-	return &Session{
+	session := &Session{
 		ctx:    ctx,
 		engine: engine,
 		tx:     nil,
@@ -136,6 +136,10 @@ func newSession(engine *Engine) *Session {
 
 		sessionType: engineSession,
 	}
+	if engine.logSessionID {
+		session.ctx = context.WithValue(session.ctx, log.SessionKey, session)
+	}
+	return session
 }
 
 // Close release the connection from pool
@@ -163,6 +167,11 @@ func (session *Session) Close() error {
 
 func (session *Session) db() *core.DB {
 	return session.engine.db
+}
+
+// Engine returns session Engine
+func (session *Session) Engine() *Engine {
+	return session.engine
 }
 
 func (session *Session) getQueryer() core.Queryer {
@@ -495,7 +504,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 		fieldType := fieldValue.Type()
 		hasAssigned := false
 
-		if col.SQLType.IsJson() {
+		if col.IsJSON {
 			var bs []byte
 			if rawValueType.Kind() == reflect.String {
 				bs = []byte(vv.String())
@@ -675,7 +684,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 					session.engine.logger.Errorf("sql.Sanner error: %v", err)
 					hasAssigned = false
 				}
-			} else if col.SQLType.IsJson() {
+			} else if col.IsJSON {
 				if rawValueType.Kind() == reflect.String {
 					hasAssigned = true
 					x := reflect.New(fieldType)
@@ -887,7 +896,7 @@ func (session *Session) incrVersionFieldValue(fieldValue *reflect.Value) {
 	}
 }
 
-// ContextHook sets the context on this session
+// Context sets the context on this session
 func (session *Session) Context(ctx context.Context) *Session {
 	session.ctx = ctx
 	return session
