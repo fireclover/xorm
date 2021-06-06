@@ -194,7 +194,7 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 	}
 
 	if statement.GroupByStr != "" {
-		sqlStr = fmt.Sprintf("SELECT %s FROM (%s)", selectSQL, sqlStr)
+		sqlStr = fmt.Sprintf("SELECT %s FROM (%s) sub", selectSQL, sqlStr)
 	}
 
 	return sqlStr, append(statement.joinArgs, condArgs...), nil
