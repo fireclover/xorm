@@ -148,12 +148,14 @@ func (s *SliceType) ToDB() ([]byte, error) {
 }
 
 type ConvStruct struct {
-	Conv  ConvString
-	Conv2 *ConvString
-	Cfg1  ConvConfig
-	Cfg2  *ConvConfig        `xorm:"TEXT"`
-	Cfg3  convert.Conversion `xorm:"BLOB"`
-	Slice SliceType
+	Conv      ConvString
+	Conv2     *ConvString
+	Cfg1      ConvConfig
+	Cfg2      *ConvConfig        `xorm:"TEXT"`
+	Cfg3      convert.Conversion `xorm:"BLOB"`
+	Slice     SliceType
+	Nullable1 *Nullable `xorm:"null"`
+	Nullable2 *Nullable `xorm:"null"`
 }
 
 func (c *ConvStruct) BeforeSet(name string, cell xorm.Cell) {
