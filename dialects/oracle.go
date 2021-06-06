@@ -524,7 +524,7 @@ func (db *oracle) Version(ctx context.Context, queryer core.Queryer) (string, er
 
 	var version string
 	if !rows.Next() {
-		return "", errors.New("Unknow version")
+		return "", errors.New("unknow version")
 	}
 
 	if err := rows.Scan(&version); err != nil {

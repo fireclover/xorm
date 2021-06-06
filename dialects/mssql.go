@@ -262,7 +262,7 @@ func (db *mssql) Version(ctx context.Context, queryer core.Queryer) (string, err
 
 	var version string
 	if !rows.Next() {
-		return "", errors.New("Unknow version")
+		return "", errors.New("unknow version")
 	}
 
 	if err := rows.Scan(&version); err != nil {
@@ -270,10 +270,6 @@ func (db *mssql) Version(ctx context.Context, queryer core.Queryer) (string, err
 	}
 
 	// MSSQL: Microsoft SQL Server 2017 (RTM-CU13) (KB4466404) - 14.0.3048.4 (X64) Nov 30 2018 12:57:58 Copyright (C) 2017 Microsoft Corporation Developer Edition (64-bit) on Linux (Ubuntu 16.04.5 LTS)
-
-	
-
-CockroachDB: CockroachDB CCL v19.2.4 (x86_64-unknown-linux-gnu, built
 	return version, nil
 }
 
