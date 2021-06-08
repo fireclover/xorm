@@ -96,9 +96,10 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 		condSQL  string
 		condArgs []interface{}
 		err      error
+		bean     interface{}
 	)
 	if len(beans) > 0 {
-		bean := beans[0]
+		bean = beans[0]
 		if err = session.statement.SetRefBean(bean); err != nil {
 			return 0, err
 		}
@@ -231,27 +232,29 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 		return 0, err
 	}
 
-	// handle after delete processors
-	if session.isAutoCommit {
-		for _, closure := range session.afterClosures {
-			closure(bean)
-		}
-		if processor, ok := interface{}(bean).(AfterDeleteProcessor); ok {
-			processor.AfterDelete()
-		}
-	} else {
-		lenAfterClosures := len(session.afterClosures)
-		if lenAfterClosures > 0 && len(beans) > 0 {
-			if value, has := session.afterDeleteBeans[beans[0]]; has && value != nil {
-				*value = append(*value, session.afterClosures...)
-			} else {
-				afterClosures := make([]func(interface{}), lenAfterClosures)
-				copy(afterClosures, session.afterClosures)
-				session.afterDeleteBeans[bean] = &afterClosures
+	if bean != nil {
+		// handle after delete processors
+		if session.isAutoCommit {
+			for _, closure := range session.afterClosures {
+				closure(bean)
+			}
+			if processor, ok := interface{}(bean).(AfterDeleteProcessor); ok {
+				processor.AfterDelete()
 			}
 		} else {
-			if _, ok := interface{}(bean).(AfterDeleteProcessor); ok {
-				session.afterDeleteBeans[bean] = nil
+			lenAfterClosures := len(session.afterClosures)
+			if lenAfterClosures > 0 && len(beans) > 0 {
+				if value, has := session.afterDeleteBeans[beans[0]]; has && value != nil {
+					*value = append(*value, session.afterClosures...)
+				} else {
+					afterClosures := make([]func(interface{}), lenAfterClosures)
+					copy(afterClosures, session.afterClosures)
+					session.afterDeleteBeans[bean] = &afterClosures
+				}
+			} else {
+				if _, ok := interface{}(bean).(AfterDeleteProcessor); ok {
+					session.afterDeleteBeans[bean] = nil
+				}
 			}
 		}
 	}
