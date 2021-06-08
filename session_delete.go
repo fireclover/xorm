@@ -168,7 +168,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 
 	var realSQL string
 	argsForCache := make([]interface{}, 0, len(condArgs)*2)
-	if session.statement.GetUnscoped() || table.DeletedColumn() == nil { // tag "deleted" is disabled
+	if session.statement.GetUnscoped() || table == nil || table.DeletedColumn() == nil { // tag "deleted" is disabled
 		realSQL = deleteSQL
 		copy(argsForCache, condArgs)
 		argsForCache = append(condArgs, argsForCache...)
