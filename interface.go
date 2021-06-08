@@ -51,6 +51,7 @@ type Interface interface {
 	MustCols(columns ...string) *Session
 	NoAutoCondition(...bool) *Session
 	NotIn(string, ...interface{}) *Session
+	Nullable(...string) *Session
 	Join(joinOperator string, tablename interface{}, condition string, args ...interface{}) *Session
 	Omit(columns ...string) *Session
 	OrderBy(order string) *Session
