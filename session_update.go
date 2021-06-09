@@ -251,8 +251,10 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		case string:
 			if len(tp) == 0 {
 				tp = "''"
+			} else {
+				tp = strings.Replace(tp, "'", "''", -1)
 			}
-			colNames = append(colNames, session.engine.Quote(expr.ColName)+"="+tp)
+			colNames = append(colNames, session.engine.Quote(expr.ColName)+"='"+tp+"'")
 		case *builder.Builder:
 			subQuery, subArgs, err := session.statement.GenCondSQL(tp)
 			if err != nil {
