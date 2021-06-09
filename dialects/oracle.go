@@ -515,22 +515,24 @@ func (db *oracle) Init(uri *URI) error {
 	return db.Base.Init(db, uri)
 }
 
-func (db *oracle) Version(ctx context.Context, queryer core.Queryer) (string, error) {
+func (db *oracle) Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error) {
 	rows, err := queryer.QueryContext(ctx, "select * from v$version where banner like 'Oracle%'")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer rows.Close()
 
 	var version string
 	if !rows.Next() {
-		return "", errors.New("unknow version")
+		return nil, errors.New("unknow version")
 	}
 
 	if err := rows.Scan(&version); err != nil {
-		return "", err
+		return nil, err
 	}
-	return version, nil
+	return &schemas.Version{
+		Number: version,
+	}, nil
 }
 
 func (db *oracle) SQLType(c *schemas.Column) string {

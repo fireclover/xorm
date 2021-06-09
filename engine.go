@@ -926,7 +926,7 @@ func (engine *Engine) Having(conditions string) *Session {
 }
 
 // DBVersion returns the database version
-func (engine *Engine) DBVersion() (string, error) {
+func (engine *Engine) DBVersion() (*schemas.Version, error) {
 	return engine.dialect.Version(engine.defaultContext, engine.db)
 }
 

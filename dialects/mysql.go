@@ -188,25 +188,42 @@ func (db *mysql) Init(uri *URI) error {
 	return db.Base.Init(db, uri)
 }
 
-func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (string, error) {
-	rows, err := queryer.QueryContext(ctx, "SELECT VERSION()")
+func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error) {
+	rows, err := queryer.QueryContext(ctx, "SELECT @@VERSION")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer rows.Close()
 
 	var version string
 	if !rows.Next() {
-		return "", errors.New("Unknow version")
+		return nil, errors.New("Unknow version")
 	}
 
 	if err := rows.Scan(&version); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// TiDB: 5.7.25-TiDB-v3.0.3
+	if strings.HasPrefix(version, "TiDB:") {
+		// TiDB: 5.7.25-TiDB-v3.0.3
+		fields := strings.Split(strings.TrimPrefix(version, "TiDB: "), "-")
+		return &schemas.Version{
+			Number:  strings.TrimPrefix(fields[2], "v"),
+			Level:   fields[0],
+			Edition: fields[1],
+		}, nil
+	}
 
-	return version, nil
+	fields := strings.SplitN(version, "-", 2)
+	var edition string
+	if len(fields) == 2 {
+		edition = fields[1]
+	}
+
+	return &schemas.Version{
+		Number:  fields[0],
+		Edition: edition,
+	}, nil
 }
 
 func (db *mysql) SetParams(params map[string]string) {

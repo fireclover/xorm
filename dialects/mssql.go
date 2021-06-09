@@ -253,24 +253,29 @@ func (db *mssql) SetParams(params map[string]string) {
 	}
 }
 
-func (db *mssql) Version(ctx context.Context, queryer core.Queryer) (string, error) {
-	rows, err := queryer.QueryContext(ctx, "SELECT @@VERSION")
+func (db *mssql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error) {
+	rows, err := queryer.QueryContext(ctx,
+		"SELECT SERVERPROPERTY('productversion'), SERVERPROPERTY ('productlevel') AS ProductLevel, SERVERPROPERTY ('edition') AS ProductEdition")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer rows.Close()
 
-	var version string
+	var version, level, edition string
 	if !rows.Next() {
-		return "", errors.New("unknow version")
+		return nil, errors.New("unknow version")
 	}
 
-	if err := rows.Scan(&version); err != nil {
-		return "", err
+	if err := rows.Scan(&version, &level, &edition); err != nil {
+		return nil, err
 	}
 
 	// MSSQL: Microsoft SQL Server 2017 (RTM-CU13) (KB4466404) - 14.0.3048.4 (X64) Nov 30 2018 12:57:58 Copyright (C) 2017 Microsoft Corporation Developer Edition (64-bit) on Linux (Ubuntu 16.04.5 LTS)
-	return version, nil
+	return &schemas.Version{
+		Number:  version,
+		Level:   level,
+		Edition: edition,
+	}, nil
 }
 
 func (db *mssql) SQLType(c *schemas.Column) string {

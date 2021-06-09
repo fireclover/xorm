@@ -207,5 +207,5 @@ func TestDBVersion(t *testing.T) {
 	version, err := testEngine.DBVersion()
 	assert.NoError(t, err)
 
-	fmt.Println(testEngine.Dialect().URI().DBType, "version", version)
+	fmt.Println(testEngine.Dialect().URI().DBType, "version is", version)
 }
