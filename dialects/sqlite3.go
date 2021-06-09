@@ -176,7 +176,8 @@ func (db *sqlite3) Version(ctx context.Context, queryer core.Queryer) (*schemas.
 		return nil, err
 	}
 	return &schemas.Version{
-		Number: version,
+		Number:  version,
+		Edition: "sqlite",
 	}, nil
 }
 
