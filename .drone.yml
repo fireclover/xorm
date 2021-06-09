@@ -1,6 +1,10 @@
 ---
 kind: pipeline
 name: testing
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 steps:
 - name: restore-cache
   image: meltwater/drone-cache
@@ -32,10 +36,6 @@ steps:
   volumes:
   - name: cache
     path: /go
-  when:
-    event:
-    - push
-    - pull_request
 
 - name: rebuild-cache
   image: meltwater/drone-cache
@@ -62,6 +62,10 @@ kind: pipeline
 name: test-sqlite
 depends_on:
   - testing
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -138,6 +142,10 @@ kind: pipeline
 name: test-mysql
 depends_on:
   - testing
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -239,6 +247,10 @@ name: test-mysql8
 depends_on:
   - test-mysql
   - test-sqlite
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -314,6 +326,10 @@ kind: pipeline
 name: test-mariadb
 depends_on:
   - test-mysql8
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -389,6 +405,10 @@ kind: pipeline
 name: test-postgres
 depends_on:
   - test-mariadb
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -489,6 +509,10 @@ kind: pipeline
 name: test-mssql
 depends_on:
   - test-postgres
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -564,6 +588,10 @@ kind: pipeline
 name: test-tidb
 depends_on:
   - test-mssql
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -634,6 +662,10 @@ kind: pipeline
 name: test-cockroach
 depends_on:
   - test-tidb
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -714,6 +746,10 @@ depends_on:
   - test-mssql
   - test-tidb
   - test-cockroach
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/pull/*/head
 clone:
   disable: true
 steps:
@@ -725,9 +761,3 @@ steps:
     GOPROXY: "https://goproxy.io"
   commands:
   - make coverage
-  when:
-    branch:
-      - master
-    event:
-      - push
-      - pull_request
