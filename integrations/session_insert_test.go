@@ -1024,3 +1024,27 @@ func TestInsertIntSlice(t *testing.T) {
 	assert.True(t, has)
 	assert.EqualValues(t, v3, v4)
 }
+
+func TestInsertDeleted(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type InsertDeletedStruct struct {
+		ID        uint64    `xorm:"'ID' pk autoincr"`
+		DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull"`
+	}
+
+	assert.NoError(t, testEngine.Sync2(new(InsertDeletedStruct)))
+
+	_, err := testEngine.Insert(&InsertDeletedStruct{})
+	assert.NoError(t, err)
+
+	var v InsertDeletedStruct
+	has, err := testEngine.Get(&v)
+	assert.NoError(t, err)
+	assert.False(t, has)
+
+	var v2 InsertDeletedStruct
+	has, err = testEngine.Unscoped().Get(&v2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+}
