@@ -267,7 +267,7 @@ func (parser *Parser) Parse(v reflect.Value) (*schemas.Table, error) {
 					addIndex(indexName, table, col, indexType)
 				}
 			}
-		} else if fieldValue.CanSet() {
+		} else {
 			var sqlType schemas.SQLType
 			if fieldValue.CanAddr() {
 				if _, ok := fieldValue.Addr().Interface().(convert.Conversion); ok {
@@ -286,8 +286,6 @@ func (parser *Parser) Parse(v reflect.Value) (*schemas.Table, error) {
 			if fieldType.Kind() == reflect.Int64 && (strings.ToUpper(col.FieldName) == "ID" || strings.HasSuffix(strings.ToUpper(col.FieldName), ".ID")) {
 				idFieldColName = col.Name
 			}
-		} else {
-			continue
 		}
 		if col.IsAutoIncrement {
 			col.Nullable = false
