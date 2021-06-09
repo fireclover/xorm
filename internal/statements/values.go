@@ -31,6 +31,12 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 			if err != nil {
 				return nil, err
 			}
+			if data == nil {
+				if col.Nullable {
+					return nil, nil
+				}
+				data = []byte{}
+			}
 			if col.SQLType.IsBlob() {
 				return data, nil
 			}
@@ -45,11 +51,14 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 			if err != nil {
 				return nil, err
 			}
+			if data == nil {
+				if col.Nullable {
+					return nil, nil
+				}
+				data = []byte{}
+			}
 			if col.SQLType.IsBlob() {
 				return data, nil
-			}
-			if nil == data {
-				return nil, nil
 			}
 			return string(data), nil
 		}
