@@ -127,8 +127,9 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 				if err != nil {
 					return nil, nil, err
 				}
-
-				val = data
+				if data != nil {
+					val = data
+				}
 				goto APPEND
 			}
 		}
@@ -138,8 +139,9 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 			if err != nil {
 				return nil, nil, err
 			}
-
-			val = data
+			if data != nil {
+				val = data
+			}
 			goto APPEND
 		}
 
