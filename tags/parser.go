@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"xorm.io/xorm/caches"
 	"xorm.io/xorm/convert"
@@ -143,8 +144,18 @@ func (parser *Parser) Parse(v reflect.Value) (*schemas.Table, error) {
 	var hasCacheTag, hasNoCacheTag bool
 
 	for i := 0; i < t.NumField(); i++ {
-		tag := t.Field(i).Tag
+		var isUnexportField bool
+		for _, c := range t.Field(i).Name {
+			if unicode.IsLower(c) {
+				isUnexportField = true
+			}
+			break
+		}
+		if isUnexportField {
+			continue
+		}
 
+		tag := t.Field(i).Tag
 		ormTagStr := tag.Get(parser.identifier)
 		var col *schemas.Column
 		fieldValue := v.Field(i)
@@ -292,7 +303,6 @@ func (parser *Parser) Parse(v reflect.Value) (*schemas.Table, error) {
 		}
 
 		table.AddColumn(col)
-
 	} // end for
 
 	if idFieldColName != "" && len(table.PrimaryKeys) == 0 {
