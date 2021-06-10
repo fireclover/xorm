@@ -1,6 +1,10 @@
 ---
 kind: pipeline
-name: test-sqlite
+name: test-mysql
+environment:
+  GO111MODULE: "on"
+  GOPROXY: "https://goproxy.io"
+  CGO_ENABLED: 1
 trigger:
   ref:
   - refs/heads/master
@@ -8,49 +12,35 @@ trigger:
 steps:
 - name: test-vet
   image: golang:1.15
-  environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   commands:
     - make vet
+- name: test-sqlite
+  image: golang:1.15
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
+  depends_on:
+  - test-vet
+  commands:
     - make fmt-check
     - make test
     - make test-sqlite3
     - TEST_CACHE_ENABLE=true make test-sqlite3
     - TEST_QUOTE_POLICY=reserved make test-sqlite3
-
-- name: test-sqlite
-  image: golang:1.15
-  environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
-  commands:
-  - make test-sqlite
-  - TEST_CACHE_ENABLE=true make test-sqlite
-  - TEST_QUOTE_POLICY=reserved make test-sqlite
-
----
-kind: pipeline
-name: test-mysql
-trigger:
-  ref:
-  - refs/heads/master
-  - refs/pull/*/head
-steps:
+    - make test-sqlite
+    - TEST_CACHE_ENABLE=true make test-sqlite
+    - TEST_QUOTE_POLICY=reserved make test-sqlite
 - name: test-mysql
   image: golang:1.15
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
+  depends_on:
+  - test-vet
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mysql
     TEST_MYSQL_CHARSET: utf8
     TEST_MYSQL_DBNAME: xorm_test
@@ -61,14 +51,13 @@ steps:
   
 - name: test-mysql-utf8mb4
   image: golang:1.15
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   depends_on:
   - test-mysql
+  - test-sqlite
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mysql
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -77,6 +66,9 @@ steps:
   commands:
   - make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
+volumes:
+- name: cache
+  temp: {}
 
 services:
 - name: mysql
