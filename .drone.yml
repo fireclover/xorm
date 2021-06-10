@@ -323,7 +323,6 @@ services:
 kind: pipeline
 name: merge_coverage
 depends_on:
-  - testing
   - test-sqlite
   - test-mysql
   - test-mysql8
