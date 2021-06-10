@@ -12,6 +12,7 @@ trigger:
 steps:
 - name: test-vet
   image: golang:1.15
+  pull: always
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -35,6 +36,7 @@ steps:
     - TEST_QUOTE_POLICY=reserved make test-sqlite
 - name: test-mysql
   image: golang:1.15
+  pull: never
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -51,6 +53,7 @@ steps:
   
 - name: test-mysql-utf8mb4
   image: golang:1.15
+  pull: never
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -73,7 +76,7 @@ volumes:
 
 services:
 - name: mysql
-  pull: default
+  pull: never
   image: mysql:5.7
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
@@ -91,12 +94,11 @@ trigger:
 steps:
 - name: test-mysql8
   image: golang:1.15
+  pull: never
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mysql8
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -107,9 +109,14 @@ steps:
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
 
+volumes:
+- name: cache
+  host:
+    path: /tmp/cache
+
 services:
 - name: mysql8
-  pull: default
+  pull: never
   image: mysql:8.0
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
@@ -127,12 +134,11 @@ trigger:
 steps:
 - name: test-mariadb
   image: golang:1.15
+  pull: never
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_MYSQL_HOST: mariadb
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -143,9 +149,14 @@ steps:
   - TEST_CACHE_ENABLE=true make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
 
+volumes:
+- name: cache
+  host:
+    path: /tmp/cache
+
 services:
 - name: mariadb
-  pull: default
+  pull: never
   image: mariadb:10.4
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
@@ -162,14 +173,12 @@ trigger:
   - refs/pull/*/head
 steps:
 - name: test-postgres
-  pull: default
+  pull: never
   image: golang:1.15
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_PGSQL_HOST: pgsql
     TEST_PGSQL_DBNAME: xorm_test
     TEST_PGSQL_USERNAME: postgres
@@ -179,16 +188,14 @@ steps:
   - TEST_CACHE_ENABLE=true make test-postgres
 
 - name: test-postgres-schema
-  pull: default
+  pull: never
   image: golang:1.15
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   depends_on:
   - test-postgres
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_PGSQL_HOST: pgsql
     TEST_PGSQL_SCHEMA: xorm
     TEST_PGSQL_DBNAME: xorm_test
@@ -197,9 +204,14 @@ steps:
   commands:
   - TEST_QUOTE_POLICY=reserved make test-postgres
 
+volumes:
+- name: cache
+  host:
+    path: /tmp/cache
+
 services:
 - name: pgsql
-  pull: default
+  pull: never
   image: postgres:9.5
   environment:
     POSTGRES_DB: xorm_test
@@ -217,14 +229,12 @@ trigger:
   - refs/pull/*/head
 steps:
 - name: test-mssql
-  pull: default
+  pull: never
   image: golang:1.15
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_MSSQL_HOST: mssql
     TEST_MSSQL_DBNAME: xorm_test
     TEST_MSSQL_USERNAME: sa
@@ -234,9 +244,15 @@ steps:
   - TEST_CACHE_ENABLE=true make test-mssql
   - TEST_QUOTE_POLICY=reserved make test-mssql
   - TEST_MSSQL_DEFAULT_VARCHAR=NVARCHAR TEST_MSSQL_DEFAULT_CHAR=NCHAR make test-mssql
+
+volumes:
+- name: cache
+  host:
+    path: /tmp/cache
+
 services:
 - name: mssql
-  pull: default
+  pull: always
   image: microsoft/mssql-server-linux:latest
   environment:
     ACCEPT_EULA: Y
@@ -254,14 +270,12 @@ trigger:
   - refs/pull/*/head
 steps:
 - name: test-tidb
-  pull: default
+  pull: never
   image: golang:1.15
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_TIDB_HOST: "tidb:4000"
     TEST_TIDB_DBNAME: xorm_test
     TEST_TIDB_USERNAME: root
@@ -271,9 +285,14 @@ steps:
   - TEST_CACHE_ENABLE=true make test-tidb
   - TEST_QUOTE_POLICY=reserved make test-tidb
 
+volumes:
+- name: cache
+  host:
+    path: /tmp/cache
+
 services:
 - name: tidb
-  pull: default
+  pull: never
   image: pingcap/tidb:v3.0.3
 
 ---
@@ -287,14 +306,12 @@ trigger:
   - refs/pull/*/head
 steps:
 - name: test-cockroach
-  pull: default
+  pull: never
   image: golang:1.15
+  volumes:
+  - name: cache
+    path: /go/pkg/mod
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
     TEST_COCKROACH_HOST: "cockroach:26257"
     TEST_COCKROACH_DBNAME: xorm_test
     TEST_COCKROACH_USERNAME: root
@@ -304,9 +321,14 @@ steps:
   - make test-cockroach
   - TEST_CACHE_ENABLE=true make test-cockroach
 
+volumes:
+- name: cache
+  host:
+    path: /tmp/cache
+
 services:
 - name: cockroach
-  pull: default
+  pull: never
   image: cockroachdb/cockroach:v19.2.4
   commands:
   - /cockroach/cockroach start --insecure
@@ -330,10 +352,7 @@ clone:
   disable: true
 steps:
 - name: merge_coverage
-  pull: default
+  pull: never
   image: golang:1.15
-  environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
   commands:
   - make coverage
