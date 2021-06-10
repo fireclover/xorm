@@ -315,7 +315,6 @@ services:
 kind: pipeline
 name: merge_coverage
 depends_on:
-  - test-sqlite
   - test-mysql
   - test-mysql8
   - test-mariadb
