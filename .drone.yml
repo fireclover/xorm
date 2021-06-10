@@ -83,7 +83,6 @@ kind: pipeline
 name: test-mysql8
 depends_on:
   - test-mysql
-  - test-sqlite
 trigger:
   ref:
   - refs/heads/master
