@@ -65,9 +65,11 @@ steps:
   commands:
   - make test-mysql
   - TEST_QUOTE_POLICY=reserved make test-mysql
+
 volumes:
 - name: cache
-  temp: {}
+  host:
+    path: /tmp/cache
 
 services:
 - name: mysql
