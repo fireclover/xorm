@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: testing
+name: test-sqlite
 trigger:
   ref:
   - refs/heads/master
@@ -17,35 +17,10 @@ steps:
   commands:
     - make vet
     - make fmt-check
-
----
-kind: pipeline
-name: test-sqlite
-depends_on:
-  - testing
-trigger:
-  ref:
-  - refs/heads/master
-  - refs/pull/*/head
-clone:
-  disable: true
-steps:
-- name: test-sqlite3
-  image: golang:1.15
-  environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
-    GOMODCACHE: '/drone/src/pkg.mod'
-    GOCACHE: '/drone/src/pkg.build'
-  commands:
-  - make test
-  - make test-sqlite3
-  - TEST_CACHE_ENABLE=true make test-sqlite3
-  - TEST_QUOTE_POLICY=reserved make test-sqlite3
-  volumes:
-  - name: cache
-    path: /go
+    - make test
+    - make test-sqlite3
+    - TEST_CACHE_ENABLE=true make test-sqlite3
+    - TEST_QUOTE_POLICY=reserved make test-sqlite3
 
 - name: test-sqlite
   image: golang:1.15
@@ -59,9 +34,6 @@ steps:
   - make test-sqlite
   - TEST_CACHE_ENABLE=true make test-sqlite
   - TEST_QUOTE_POLICY=reserved make test-sqlite
-  volumes:
-  - name: cache
-    path: /go
 
 ---
 kind: pipeline
@@ -72,8 +44,6 @@ trigger:
   ref:
   - refs/heads/master
   - refs/pull/*/head
-clone:
-  disable: true
 steps:
 - name: test-mysql
   image: golang:1.15
@@ -128,8 +98,6 @@ trigger:
   ref:
   - refs/heads/master
   - refs/pull/*/head
-clone:
-  disable: true
 steps:
 - name: test-mysql8
   image: golang:1.15
@@ -166,8 +134,6 @@ trigger:
   ref:
   - refs/heads/master
   - refs/pull/*/head
-clone:
-  disable: true
 steps:
 - name: test-mariadb
   image: golang:1.15
@@ -204,8 +170,6 @@ trigger:
   ref:
   - refs/heads/master
   - refs/pull/*/head
-clone:
-  disable: true
 steps:
 - name: test-postgres
   pull: default
@@ -261,10 +225,7 @@ trigger:
   ref:
   - refs/heads/master
   - refs/pull/*/head
-clone:
-  disable: true
 steps:
-
 - name: test-mssql
   pull: default
   image: golang:1.15
@@ -301,8 +262,6 @@ trigger:
   ref:
   - refs/heads/master
   - refs/pull/*/head
-clone:
-  disable: true
 steps:
 - name: test-tidb
   pull: default
@@ -336,8 +295,6 @@ trigger:
   ref:
   - refs/heads/master
   - refs/pull/*/head
-clone:
-  disable: true
 steps:
 - name: test-cockroach
   pull: default
