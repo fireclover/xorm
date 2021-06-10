@@ -38,8 +38,6 @@ steps:
 ---
 kind: pipeline
 name: test-mysql
-depends_on:
-  - testing
 trigger:
   ref:
   - refs/heads/master
