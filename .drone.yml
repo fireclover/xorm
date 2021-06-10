@@ -26,18 +26,10 @@ steps:
   - test-vet
   commands:
     - make fmt-check
+    - make test
     - make test-sqlite3
     - TEST_CACHE_ENABLE=true make test-sqlite3
     - TEST_QUOTE_POLICY=reserved make test-sqlite3
-- name: test-sqlite
-  image: golang:1.15
-  volumes:
-  - name: cache
-    path: /go/pkg/mod
-  depends_on:
-  - test-vet
-  commands:
-    - make test
     - make test-sqlite
     - TEST_CACHE_ENABLE=true make test-sqlite
     - TEST_QUOTE_POLICY=reserved make test-sqlite
