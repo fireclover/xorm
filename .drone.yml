@@ -1,6 +1,10 @@
 ---
 kind: pipeline
 name: test-mysql
+environment:
+  GO111MODULE: "on"
+  GOPROXY: "https://goproxy.io"
+  CGO_ENABLED: 1
 trigger:
   ref:
   - refs/heads/master
@@ -9,10 +13,6 @@ steps:
 - name: test-vet
   image: golang:1.15
   pull: always
-  environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -20,10 +20,6 @@ steps:
     - make vet
 - name: test-sqlite3
   image: golang:1.15
-  environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -47,9 +43,6 @@ steps:
   depends_on:
   - test-vet
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
     TEST_MYSQL_HOST: mysql
     TEST_MYSQL_CHARSET: utf8
     TEST_MYSQL_DBNAME: xorm_test
@@ -67,9 +60,6 @@ steps:
   depends_on:
   - test-mysql
   environment:
-    GO111MODULE: "on"
-    GOPROXY: "https://goproxy.io"
-    CGO_ENABLED: 1
     TEST_MYSQL_HOST: mysql
     TEST_MYSQL_CHARSET: utf8mb4
     TEST_MYSQL_DBNAME: xorm_test
@@ -86,7 +76,6 @@ volumes:
 
 services:
 - name: mysql
-  pull: never
   image: mysql:5.7
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: yes
