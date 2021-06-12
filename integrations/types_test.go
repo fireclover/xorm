@@ -147,6 +147,30 @@ func (s *SliceType) ToDB() ([]byte, error) {
 	return json.DefaultJSONHandler.Marshal(s)
 }
 
+type Nullable struct {
+	Data string
+}
+
+func (s *Nullable) FromDB(data []byte) error {
+	if data == nil {
+		return nil
+	}
+
+	*s = Nullable{
+		Data: string(data),
+	}
+
+	return nil
+}
+
+func (s *Nullable) ToDB() ([]byte, error) {
+	if s == nil {
+		return nil, nil
+	}
+
+	return []byte(s.Data), nil
+}
+
 type ConvStruct struct {
 	Conv      ConvString
 	Conv2     *ConvString
@@ -178,8 +202,10 @@ func TestConversion(t *testing.T) {
 	c.Cfg2 = &ConvConfig{"xx", 2}
 	c.Cfg3 = &ConvConfig{"zz", 3}
 	c.Slice = []*ConvConfig{{"yy", 4}, {"ff", 5}}
+	c.Nullable1 = &Nullable{Data: "test"}
+	c.Nullable2 = nil
 
-	_, err := testEngine.Insert(c)
+	_, err := testEngine.Nullable("nullable2").Insert(c)
 	assert.NoError(t, err)
 
 	c1 := new(ConvStruct)
@@ -221,6 +247,9 @@ func TestConversion(t *testing.T) {
 	assert.EqualValues(t, 2, len(c2.Slice))
 	assert.EqualValues(t, *c.Slice[0], *c2.Slice[0])
 	assert.EqualValues(t, *c.Slice[1], *c2.Slice[1])
+	assert.NotNil(t, c1.Nullable1)
+	assert.Equal(t, c1.Nullable1.Data, "test")
+	assert.Nil(t, c1.Nullable2)
 }
 
 type MyInt int
