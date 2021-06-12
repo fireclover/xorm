@@ -777,10 +777,22 @@ var (
 var (
 	// DefaultPostgresSchema default postgres schema
 	DefaultPostgresSchema = "public"
+	postgresColAliases    = map[string]string{
+		"numeric": "decimal",
+	}
 )
 
 type postgres struct {
 	Base
+}
+
+// Alias returns a alias of column
+func (db *postgres) Alias(col string) string {
+	v, ok := postgresColAliases[strings.ToLower(col)]
+	if ok {
+		return v
+	}
+	return col
 }
 
 func (db *postgres) Init(uri *URI) error {

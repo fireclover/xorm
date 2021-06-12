@@ -188,6 +188,21 @@ func (db *mysql) Init(uri *URI) error {
 	return db.Base.Init(db, uri)
 }
 
+var (
+	mysqlColAliases = map[string]string{
+		"numeric": "decimal",
+	}
+)
+
+// Alias returns a alias of column
+func (db *mysql) Alias(col string) string {
+	v, ok := mysqlColAliases[strings.ToLower(col)]
+	if ok {
+		return v
+	}
+	return col
+}
+
 func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error) {
 	rows, err := queryer.QueryContext(ctx, "SELECT @@VERSION")
 	if err != nil {

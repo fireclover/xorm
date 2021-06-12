@@ -365,3 +365,9 @@ func SQLType2Type(st SQLType) reflect.Type {
 		return reflect.TypeOf("")
 	}
 }
+
+// SQLTypeName returns sql type name
+func SQLTypeName(tp string) string {
+	fields := strings.Split(tp, "(")
+	return fields[0]
+}

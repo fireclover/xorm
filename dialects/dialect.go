@@ -43,6 +43,7 @@ type Dialect interface {
 	Init(*URI) error
 	URI() *URI
 	SQLType(*schemas.Column) string
+	Alias(string) string // return what a sql type's alias of
 	FormatBytes(b []byte) string
 	Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error)
 
@@ -78,6 +79,11 @@ type Base struct {
 	dialect Dialect
 	uri     *URI
 	quoter  schemas.Quoter
+}
+
+// Alias returned col itself
+func (db *Base) Alias(col string) string {
+	return col
 }
 
 // Quoter returns the current database Quoter
