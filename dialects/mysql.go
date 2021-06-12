@@ -204,9 +204,9 @@ func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Ve
 		return nil, err
 	}
 
-	if strings.HasPrefix(version, "TiDB:") {
-		// TiDB: 5.7.25-TiDB-v3.0.3
-		fields := strings.Split(strings.TrimPrefix(version, "TiDB: "), "-")
+	fields := strings.Split(version, "-")
+	if len(fields) == 3 && fields[1] == "TiDB" {
+		// 5.7.25-TiDB-v3.0.3
 		return &schemas.Version{
 			Number:  strings.TrimPrefix(fields[2], "v"),
 			Level:   fields[0],
@@ -214,7 +214,6 @@ func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Ve
 		}, nil
 	}
 
-	fields := strings.SplitN(version, "-", 2)
 	var edition string
 	if len(fields) == 2 {
 		edition = fields[1]
