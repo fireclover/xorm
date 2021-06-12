@@ -1418,4 +1418,37 @@ func TestNilFromDB(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
+
+	var tt = TestTable1{
+		UpdateTime: time.Now(),
+		Field1: &TestFieldType1{
+			cb: nil,
+		},
+	}
+	cnt, err = testEngine.Insert(&tt)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var tt2 TestTable1
+	has, err := testEngine.ID(tt.Id).Get(&tt2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Nil(t, tt2.Field1)
+
+	var tt3 = TestTable1{
+		UpdateTime: time.Now(),
+		Field1: &TestFieldType1{
+			cb: []byte{},
+		},
+	}
+	cnt, err = testEngine.Insert(&tt3)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var tt4 TestTable1
+	has, err = testEngine.ID(tt.Id).Get(&tt4)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.NotNil(t, tt4.Field1)
+	assert.Nil(t, tt4.Field1.cb)
 }
