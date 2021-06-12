@@ -500,7 +500,11 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 		if col.IsDeleted {
 			colNames = append(colNames, col.Name)
 			if !col.Nullable {
-				args = append(args, time.Time{})
+				if col.SQLType.IsNumeric() {
+					args = append(args, 0)
+				} else {
+					args = append(args, time.Time{})
+				}
 			} else {
 				args = append(args, nil)
 			}
