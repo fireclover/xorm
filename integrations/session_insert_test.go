@@ -1028,9 +1028,15 @@ func TestInsertIntSlice(t *testing.T) {
 func TestInsertDeleted(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	type InsertDeletedStruct struct {
+	type InsertDeletedStructNotRight struct {
 		ID        uint64    `xorm:"'ID' pk autoincr"`
 		DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull"`
+	}
+	assert.Error(t, testEngine.Sync2(new(InsertDeletedStructNotRight)))
+
+	type InsertDeletedStruct struct {
+		ID        uint64    `xorm:"'ID' pk autoincr"`
+		DeletedAt time.Time `xorm:"'DELETED_AT' deleted"`
 	}
 
 	assert.NoError(t, testEngine.Sync2(new(InsertDeletedStruct)))
