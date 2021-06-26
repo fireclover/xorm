@@ -129,6 +129,9 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 				}
 				if data != nil {
 					val = data
+					if !col.SQLType.IsBlob() {
+						val = string(data)
+					}
 				}
 				goto APPEND
 			}
@@ -141,6 +144,9 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 			}
 			if data != nil {
 				val = data
+				if !col.SQLType.IsBlob() {
+					val = string(data)
+				}
 			}
 			goto APPEND
 		}
