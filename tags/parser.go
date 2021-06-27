@@ -246,17 +246,24 @@ func (parser *Parser) parseField(table *schemas.Table, field reflect.StructField
 		tag       = field.Tag
 		ormTagStr = strings.TrimSpace(tag.Get(parser.identifier))
 	)
-	if ormTagStr == "" {
-		return parser.parseFieldWithNoTag(field, fieldValue)
-	}
 	if ormTagStr == "-" {
 		return nil, ErrIgnoreField
+	}
+	if ormTagStr == "" {
+		return parser.parseFieldWithNoTag(field, fieldValue)
 	}
 	tags, err := splitTag(ormTagStr)
 	if err != nil {
 		return nil, err
 	}
 	return parser.parseFieldWithTags(table, field, fieldValue, tags)
+}
+
+func isNotTitle(n string) bool {
+	for _, c := range n {
+		return unicode.IsLower(c)
+	}
+	return true
 }
 
 // Parse parses a struct as a table information
@@ -275,14 +282,7 @@ func (parser *Parser) Parse(v reflect.Value) (*schemas.Table, error) {
 	table.Name = names.GetTableName(parser.tableMapper, v)
 
 	for i := 0; i < t.NumField(); i++ {
-		var isUnexportField bool
-		for _, c := range t.Field(i).Name {
-			if unicode.IsLower(c) {
-				isUnexportField = true
-			}
-			break
-		}
-		if isUnexportField {
+		if isNotTitle(t.Field(i).Name) {
 			continue
 		}
 
