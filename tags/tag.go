@@ -120,6 +120,7 @@ var (
 		"CACHE":    CacheTagHandler,
 		"NOCACHE":  NoCacheTagHandler,
 		"COMMENT":  CommentTagHandler,
+		"EXTENDS":  ExtendsTagHandler,
 	}
 )
 
@@ -270,7 +271,7 @@ func CommentTagHandler(ctx *Context) error {
 
 // SQLTypeTagHandler describes SQL Type tag handler
 func SQLTypeTagHandler(ctx *Context) error {
-	ctx.col.SQLType = schemas.SQLType{Name: ctx.tag.name}
+	ctx.col.SQLType = schemas.SQLType{Name: ctx.tagUname}
 	if ctx.tagUname == "JSON" {
 		ctx.col.IsJSON = true
 	}
@@ -341,7 +342,7 @@ func ExtendsTagHandler(ctx *Context) error {
 			var tagPrefix = ctx.col.FieldName
 			if len(ctx.params) > 0 {
 				col.Nullable = isPtr
-				tagPrefix = ctx.params[0]
+				tagPrefix = strings.Trim(ctx.params[0], "'")
 				if col.IsPrimaryKey {
 					col.Name = ctx.col.FieldName
 					col.IsPrimaryKey = false

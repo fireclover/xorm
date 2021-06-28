@@ -189,9 +189,6 @@ func (parser *Parser) parseFieldWithTags(table *schemas.Table, field reflect.Str
 
 		if h, ok := parser.handlers[ctx.tagUname]; ok {
 			if err := h(&ctx); err != nil {
-				if err == ErrIgnoreField {
-					continue
-				}
 				return nil, err
 			}
 		} else {
