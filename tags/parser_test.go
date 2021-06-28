@@ -544,9 +544,9 @@ func TestParseWithSQLType(t *testing.T) {
 	assert.EqualValues(t, "date_time", table.Columns()[3].Name)
 	assert.EqualValues(t, "uuid", table.Columns()[4].Name)
 
-	assert.EqualValues(t, "varchar", table.Columns()[0].SQLType.Name)
-	assert.EqualValues(t, "char", table.Columns()[1].SQLType.Name)
-	assert.EqualValues(t, "bigint", table.Columns()[2].SQLType.Name)
-	assert.EqualValues(t, "datetime", table.Columns()[3].SQLType.Name)
-	assert.EqualValues(t, "uuid", table.Columns()[4].SQLType.Name)
+	assert.EqualValues(t, "VARCHAR", table.Columns()[0].SQLType.Name)
+	assert.EqualValues(t, "CHAR", table.Columns()[1].SQLType.Name)
+	assert.EqualValues(t, "BIGINT", table.Columns()[2].SQLType.Name)
+	assert.EqualValues(t, "DATETIME", table.Columns()[3].SQLType.Name)
+	assert.EqualValues(t, "UUID", table.Columns()[4].SQLType.Name)
 }
