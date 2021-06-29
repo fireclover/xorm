@@ -12,7 +12,7 @@ import (
 	"xorm.io/xorm/core"
 )
 
-func (session *Session) scan(rows *core.Rows, types []*sql.ColumnType, v ...interface{}) error {
+func (engine *Engine) scan(rows *core.Rows, types []*sql.ColumnType, v ...interface{}) error {
 	var v2 = make([]interface{}, 0, len(v))
 	var turnBackIdxes = make([]int, 0, 5)
 	for i, vv := range v {
@@ -37,7 +37,7 @@ func (session *Session) scan(rows *core.Rows, types []*sql.ColumnType, v ...inte
 			if !s.Valid {
 				break
 			}
-			dt, err := convert.String2Time(s.String, session.engine.DatabaseTZ, session.engine.TZLocation)
+			dt, err := convert.String2Time(s.String, engine.DatabaseTZ, engine.TZLocation)
 			if err != nil {
 				return err
 			}
@@ -47,7 +47,7 @@ func (session *Session) scan(rows *core.Rows, types []*sql.ColumnType, v ...inte
 			if !s.Valid {
 				break
 			}
-			dt, err := convert.String2Time(s.String, session.engine.DatabaseTZ, session.engine.TZLocation)
+			dt, err := convert.String2Time(s.String, engine.DatabaseTZ, engine.TZLocation)
 			if err != nil {
 				return err
 			}
