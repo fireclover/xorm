@@ -38,7 +38,7 @@ func (session *Session) str2Time(col *schemas.Column, data string) (outTime time
 		}
 	} else if len(sdata) > 19 && strings.Contains(sdata, "-") {
 		x, err = time.ParseInLocation(time.RFC3339Nano, sdata, parseLoc)
-		session.engine.logger.Debugf("time(1) key[%v]: %+v | sdata: [%v]\n", col.FieldName, x, sdata)
+		session.engine.logger.Debugf("time(1) key[%v]: %+v | sdata: [%v]\n", col.Name, x, sdata)
 		if err != nil {
 			x, err = time.ParseInLocation("2006-01-02 15:04:05.999999999", sdata, parseLoc)
 		}
