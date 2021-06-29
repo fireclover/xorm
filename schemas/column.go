@@ -86,7 +86,7 @@ func (col *Column) ValueOfV(dataStruct *reflect.Value) (*reflect.Value, error) {
 	for _, i := range col.FieldIndex {
 		if v.Kind() == reflect.Ptr {
 			if v.IsNil() {
-				return nil, nil
+				v.Set(reflect.New(v.Type().Elem()))
 			}
 			v = v.Elem()
 		}
