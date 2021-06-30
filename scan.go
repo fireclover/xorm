@@ -28,3 +28,21 @@ func (engine *Engine) row2mapStr(rows *core.Rows, types []*sql.ColumnType, field
 	}
 	return result, nil
 }
+
+func (engine *Engine) row2sliceStr(rows *core.Rows, types []*sql.ColumnType, fields []string) ([]string, error) {
+	results := make([]string, 0, len(fields))
+	var scanResults = make([]interface{}, len(fields))
+	for i := 0; i < len(fields); i++ {
+		var s sql.NullString
+		scanResults[i] = &s
+	}
+
+	if err := rows.Scan(scanResults...); err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(fields); i++ {
+		results = append(results, scanResults[i].(*sql.NullString).String)
+	}
+	return results, nil
+}
