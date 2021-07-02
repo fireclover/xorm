@@ -134,7 +134,7 @@ func TestQueryInterface(t *testing.T) {
 	assert.Equal(t, 5, len(records[0]))
 	assert.EqualValues(t, int64(1), records[0]["id"])
 	assert.Equal(t, "hi", records[0]["msg"])
-	assert.EqualValues(t, 28, toInt64(records[0]["age"]))
+	assert.EqualValues(t, 28, records[0]["age"])
 	assert.EqualValues(t, 1.5, records[0]["money"])
 }
 
@@ -280,14 +280,14 @@ func TestQueryInterfaceNoParam(t *testing.T) {
 	records, err := testEngine.Table("get_var5").Limit(1).QueryInterface()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(records))
-	assert.EqualValues(t, 1, toInt64(records[0]["id"]))
-	assert.EqualValues(t, 0, toInt64(records[0]["msg"]))
+	assert.EqualValues(t, 1, records[0]["id"])
+	assert.EqualValues(t, false, records[0]["msg"])
 
 	records, err = testEngine.Table("get_var5").Where(builder.Eq{"id": 1}).QueryInterface()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(records))
-	assert.EqualValues(t, 1, toInt64(records[0]["id"]))
-	assert.EqualValues(t, 0, toInt64(records[0]["msg"]))
+	assert.EqualValues(t, 1, records[0]["id"])
+	assert.EqualValues(t, false, records[0]["msg"])
 }
 
 func TestQueryWithBuilder(t *testing.T) {
