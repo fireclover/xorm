@@ -35,6 +35,7 @@ type Engine struct {
 	cacherMgr      *caches.Manager
 	defaultContext context.Context
 	dialect        dialects.Dialect
+	driver         dialects.Driver
 	engineGroup    *EngineGroup
 	logger         log.ContextLogger
 	tagParser      *tags.Parser
@@ -72,6 +73,7 @@ func newEngine(driverName, dataSourceName string, dialect dialects.Dialect, db *
 
 	engine := &Engine{
 		dialect:        dialect,
+		driver:         dialects.QueryDriver(driverName),
 		TZLocation:     time.Local,
 		defaultContext: context.Background(),
 		cacherMgr:      cacherMgr,

@@ -157,30 +157,17 @@ func (session *Session) QuerySliceString(sqlOrArgs ...interface{}) ([][]string, 
 	return session.rows2SliceString(rows)
 }
 
-func row2mapInterface(rows *core.Rows, fields []string) (resultsMap map[string]interface{}, err error) {
-	resultsMap = make(map[string]interface{}, len(fields))
-	scanResultContainers := make([]interface{}, len(fields))
-	for i := 0; i < len(fields); i++ {
-		var scanResultContainer interface{}
-		scanResultContainers[i] = &scanResultContainer
-	}
-	if err := rows.Scan(scanResultContainers...); err != nil {
-		return nil, err
-	}
-
-	for ii, key := range fields {
-		resultsMap[key] = reflect.Indirect(reflect.ValueOf(scanResultContainers[ii])).Interface()
-	}
-	return
-}
-
-func rows2Interfaces(rows *core.Rows) (resultsSlice []map[string]interface{}, err error) {
+func (session *Session) rows2Interfaces(rows *core.Rows) (resultsSlice []map[string]interface{}, err error) {
 	fields, err := rows.Columns()
 	if err != nil {
 		return nil, err
 	}
+	types, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
 	for rows.Next() {
-		result, err := row2mapInterface(rows, fields)
+		result, err := session.engine.row2mapInterface(rows, types, fields)
 		if err != nil {
 			return nil, err
 		}
@@ -207,5 +194,5 @@ func (session *Session) QueryInterface(sqlOrArgs ...interface{}) ([]map[string]i
 	}
 	defer rows.Close()
 
-	return rows2Interfaces(rows)
+	return session.rows2Interfaces(rows)
 }

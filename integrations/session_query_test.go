@@ -132,10 +132,10 @@ func TestQueryInterface(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(records))
 	assert.Equal(t, 5, len(records[0]))
-	assert.EqualValues(t, 1, toInt64(records[0]["id"]))
-	assert.Equal(t, "hi", toString(records[0]["msg"]))
+	assert.EqualValues(t, int64(1), records[0]["id"])
+	assert.Equal(t, "hi", records[0]["msg"])
 	assert.EqualValues(t, 28, toInt64(records[0]["age"]))
-	assert.EqualValues(t, 1.5, toFloat64(records[0]["money"]))
+	assert.EqualValues(t, 1.5, records[0]["money"])
 }
 
 func TestQueryNoParams(t *testing.T) {

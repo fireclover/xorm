@@ -6,6 +6,7 @@ package dialects
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
@@ -1298,6 +1299,7 @@ func (db *postgres) Filters() []Filter {
 }
 
 type pqDriver struct {
+	baseDriver
 }
 
 type values map[string]string
@@ -1372,6 +1374,33 @@ func (p *pqDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	}
 
 	return db, nil
+}
+
+func (p *pqDriver) GenScanResult(colType string) (interface{}, error) {
+	switch colType {
+	case "VARCHAR", "TEXT":
+		var s sql.NullString
+		return &s, nil
+	case "BIGINT":
+		var s sql.NullInt64
+		return &s, nil
+	case "TINYINT", "INT":
+		var s sql.NullInt32
+		return &s, nil
+	case "FLOAT":
+		var s sql.NullFloat64
+		return &s, nil
+	case "DATETIME":
+		var s sql.NullTime
+		return &s, nil
+	case "BIT":
+		var s sql.RawBytes
+		return &s, nil
+	default:
+		fmt.Printf("unknow postgres database type: %v\n", colType)
+		var r sql.RawBytes
+		return &r, nil
+	}
 }
 
 type pqDriverPgx struct {
