@@ -107,6 +107,16 @@ func toFloat64(i interface{}) float64 {
 	return 0
 }
 
+func toBool(i interface{}) bool {
+	switch t := i.(type) {
+	case int32:
+		return t > 0
+	case bool:
+		return t
+	}
+	return false
+}
+
 func TestQueryInterface(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
@@ -281,13 +291,13 @@ func TestQueryInterfaceNoParam(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(records))
 	assert.EqualValues(t, 1, records[0]["id"])
-	assert.EqualValues(t, false, records[0]["msg"])
+	assert.False(t, toBool(records[0]["msg"]))
 
 	records, err = testEngine.Table("get_var5").Where(builder.Eq{"id": 1}).QueryInterface()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(records))
 	assert.EqualValues(t, 1, records[0]["id"])
-	assert.EqualValues(t, false, records[0]["msg"])
+	assert.False(t, toBool(records[0]["msg"]))
 }
 
 func TestQueryWithBuilder(t *testing.T) {
