@@ -1032,7 +1032,9 @@ func TestInsertDeleted(t *testing.T) {
 		ID        uint64    `xorm:"'ID' pk autoincr"`
 		DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull"`
 	}
-	assert.Error(t, testEngine.Sync2(new(InsertDeletedStructNotRight)))
+	// notnull tag will be ignored
+	err := testEngine.Sync2(new(InsertDeletedStructNotRight))
+	assert.NoError(t, err)
 
 	type InsertDeletedStruct struct {
 		ID        uint64    `xorm:"'ID' pk autoincr"`
@@ -1042,7 +1044,7 @@ func TestInsertDeleted(t *testing.T) {
 	assert.NoError(t, testEngine.Sync2(new(InsertDeletedStruct)))
 
 	var v InsertDeletedStruct
-	_, err := testEngine.Insert(&v)
+	_, err = testEngine.Insert(&v)
 	assert.NoError(t, err)
 
 	var v2 InsertDeletedStruct
