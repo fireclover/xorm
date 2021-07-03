@@ -6,8 +6,8 @@ package xorm
 
 import (
 	"database/sql"
-	"fmt"
 
+	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/dialects"
 )
@@ -86,30 +86,11 @@ func (engine *Engine) row2mapInterface(rows *core.Rows, types []*sql.ColumnType,
 	}
 
 	for ii, key := range fields {
-		switch t := scanResultContainers[ii].(type) {
-		case *sql.NullInt32:
-			resultsMap[key] = t.Int32
-		case *sql.NullInt64:
-			resultsMap[key] = t.Int64
-		case *sql.NullFloat64:
-			resultsMap[key] = t.Float64
-		case *sql.NullString:
-			resultsMap[key] = t.String
-		case *sql.NullTime:
-			if t.Valid {
-				resultsMap[key] = t.Time.In(engine.TZLocation).Format("2006-01-02 15:04:05")
-			} else {
-				resultsMap[key] = nil
-			}
-		case *sql.RawBytes:
-			if t == nil {
-				resultsMap[key] = nil
-			} else {
-				resultsMap[key] = []byte(*t)
-			}
-		default:
-			return nil, fmt.Errorf("unknow type: %v", t)
+		res, err := convert.Interface2Interface(engine.TZLocation, scanResultContainers[ii])
+		if err != nil {
+			return nil, err
 		}
+		resultsMap[key] = res
 	}
 	return resultsMap, nil
 }

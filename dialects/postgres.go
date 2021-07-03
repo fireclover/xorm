@@ -1384,17 +1384,20 @@ func (p *pqDriver) GenScanResult(colType string) (interface{}, error) {
 	case "BIGINT":
 		var s sql.NullInt64
 		return &s, nil
-	case "TINYINT", "INT":
+	case "TINYINT", "INT", "INT8", "INT4":
 		var s sql.NullInt32
 		return &s, nil
-	case "FLOAT":
+	case "FLOAT", "FLOAT4":
 		var s sql.NullFloat64
 		return &s, nil
-	case "DATETIME":
+	case "DATETIME", "TIMESTAMP":
 		var s sql.NullTime
 		return &s, nil
 	case "BIT":
 		var s sql.RawBytes
+		return &s, nil
+	case "BOOL":
+		var s sql.NullBool
 		return &s, nil
 	default:
 		fmt.Printf("unknow postgres database type: %v\n", colType)
