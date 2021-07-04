@@ -572,7 +572,6 @@ func (p *sqlite3Driver) GenScanResult(colType string) (interface{}, error) {
 		var s sql.RawBytes
 		return &s, nil
 	default:
-		fmt.Printf("====unknow handle db type: %v \n", colType)
 		var r sql.NullString
 		return &r, nil
 	}

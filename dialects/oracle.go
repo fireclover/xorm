@@ -852,9 +852,18 @@ func (cfg *godrorDriver) Parse(driverName, dataSourceName string) (*URI, error) 
 
 func (p *godrorDriver) GenScanResult(colType string) (interface{}, error) {
 	switch colType {
-	case "VARCHAR", "TEXT":
+	case "CHAR", "NCHAR", "VARCHAR", "VARCHAR2", "NVARCHAR2", "LONG", "CLOB", "NCLOB":
 		var s sql.NullString
 		return &s, nil
+	case "NUMBER":
+		var s sql.NullString
+		return &s, nil
+	case "DATE":
+		var s sql.NullTime
+		return &s, nil
+	case "BLOB":
+		var r sql.RawBytes
+		return &r, nil
 	default:
 		var r sql.RawBytes
 		return &r, nil

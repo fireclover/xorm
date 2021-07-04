@@ -672,17 +672,20 @@ func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 
 func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
 	switch colType {
-	case "VARCHAR", "TEXT":
+	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
 		var s sql.NullString
 		return &s, nil
 	case "BIGINT":
 		var s sql.NullInt64
 		return &s, nil
-	case "TINYINT", "INT":
+	case "TINYINT", "SMALLINT", "MEDIUMINT", "INT":
 		var s sql.NullInt32
 		return &s, nil
-	case "FLOAT":
+	case "FLOAT", "REAL", "DOUBLE PRECISION":
 		var s sql.NullFloat64
+		return &s, nil
+	case "DECIMAL", "NUMERIC":
+		var s sql.NullString
 		return &s, nil
 	case "DATETIME":
 		var s sql.NullTime
@@ -690,8 +693,10 @@ func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
 	case "BIT":
 		var s sql.RawBytes
 		return &s, nil
+	case "BINARY", "VARBINARY", "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB":
+		var r sql.RawBytes
+		return &r, nil
 	default:
-		fmt.Printf("unknow mysql database type: %v\n", colType)
 		var r sql.RawBytes
 		return &r, nil
 	}
