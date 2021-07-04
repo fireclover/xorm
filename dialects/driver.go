@@ -18,9 +18,14 @@ type ScanContext struct {
 	UserLocation *time.Location
 }
 
+type DriverFeatures struct {
+	SupportNullable bool
+}
+
 // Driver represents a database driver
 type Driver interface {
 	Parse(string, string) (*URI, error)
+	Features() DriverFeatures
 	GenScanResult(string) (interface{}, error) // according given column type generating a suitable scan interface
 	Scan(*ScanContext, *core.Rows, []*sql.ColumnType, ...interface{}) error
 }
@@ -76,4 +81,10 @@ type baseDriver struct{}
 
 func (b *baseDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.ColumnType, v ...interface{}) error {
 	return rows.Scan(v...)
+}
+
+func (b *baseDriver) Features() DriverFeatures {
+	return DriverFeatures{
+		SupportNullable: true,
+	}
 }

@@ -54,7 +54,7 @@ func (session *Session) rows2SliceString(rows *core.Rows) (resultsSlice [][]stri
 	}
 
 	for rows.Next() {
-		record, err := row2sliceStr(rows, types, fields)
+		record, err := session.engine.row2sliceStr(rows, types, fields)
 		if err != nil {
 			return nil, err
 		}

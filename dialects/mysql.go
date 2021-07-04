@@ -633,6 +633,7 @@ func (db *mysql) Filters() []Filter {
 }
 
 type mysqlDriver struct {
+	baseDriver
 }
 
 func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
