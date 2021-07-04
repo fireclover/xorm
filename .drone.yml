@@ -354,8 +354,6 @@ name: release-tag
 trigger:
   event:
     - tag
-depends_on:
-  - testing
 steps:
 - name: release-tag-gitea
   pull: always
