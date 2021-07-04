@@ -12,7 +12,7 @@ import (
 	"xorm.io/xorm/dialects"
 )
 
-func (engine *Engine) row2mapStr(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string]string, error) {
+func row2mapStr(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string]string, error) {
 	var scanResults = make([]interface{}, len(fields))
 	for i := 0; i < len(fields); i++ {
 		var s sql.NullString
@@ -31,7 +31,7 @@ func (engine *Engine) row2mapStr(rows *core.Rows, types []*sql.ColumnType, field
 	return result, nil
 }
 
-func (engine *Engine) row2mapBytes(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string][]byte, error) {
+func row2mapBytes(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string][]byte, error) {
 	var scanResults = make([]interface{}, len(fields))
 	for i := 0; i < len(fields); i++ {
 		var s sql.NullString
@@ -50,7 +50,7 @@ func (engine *Engine) row2mapBytes(rows *core.Rows, types []*sql.ColumnType, fie
 	return result, nil
 }
 
-func (engine *Engine) row2sliceStr(rows *core.Rows, types []*sql.ColumnType, fields []string) ([]string, error) {
+func row2sliceStr(rows *core.Rows, types []*sql.ColumnType, fields []string) ([]string, error) {
 	results := make([]string, 0, len(fields))
 	var scanResults = make([]interface{}, len(fields))
 	for i := 0; i < len(fields); i++ {
@@ -66,6 +66,26 @@ func (engine *Engine) row2sliceStr(rows *core.Rows, types []*sql.ColumnType, fie
 		results = append(results, scanResults[i].(*sql.NullString).String)
 	}
 	return results, nil
+}
+
+func rows2maps(rows *core.Rows) (resultsSlice []map[string][]byte, err error) {
+	fields, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+	types, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		result, err := row2mapBytes(rows, types, fields)
+		if err != nil {
+			return nil, err
+		}
+		resultsSlice = append(resultsSlice, result)
+	}
+
+	return resultsSlice, nil
 }
 
 func (engine *Engine) row2mapInterface(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string]interface{}, error) {
