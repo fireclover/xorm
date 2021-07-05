@@ -40,6 +40,12 @@ func asString(src interface{}) string {
 		return v
 	case []byte:
 		return string(v)
+	case *sql.NullString:
+		return v.String
+	case *sql.NullInt32:
+		return fmt.Sprintf("%d", v.Int32)
+	case *sql.NullInt64:
+		return fmt.Sprintf("%d", v.Int64)
 	}
 	rv := reflect.ValueOf(src)
 	switch rv.Kind() {
@@ -401,6 +407,7 @@ func convertAssignV(dpv reflect.Value, src interface{}, originalLocation, conver
 		dv.SetFloat(f64)
 		return nil
 	case reflect.String:
+		fmt.Println("=====", src)
 		dv.SetString(asString(src))
 		return nil
 	}

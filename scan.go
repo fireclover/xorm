@@ -57,6 +57,7 @@ func genScanResultsByBeanNullable(bean interface{}, originalLocation, convertedL
 	tp := reflect.TypeOf(bean).Elem()
 	switch tp.Kind() {
 	case reflect.String:
+		fmt.Println("=====", tp)
 		return &sql.NullString{}, true, nil
 	case reflect.Int64:
 		return &sql.NullInt64{}, true, nil

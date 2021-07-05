@@ -719,7 +719,7 @@ func TestCustomTypes(t *testing.T) {
 	has, err := testEngine.Table(new(TestCustomizeStruct)).ID(s.Id).Cols("name").Get(&name)
 	assert.NoError(t, err)
 	assert.True(t, has)
-	assert.EqualValues(t, "test", name)
+	assert.EqualValues(t, "test", string(name))
 
 	var age MyInt
 	has, err = testEngine.Table(new(TestCustomizeStruct)).ID(s.Id).Select("age").Get(&age)
