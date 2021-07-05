@@ -63,6 +63,156 @@ func asString(src interface{}) string {
 	return fmt.Sprintf("%v", src)
 }
 
+func asInt64(src interface{}) (int64, error) {
+	switch v := src.(type) {
+	case int:
+		return int64(v), nil
+	case int16:
+		return int64(v), nil
+	case int32:
+		return int64(v), nil
+	case int8:
+		return int64(v), nil
+	case int64:
+		return v, nil
+	case uint:
+		return int64(v), nil
+	case uint8:
+		return int64(v), nil
+	case uint16:
+		return int64(v), nil
+	case uint32:
+		return int64(v), nil
+	case uint64:
+		return int64(v), nil
+	case []byte:
+		return strconv.ParseInt(string(v), 10, 64)
+	case string:
+		return strconv.ParseInt(v, 10, 64)
+	case *sql.NullString:
+		return strconv.ParseInt(v.String, 10, 64)
+	case *sql.NullInt32:
+		return int64(v.Int32), nil
+	case *sql.NullInt64:
+		return int64(v.Int64), nil
+	}
+
+	rv := reflect.ValueOf(src)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return rv.Int(), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return int64(rv.Uint()), nil
+	case reflect.Float64:
+		return int64(rv.Float()), nil
+	case reflect.Float32:
+		return int64(rv.Float()), nil
+	case reflect.String:
+		return strconv.ParseInt(rv.String(), 10, 64)
+	}
+	return 0, fmt.Errorf("unsupported value %T as int64", src)
+}
+
+func asUint64(src interface{}) (uint64, error) {
+	switch v := src.(type) {
+	case int:
+		return uint64(v), nil
+	case int16:
+		return uint64(v), nil
+	case int32:
+		return uint64(v), nil
+	case int8:
+		return uint64(v), nil
+	case int64:
+		return uint64(v), nil
+	case uint:
+		return uint64(v), nil
+	case uint8:
+		return uint64(v), nil
+	case uint16:
+		return uint64(v), nil
+	case uint32:
+		return uint64(v), nil
+	case uint64:
+		return v, nil
+	case []byte:
+		return strconv.ParseUint(string(v), 10, 64)
+	case string:
+		return strconv.ParseUint(v, 10, 64)
+	case *sql.NullString:
+		return strconv.ParseUint(v.String, 10, 64)
+	case *sql.NullInt32:
+		return uint64(v.Int32), nil
+	case *sql.NullInt64:
+		return uint64(v.Int64), nil
+	}
+
+	rv := reflect.ValueOf(src)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return uint64(rv.Int()), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return uint64(rv.Uint()), nil
+	case reflect.Float64:
+		return uint64(rv.Float()), nil
+	case reflect.Float32:
+		return uint64(rv.Float()), nil
+	case reflect.String:
+		return strconv.ParseUint(rv.String(), 10, 64)
+	}
+	return 0, fmt.Errorf("unsupported value %T as uint64", src)
+}
+
+func asFloat64(src interface{}) (float64, error) {
+	switch v := src.(type) {
+	case int:
+		return float64(v), nil
+	case int16:
+		return float64(v), nil
+	case int32:
+		return float64(v), nil
+	case int8:
+		return float64(v), nil
+	case int64:
+		return float64(v), nil
+	case uint:
+		return float64(v), nil
+	case uint8:
+		return float64(v), nil
+	case uint16:
+		return float64(v), nil
+	case uint32:
+		return float64(v), nil
+	case uint64:
+		return float64(v), nil
+	case []byte:
+		return strconv.ParseFloat(string(v), 64)
+	case string:
+		return strconv.ParseFloat(v, 64)
+	case *sql.NullString:
+		return strconv.ParseFloat(v.String, 64)
+	case *sql.NullInt32:
+		return float64(v.Int32), nil
+	case *sql.NullInt64:
+		return float64(v.Int64), nil
+	}
+
+	rv := reflect.ValueOf(src)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(rv.Int()), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return float64(rv.Uint()), nil
+	case reflect.Float64:
+		return float64(rv.Float()), nil
+	case reflect.Float32:
+		return float64(rv.Float()), nil
+	case reflect.String:
+		return strconv.ParseFloat(rv.String(), 64)
+	}
+	return 0, fmt.Errorf("unsupported value %T as int64", src)
+}
+
 func asBytes(buf []byte, rv reflect.Value) (b []byte, ok bool) {
 	switch rv.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -380,34 +530,30 @@ func convertAssignV(dpv reflect.Value, src interface{}, originalLocation, conver
 		dv.Set(reflect.New(dv.Type().Elem()))
 		return convertAssign(dv.Interface(), src, originalLocation, convertedLocation)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		s := asString(src)
-		i64, err := strconv.ParseInt(s, 10, dv.Type().Bits())
+		i64, err := asInt64(src)
 		if err != nil {
 			err = strconvErr(err)
-			return fmt.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
+			return fmt.Errorf("converting driver.Value type %T to a %s: %v", src, dv.Kind(), err)
 		}
 		dv.SetInt(i64)
 		return nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		s := asString(src)
-		u64, err := strconv.ParseUint(s, 10, dv.Type().Bits())
+		u64, err := asUint64(src)
 		if err != nil {
 			err = strconvErr(err)
-			return fmt.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
+			return fmt.Errorf("converting driver.Value type %T to a %s: %v", src, dv.Kind(), err)
 		}
 		dv.SetUint(u64)
 		return nil
 	case reflect.Float32, reflect.Float64:
-		s := asString(src)
-		f64, err := strconv.ParseFloat(s, dv.Type().Bits())
+		f64, err := asFloat64(src)
 		if err != nil {
 			err = strconvErr(err)
-			return fmt.Errorf("converting driver.Value type %T (%q) to a %s: %v", src, s, dv.Kind(), err)
+			return fmt.Errorf("converting driver.Value type %T to a %s: %v", src, dv.Kind(), err)
 		}
 		dv.SetFloat(f64)
 		return nil
 	case reflect.String:
-		fmt.Println("=====", src)
 		dv.SetString(asString(src))
 		return nil
 	}
