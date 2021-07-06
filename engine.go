@@ -1202,10 +1202,10 @@ func (engine *Engine) Update(bean interface{}, condiBeans ...interface{}) (int64
 }
 
 // Delete records, bean's non-empty fields are conditions
-func (engine *Engine) Delete(bean interface{}) (int64, error) {
+func (engine *Engine) Delete(beans ...interface{}) (int64, error) {
 	session := engine.NewSession()
 	defer session.Close()
-	return session.Delete(bean)
+	return session.Delete(beans...)
 }
 
 // Get retrieve one record from table, bean's non-empty fields

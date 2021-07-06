@@ -241,3 +241,28 @@ func TestUnscopeDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, has)
 }
+
+func TestDelete2(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type UserinfoDelete2 struct {
+		Uid   int64 `xorm:"id pk not null autoincr"`
+		IsMan bool
+	}
+
+	assert.NoError(t, testEngine.Sync2(new(UserinfoDelete2)))
+
+	user := UserinfoDelete2{}
+	cnt, err := testEngine.Insert(&user)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = testEngine.Table("userinfo_delete2").In("id", []int{1}).Delete()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	user2 := UserinfoDelete2{}
+	has, err := testEngine.ID(1).Get(&user2)
+	assert.NoError(t, err)
+	assert.False(t, has)
+}
