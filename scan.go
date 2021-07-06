@@ -16,7 +16,7 @@ import (
 )
 
 // genScanResultsByBeanNullabale generates scan result
-func genScanResultsByBeanNullable(bean interface{}, originalLocation, convertedLocation *time.Location) (interface{}, bool, error) {
+func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
 	switch t := bean.(type) {
 	case *sql.NullInt64, *sql.NullBool, *sql.NullFloat64, *sql.NullString, *sql.RawBytes:
 		return t, false, nil
@@ -29,15 +29,9 @@ func genScanResultsByBeanNullable(bean interface{}, originalLocation, convertedL
 	case *int64:
 		return &sql.NullInt64{}, true, nil
 	case *uint, *uint8, *uint16, *uint32:
-		return &NullUint32{
-			OriginalLocation:  originalLocation,
-			ConvertedLocation: convertedLocation,
-		}, true, nil
+		return &NullUint32{}, true, nil
 	case *uint64:
-		return &NullUint64{
-			OriginalLocation:  originalLocation,
-			ConvertedLocation: convertedLocation,
-		}, true, nil
+		return &NullUint64{}, true, nil
 	case *float32, *float64:
 		return &sql.NullFloat64{}, true, nil
 	case *bool:
@@ -57,7 +51,6 @@ func genScanResultsByBeanNullable(bean interface{}, originalLocation, convertedL
 	tp := reflect.TypeOf(bean).Elem()
 	switch tp.Kind() {
 	case reflect.String:
-		fmt.Println("=====", tp)
 		return &sql.NullString{}, true, nil
 	case reflect.Int64:
 		return &sql.NullInt64{}, true, nil
@@ -197,7 +190,7 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 			}
 
 			if useNullable {
-				scanResult, replaced, err = genScanResultsByBeanNullable(v, engine.DatabaseTZ, engine.TZLocation)
+				scanResult, replaced, err = genScanResultsByBeanNullable(v)
 			} else {
 				scanResult, replaced, err = genScanResultsByBean(v)
 			}

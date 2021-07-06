@@ -698,10 +698,8 @@ var (
 // NullUint64 implements the Scanner interface so
 // it can be used as a scan destination, similar to NullString.
 type NullUint64 struct {
-	Uint64            uint64
-	Valid             bool // Valid is true if Uint64 is not NULL
-	OriginalLocation  *time.Location
-	ConvertedLocation *time.Location
+	Uint64 uint64
+	Valid  bool
 }
 
 // Scan implements the Scanner interface.
@@ -711,8 +709,9 @@ func (n *NullUint64) Scan(value interface{}) error {
 		return nil
 	}
 	n.Valid = true
-	fmt.Println("======44444")
-	return convertAssign(&n.Uint64, value, n.OriginalLocation, n.ConvertedLocation)
+	var err error
+	n.Uint64, err = asUint64(value)
+	return err
 }
 
 // Value implements the driver Valuer interface.
@@ -731,10 +730,8 @@ var (
 // NullUint32 implements the Scanner interface so
 // it can be used as a scan destination, similar to NullString.
 type NullUint32 struct {
-	Uint32            uint32
-	Valid             bool // Valid is true if Uint32 is not NULL
-	OriginalLocation  *time.Location
-	ConvertedLocation *time.Location
+	Uint32 uint32
+	Valid  bool // Valid is true if Uint32 is not NULL
 }
 
 // Scan implements the Scanner interface.
@@ -744,8 +741,12 @@ func (n *NullUint32) Scan(value interface{}) error {
 		return nil
 	}
 	n.Valid = true
-	fmt.Println("555555")
-	return convertAssign(&n.Uint32, value, n.OriginalLocation, n.ConvertedLocation)
+	i64, err := asUint64(value)
+	if err != nil {
+		return err
+	}
+	n.Uint32 = uint32(i64)
+	return nil
 }
 
 // Value implements the driver Valuer interface.
