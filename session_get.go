@@ -256,7 +256,7 @@ func (session *Session) getVars(rows *core.Rows, types []*sql.ColumnType, fields
 		}
 	}
 
-	err := session.engine.scan(rows, types, scanResults...)
+	err := session.engine.scan(rows, fields, types, scanResults...)
 	if err != nil {
 		return true, err
 	}

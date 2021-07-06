@@ -78,6 +78,7 @@ func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 		*string,
 		*int, *int8, *int16, *int32, *int64,
 		*uint, *uint8, *uint16, *uint32, *uint64,
+		*float32, *float64,
 		*bool:
 		return t, false, nil
 	case *time.Time:
@@ -117,6 +118,10 @@ func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 		return new(uint16), true, nil
 	case reflect.Uint8:
 		return new(uint8), true, nil
+	case reflect.Float32:
+		return new(float32), true, nil
+	case reflect.Float64:
+		return new(float64), true, nil
 	default:
 		return nil, false, fmt.Errorf("unsupported type: %#v", bean)
 	}
@@ -177,7 +182,7 @@ func (engine *Engine) scanStringInterface(rows *core.Rows, types []*sql.ColumnTy
 }
 
 // scan is a wrap of driver.Scan but will automatically change the input values according requirements
-func (engine *Engine) scan(rows *core.Rows, types []*sql.ColumnType, vv ...interface{}) error {
+func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.ColumnType, vv ...interface{}) error {
 	var scanResults = make([]interface{}, 0, len(types))
 	var replaces = make([]bool, 0, len(types))
 	var err error
@@ -188,7 +193,7 @@ func (engine *Engine) scan(rows *core.Rows, types []*sql.ColumnType, vv ...inter
 			var useNullable = true
 			if engine.driver.Features().SupportNullable {
 				nullable, ok := types[0].Nullable()
-				useNullable = ok && !nullable
+				useNullable = ok && nullable
 			}
 
 			if useNullable {
