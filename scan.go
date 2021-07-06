@@ -22,7 +22,9 @@ func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
 	case *sql.NullInt64, *sql.NullBool, *sql.NullFloat64, *sql.NullString, *sql.RawBytes:
 		return t, false, nil
 	case *time.Time:
-		return &sql.NullTime{}, true, nil
+		return &sql.NullString{}, true, nil
+	case *sql.NullTime:
+		return &sql.NullString{}, true, nil
 	case *string:
 		return &sql.NullString{}, true, nil
 	case *int, *int8, *int16, *int32:
@@ -75,8 +77,8 @@ func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 		*float32, *float64,
 		*bool:
 		return t, false, nil
-	case *time.Time:
-		return &sql.NullTime{}, true, nil
+	case *time.Time, *sql.NullTime:
+		return &sql.NullString{}, true, nil
 	case sql.NullInt64, sql.NullBool, sql.NullFloat64, sql.NullString,
 		time.Time,
 		string,
