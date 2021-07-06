@@ -1302,6 +1302,12 @@ type pqDriver struct {
 	baseDriver
 }
 
+func (b *pqDriver) Features() DriverFeatures {
+	return DriverFeatures{
+		SupportNullable: false,
+	}
+}
+
 type values map[string]string
 
 func (vs values) Set(k, v string) {
