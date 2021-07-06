@@ -1393,7 +1393,7 @@ func (p *pqDriver) GenScanResult(colType string) (interface{}, error) {
 	case "TINYINT", "INT", "INT8", "INT4":
 		var s sql.NullInt32
 		return &s, nil
-	case "FLOAT", "FLOAT4":
+	case "FLOAT", "FLOAT4", "NUMERIC":
 		var s sql.NullFloat64
 		return &s, nil
 	case "DATETIME", "TIMESTAMP":
