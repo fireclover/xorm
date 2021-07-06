@@ -1065,3 +1065,24 @@ func TestInsertDeleted(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 }
+
+func TestInsertDefaultTime(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type InsertDefaultTime struct {
+		Id      int64
+		TheTime time.Time `xorm:"default('1970-01-01 00:00:00')"`
+	}
+
+	assert.NoError(t, testEngine.Sync2(new(InsertDefaultTime), new(InsertDefaultTime)))
+
+	var t1 InsertDefaultTime
+	_, err := testEngine.Insert(&t1)
+	assert.NoError(t, err)
+	assert.EqualValues(t, "1970-01-01 00:00:00", t1.TheTime.Format("2006-01-02 15:04:05"))
+
+	_, err = testEngine.Insert(&InsertDefaultTime{
+		TheTime: time.Now(),
+	})
+	assert.NoError(t, err)
+}
