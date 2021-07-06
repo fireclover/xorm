@@ -82,7 +82,12 @@ func newEngine(driverName, dataSourceName string, dialect dialects.Dialect, db *
 		dataSourceName: dataSourceName,
 		db:             db,
 		logSessionID:   false,
-		DatabaseTZ:     time.Local,
+	}
+
+	if dialect.URI().DBType == schemas.SQLITE {
+		engine.DatabaseTZ = time.UTC
+	} else {
+		engine.DatabaseTZ = time.Local
 	}
 
 	logger := log.NewSimpleLogger(os.Stdout)
