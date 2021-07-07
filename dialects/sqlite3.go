@@ -565,7 +565,7 @@ func (p *sqlite3Driver) GenScanResult(colType string) (interface{}, error) {
 	case "REAL":
 		var s sql.NullFloat64
 		return &s, nil
-	case "NUMERIC":
+	case "NUMERIC", "DECIMAL":
 		var s sql.NullString
 		return &s, nil
 	case "BLOB":
