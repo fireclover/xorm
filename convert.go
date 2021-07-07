@@ -9,6 +9,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strconv"
 	"time"
@@ -308,10 +309,12 @@ func convertAssign(dest, src interface{}, originalLocation *time.Location, conve
 			if s.Valid {
 				*d, _ = strconv.Atoi(s.String)
 			}
+			return nil
 		case *int64:
 			if s.Valid {
 				*d, _ = strconv.ParseInt(s.String, 10, 64)
 			}
+			return nil
 		case *string:
 			if s.Valid {
 				*d = s.String
@@ -337,6 +340,15 @@ func convertAssign(dest, src interface{}, originalLocation *time.Location, conve
 				d.Valid = true
 				d.Time = *dt
 			}
+			return nil
+		case *big.Float:
+			if s.Valid {
+				if d == nil {
+					d = big.NewFloat(0)
+				}
+				d.SetString(s.String)
+			}
+			return nil
 		}
 	case *sql.NullInt32:
 		switch d := dest.(type) {

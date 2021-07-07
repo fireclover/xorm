@@ -7,6 +7,7 @@ package xorm
 import (
 	"database/sql"
 	"fmt"
+	"math/big"
 	"reflect"
 	"time"
 
@@ -182,13 +183,21 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 	for _, v := range vv {
 		var replaced bool
 		var scanResult interface{}
-		if _, ok := v.(sql.Scanner); !ok {
+		switch t := v.(type) {
+		case sql.Scanner:
+			scanResult = t
+		case convert.Conversion:
+			scanResult = &sql.RawBytes{}
+			replaced = true
+		case *big.Float:
+			scanResult = &sql.NullString{}
+			replaced = true
+		default:
 			var useNullable = true
 			if engine.driver.Features().SupportNullable {
 				nullable, ok := types[0].Nullable()
 				useNullable = ok && nullable
 			}
-
 			if useNullable {
 				scanResult, replaced, err = genScanResultsByBeanNullable(v)
 			} else {
@@ -197,25 +206,22 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 			if err != nil {
 				return err
 			}
-		} else {
-			scanResult = v
 		}
+
 		scanResults = append(scanResults, scanResult)
 		replaces = append(replaces, replaced)
 	}
 
-	var scanCtx = dialects.ScanContext{
+	if err = engine.driver.Scan(&dialects.ScanContext{
 		DBLocation:   engine.DatabaseTZ,
 		UserLocation: engine.TZLocation,
-	}
-
-	if err = engine.driver.Scan(&scanCtx, rows, types, scanResults...); err != nil {
+	}, rows, types, scanResults...); err != nil {
 		return err
 	}
 
 	for i, replaced := range replaces {
 		if replaced {
-			if err = convertAssign(vv[i], scanResults[i], scanCtx.DBLocation, engine.TZLocation); err != nil {
+			if err = convertAssign(vv[i], scanResults[i], engine.DatabaseTZ, engine.TZLocation); err != nil {
 				return err
 			}
 		}

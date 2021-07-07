@@ -9,6 +9,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strconv"
 	"time"
@@ -123,6 +124,20 @@ var (
 	conversionType            = reflect.TypeOf(&conversionTypePlaceHolder).Elem()
 )
 
+func isScannableStruct(bean interface{}, typeLen int) bool {
+	switch bean.(type) {
+	case *time.Time:
+		return false
+	case sql.Scanner:
+		return false
+	case convert.Conversion:
+		return typeLen > 1
+	case *big.Float:
+		return false
+	}
+	return true
+}
+
 func (session *Session) nocacheGet(beanKind reflect.Kind, table *schemas.Table, bean interface{}, sqlStr string, args ...interface{}) (bool, error) {
 	rows, err := session.queryRows(sqlStr, args...)
 	if err != nil {
@@ -148,13 +163,7 @@ func (session *Session) nocacheGet(beanKind reflect.Kind, table *schemas.Table, 
 	}
 	switch beanKind {
 	case reflect.Struct:
-		if _, ok := bean.(*time.Time); ok {
-			break
-		}
-		if _, ok := bean.(sql.Scanner); ok {
-			break
-		}
-		if _, ok := bean.(convert.Conversion); len(types) == 1 && ok {
+		if !isScannableStruct(bean, len(types)) {
 			break
 		}
 		return session.getStruct(rows, types, fields, table, bean)
@@ -240,35 +249,9 @@ func (session *Session) getVars(rows *core.Rows, types []*sql.ColumnType, fields
 	if len(beans) != len(types) {
 		return false, fmt.Errorf("expected columns %d, but only %d variables", len(types), len(beans))
 	}
-	var scanResults = make([]interface{}, 0, len(types))
-	var replaceds = make([]bool, 0, len(types))
-	for _, bean := range beans {
-		switch t := bean.(type) {
-		case sql.Scanner:
-			scanResults = append(scanResults, t)
-			replaceds = append(replaceds, false)
-		case convert.Conversion:
-			scanResults = append(scanResults, &sql.RawBytes{})
-			replaceds = append(replaceds, true)
-		default:
-			scanResults = append(scanResults, bean)
-			replaceds = append(replaceds, false)
-		}
-	}
 
-	err := session.engine.scan(rows, fields, types, scanResults...)
-	if err != nil {
-		return true, err
-	}
-	for i, replaced := range replaceds {
-		if replaced {
-			err = convertAssign(beans[i], scanResults[i], session.engine.DatabaseTZ, session.engine.TZLocation)
-			if err != nil {
-				return true, err
-			}
-		}
-	}
-	return true, nil
+	err := session.engine.scan(rows, fields, types, beans...)
+	return true, err
 }
 
 func (session *Session) getStruct(rows *core.Rows, types []*sql.ColumnType, fields []string, table *schemas.Table, bean interface{}) (bool, error) {

@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"math/big"
 	"reflect"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 
 var (
 	nullFloatType = reflect.TypeOf(sql.NullFloat64{})
+	bigFloatType  = reflect.TypeOf(big.Float{})
 )
 
 // Value2Interface convert a field value of a struct to interface for puting into database
@@ -84,6 +86,9 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 				return nil, nil
 			}
 			return t.Float64, nil
+		} else if fieldType.ConvertibleTo(bigFloatType) {
+			t := fieldValue.Convert(bigFloatType).Interface().(big.Float)
+			return t.String(), nil
 		}
 
 		if !col.IsJSON {
