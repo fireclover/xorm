@@ -70,10 +70,6 @@ func (session *Session) get(bean interface{}) (bool, error) {
 		}
 	}
 
-	var sqlStr string
-	var args []interface{}
-	var err error
-
 	if session.statement.RawSQL == "" {
 		if len(session.statement.TableName()) <= 0 {
 			return false, ErrTableNotFound

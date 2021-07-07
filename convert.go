@@ -579,10 +579,7 @@ func convertAssign(dest, src interface{}, originalLocation *time.Location, conve
 }
 
 func convertAssignV(dpv reflect.Value, src interface{}, originalLocation, convertedLocation *time.Location) error {
-	if dpv.Kind() != reflect.Ptr {
-		return errors.New("destination not a pointer")
-	}
-	if dpv.IsNil() {
+	if dpv.Kind() == reflect.Ptr && dpv.IsNil() {
 		return errNilPtr
 	}
 
@@ -640,6 +637,36 @@ func convertAssignV(dpv reflect.Value, src interface{}, originalLocation, conver
 	case reflect.String:
 		dv.SetString(asString(src))
 		return nil
+	case reflect.Bool:
+		b, err := asBool(src)
+		if err != nil {
+			return err
+		}
+		dv.SetBool(b)
+		return nil
+	case reflect.Array:
+		var bs []byte
+		switch t := src.(type) {
+		case string:
+			bs = []byte(t)
+		case []byte:
+			bs = t
+		}
+
+		if bs != nil {
+			if dv.Len() > 0 {
+				for i := 0; i < dv.Len(); i++ {
+					if i < len(bs) {
+						dv.Index(i).Set(reflect.ValueOf(bs[i]))
+					}
+				}
+			} else {
+				for i := 0; i < len(bs); i++ {
+					dv.Set(reflect.Append(dv, reflect.ValueOf(bs[i])))
+				}
+			}
+			return nil
+		}
 	}
 
 	return fmt.Errorf("unsupported Scan, storing driver.Value type %T into type %T", src, dpv.Interface())
@@ -682,16 +709,39 @@ func asKind(vv reflect.Value, tp reflect.Type) (interface{}, error) {
 	return nil, fmt.Errorf("unsupported primary key type: %v, %v", tp, vv)
 }
 
-func asBool(bs []byte) (bool, error) {
-	if len(bs) == 0 {
-		return false, nil
+func asBool(src interface{}) (bool, error) {
+	switch v := src.(type) {
+	case bool:
+		return v, nil
+	case *bool:
+		return *v, nil
+	case *sql.NullBool:
+		return v.Bool, nil
+	case int64:
+		return v > 0, nil
+	case int:
+		return v > 0, nil
+	case int8:
+		return v > 0, nil
+	case int16:
+		return v > 0, nil
+	case int32:
+		return v > 0, nil
+	case []byte:
+		if len(v) == 0 {
+			return false, nil
+		}
+		if v[0] == 0x00 {
+			return false, nil
+		} else if v[0] == 0x01 {
+			return true, nil
+		}
+		return strconv.ParseBool(string(v))
+	case string:
+		return strconv.ParseBool(v)
+	default:
+		return false, fmt.Errorf("unknow type %T as bool", src)
 	}
-	if bs[0] == 0x00 {
-		return false, nil
-	} else if bs[0] == 0x01 {
-		return true, nil
-	}
-	return strconv.ParseBool(string(bs))
 }
 
 // str2PK convert string value to primary key value according to tp
