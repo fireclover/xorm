@@ -471,9 +471,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	}
 
 	rawValueType := reflect.TypeOf(rawValue.Interface())
-
 	vv := reflect.ValueOf(rawValue.Interface())
-
 	fieldType := fieldValue.Type()
 
 	if col.IsJSON {
