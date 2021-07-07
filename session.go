@@ -620,7 +620,6 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			if err != nil {
 				return err
 			}
-			fmt.Println("0000000", v.String())
 			fieldValue.Set(reflect.ValueOf(v).Elem().Convert(fieldType))
 			return nil
 		}
