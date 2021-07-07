@@ -557,26 +557,26 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			switch rawValueType.Elem().Kind() {
 			case reflect.Uint8:
 				if fieldType.Elem().Kind() == reflect.Uint8 {
-					if col.SQLType.IsText() {
-						x := reflect.New(fieldType)
-						err := json.DefaultJSONHandler.Unmarshal(vv.Bytes(), x.Interface())
-						if err != nil {
-							return err
+					if fieldValue.Len() > 0 {
+						for i := 0; i < fieldValue.Len(); i++ {
+							if i < vv.Len() {
+								fieldValue.Index(i).Set(vv.Index(i))
+							}
 						}
-						fieldValue.Set(x.Elem())
 					} else {
-						if fieldValue.Len() > 0 {
-							for i := 0; i < fieldValue.Len(); i++ {
-								if i < vv.Len() {
-									fieldValue.Index(i).Set(vv.Index(i))
-								}
-							}
-						} else {
-							for i := 0; i < vv.Len(); i++ {
-								fieldValue.Set(reflect.Append(*fieldValue, vv.Index(i)))
-							}
+						for i := 0; i < vv.Len(); i++ {
+							fieldValue.Set(reflect.Append(*fieldValue, vv.Index(i)))
 						}
 					}
+					return nil
+				}
+				if col.SQLType.IsText() {
+					x := reflect.New(fieldType)
+					err := json.DefaultJSONHandler.Unmarshal(vv.Bytes(), x.Interface())
+					if err != nil {
+						return err
+					}
+					fieldValue.Set(x.Elem())
 					return nil
 				}
 			}
