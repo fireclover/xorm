@@ -357,7 +357,8 @@ func TestGetMap(t *testing.T) {
 
 	assertSync(t, new(UserinfoMap))
 
-	_, err := testEngine.Exec("INSERT INTO userinfo_map (is_man) VALUES (NULL)")
+	tableName := testEngine.Quote(testEngine.TableName("userinfo_map", true))
+	_, err := testEngine.Exec(fmt.Sprintf("INSERT INTO %s (is_man) VALUES (NULL)", tableName))
 	assert.NoError(t, err)
 
 	var valuesString = make(map[string]string)
