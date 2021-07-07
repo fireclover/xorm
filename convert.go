@@ -238,6 +238,8 @@ func asBytes(buf []byte, rv reflect.Value) (b []byte, ok bool) {
 func convertAssign(dest, src interface{}, originalLocation *time.Location, convertedLocation *time.Location) error {
 	// Common cases, without reflect.
 	switch s := src.(type) {
+	case *interface{}:
+		return convertAssign(dest, *s, originalLocation, convertedLocation)
 	case string:
 		switch d := dest.(type) {
 		case *string:
