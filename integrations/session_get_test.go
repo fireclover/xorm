@@ -17,6 +17,7 @@ import (
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/schemas"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -827,5 +828,56 @@ func TestGetBigFloat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, len(gfs))
 		assert.True(t, gfs[0].Money.String() == gf2.Money.String(), "%v != %v", gfs[0].Money.String(), gf2.Money.String())
+	}
+}
+
+func TestGetDecimal(t *testing.T) {
+	type GetDecimal struct {
+		Id    int64
+		Money decimal.Decimal `xorm:"decimal(22,2)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetDecimal))
+
+	{
+		var gf = GetDecimal{
+			Money: decimal.NewFromFloat(999999.99),
+		}
+		_, err := testEngine.Insert(&gf)
+		assert.NoError(t, err)
+
+		var m decimal.Decimal
+		has, err := testEngine.Table("get_decimal").Cols("money").Where("id=?", gf.Id).Get(&m)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.True(t, m.String() == gf.Money.String(), "%v != %v", m.String(), gf.Money.String())
+		//fmt.Println(m.Cmp(gf.Money))
+		//assert.True(t, m.Cmp(gf.Money) == 0, "%v != %v", m.String(), gf.Money.String())
+	}
+
+	type GetDecimal2 struct {
+		Id    int64
+		Money *decimal.Decimal `xorm:"decimal(22,2)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetDecimal2))
+
+	{
+		v := decimal.NewFromFloat(999999.99)
+		var gf = GetDecimal2{
+			Money: &v,
+		}
+		_, err := testEngine.Insert(&gf)
+		assert.NoError(t, err)
+
+		var m decimal.Decimal
+		has, err := testEngine.Table("get_decimal2").Cols("money").Where("id=?", gf.Id).Get(&m)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.True(t, m.String() == gf.Money.String(), "%v != %v", m.String(), gf.Money.String())
+		//fmt.Println(m.Cmp(gf.Money))
+		//assert.True(t, m.Cmp(gf.Money) == 0, "%v != %v", m.String(), gf.Money.String())
 	}
 }
