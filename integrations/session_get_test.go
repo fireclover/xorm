@@ -815,5 +815,17 @@ func TestGetBigFloat(t *testing.T) {
 		assert.True(t, m2.String() == gf2.Money.String(), "%v != %v", m2.String(), gf2.Money.String())
 		//fmt.Println(m.Cmp(gf.Money))
 		//assert.True(t, m.Cmp(gf.Money) == 0, "%v != %v", m.String(), gf.Money.String())
+
+		var gf3 GetBigFloat2
+		has, err = testEngine.ID(gf2.Id).Get(&gf3)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.True(t, gf3.Money.String() == gf2.Money.String(), "%v != %v", gf3.Money.String(), gf2.Money.String())
+
+		var gfs []GetBigFloat2
+		err = testEngine.Find(&gfs)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, len(gfs))
+		assert.True(t, gfs[0].Money.String() == gf2.Money.String(), "%v != %v", gfs[0].Money.String(), gf2.Money.String())
 	}
 }

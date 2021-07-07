@@ -104,9 +104,7 @@ func asInt64(src interface{}) (int64, error) {
 		return rv.Int(), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return int64(rv.Uint()), nil
-	case reflect.Float64:
-		return int64(rv.Float()), nil
-	case reflect.Float32:
+	case reflect.Float64, reflect.Float32:
 		return int64(rv.Float()), nil
 	case reflect.String:
 		return strconv.ParseInt(rv.String(), 10, 64)
@@ -154,9 +152,7 @@ func asUint64(src interface{}) (uint64, error) {
 		return uint64(rv.Int()), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return uint64(rv.Uint()), nil
-	case reflect.Float64:
-		return uint64(rv.Float()), nil
-	case reflect.Float32:
+	case reflect.Float64, reflect.Float32:
 		return uint64(rv.Float()), nil
 	case reflect.String:
 		return strconv.ParseUint(rv.String(), 10, 64)
@@ -204,14 +200,89 @@ func asFloat64(src interface{}) (float64, error) {
 		return float64(rv.Int()), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return float64(rv.Uint()), nil
-	case reflect.Float64:
-		return float64(rv.Float()), nil
-	case reflect.Float32:
+	case reflect.Float64, reflect.Float32:
 		return float64(rv.Float()), nil
 	case reflect.String:
 		return strconv.ParseFloat(rv.String(), 64)
 	}
 	return 0, fmt.Errorf("unsupported value %T as int64", src)
+}
+
+func asBigFloat(src interface{}) (*big.Float, error) {
+	res := big.NewFloat(0)
+	switch v := src.(type) {
+	case int:
+		res.SetInt64(int64(v))
+		return res, nil
+	case int16:
+		res.SetInt64(int64(v))
+		return res, nil
+	case int32:
+		res.SetInt64(int64(v))
+		return res, nil
+	case int8:
+		res.SetInt64(int64(v))
+		return res, nil
+	case int64:
+		res.SetInt64(int64(v))
+		return res, nil
+	case uint:
+		res.SetUint64(uint64(v))
+		return res, nil
+	case uint8:
+		res.SetUint64(uint64(v))
+		return res, nil
+	case uint16:
+		res.SetUint64(uint64(v))
+		return res, nil
+	case uint32:
+		res.SetUint64(uint64(v))
+		return res, nil
+	case uint64:
+		res.SetUint64(uint64(v))
+		return res, nil
+	case []byte:
+		res.SetString(string(v))
+		return res, nil
+	case string:
+		res.SetString(v)
+		return res, nil
+	case *sql.NullString:
+		if v.Valid {
+			res.SetString(v.String)
+			return res, nil
+		}
+		return nil, nil
+	case *sql.NullInt32:
+		if v.Valid {
+			res.SetInt64(int64(v.Int32))
+			return res, nil
+		}
+		return nil, nil
+	case *sql.NullInt64:
+		if v.Valid {
+			res.SetInt64(int64(v.Int64))
+			return res, nil
+		}
+		return nil, nil
+	}
+
+	rv := reflect.ValueOf(src)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		res.SetInt64(rv.Int())
+		return res, nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		res.SetUint64(rv.Uint())
+		return res, nil
+	case reflect.Float64, reflect.Float32:
+		res.SetFloat64(rv.Float())
+		return res, nil
+	case reflect.String:
+		res.SetString(rv.String())
+		return res, nil
+	}
+	return nil, fmt.Errorf("unsupported value %T as big.Float", src)
 }
 
 func asBytes(buf []byte, rv reflect.Value) (b []byte, ok bool) {

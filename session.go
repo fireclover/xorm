@@ -438,8 +438,15 @@ func (session *Session) row2Slice(rows *core.Rows, fields []string, bean interfa
 
 func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflect.Value,
 	scanResult interface{}, table *schemas.Table) error {
-	rawValue := reflect.Indirect(reflect.ValueOf(scanResult))
+	v, ok := scanResult.(*interface{})
+	if ok {
+		scanResult = *v
+	}
+	if scanResult == nil {
+		return nil
+	}
 
+	rawValue := reflect.Indirect(reflect.ValueOf(scanResult))
 	// if row is null then ignore
 	if rawValue.Interface() == nil {
 		return nil
@@ -508,21 +515,19 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 
 	switch fieldType.Kind() {
 	case reflect.Ptr:
-		if scanResult == nil {
-			return nil
-		}
-		if v, ok := scanResult.(*interface{}); ok && v == nil {
-			return nil
-		}
-
 		var e reflect.Value
 		if fieldValue.IsNil() {
 			e = reflect.New(fieldType.Elem()).Elem()
 		} else {
 			e = fieldValue.Elem()
 		}
-
-		return session.convertBeanField(col, &e, scanResult, table)
+		if err := session.convertBeanField(col, &e, scanResult, table); err != nil {
+			return err
+		}
+		if fieldValue.IsNil() {
+			fieldValue.Set(e.Addr())
+		}
+		return nil
 	case reflect.Complex64, reflect.Complex128:
 		// TODO: reimplement this
 		var bs []byte
@@ -610,6 +615,16 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			return nil
 		}
 	case reflect.Struct:
+		if fieldType.ConvertibleTo(schemas.BigFloatType) {
+			v, err := asBigFloat(scanResult)
+			if err != nil {
+				return err
+			}
+			fmt.Println("0000000", v.String())
+			fieldValue.Set(reflect.ValueOf(v).Elem().Convert(fieldType))
+			return nil
+		}
+
 		if fieldType.ConvertibleTo(schemas.TimeType) {
 			dbTZ := session.engine.DatabaseTZ
 			if col.TimeZone != nil {

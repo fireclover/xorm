@@ -5,6 +5,7 @@
 package schemas
 
 import (
+	"math/big"
 	"reflect"
 	"sort"
 	"strings"
@@ -240,6 +241,7 @@ var (
 	intDefault        int
 	uintDefault       uint
 	timeDefault       time.Time
+	bigFloatDefault   big.Float
 )
 
 // enumerates all types
@@ -267,7 +269,8 @@ var (
 	ByteType   = reflect.TypeOf(byteDefault)
 	BytesType  = reflect.SliceOf(ByteType)
 
-	TimeType = reflect.TypeOf(timeDefault)
+	TimeType     = reflect.TypeOf(timeDefault)
+	BigFloatType = reflect.TypeOf(bigFloatDefault)
 )
 
 // enumerates all types
