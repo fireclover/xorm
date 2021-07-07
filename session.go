@@ -471,6 +471,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	}
 
 	rawValueType := reflect.TypeOf(rawValue.Interface())
+
 	vv := reflect.ValueOf(rawValue.Interface())
 
 	fieldType := fieldValue.Type()
@@ -508,6 +509,22 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	}
 
 	switch fieldType.Kind() {
+	case reflect.Ptr:
+		if scanResult == nil {
+			return nil
+		}
+		if v, ok := scanResult.(*interface{}); ok && v == nil {
+			return nil
+		}
+
+		var e reflect.Value
+		if fieldValue.IsNil() {
+			e = reflect.New(fieldType.Elem()).Elem()
+		} else {
+			e = fieldValue.Elem()
+		}
+
+		return session.convertBeanField(col, &e, scanResult, table)
 	case reflect.Complex64, reflect.Complex128:
 		// TODO: reimplement this
 		var bs []byte
@@ -702,121 +719,6 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			}
 			return nil
 		}
-	case reflect.Ptr:
-		// !nashtsai! TODO merge duplicated codes above
-		switch fieldType {
-		// following types case matching ptr's native type, therefore assign ptr directly
-		case schemas.PtrStringType:
-			if rawValueType.Kind() == reflect.String {
-				x := vv.String()
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrBoolType:
-			if rawValueType.Kind() == reflect.Bool {
-				x := vv.Bool()
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrTimeType:
-			if rawValueType == schemas.PtrTimeType {
-				var x = rawValue.Interface().(time.Time)
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrFloat64Type:
-			if rawValueType.Kind() == reflect.Float64 {
-				x := vv.Float()
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrUint64Type:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = uint64(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrInt64Type:
-			if rawValueType.Kind() == reflect.Int64 {
-				x := vv.Int()
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrFloat32Type:
-			if rawValueType.Kind() == reflect.Float64 {
-				var x = float32(vv.Float())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrIntType:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = int(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrInt32Type:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = int32(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrInt8Type:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = int8(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrInt16Type:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = int16(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrUintType:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = uint(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.PtrUint32Type:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = uint32(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.Uint8Type:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = uint8(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.Uint16Type:
-			if rawValueType.Kind() == reflect.Int64 {
-				var x = uint16(vv.Int())
-				fieldValue.Set(reflect.ValueOf(&x))
-				return nil
-			}
-		case schemas.Complex64Type:
-			var x complex64
-			if len([]byte(vv.String())) > 0 {
-				err := json.DefaultJSONHandler.Unmarshal([]byte(vv.String()), &x)
-				if err != nil {
-					return err
-				}
-				fieldValue.Set(reflect.ValueOf(&x))
-			}
-			return nil
-		case schemas.Complex128Type:
-			var x complex128
-			if len([]byte(vv.String())) > 0 {
-				err := json.DefaultJSONHandler.Unmarshal([]byte(vv.String()), &x)
-				if err != nil {
-					return err
-				}
-				fieldValue.Set(reflect.ValueOf(&x))
-			}
-			return nil
-		} // switch fieldType
 	} // switch fieldType.Kind()
 
 	data, err := value2Bytes(&rawValue)
