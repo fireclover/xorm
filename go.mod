@@ -8,6 +8,7 @@ require (
 	github.com/json-iterator/go v1.1.11
 	github.com/lib/pq v1.7.0
 	github.com/mattn/go-sqlite3 v1.14.6
+	github.com/goccy/go-json v0.7.4
 	github.com/shopspring/decimal v1.2.0
 	github.com/stretchr/testify v1.4.0
 	github.com/syndtr/goleveldb v1.0.0
