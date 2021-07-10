@@ -576,7 +576,6 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 
 		cols := table.ColumnsSeq()
 		dstCols := dstTable.ColumnsSeq()
-		dstColumns := dstTable.Columns()
 
 		colNames := engine.dialect.Quoter().Join(cols, ", ")
 		destColNames := dstDialect.Quoter().Join(dstCols, ", ")
@@ -600,14 +599,34 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 				return err
 			}
 
-			scanResults, err := sess.engine.scanInterfaces(rows, types)
+			scanResults, err := sess.engine.scanStringInterface(rows, types)
 			if err != nil {
 				return err
 			}
 			for i, scanResult := range scanResults {
-				s := formatColumnValue(engine.DatabaseTZ, dstDialect, scanResult, dstColumns[i])
-				if _, err = io.WriteString(w, s); err != nil {
-					return err
+				stp := schemas.SQLType{Name: types[i].DatabaseTypeName()}
+				if stp.IsNumeric() {
+					s := scanResult.(*sql.NullString)
+					if s.Valid {
+						if _, err = io.WriteString(w, s.String); err != nil {
+							return err
+						}
+					} else {
+						if _, err = io.WriteString(w, "NULL"); err != nil {
+							return err
+						}
+					}
+				} else {
+					s := scanResult.(*sql.NullString)
+					if s.Valid {
+						if _, err = io.WriteString(w, "'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
+							return err
+						}
+					} else {
+						if _, err = io.WriteString(w, "NULL"); err != nil {
+							return err
+						}
+					}
 				}
 				if i < len(scanResults)-1 {
 					if _, err = io.WriteString(w, ","); err != nil {
