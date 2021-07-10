@@ -25,6 +25,13 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		}
 		dt = dt.In(convertedLocation)
 		return &dt, nil
+	} else if len(s) == 25 && s[10] == 'T' && s[19] == '+' && s[22] == ':' {
+		dt, err := time.Parse("2006-01-02T15:04:05+07:00", s)
+		if err != nil {
+			return nil, err
+		}
+		dt = dt.In(convertedLocation)
+		return &dt, nil
 	}
 	return nil, fmt.Errorf("unsupported convertion from %s to time", s)
 }
