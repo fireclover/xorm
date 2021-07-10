@@ -13,7 +13,6 @@ import (
 	"os"
 	"reflect"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -443,65 +442,6 @@ func (engine *Engine) DumpTablesToFile(tables []*schemas.Table, fp string, tp ..
 // DumpTables dump specify tables to io.Writer
 func (engine *Engine) DumpTables(tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
 	return engine.dumpTables(tables, w, tp...)
-}
-
-func formatBool(dialect dialects.Dialect, b bool) string {
-	if dialect.URI().DBType == schemas.SQLITE ||
-		dialect.URI().DBType == schemas.MSSQL {
-		if b {
-			return "1"
-		}
-		return "0"
-	}
-	return strconv.FormatBool(b)
-}
-
-func formatColumnValue(dbLocation *time.Location, dstDialect dialects.Dialect, d interface{}, col *schemas.Column) string {
-	if d == nil {
-		return "NULL"
-	}
-
-	switch t := d.(type) {
-	case *sql.NullInt64:
-		if t.Valid {
-			return fmt.Sprintf("%d", t.Int64)
-		}
-		return "NULL"
-	case *sql.NullTime:
-		if t.Valid {
-			return fmt.Sprintf("'%s'", t.Time.In(dbLocation).Format("2006-1-02 15:04:05"))
-		}
-		return "NULL"
-	case *sql.NullString:
-		if t.Valid {
-			return "'" + strings.Replace(t.String, "'", "''", -1) + "'"
-		}
-		return "NULL"
-	case *sql.NullInt32:
-		if t.Valid {
-			return fmt.Sprintf("%d", t.Int32)
-		}
-		return "NULL"
-	case *sql.NullFloat64:
-		if t.Valid {
-			return fmt.Sprintf("%f", t.Float64)
-		}
-		return "NULL"
-	case *sql.NullBool:
-		if t.Valid {
-			return formatBool(dstDialect, t.Bool)
-		}
-		return "NULL"
-	case *sql.RawBytes:
-		if t != nil {
-			return string([]byte(*t))
-		}
-		return "NULL"
-	case bool:
-		return formatBool(dstDialect, t)
-	}
-
-	return fmt.Sprintf("%v", d)
 }
 
 // dumpTables dump database all table structs and data to w with specify db type
