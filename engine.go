@@ -21,7 +21,6 @@ import (
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/log"
 	"xorm.io/xorm/names"
@@ -446,6 +445,17 @@ func (engine *Engine) DumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 	return engine.dumpTables(tables, w, tp...)
 }
 
+func formatBool(dialect dialects.Dialect, b bool) string {
+	if dialect.URI().DBType == schemas.SQLITE ||
+		dialect.URI().DBType == schemas.MSSQL {
+		if b {
+			return "1"
+		}
+		return "0"
+	}
+	return strconv.FormatBool(b)
+}
+
 func formatColumnValue(dbLocation *time.Location, dstDialect dialects.Dialect, d interface{}, col *schemas.Column) string {
 	if d == nil {
 		return "NULL"
@@ -459,7 +469,7 @@ func formatColumnValue(dbLocation *time.Location, dstDialect dialects.Dialect, d
 		return "NULL"
 	case *sql.NullTime:
 		if t.Valid {
-			return fmt.Sprintf("'%s'", t.Time.Format("2006-1-02 15:04:05"))
+			return fmt.Sprintf("'%s'", t.Time.In(dbLocation).Format("2006-1-02 15:04:05"))
 		}
 		return "NULL"
 	case *sql.NullString:
@@ -479,95 +489,19 @@ func formatColumnValue(dbLocation *time.Location, dstDialect dialects.Dialect, d
 		return "NULL"
 	case *sql.NullBool:
 		if t.Valid {
-			return strconv.FormatBool(t.Bool)
+			return formatBool(dstDialect, t.Bool)
+		}
+		return "NULL"
+	case *sql.RawBytes:
+		if t != nil {
+			return string([]byte(*t))
 		}
 		return "NULL"
 	case bool:
-		if dstDialect.URI().DBType == schemas.SQLITE ||
-			dstDialect.URI().DBType == schemas.MSSQL {
-			if t {
-				return "1"
-			}
-			return "0"
-		}
+		return formatBool(dstDialect, t)
 	}
 
-	if col.SQLType.IsText() {
-		var v string
-		switch reflect.TypeOf(d).Kind() {
-		case reflect.Struct, reflect.Array, reflect.Slice, reflect.Map:
-			bytes, err := json.DefaultJSONHandler.Marshal(d)
-			if err != nil {
-				v = fmt.Sprintf("%s", d)
-			} else {
-				v = string(bytes)
-			}
-		default:
-			v = fmt.Sprintf("%s", d)
-		}
-
-		return "'" + strings.Replace(v, "'", "''", -1) + "'"
-	} else if col.SQLType.IsTime() {
-		if t, ok := d.(time.Time); ok {
-			return "'" + t.In(dbLocation).Format("2006-01-02 15:04:05") + "'"
-		}
-		var v = fmt.Sprintf("%s", d)
-		if strings.HasSuffix(v, " +0000 UTC") {
-			return fmt.Sprintf("'%s'", v[0:len(v)-len(" +0000 UTC")])
-		} else if strings.HasSuffix(v, " +0000 +0000") {
-			return fmt.Sprintf("'%s'", v[0:len(v)-len(" +0000 +0000")])
-		}
-		return "'" + strings.Replace(v, "'", "''", -1) + "'"
-	} else if col.SQLType.IsBlob() {
-		if reflect.TypeOf(d).Kind() == reflect.Slice {
-			return dstDialect.FormatBytes(d.([]byte))
-		} else if reflect.TypeOf(d).Kind() == reflect.String {
-			return fmt.Sprintf("'%s'", d.(string))
-		}
-	} else if col.SQLType.IsNumeric() {
-		switch reflect.TypeOf(d).Kind() {
-		case reflect.Slice:
-			if col.SQLType.Name == schemas.Bool {
-				return fmt.Sprintf("%v", strconv.FormatBool(d.([]byte)[0] != byte('0')))
-			}
-			return string(d.([]byte))
-		case reflect.Int16, reflect.Int8, reflect.Int32, reflect.Int64, reflect.Int:
-			if col.SQLType.Name == schemas.Bool {
-				v := reflect.ValueOf(d).Int() > 0
-				if dstDialect.URI().DBType == schemas.SQLITE {
-					if v {
-						return "1"
-					}
-					return "0"
-				}
-				return fmt.Sprintf("%v", strconv.FormatBool(v))
-			}
-			return fmt.Sprintf("%d", d)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			if col.SQLType.Name == schemas.Bool {
-				v := reflect.ValueOf(d).Uint() > 0
-				if dstDialect.URI().DBType == schemas.SQLITE {
-					if v {
-						return "1"
-					}
-					return "0"
-				}
-				return fmt.Sprintf("%v", strconv.FormatBool(v))
-			}
-			return fmt.Sprintf("%d", d)
-		default:
-			return fmt.Sprintf("%v", d)
-		}
-	}
-
-	s := fmt.Sprintf("%v", d)
-	if strings.Contains(s, ":") || strings.Contains(s, "-") {
-		if strings.HasSuffix(s, " +0000 UTC") {
-			return fmt.Sprintf("'%s'", s[0:len(s)-len(" +0000 UTC")])
-		}
-		return fmt.Sprintf("'%s'", s)
-	}
-	return s
+	return fmt.Sprintf("%v", d)
 }
 
 // dumpTables dump database all table structs and data to w with specify db type
@@ -578,7 +512,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 	} else {
 		dstDialect = dialects.QueryDialect(tp[0])
 		if dstDialect == nil {
-			return errors.New("Unsupported database type")
+			return fmt.Errorf("unsupported database type %v", tp[0])
 		}
 
 		uri := engine.dialect.URI()
