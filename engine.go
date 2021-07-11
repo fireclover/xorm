@@ -560,7 +560,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 				if stp.IsNumeric() {
 					s := scanResult.(*sql.NullString)
 					if s.Valid {
-						if _, err = io.WriteString(w, s.String); err != nil {
+						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
 							return err
 						}
 					} else {
