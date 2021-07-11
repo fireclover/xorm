@@ -180,8 +180,12 @@ func TestDumpTables(t *testing.T) {
 
 	importPath := fmt.Sprintf("dump_%v-table.sql", testEngine.Dialect().URI().DBType)
 	t.Run("import_"+importPath, func(t *testing.T) {
-		_, err = testEngine.ImportFile(importPath)
+		sess := testEngine.NewSession()
+		defer sess.Close()
+		assert.NoError(t, sess.Begin())
+		_, err = sess.ImportFile(importPath)
 		assert.NoError(t, err)
+		assert.NoError(t, sess.Commit())
 	})
 }
 
