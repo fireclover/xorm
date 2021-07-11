@@ -39,6 +39,7 @@ const (
 	TIME_TYPE
 	NUMERIC_TYPE
 	ARRAY_TYPE
+	BOOL_TYPE
 )
 
 // IsType reutrns ture if the column type is the same as the parameter
@@ -62,6 +63,10 @@ func (s *SQLType) IsBlob() bool {
 // IsTime returns true if column is a time type
 func (s *SQLType) IsTime() bool {
 	return s.IsType(TIME_TYPE)
+}
+
+func (s *SQLType) IsBool() bool {
+	return s.IsType(BOOL_TYPE)
 }
 
 // IsNumeric returns true if column is a numeric type
@@ -209,7 +214,8 @@ var (
 		Bytea:            BLOB_TYPE,
 		UniqueIdentifier: BLOB_TYPE,
 
-		Bool: NUMERIC_TYPE,
+		Bool:    BOOL_TYPE,
+		Boolean: BOOL_TYPE,
 
 		Serial:    NUMERIC_TYPE,
 		BigSerial: NUMERIC_TYPE,

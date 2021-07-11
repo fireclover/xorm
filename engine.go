@@ -444,6 +444,18 @@ func (engine *Engine) DumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 	return engine.dumpTables(tables, w, tp...)
 }
 
+func formatBool(s string, dstDialect dialects.Dialect) string {
+	if dstDialect.URI().DBType == schemas.MSSQL {
+		switch s {
+		case "true":
+			return "1"
+		case "false":
+			return "0"
+		}
+	}
+	return s
+}
+
 // dumpTables dump database all table structs and data to w with specify db type
 func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
 	var dstDialect dialects.Dialect
@@ -549,6 +561,17 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 					s := scanResult.(*sql.NullString)
 					if s.Valid {
 						if _, err = io.WriteString(w, s.String); err != nil {
+							return err
+						}
+					} else {
+						if _, err = io.WriteString(w, "NULL"); err != nil {
+							return err
+						}
+					}
+				} else if stp.IsBool() {
+					s := scanResult.(*sql.NullString)
+					if s.Valid {
+						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
 							return err
 						}
 					} else {
