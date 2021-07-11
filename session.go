@@ -768,7 +768,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 
 		fieldValue, err := session.getField(dataStruct, key, table, idx)
 		if err != nil {
-			if !strings.Contains(err.Error(), "is not valid") {
+			if _, ok := err.(ErrFieldIsNotValid); !ok {
 				session.engine.logger.Warnf("%v", err)
 			}
 			continue
