@@ -33,7 +33,7 @@ func (session *Session) rows2Strings(rows *core.Rows) (resultsSlice []map[string
 	}
 
 	for rows.Next() {
-		result, err := row2mapStr(rows, types, fields)
+		result, err := session.engine.row2mapStr(rows, types, fields)
 		if err != nil {
 			return nil, err
 		}

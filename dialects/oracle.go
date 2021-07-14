@@ -568,6 +568,21 @@ func (db *oracle) SQLType(c *schemas.Column) string {
 	return res
 }
 
+func (db *oracle) ColumnTypeKind(t string) int {
+	switch strings.ToUpper(t) {
+	case "DATE":
+		return schemas.TIME_TYPE
+	case "CHAR", "NCHAR", "VARCHAR", "VARCHAR2", "NVARCHAR2", "LONG", "CLOB", "NCLOB":
+		return schemas.TEXT_TYPE
+	case "NUMBER":
+		return schemas.NUMERIC_TYPE
+	case "BLOB":
+		return schemas.BLOB_TYPE
+	default:
+		return schemas.UNKNOW_TYPE
+	}
+}
+
 func (db *oracle) AutoIncrStr() string {
 	return "AUTO_INCREMENT"
 }

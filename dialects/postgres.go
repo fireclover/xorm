@@ -873,11 +873,6 @@ func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 	}
 }
 
-// FormatBytes formats bytes
-func (db *postgres) FormatBytes(bs []byte) string {
-	return fmt.Sprintf("E'\\x%x'", bs)
-}
-
 func (db *postgres) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
@@ -941,6 +936,21 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 		res += "(" + strconv.Itoa(c.Length) + ")"
 	}
 	return res
+}
+
+func (db *postgres) ColumnTypeKind(t string) int {
+	switch strings.ToUpper(t) {
+	case "DATETIME", "TIMESTAMP":
+		return schemas.TIME_TYPE
+	case "VARCHAR", "TEXT":
+		return schemas.TEXT_TYPE
+	case "BIGINT", "BIGSERIAL", "SMALLINT", "INT", "INT8", "INT4", "INTEGER", "SERIAL", "FLOAT", "FLOAT4", "REAL", "DOUBLE PRECISION":
+		return schemas.NUMERIC_TYPE
+	case "BOOL":
+		return schemas.BOOL_TYPE
+	default:
+		return schemas.UNKNOW_TYPE
+	}
 }
 
 func (db *postgres) IsReserved(name string) bool {

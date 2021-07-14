@@ -364,6 +364,19 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 	return res
 }
 
+func (db *mssql) ColumnTypeKind(t string) int {
+	switch strings.ToUpper(t) {
+	case "DATE", "DATETIME", "DATETIME2", "TIME":
+		return schemas.TIME_TYPE
+	case "VARCHAR", "TEXT", "CHAR", "NVARCHAR", "NCHAR", "NTEXT":
+		return schemas.TEXT_TYPE
+	case "FLOAT", "REAL", "BIGINT", "DATETIMEOFFSET", "TINYINT", "SMALLINT", "INT":
+		return schemas.NUMERIC_TYPE
+	default:
+		return schemas.UNKNOW_TYPE
+	}
+}
+
 func (db *mssql) IsReserved(name string) bool {
 	_, ok := mssqlReservedWords[strings.ToUpper(name)]
 	return ok

@@ -337,6 +337,21 @@ func (db *mysql) SQLType(c *schemas.Column) string {
 	return res
 }
 
+func (db *mysql) ColumnTypeKind(t string) int {
+	switch strings.ToUpper(t) {
+	case "DATETIME":
+		return schemas.TIME_TYPE
+	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
+		return schemas.TEXT_TYPE
+	case "BIGINT", "TINYINT", "SMALLINT", "MEDIUMINT", "INT", "FLOAT", "REAL", "DOUBLE PRECISION", "DECIMAL", "NUMERIC", "BIT":
+		return schemas.NUMERIC_TYPE
+	case "BINARY", "VARBINARY", "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB":
+		return schemas.BLOB_TYPE
+	default:
+		return schemas.UNKNOW_TYPE
+	}
+}
+
 func (db *mysql) IsReserved(name string) bool {
 	_, ok := mysqlReservedWords[strings.ToUpper(name)]
 	return ok
