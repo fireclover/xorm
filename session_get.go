@@ -268,12 +268,6 @@ func (session *Session) getVars(rows *core.Rows, types []*sql.ColumnType, fields
 }
 
 func (session *Session) getStruct(rows *core.Rows, types []*sql.ColumnType, fields []string, table *schemas.Table, bean interface{}) (bool, error) {
-	fields, err := rows.Columns()
-	if err != nil {
-		// WARN: Alougth rows return true, but get fields failed
-		return true, err
-	}
-
 	scanResults, err := session.row2Slice(rows, fields, bean)
 	if err != nil {
 		return false, err
