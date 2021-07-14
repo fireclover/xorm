@@ -233,8 +233,19 @@ func (db *sqlite3) SQLType(c *schemas.Column) string {
 	}
 }
 
-func (db *sqlite3) FormatBytes(bs []byte) string {
-	return fmt.Sprintf("X'%x'", bs)
+func (db *sqlite3) ColumnTypeKind(t string) int {
+	switch strings.ToUpper(t) {
+	case "DATETIME":
+		return schemas.TIME_TYPE
+	case "TEXT":
+		return schemas.TEXT_TYPE
+	case "INTEGER", "REAL", "NUMERIC", "DECIMAL":
+		return schemas.NUMERIC_TYPE
+	case "BLOB":
+		return schemas.BLOB_TYPE
+	default:
+		return schemas.UNKNOW_TYPE
+	}
 }
 
 func (db *sqlite3) IsReserved(name string) bool {

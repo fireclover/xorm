@@ -14,6 +14,7 @@ import (
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/dialects"
+	"xorm.io/xorm/schemas"
 )
 
 // genScanResultsByBeanNullabale generates scan result
@@ -22,7 +23,9 @@ func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
 	case *sql.NullInt64, *sql.NullBool, *sql.NullFloat64, *sql.NullString, *sql.RawBytes:
 		return t, false, nil
 	case *time.Time:
-		return &sql.NullTime{}, true, nil
+		return &sql.NullString{}, true, nil
+	case *sql.NullTime:
+		return &sql.NullString{}, true, nil
 	case *string:
 		return &sql.NullString{}, true, nil
 	case *int, *int8, *int16, *int32:
@@ -75,8 +78,8 @@ func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 		*float32, *float64,
 		*bool:
 		return t, false, nil
-	case *time.Time:
-		return &sql.NullTime{}, true, nil
+	case *time.Time, *sql.NullTime:
+		return &sql.NullString{}, true, nil
 	case sql.NullInt64, sql.NullBool, sql.NullFloat64, sql.NullString,
 		time.Time,
 		string,
@@ -121,7 +124,7 @@ func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 	}
 }
 
-func row2mapStr(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string]string, error) {
+func (engine *Engine) row2mapStr(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string]string, error) {
 	var scanResults = make([]interface{}, len(fields))
 	for i := 0; i < len(fields); i++ {
 		var s sql.NullString
@@ -133,9 +136,22 @@ func row2mapStr(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[
 	}
 
 	result := make(map[string]string, len(fields))
-	for ii, key := range fields {
-		s := scanResults[ii].(*sql.NullString)
-		result[key] = s.String
+	for i, key := range fields {
+		s := scanResults[i].(*sql.NullString)
+		if s.String == "" {
+			result[key] = ""
+			continue
+		}
+
+		if schemas.TIME_TYPE == engine.dialect.ColumnTypeKind(types[i].DatabaseTypeName()) {
+			t, err := convert.String2Time(s.String, engine.DatabaseTZ, engine.TZLocation)
+			if err != nil {
+				return nil, err
+			}
+			result[key] = t.Format("2006-01-02 15:04:05")
+		} else {
+			result[key] = s.String
+		}
 	}
 	return result, nil
 }

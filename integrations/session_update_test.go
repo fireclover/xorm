@@ -1396,14 +1396,21 @@ func TestNilFromDB(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(TestTable1))
 
-	cnt, err := testEngine.Insert(&TestTable1{
+	var tt0 = TestTable1{
 		Field1: &TestFieldType1{
 			cb: []byte("string"),
 		},
 		UpdateTime: time.Now(),
-	})
+	}
+	cnt, err := testEngine.Insert(&tt0)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
+
+	var tt1 TestTable1
+	has, err := testEngine.ID(tt0.Id).Get(&tt1)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, "string", string(tt1.Field1.cb))
 
 	cnt, err = testEngine.Update(TestTable1{
 		UpdateTime: time.Now().Add(time.Second),
@@ -1418,4 +1425,37 @@ func TestNilFromDB(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
+
+	var tt = TestTable1{
+		UpdateTime: time.Now(),
+		Field1: &TestFieldType1{
+			cb: nil,
+		},
+	}
+	cnt, err = testEngine.Insert(&tt)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var tt2 TestTable1
+	has, err = testEngine.ID(tt.Id).Get(&tt2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Nil(t, tt2.Field1)
+
+	var tt3 = TestTable1{
+		UpdateTime: time.Now(),
+		Field1: &TestFieldType1{
+			cb: []byte{},
+		},
+	}
+	cnt, err = testEngine.Insert(&tt3)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var tt4 TestTable1
+	has, err = testEngine.ID(tt3.Id).Get(&tt4)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.NotNil(t, tt4.Field1)
+	assert.NotNil(t, tt4.Field1.cb)
 }

@@ -173,6 +173,16 @@ func TestUintId(t *testing.T) {
 	err = testEngine.CreateTables(&UintId{})
 	assert.NoError(t, err)
 
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+
+	assert.EqualValues(t, 1, len(tables))
+	cols := tables[0].PKColumns()
+	assert.EqualValues(t, 1, len(cols))
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		assert.EqualValues(t, "UNSIGNED INT", cols[0].SQLType.Name)
+	}
+
 	cnt, err := testEngine.Insert(&UintId{Name: "test"})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)

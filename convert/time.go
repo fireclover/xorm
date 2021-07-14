@@ -19,7 +19,14 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		dt = dt.In(convertedLocation)
 		return &dt, nil
 	} else if len(s) == 20 && s[10] == 'T' && s[19] == 'Z' {
-		dt, err := time.ParseInLocation("2006-01-02T15:04:05Z", s, originalLocation)
+		dt, err := time.ParseInLocation(time.RFC3339, s, originalLocation)
+		if err != nil {
+			return nil, err
+		}
+		dt = dt.In(convertedLocation)
+		return &dt, nil
+	} else if len(s) == 25 && s[10] == 'T' && s[19] == '+' && s[22] == ':' {
+		dt, err := time.Parse(time.RFC3339, s)
 		if err != nil {
 			return nil, err
 		}

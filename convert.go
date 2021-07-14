@@ -348,7 +348,6 @@ func convertAssign(dest, src interface{}, originalLocation *time.Location, conve
 			*d = cloneBytes(s)
 			return nil
 		}
-
 	case time.Time:
 		switch d := dest.(type) {
 		case *string:

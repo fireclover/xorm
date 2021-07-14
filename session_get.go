@@ -35,6 +35,19 @@ func (session *Session) Get(bean interface{}) (bool, error) {
 	return session.get(bean)
 }
 
+func isPtrOfTime(v interface{}) bool {
+	if _, ok := v.(*time.Time); ok {
+		return true
+	}
+
+	el := reflect.ValueOf(v).Elem()
+	if el.Kind() != reflect.Struct {
+		return false
+	}
+
+	return el.Type().ConvertibleTo(schemas.TimeType)
+}
+
 func (session *Session) get(bean interface{}) (bool, error) {
 	defer session.resetStatement()
 
@@ -51,7 +64,7 @@ func (session *Session) get(bean interface{}) (bool, error) {
 		return false, ErrObjectIsNil
 	}
 
-	if beanValue.Elem().Kind() == reflect.Struct {
+	if beanValue.Elem().Kind() == reflect.Struct && !isPtrOfTime(bean) {
 		if err := session.statement.SetRefBean(bean); err != nil {
 			return false, err
 		}

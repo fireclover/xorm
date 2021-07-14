@@ -42,10 +42,11 @@ func (uri *URI) SetSchema(schema string) {
 type Dialect interface {
 	Init(*URI) error
 	URI() *URI
-	SQLType(*schemas.Column) string
-	Alias(string) string // return what a sql type's alias of
-	FormatBytes(b []byte) string
 	Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error)
+
+	SQLType(*schemas.Column) string
+	Alias(string) string       // return what a sql type's alias of
+	ColumnTypeKind(string) int // database column type kind
 
 	IsReserved(string) bool
 	Quoter() schemas.Quoter
@@ -100,11 +101,6 @@ func (db *Base) Init(dialect Dialect, uri *URI) error {
 // URI returns the uri of database
 func (db *Base) URI() *URI {
 	return db.uri
-}
-
-// FormatBytes formats bytes
-func (db *Base) FormatBytes(bs []byte) string {
-	return fmt.Sprintf("0x%x", bs)
 }
 
 // DropTableSQL returns drop table SQL
