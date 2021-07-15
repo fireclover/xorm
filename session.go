@@ -85,6 +85,7 @@ type Session struct {
 	lastSQLArgs []interface{}
 
 	ctx         context.Context
+	cancel		context.CancelFunc
 	sessionType sessionType
 }
 
@@ -106,9 +107,13 @@ func newSession(engine *Engine) *Session {
 	} else {
 		ctx = engine.defaultContext
 	}
-
+	var cancel context.CancelFunc
+	if engine.timeoutSecond > 0 {
+		ctx, cancel = context.WithTimeout(ctx, time.Second*time.Duration(engine.timeoutSecond))
+	}
 	session := &Session{
 		ctx:    ctx,
+		cancel: cancel,
 		engine: engine,
 		tx:     nil,
 		statement: statements.NewStatement(
@@ -144,6 +149,9 @@ func newSession(engine *Engine) *Session {
 
 // Close release the connection from pool
 func (session *Session) Close() error {
+	if session.cancel != nil{
+		session.cancel()
+	}
 	for _, v := range session.stmtCache {
 		if err := v.Close(); err != nil {
 			return err

@@ -46,6 +46,7 @@ type Engine struct {
 	DatabaseTZ *time.Location // The timezone of the database
 
 	logSessionID bool // create session id
+	timeoutSecond uint // if > 0 set default timeout for session
 }
 
 // NewEngine new a db manager according to the parameter. Currently support four
@@ -271,6 +272,16 @@ func (engine *Engine) SetMaxIdleConns(conns int) {
 // SetDefaultCacher set the default cacher. Xorm's default not enable cacher.
 func (engine *Engine) SetDefaultCacher(cacher caches.Cacher) {
 	engine.cacherMgr.SetDefaultCacher(cacher)
+}
+
+// SetSessionTimeout set the default timeout for every session
+func (engine *Engine) SetSessionTimeout(timeout uint) {
+	engine.timeoutSecond = timeout
+}
+
+// GetDefaultTimeout return the default timeout of new session
+func (engine *Engine) GetDefaultTimeout() uint {
+	return engine.timeoutSecond
 }
 
 // GetDefaultCacher returns the default cacher
