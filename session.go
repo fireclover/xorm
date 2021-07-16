@@ -389,7 +389,7 @@ func (session *Session) getField(dataStruct *reflect.Value, key string, table *s
 // Cell cell is a result of one column field
 type Cell *interface{}
 
-func (session *Session) rows2Beans(rows *core.Rows, fields []string,
+func (session *Session) rows2Beans(rows *core.Rows, types []*sql.ColumnType, fields []string,
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
 	sliceValueSetFunc func(*reflect.Value, schemas.PK) error) error {
 	for rows.Next() {
@@ -398,7 +398,7 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string,
 		dataStruct := newValue.Elem()
 
 		// handle beforeClosures
-		scanResults, err := session.row2Slice(rows, fields, bean)
+		scanResults, err := session.row2Slice(rows, types, fields, bean)
 		if err != nil {
 			return err
 		}
@@ -417,15 +417,18 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string,
 	return nil
 }
 
-func (session *Session) row2Slice(rows *core.Rows, fields []string, bean interface{}) ([]interface{}, error) {
+func (session *Session) row2Slice(rows *core.Rows, types []*sql.ColumnType, fields []string, bean interface{}) ([]interface{}, error) {
 	for _, closure := range session.beforeClosures {
 		closure(bean)
 	}
 
-	scanResults := make([]interface{}, len(fields))
+	var scanResults = make([]interface{}, len(fields))
+	var err error
 	for i := 0; i < len(fields); i++ {
-		var cell interface{}
-		scanResults[i] = &cell
+		scanResults[i], err = session.engine.driver.GenScanResult(types[i].DatabaseTypeName())
+		if err != nil {
+			return nil, err
+		}
 	}
 	if err := rows.Scan(scanResults...); err != nil {
 		return nil, err
@@ -468,8 +471,7 @@ func (session *Session) setJSON(fieldValue *reflect.Value, fieldType reflect.Typ
 	return nil
 }
 
-func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflect.Value,
-	scanResult interface{}, table *schemas.Table) error {
+func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflect.Value, scanResult interface{}) error {
 	v, ok := scanResult.(*interface{})
 	if ok {
 		scanResult = *v
@@ -525,7 +527,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		} else {
 			e = fieldValue.Elem()
 		}
-		if err := session.convertBeanField(col, &e, scanResult, table); err != nil {
+		if err := session.convertBeanField(col, &e, scanResult); err != nil {
 			return err
 		}
 		if fieldValue.IsNil() {
@@ -554,6 +556,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			fieldValue.Set(x.Elem())
 			return nil
 		case reflect.Slice, reflect.Array:
+			fmt.Printf("======%T\n", scanResult)
 			switch rawValueType.Elem().Kind() {
 			case reflect.Uint8:
 				if fieldType.Elem().Kind() == reflect.Uint8 {
@@ -711,7 +714,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 		}
 
 		var scanResult = scanResults[ii]
-		if err := session.convertBeanField(col, fieldValue, scanResult, table); err != nil {
+		if err := session.convertBeanField(col, fieldValue, scanResult); err != nil {
 			return nil, err
 		}
 		if col.IsPrimaryKey {

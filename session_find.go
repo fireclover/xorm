@@ -167,6 +167,11 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 	}
 	defer rows.Close()
 
+	types, err := rows.ColumnTypes()
+	if err != nil {
+		return err
+	}
+
 	fields, err := rows.Columns()
 	if err != nil {
 		return err
@@ -241,7 +246,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 		if err != nil {
 			return err
 		}
-		err = session.rows2Beans(rows, fields, tb, newElemFunc, containerValueSetFunc)
+		err = session.rows2Beans(rows, types, fields, tb, newElemFunc, containerValueSetFunc)
 		rows.Close()
 		if err != nil {
 			return err

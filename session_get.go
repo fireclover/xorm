@@ -268,7 +268,7 @@ func (session *Session) getVars(rows *core.Rows, types []*sql.ColumnType, fields
 }
 
 func (session *Session) getStruct(rows *core.Rows, types []*sql.ColumnType, fields []string, table *schemas.Table, bean interface{}) (bool, error) {
-	scanResults, err := session.row2Slice(rows, fields, bean)
+	scanResults, err := session.row2Slice(rows, types, fields, bean)
 	if err != nil {
 		return false, err
 	}

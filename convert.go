@@ -651,6 +651,10 @@ func convertAssignV(dpv reflect.Value, src interface{}, originalLocation, conver
 			bs = []byte(t)
 		case []byte:
 			bs = t
+		case *sql.NullString:
+			if t.Valid {
+				bs = []byte(t.String)
+			}
 		}
 
 		if bs != nil {
