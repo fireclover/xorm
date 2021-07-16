@@ -109,6 +109,7 @@ func TestGetBytes(t *testing.T) {
 type ConvString string
 
 func (s *ConvString) FromDB(data []byte) error {
+	fmt.Println("3333", string(data))
 	*s = ConvString("prefix---" + string(data))
 	return nil
 }
@@ -127,6 +128,7 @@ func (s *ConvConfig) FromDB(data []byte) error {
 		s = nil
 		return nil
 	}
+	fmt.Println("11111", string(data))
 	return json.DefaultJSONHandler.Unmarshal(data, s)
 }
 
@@ -140,6 +142,7 @@ func (s *ConvConfig) ToDB() ([]byte, error) {
 type SliceType []*ConvConfig
 
 func (s *SliceType) FromDB(data []byte) error {
+	fmt.Println("2222", string(data))
 	return json.DefaultJSONHandler.Unmarshal(data, s)
 }
 

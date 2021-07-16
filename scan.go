@@ -191,37 +191,36 @@ func (engine *Engine) scanStringInterface(rows *core.Rows, types []*sql.ColumnTy
 	return scanResults, nil
 }
 
+func (engine *Engine) genScanResult(tp *sql.ColumnType, v interface{}) (interface{}, bool, error) {
+	switch t := v.(type) {
+	case sql.Scanner:
+		return t, false, nil
+	case convert.Conversion:
+		return &sql.RawBytes{}, true, nil
+	case *big.Float:
+		return &sql.NullString{}, true, nil
+	default:
+		var useNullable = true
+		if engine.driver.Features().SupportNullable {
+			nullable, ok := tp.Nullable()
+			useNullable = ok && nullable
+		}
+		if useNullable {
+			return genScanResultsByBeanNullable(v)
+		}
+		return genScanResultsByBean(v)
+	}
+}
+
 // scan is a wrap of driver.Scan but will automatically change the input values according requirements
 func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.ColumnType, vv ...interface{}) error {
 	var scanResults = make([]interface{}, 0, len(types))
 	var replaces = make([]bool, 0, len(types))
 	var err error
 	for _, v := range vv {
-		var replaced bool
-		var scanResult interface{}
-		switch t := v.(type) {
-		case sql.Scanner:
-			scanResult = t
-		case convert.Conversion:
-			scanResult = &sql.RawBytes{}
-			replaced = true
-		case *big.Float:
-			scanResult = &sql.NullString{}
-			replaced = true
-		default:
-			var useNullable = true
-			if engine.driver.Features().SupportNullable {
-				nullable, ok := types[0].Nullable()
-				useNullable = ok && nullable
-			}
-			if useNullable {
-				scanResult, replaced, err = genScanResultsByBeanNullable(v)
-			} else {
-				scanResult, replaced, err = genScanResultsByBean(v)
-			}
-			if err != nil {
-				return err
-			}
+		scanResult, replaced, err := engine.genScanResult(types[0], v)
+		if err != nil {
+			return err
 		}
 
 		scanResults = append(scanResults, scanResult)
@@ -242,7 +241,6 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 			}
 		}
 	}
-
 	return nil
 }
 

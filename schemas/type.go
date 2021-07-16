@@ -250,6 +250,7 @@ var (
 	timeDefault       time.Time
 	bigFloatDefault   big.Float
 	nullInt64Default  sql.NullInt64
+	nullStringDefault sql.NullString
 )
 
 // enumerates all types
@@ -280,7 +281,8 @@ var (
 	TimeType     = reflect.TypeOf(timeDefault)
 	BigFloatType = reflect.TypeOf(bigFloatDefault)
 
-	NullInt64Type = reflect.TypeOf(nullInt64Default)
+	NullInt64Type  = reflect.TypeOf(nullInt64Default)
+	NullStringType = reflect.TypeOf(nullStringDefault)
 )
 
 // enumerates all types

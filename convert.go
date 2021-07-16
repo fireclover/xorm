@@ -226,7 +226,16 @@ func asTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.
 		}
 		return convert.String2Time(string(t), dbLoc, uiLoc)
 	case *sql.NullTime:
-		tm := t.Time
+		if !t.Valid {
+			return nil, nil
+		}
+		z, _ := t.Time.Zone()
+		if len(z) == 0 || t.Time.Year() == 0 || t.Time.Location().String() != dbLoc.String() {
+			tm := time.Date(t.Time.Year(), t.Time.Month(), t.Time.Day(), t.Time.Hour(),
+				t.Time.Minute(), t.Time.Second(), t.Time.Nanosecond(), dbLoc).In(uiLoc)
+			return &tm, nil
+		}
+		tm := t.Time.In(uiLoc)
 		return &tm, nil
 	case *time.Time:
 		z, _ := t.Zone()
@@ -242,6 +251,9 @@ func asTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.
 		return &tm, nil
 	case int64:
 		tm := time.Unix(t, 0).In(uiLoc)
+		return &tm, nil
+	case *sql.NullInt64:
+		tm := time.Unix(t.Int64, 0).In(uiLoc)
 		return &tm, nil
 	}
 	return nil, fmt.Errorf("unsupported value %#v as time", src)
@@ -329,6 +341,9 @@ func asBytes(src interface{}) ([]byte, bool) {
 	case []byte:
 		return t, true
 	case *sql.NullString:
+		if !t.Valid {
+			return nil, true
+		}
 		return []byte(t.String), true
 	case *sql.RawBytes:
 		return *t, true
@@ -762,6 +777,10 @@ func asKind(vv reflect.Value, tp reflect.Type) (interface{}, error) {
 		if vv.Type().ConvertibleTo(schemas.NullInt64Type) {
 			r := vv.Convert(schemas.NullInt64Type)
 			return r.Interface().(sql.NullInt64).Int64, nil
+		}
+		if vv.Type().ConvertibleTo(schemas.NullStringType) {
+			r := vv.Convert(schemas.NullStringType)
+			return r.Interface().(sql.NullString).String, nil
 		}
 	}
 	return nil, fmt.Errorf("unsupported primary key type: %v, %v", tp, vv)
