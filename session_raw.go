@@ -96,14 +96,14 @@ func value2String(rawValue *reflect.Value) (str string, err error) {
 				str = "0"
 			}
 		default:
-			err = fmt.Errorf("Unsupported struct type %v", vv.Type().Name())
+			err = fmt.Errorf("Unsupported struct type %v as array", vv.Type().Name())
 		}
 	// time type
 	case reflect.Struct:
 		if aa.ConvertibleTo(schemas.TimeType) {
 			str = vv.Convert(schemas.TimeType).Interface().(time.Time).Format(time.RFC3339Nano)
 		} else {
-			err = fmt.Errorf("Unsupported struct type %v", vv.Type().Name())
+			err = fmt.Errorf("Unsupported struct type %v as struct", vv.Type().Name())
 		}
 	case reflect.Bool:
 		str = strconv.FormatBool(vv.Bool())
@@ -117,7 +117,7 @@ func value2String(rawValue *reflect.Value) (str string, err error) {
 	   case reflect.Chan, reflect.Func, reflect.Interface:
 	*/
 	default:
-		err = fmt.Errorf("Unsupported struct type %v", vv.Type().Name())
+		err = fmt.Errorf("Unsupported struct type %v as %v", vv.Type().Name(), aa.Kind())
 	}
 	return
 }

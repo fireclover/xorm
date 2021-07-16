@@ -5,6 +5,7 @@
 package schemas
 
 import (
+	"database/sql"
 	"math/big"
 	"reflect"
 	"sort"
@@ -248,6 +249,7 @@ var (
 	uintDefault       uint
 	timeDefault       time.Time
 	bigFloatDefault   big.Float
+	nullInt64Default  sql.NullInt64
 )
 
 // enumerates all types
@@ -277,6 +279,8 @@ var (
 
 	TimeType     = reflect.TypeOf(timeDefault)
 	BigFloatType = reflect.TypeOf(bigFloatDefault)
+
+	NullInt64Type = reflect.TypeOf(nullInt64Default)
 )
 
 // enumerates all types

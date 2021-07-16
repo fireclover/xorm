@@ -16,7 +16,6 @@ import (
 	"io"
 	"reflect"
 	"strings"
-	"time"
 
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/convert"
@@ -387,7 +386,7 @@ func (session *Session) getField(dataStruct *reflect.Value, key string, table *s
 }
 
 // Cell cell is a result of one column field
-type Cell *interface{}
+type Cell interface{}
 
 func (session *Session) rows2Beans(rows *core.Rows, types []*sql.ColumnType, fields []string,
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
@@ -439,14 +438,17 @@ func (session *Session) row2Slice(rows *core.Rows, types []*sql.ColumnType, fiel
 	return scanResults, nil
 }
 
-func (session *Session) setJSON(fieldValue *reflect.Value, fieldType reflect.Type, vv reflect.Value, rawValueType reflect.Type) error {
+func (session *Session) setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult interface{}) error {
 	var bs []byte
-	if rawValueType.Kind() == reflect.String {
-		bs = []byte(vv.String())
-	} else if rawValueType.ConvertibleTo(schemas.BytesType) {
-		bs = vv.Bytes()
-	} else {
-		return fmt.Errorf("unsupported database data type: %v", rawValueType.Kind())
+	switch t := scanResult.(type) {
+	case string:
+		bs = []byte(t)
+	case []byte:
+		bs = t
+	case *sql.NullString:
+		bs = []byte(t.String)
+	default:
+		return fmt.Errorf("unsupported database data type: %#v", scanResult)
 	}
 
 	if len(bs) > 0 {
@@ -487,26 +489,33 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	}
 
 	if fieldValue.CanAddr() {
+		if scanner, ok := fieldValue.Addr().Interface().(sql.Scanner); ok {
+			return scanner.Scan(scanResult)
+		}
 		if structConvert, ok := fieldValue.Addr().Interface().(convert.Conversion); ok {
-			data, err := value2Bytes(&rawValue)
-			if err != nil {
-				return err
+			data, ok := asBytes(scanResult)
+			if !ok {
+				return fmt.Errorf("cannot convert %#v as bytes", scanResult)
 			}
-			if err := structConvert.FromDB(data); err != nil {
-				return err
-			}
-			return nil
+			return structConvert.FromDB(data)
 		}
 	}
 
-	if _, ok := fieldValue.Interface().(convert.Conversion); ok {
-		if data, err := value2Bytes(&rawValue); err == nil {
+	if scanner, ok := fieldValue.Interface().(sql.Scanner); ok {
+		return scanner.Scan(scanResult)
+	}
+
+	if structConvert, ok := fieldValue.Interface().(convert.Conversion); ok {
+		data, ok := asBytes(scanResult)
+		if !ok {
+			return fmt.Errorf("cannot convert %#v as bytes", scanResult)
+		}
+		if data != nil {
 			if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
 				fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+				return fieldValue.Interface().(convert.Conversion).FromDB(data)
 			}
-			fieldValue.Interface().(convert.Conversion).FromDB(data)
-		} else {
-			return err
+			return structConvert.FromDB(data)
 		}
 		return nil
 	}
@@ -516,7 +525,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	fieldType := fieldValue.Type()
 
 	if col.IsJSON {
-		return session.setJSON(fieldValue, fieldType, vv, rawValueType)
+		return session.setJSON(fieldValue, fieldType, scanResult)
 	}
 
 	switch fieldType.Kind() {
@@ -535,13 +544,13 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		}
 		return nil
 	case reflect.Complex64, reflect.Complex128:
-		return session.setJSON(fieldValue, fieldType, vv, rawValueType)
+		return session.setJSON(fieldValue, fieldType, scanResult)
 	case reflect.Map:
 		switch rawValueType.Kind() {
 		case reflect.String:
-			return session.setJSON(fieldValue, fieldType, vv, rawValueType)
+			return session.setJSON(fieldValue, fieldType, scanResult)
 		case reflect.Slice:
-			return session.setJSON(fieldValue, fieldType, vv, rawValueType)
+			return session.setJSON(fieldValue, fieldType, scanResult)
 		default:
 			return fmt.Errorf("unsupported %v -> %T", scanResult, fieldType)
 		}
@@ -556,7 +565,6 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			fieldValue.Set(x.Elem())
 			return nil
 		case reflect.Slice, reflect.Array:
-			fmt.Printf("======%T\n", scanResult)
 			switch rawValueType.Elem().Kind() {
 			case reflect.Uint8:
 				if fieldType.Elem().Kind() == reflect.Uint8 {
@@ -600,53 +608,12 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 				dbTZ = col.TimeZone
 			}
 
-			if rawValueType == schemas.TimeType {
-				t := vv.Convert(schemas.TimeType).Interface().(time.Time)
-
-				z, _ := t.Zone()
-				// set new location if database don't save timezone or give an incorrect timezone
-				if len(z) == 0 || t.Year() == 0 || t.Location().String() != dbTZ.String() { // !nashtsai! HACK tmp work around for lib/pq doesn't properly time with location
-					session.engine.logger.Debugf("empty zone key[%v] : %v | zone: %v | location: %+v\n", col.Name, t, z, *t.Location())
-					t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(),
-						t.Minute(), t.Second(), t.Nanosecond(), dbTZ)
-				}
-
-				t = t.In(session.engine.TZLocation)
-				fieldValue.Set(reflect.ValueOf(t).Convert(fieldType))
-				return nil
-			} else if rawValueType == schemas.IntType || rawValueType == schemas.Int64Type ||
-				rawValueType == schemas.Int32Type {
-				t := time.Unix(vv.Int(), 0).In(session.engine.TZLocation)
-				fieldValue.Set(reflect.ValueOf(t).Convert(fieldType))
-				return nil
-			} else {
-				if d, ok := vv.Interface().([]uint8); ok {
-					t, err := session.byte2Time(col, d)
-					if err != nil {
-						session.engine.logger.Errorf("byte2Time error: %v", err)
-					} else {
-						fieldValue.Set(reflect.ValueOf(t).Convert(fieldType))
-						return nil
-					}
-
-				} else if d, ok := vv.Interface().(string); ok {
-					t, err := session.str2Time(col, d)
-					if err != nil {
-						session.engine.logger.Errorf("byte2Time error: %v", err)
-					} else {
-						fieldValue.Set(reflect.ValueOf(t).Convert(fieldType))
-						return nil
-					}
-				} else {
-					return fmt.Errorf("rawValueType is %v, value is %v", rawValueType, vv.Interface())
-				}
+			tm, err := asTime(scanResult, dbTZ, session.engine.TZLocation)
+			if err != nil {
+				return err
 			}
-		} else if nulVal, ok := fieldValue.Addr().Interface().(sql.Scanner); ok {
-			err := nulVal.Scan(vv.Interface())
-			if err == nil {
-				return nil
-			}
-			session.engine.logger.Errorf("sql.Sanner error: %v", err)
+			fieldValue.Set(reflect.ValueOf(*tm).Convert(fieldType))
+			return nil
 		} else if session.statement.UseCascade {
 			table, err := session.engine.tagParser.ParseWithCache(*fieldValue)
 			if err != nil {
@@ -679,7 +646,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			}
 			return nil
 		}
-		return session.setJSON(fieldValue, fieldType, vv, rawValueType)
+		return session.setJSON(fieldValue, fieldType, scanResult)
 	} // switch fieldType.Kind()
 
 	return convertAssignV(fieldValue.Addr(), scanResult, session.engine.DatabaseTZ, session.engine.TZLocation)
