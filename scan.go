@@ -200,13 +200,13 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 		var replaced bool
 		var scanResult interface{}
 		switch t := v.(type) {
+		case *big.Float, *time.Time, *sql.NullTime:
+			scanResult = &sql.NullString{}
+			replaced = true
 		case sql.Scanner:
 			scanResult = t
 		case convert.Conversion:
 			scanResult = &sql.RawBytes{}
-			replaced = true
-		case *big.Float:
-			scanResult = &sql.NullString{}
 			replaced = true
 		default:
 			var useNullable = true

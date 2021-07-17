@@ -914,7 +914,7 @@ func TestGetTime(t *testing.T) {
 	assertSync(t, new(GetTimeStruct))
 
 	var gts = GetTimeStruct{
-		CreateTime: time.Now(),
+		CreateTime: time.Now().In(testEngine.GetTZLocation()),
 	}
 	_, err := testEngine.Insert(&gts)
 	assert.NoError(t, err)

@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/schemas"
 )
@@ -731,52 +730,6 @@ func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
 		var r sql.RawBytes
 		return &r, nil
 	}
-}
-
-func (p *mysqlDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.ColumnType, scanResults ...interface{}) error {
-	var v2 = make([]interface{}, 0, len(scanResults))
-	var turnBackIdxes = make([]int, 0, 5)
-	for i, vv := range scanResults {
-		switch vv.(type) {
-		case *time.Time:
-			v2 = append(v2, &sql.NullString{})
-			turnBackIdxes = append(turnBackIdxes, i)
-		case *sql.NullTime:
-			v2 = append(v2, &sql.NullString{})
-			turnBackIdxes = append(turnBackIdxes, i)
-		default:
-			v2 = append(v2, scanResults[i])
-		}
-	}
-	if err := rows.Scan(v2...); err != nil {
-		return err
-	}
-	for _, i := range turnBackIdxes {
-		switch t := scanResults[i].(type) {
-		case *time.Time:
-			var s = *(v2[i].(*sql.NullString))
-			if !s.Valid {
-				break
-			}
-			dt, err := convert.String2Time(s.String, ctx.DBLocation, ctx.UserLocation)
-			if err != nil {
-				return err
-			}
-			*t = *dt
-		case *sql.NullTime:
-			var s = *(v2[i].(*sql.NullString))
-			if !s.Valid {
-				break
-			}
-			dt, err := convert.String2Time(s.String, ctx.DBLocation, ctx.UserLocation)
-			if err != nil {
-				return err
-			}
-			t.Time = *dt
-			t.Valid = true
-		}
-	}
-	return nil
 }
 
 type mymysqlDriver struct {
