@@ -192,7 +192,7 @@ func (session *Session) nocacheGet(beanKind reflect.Kind, table *schemas.Table, 
 func (session *Session) getSlice(rows *core.Rows, types []*sql.ColumnType, fields []string, bean interface{}) (bool, error) {
 	switch t := bean.(type) {
 	case *[]string:
-		res, err := session.engine.scanStringInterface(rows, types)
+		res, err := session.engine.scanStringInterface(rows, fields, types)
 		if err != nil {
 			return true, err
 		}
@@ -207,7 +207,7 @@ func (session *Session) getSlice(rows *core.Rows, types []*sql.ColumnType, field
 		}
 		return true, nil
 	case *[]interface{}:
-		scanResults, err := session.engine.scanInterfaces(rows, types)
+		scanResults, err := session.engine.scanInterfaces(rows, fields, types)
 		if err != nil {
 			return true, err
 		}
@@ -232,7 +232,7 @@ func (session *Session) getSlice(rows *core.Rows, types []*sql.ColumnType, field
 func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields []string, bean interface{}) (bool, error) {
 	switch t := bean.(type) {
 	case *map[string]string:
-		scanResults, err := session.engine.scanStringInterface(rows, types)
+		scanResults, err := session.engine.scanStringInterface(rows, fields, types)
 		if err != nil {
 			return true, err
 		}
@@ -241,7 +241,7 @@ func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields 
 		}
 		return true, nil
 	case *map[string]interface{}:
-		scanResults, err := session.engine.scanInterfaces(rows, types)
+		scanResults, err := session.engine.scanInterfaces(rows, fields, types)
 		if err != nil {
 			return true, err
 		}

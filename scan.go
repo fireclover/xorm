@@ -72,6 +72,7 @@ func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
 func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 	switch t := bean.(type) {
 	case *sql.NullInt64, *sql.NullBool, *sql.NullFloat64, *sql.NullString,
+		*sql.RawBytes,
 		*string,
 		*int, *int8, *int16, *int32, *int64,
 		*uint, *uint8, *uint16, *uint32, *uint64,
@@ -175,17 +176,14 @@ func row2mapBytes(rows *core.Rows, types []*sql.ColumnType, fields []string) (ma
 	return result, nil
 }
 
-func (engine *Engine) scanStringInterface(rows *core.Rows, types []*sql.ColumnType) ([]interface{}, error) {
+func (engine *Engine) scanStringInterface(rows *core.Rows, fields []string, types []*sql.ColumnType) ([]interface{}, error) {
 	var scanResults = make([]interface{}, len(types))
 	for i := 0; i < len(types); i++ {
 		var s sql.NullString
 		scanResults[i] = &s
 	}
 
-	if err := engine.driver.Scan(&dialects.ScanContext{
-		DBLocation:   engine.DatabaseTZ,
-		UserLocation: engine.TZLocation,
-	}, rows, types, scanResults...); err != nil {
+	if err := engine.scan(rows, fields, types, scanResults...); err != nil {
 		return nil, err
 	}
 	return scanResults, nil
@@ -246,7 +244,7 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 	return nil
 }
 
-func (engine *Engine) scanInterfaces(rows *core.Rows, types []*sql.ColumnType) ([]interface{}, error) {
+func (engine *Engine) scanInterfaces(rows *core.Rows, fields []string, types []*sql.ColumnType) ([]interface{}, error) {
 	var scanResultContainers = make([]interface{}, len(types))
 	for i := 0; i < len(types); i++ {
 		scanResult, err := engine.driver.GenScanResult(types[i].DatabaseTypeName())
@@ -255,17 +253,14 @@ func (engine *Engine) scanInterfaces(rows *core.Rows, types []*sql.ColumnType) (
 		}
 		scanResultContainers[i] = scanResult
 	}
-	if err := engine.driver.Scan(&dialects.ScanContext{
-		DBLocation:   engine.DatabaseTZ,
-		UserLocation: engine.TZLocation,
-	}, rows, types, scanResultContainers...); err != nil {
+	if err := engine.scan(rows, fields, types, scanResultContainers...); err != nil {
 		return nil, err
 	}
 	return scanResultContainers, nil
 }
 
 func (engine *Engine) row2sliceStr(rows *core.Rows, types []*sql.ColumnType, fields []string) ([]string, error) {
-	scanResults, err := engine.scanStringInterface(rows, types)
+	scanResults, err := engine.scanStringInterface(rows, fields, types)
 	if err != nil {
 		return nil, err
 	}
@@ -307,10 +302,7 @@ func (engine *Engine) row2mapInterface(rows *core.Rows, types []*sql.ColumnType,
 		}
 		scanResultContainers[i] = scanResult
 	}
-	if err := engine.driver.Scan(&dialects.ScanContext{
-		DBLocation:   engine.DatabaseTZ,
-		UserLocation: engine.TZLocation,
-	}, rows, types, scanResultContainers...); err != nil {
+	if err := engine.scan(rows, fields, types, scanResultContainers...); err != nil {
 		return nil, err
 	}
 

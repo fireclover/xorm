@@ -543,6 +543,11 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 			return err
 		}
 
+		fields, err := rows.Columns()
+		if err != nil {
+			return err
+		}
+
 		sess := engine.NewSession()
 		defer sess.Close()
 		for rows.Next() {
@@ -551,7 +556,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 				return err
 			}
 
-			scanResults, err := sess.engine.scanStringInterface(rows, types)
+			scanResults, err := sess.engine.scanStringInterface(rows, fields, types)
 			if err != nil {
 				return err
 			}
