@@ -375,7 +375,7 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 			return 1, nil
 		}
 
-		return 1, convertAssignV(aiValue.Addr(), id, session.engine.DatabaseTZ, session.engine.TZLocation)
+		return 1, convertAssignV(aiValue.Addr(), id)
 	} else if len(table.AutoIncrement) > 0 && (session.engine.dialect.URI().DBType == schemas.POSTGRES ||
 		session.engine.dialect.URI().DBType == schemas.MSSQL) {
 		res, err := session.queryBytes(sqlStr, args...)
@@ -415,7 +415,7 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 			return 1, nil
 		}
 
-		return 1, convertAssignV(*aiValue, id, session.engine.DatabaseTZ, session.engine.TZLocation)
+		return 1, convertAssignV(*aiValue, id)
 	}
 
 	res, err := session.exec(sqlStr, args...)
@@ -455,7 +455,7 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 		return res.RowsAffected()
 	}
 
-	if err := convertAssignV(*aiValue, id, session.engine.DatabaseTZ, session.engine.TZLocation); err != nil {
+	if err := convertAssignV(*aiValue, id); err != nil {
 		return 0, err
 	}
 

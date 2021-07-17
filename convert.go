@@ -588,10 +588,10 @@ func convertAssign(dest, src interface{}, originalLocation *time.Location, conve
 		return nil
 	}
 
-	return convertAssignV(reflect.ValueOf(dest), src, originalLocation, convertedLocation)
+	return convertAssignV(reflect.ValueOf(dest), src)
 }
 
-func convertAssignV(dv reflect.Value, src interface{}, originalLocation, convertedLocation *time.Location) error {
+func convertAssignV(dv reflect.Value, src interface{}) error {
 	if src == nil {
 		return nil
 	}
@@ -605,7 +605,7 @@ func convertAssignV(dv reflect.Value, src interface{}, originalLocation, convert
 		if dv.IsNil() {
 			dv.Set(reflect.New(dv.Type().Elem()))
 		}
-		return convertAssignV(dv.Elem(), src, originalLocation, convertedLocation)
+		return convertAssignV(dv.Elem(), src)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		i64, err := asInt64(src)
 		if err != nil {

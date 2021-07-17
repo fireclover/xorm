@@ -734,7 +734,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		}
 	} // switch fieldType.Kind()
 
-	return convertAssignV(fieldValue.Addr(), scanResult, session.engine.DatabaseTZ, session.engine.TZLocation)
+	return convertAssignV(fieldValue.Addr(), scanResult)
 }
 
 func (session *Session) slice2Bean(scanResults []interface{}, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
