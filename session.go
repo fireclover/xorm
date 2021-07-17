@@ -454,27 +454,28 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 
 	if fieldValue.CanAddr() {
 		if structConvert, ok := fieldValue.Addr().Interface().(convert.Conversion); ok {
-			data, err := value2Bytes(&rawValue)
-			if err != nil {
-				return err
+			data, ok := asBytes(scanResult)
+			if !ok {
+				return fmt.Errorf("cannot convert %#v as bytes", scanResult)
 			}
-			if err := structConvert.FromDB(data); err != nil {
-				return err
-			}
-			return nil
+			return structConvert.FromDB(data)
 		}
 	}
 
-	if _, ok := fieldValue.Interface().(convert.Conversion); ok {
-		if data, err := value2Bytes(&rawValue); err == nil {
-			if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
-				fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
-			}
-			fieldValue.Interface().(convert.Conversion).FromDB(data)
-		} else {
-			return err
+	if structConvert, ok := fieldValue.Interface().(convert.Conversion); ok {
+		data, ok := asBytes(scanResult)
+		if !ok {
+			return fmt.Errorf("cannot convert %#v as bytes", scanResult)
 		}
-		return nil
+		if data == nil {
+			return nil
+		}
+
+		if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
+			fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+			return fieldValue.Interface().(convert.Conversion).FromDB(data)
+		}
+		return structConvert.FromDB(data)
 	}
 
 	rawValueType := reflect.TypeOf(rawValue.Interface())
@@ -733,12 +734,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		}
 	} // switch fieldType.Kind()
 
-	data, err := value2Bytes(&rawValue)
-	if err != nil {
-		return err
-	}
-
-	return session.bytes2Value(col, fieldValue, data)
+	return convertAssignV(fieldValue.Addr(), scanResult, session.engine.DatabaseTZ, session.engine.TZLocation)
 }
 
 func (session *Session) slice2Bean(scanResults []interface{}, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {

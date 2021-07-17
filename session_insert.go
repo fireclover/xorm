@@ -415,7 +415,12 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 			return 1, nil
 		}
 
-		return 1, convertAssignV(aiValue.Addr(), id, session.engine.DatabaseTZ, session.engine.TZLocation)
+		var refValue = *aiValue
+		if refValue.Kind() != reflect.Ptr {
+			refValue = aiValue.Addr()
+		}
+
+		return 1, convertAssignV(refValue, id, session.engine.DatabaseTZ, session.engine.TZLocation)
 	}
 
 	res, err := session.exec(sqlStr, args...)
@@ -455,7 +460,12 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 		return res.RowsAffected()
 	}
 
-	if err := convertAssignV(aiValue.Addr(), id, session.engine.DatabaseTZ, session.engine.TZLocation); err != nil {
+	var refValue = *aiValue
+	if refValue.Kind() != reflect.Ptr {
+		refValue = aiValue.Addr()
+	}
+
+	if err := convertAssignV(refValue, id, session.engine.DatabaseTZ, session.engine.TZLocation); err != nil {
 		return 0, err
 	}
 
