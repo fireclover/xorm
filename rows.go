@@ -129,8 +129,12 @@ func (rows *Rows) Scan(bean interface{}) error {
 	if err != nil {
 		return err
 	}
+	types, err := rows.rows.ColumnTypes()
+	if err != nil {
+		return err
+	}
 
-	scanResults, err := rows.session.row2Slice(rows.rows, fields, bean)
+	scanResults, err := rows.session.row2Slice(rows.rows, fields, types, bean)
 	if err != nil {
 		return err
 	}

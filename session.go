@@ -16,7 +16,6 @@ import (
 	"io"
 	"reflect"
 	"strings"
-	"time"
 
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/convert"
@@ -389,7 +388,7 @@ func (session *Session) getField(dataStruct *reflect.Value, key string, table *s
 // Cell cell is a result of one column field
 type Cell *interface{}
 
-func (session *Session) rows2Beans(rows *core.Rows, fields []string,
+func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sql.ColumnType,
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
 	sliceValueSetFunc func(*reflect.Value, schemas.PK) error) error {
 	for rows.Next() {
@@ -398,7 +397,7 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string,
 		dataStruct := newValue.Elem()
 
 		// handle beforeClosures
-		scanResults, err := session.row2Slice(rows, fields, bean)
+		scanResults, err := session.row2Slice(rows, fields, types, bean)
 		if err != nil {
 			return err
 		}
@@ -417,7 +416,7 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string,
 	return nil
 }
 
-func (session *Session) row2Slice(rows *core.Rows, fields []string, bean interface{}) ([]interface{}, error) {
+func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql.ColumnType, bean interface{}) ([]interface{}, error) {
 	for _, closure := range session.beforeClosures {
 		closure(bean)
 	}
@@ -427,7 +426,7 @@ func (session *Session) row2Slice(rows *core.Rows, fields []string, bean interfa
 		var cell interface{}
 		scanResults[i] = &cell
 	}
-	if err := rows.Scan(scanResults...); err != nil {
+	if err := session.engine.scan(rows, fields, types, scanResults...); err != nil {
 		return nil, err
 	}
 
@@ -555,64 +554,28 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		}
 		return nil
 	case reflect.Slice, reflect.Array:
-		switch rawValueType.Kind() {
-		case reflect.Slice, reflect.Array:
-			switch rawValueType.Elem().Kind() {
-			case reflect.Uint8:
-				if fieldType.Elem().Kind() == reflect.Uint8 {
-					if col.SQLType.IsText() {
-						x := reflect.New(fieldType)
-						err := json.DefaultJSONHandler.Unmarshal(vv.Bytes(), x.Interface())
-						if err != nil {
-							return err
-						}
-						fieldValue.Set(x.Elem())
-					} else {
-						if fieldValue.Len() > 0 {
-							for i := 0; i < fieldValue.Len(); i++ {
-								if i < vv.Len() {
-									fieldValue.Index(i).Set(vv.Index(i))
-								}
-							}
-						} else {
-							for i := 0; i < vv.Len(); i++ {
-								fieldValue.Set(reflect.Append(*fieldValue, vv.Index(i)))
-							}
+		bs, ok := asBytes(scanResult)
+		if ok && fieldType.Elem().Kind() == reflect.Uint8 {
+			if col.SQLType.IsText() {
+				x := reflect.New(fieldType)
+				err := json.DefaultJSONHandler.Unmarshal(bs, x.Interface())
+				if err != nil {
+					return err
+				}
+				fieldValue.Set(x.Elem())
+			} else {
+				if fieldValue.Len() > 0 {
+					for i := 0; i < fieldValue.Len(); i++ {
+						if i < vv.Len() {
+							fieldValue.Index(i).Set(vv.Index(i))
 						}
 					}
-					return nil
+				} else {
+					for i := 0; i < vv.Len(); i++ {
+						fieldValue.Set(reflect.Append(*fieldValue, vv.Index(i)))
+					}
 				}
 			}
-		}
-	case reflect.String:
-		if rawValueType.Kind() == reflect.String {
-			fieldValue.SetString(vv.String())
-			return nil
-		}
-	case reflect.Bool:
-		if rawValueType.Kind() == reflect.Bool {
-			fieldValue.SetBool(vv.Bool())
-			return nil
-		}
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		switch rawValueType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			fieldValue.SetInt(vv.Int())
-			return nil
-		}
-	case reflect.Float32, reflect.Float64:
-		switch rawValueType.Kind() {
-		case reflect.Float32, reflect.Float64:
-			fieldValue.SetFloat(vv.Float())
-			return nil
-		}
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		switch rawValueType.Kind() {
-		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-			fieldValue.SetUint(vv.Uint())
-			return nil
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			fieldValue.SetUint(uint64(vv.Int()))
 			return nil
 		}
 	case reflect.Struct:
@@ -631,47 +594,13 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 				dbTZ = col.TimeZone
 			}
 
-			if rawValueType == schemas.TimeType {
-				t := vv.Convert(schemas.TimeType).Interface().(time.Time)
-
-				z, _ := t.Zone()
-				// set new location if database don't save timezone or give an incorrect timezone
-				if len(z) == 0 || t.Year() == 0 || t.Location().String() != dbTZ.String() { // !nashtsai! HACK tmp work around for lib/pq doesn't properly time with location
-					session.engine.logger.Debugf("empty zone key[%v] : %v | zone: %v | location: %+v\n", col.Name, t, z, *t.Location())
-					t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(),
-						t.Minute(), t.Second(), t.Nanosecond(), dbTZ)
-				}
-
-				t = t.In(session.engine.TZLocation)
-				fieldValue.Set(reflect.ValueOf(t).Convert(fieldType))
-				return nil
-			} else if rawValueType == schemas.IntType || rawValueType == schemas.Int64Type ||
-				rawValueType == schemas.Int32Type {
-				t := time.Unix(vv.Int(), 0).In(session.engine.TZLocation)
-				fieldValue.Set(reflect.ValueOf(t).Convert(fieldType))
-				return nil
-			} else {
-				if d, ok := vv.Interface().([]uint8); ok {
-					t, err := session.byte2Time(col, d)
-					if err != nil {
-						session.engine.logger.Errorf("byte2Time error: %v", err)
-					} else {
-						fieldValue.Set(reflect.ValueOf(t).Convert(fieldType))
-						return nil
-					}
-
-				} else if d, ok := vv.Interface().(string); ok {
-					t, err := session.str2Time(col, d)
-					if err != nil {
-						session.engine.logger.Errorf("byte2Time error: %v", err)
-					} else {
-						fieldValue.Set(reflect.ValueOf(t).Convert(fieldType))
-						return nil
-					}
-				} else {
-					return fmt.Errorf("rawValueType is %v, value is %v", rawValueType, vv.Interface())
-				}
+			t, err := asTime(scanResult, dbTZ, session.engine.TZLocation)
+			if err != nil {
+				return err
 			}
+
+			fieldValue.Set(reflect.ValueOf(*t).Convert(fieldType))
+			return nil
 		} else if nulVal, ok := fieldValue.Addr().Interface().(sql.Scanner); ok {
 			err := nulVal.Scan(vv.Interface())
 			if err == nil {

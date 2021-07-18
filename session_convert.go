@@ -68,7 +68,3 @@ func (session *Session) str2Time(col *schemas.Column, data string) (outTime time
 	outTime = x.In(session.engine.TZLocation)
 	return
 }
-
-func (session *Session) byte2Time(col *schemas.Column, data []byte) (outTime time.Time, outErr error) {
-	return session.str2Time(col, string(data))
-}

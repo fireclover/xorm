@@ -20,6 +20,8 @@ import (
 // genScanResultsByBeanNullabale generates scan result
 func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
 	switch t := bean.(type) {
+	case *interface{}:
+		return t, false, nil
 	case *sql.NullInt64, *sql.NullBool, *sql.NullFloat64, *sql.NullString, *sql.RawBytes:
 		return t, false, nil
 	case *time.Time:
@@ -71,6 +73,8 @@ func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
 
 func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 	switch t := bean.(type) {
+	case *interface{}:
+		return t, false, nil
 	case *sql.NullInt64, *sql.NullBool, *sql.NullFloat64, *sql.NullString,
 		*sql.RawBytes,
 		*string,
@@ -194,7 +198,7 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 	var scanResults = make([]interface{}, 0, len(types))
 	var replaces = make([]bool, 0, len(types))
 	var err error
-	for _, v := range vv {
+	for i, v := range vv {
 		var replaced bool
 		var scanResult interface{}
 		switch t := v.(type) {
@@ -222,6 +226,8 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 			}
 		}
 
+		fmt.Printf("----- %v ----- %#v\n", fields[i], scanResult)
+
 		scanResults = append(scanResults, scanResult)
 		replaces = append(replaces, replaced)
 	}
@@ -235,6 +241,7 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 
 	for i, replaced := range replaces {
 		if replaced {
+			fmt.Printf("===== %v %#v\n", fields[i], scanResults[i])
 			if err = convertAssign(vv[i], scanResults[i], engine.DatabaseTZ, engine.TZLocation); err != nil {
 				return err
 			}

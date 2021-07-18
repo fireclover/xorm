@@ -6,6 +6,7 @@ package convert
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -32,6 +33,12 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		}
 		dt = dt.In(convertedLocation)
 		return &dt, nil
+	} else {
+		i, err := strconv.ParseInt(s, 10, 64)
+		if err == nil {
+			tm := time.Unix(i, 0).In(convertedLocation)
+			return &tm, nil
+		}
 	}
 	return nil, fmt.Errorf("unsupported convertion from %s to time", s)
 }
