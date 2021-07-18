@@ -270,6 +270,11 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 			return err
 		}
 	}
+
+	if err:=rows.Err(); err!=nil{
+		return err
+	}
+
 	return nil
 }
 
