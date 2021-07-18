@@ -226,8 +226,6 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 			}
 		}
 
-		fmt.Printf("----- %v ----- %#v\n", fields[i], scanResult)
-
 		scanResults = append(scanResults, scanResult)
 		replaces = append(replaces, replaced)
 	}
@@ -241,7 +239,6 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 
 	for i, replaced := range replaces {
 		if replaced {
-			fmt.Printf("===== %v %#v\n", fields[i], scanResults[i])
 			if err = convertAssign(vv[i], scanResults[i], engine.DatabaseTZ, engine.TZLocation); err != nil {
 				return err
 			}

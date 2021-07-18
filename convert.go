@@ -331,7 +331,6 @@ func asTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.
 		if t == nil {
 			return nil, nil
 		}
-		fmt.Printf("====== %#v,,%v,,%v\n", string(t), dbLoc.String(), uiLoc.String())
 		return convert.String2Time(string(t), dbLoc, uiLoc)
 	case *sql.NullTime:
 		if !t.Valid {
