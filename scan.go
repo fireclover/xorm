@@ -198,7 +198,7 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 	var scanResults = make([]interface{}, 0, len(types))
 	var replaces = make([]bool, 0, len(types))
 	var err error
-	for i, v := range vv {
+	for _, v := range vv {
 		var replaced bool
 		var scanResult interface{}
 		switch t := v.(type) {
