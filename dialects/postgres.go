@@ -810,7 +810,7 @@ func (db *postgres) Version(ctx context.Context, queryer core.Queryer) (*schemas
 
 	var version string
 	if !rows.Next() {
-		return nil, errors.New("Unknow version")
+		return nil, errors.New("unknow version")
 	}
 
 	if err := rows.Scan(&version); err != nil {
@@ -1098,6 +1098,9 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 	colSeq := make([]string, 0)
 
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, nil, rows.Err()
+		}
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
@@ -1192,7 +1195,7 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 			}
 		}
 		if _, ok := schemas.SqlTypes[col.SQLType.Name]; !ok {
-			return nil, nil, fmt.Errorf("Unknown colType: %s - %s", dataType, col.SQLType.Name)
+			return nil, nil, fmt.Errorf("unknown colType: %s - %s", dataType, col.SQLType.Name)
 		}
 
 		col.Length = maxLen
@@ -1200,13 +1203,13 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 		if !col.DefaultIsEmpty {
 			if col.SQLType.IsText() {
 				if strings.HasSuffix(col.Default, "::character varying") {
-					col.Default = strings.TrimRight(col.Default, "::character varying")
+					col.Default = strings.TrimSuffix(col.Default, "::character varying")
 				} else if !strings.HasPrefix(col.Default, "'") {
 					col.Default = "'" + col.Default + "'"
 				}
 			} else if col.SQLType.IsTime() {
 				if strings.HasSuffix(col.Default, "::timestamp without time zone") {
-					col.Default = strings.TrimRight(col.Default, "::timestamp without time zone")
+					col.Default = strings.TrimSuffix(col.Default, "::timestamp without time zone")
 				}
 			}
 		}
@@ -1234,6 +1237,9 @@ func (db *postgres) GetTables(queryer core.Queryer, ctx context.Context) ([]*sch
 
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		table := schemas.NewEmptyTable()
 		var name string
 		err = rows.Scan(&name)
@@ -1259,7 +1265,7 @@ func getIndexColName(indexdef string) []string {
 
 func (db *postgres) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
 	args := []interface{}{tableName}
-	s := fmt.Sprintf("SELECT indexname, indexdef FROM pg_indexes WHERE tablename=$1")
+	s := "SELECT indexname, indexdef FROM pg_indexes WHERE tablename=$1"
 	if len(db.getSchema()) != 0 {
 		args = append(args, db.getSchema())
 		s = s + " AND schemaname=$2"
@@ -1271,8 +1277,11 @@ func (db *postgres) GetIndexes(queryer core.Queryer, ctx context.Context, tableN
 	}
 	defer rows.Close()
 
-	indexes := make(map[string]*schemas.Index, 0)
+	indexes := make(map[string]*schemas.Index)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		var indexType int
 		var indexName, indexdef string
 		var colNames []string
@@ -1450,6 +1459,9 @@ func QueryDefaultPostgresSchema(ctx context.Context, queryer core.Queryer) (stri
 	}
 	defer rows.Close()
 	if rows.Next() {
+		if rows.Err() != nil {
+			return "", rows.Err()
+		}
 		var defaultSchema string
 		if err = rows.Scan(&defaultSchema); err != nil {
 			return "", err
@@ -1458,5 +1470,5 @@ func QueryDefaultPostgresSchema(ctx context.Context, queryer core.Queryer) (stri
 		return strings.TrimSpace(parts[len(parts)-1]), nil
 	}
 
-	return "", errors.New("No default schema")
+	return "", errors.New("no default schema")
 }

@@ -551,6 +551,9 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 		sess := engine.NewSession()
 		defer sess.Close()
 		for rows.Next() {
+			if rows.Err() != nil {
+				return rows.Err()
+			}
 			_, err = io.WriteString(w, "INSERT INTO "+dstDialect.Quoter().Quote(dstTableName)+" ("+destColNames+") VALUES (")
 			if err != nil {
 				return err

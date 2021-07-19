@@ -415,12 +415,14 @@ func (db *sqlite3) GetColumns(queryer core.Queryer, ctx context.Context, tableNa
 	defer rows.Close()
 
 	var name string
-	for rows.Next() {
+	if rows.Next() {
+		if rows.Err() != nil {
+			return nil, nil, rows.Err()
+		}
 		err = rows.Scan(&name)
 		if err != nil {
 			return nil, nil, err
 		}
-		break
 	}
 
 	if name == "" {
@@ -496,8 +498,11 @@ func (db *sqlite3) GetIndexes(queryer core.Queryer, ctx context.Context, tableNa
 	}
 	defer rows.Close()
 
-	indexes := make(map[string]*schemas.Index, 0)
+	indexes := make(map[string]*schemas.Index)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		var tmpSQL sql.NullString
 		err = rows.Scan(&tmpSQL)
 		if err != nil {

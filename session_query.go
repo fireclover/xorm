@@ -33,6 +33,9 @@ func (session *Session) rows2Strings(rows *core.Rows) (resultsSlice []map[string
 	}
 
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		result, err := session.engine.row2mapStr(rows, types, fields)
 		if err != nil {
 			return nil, err
@@ -54,6 +57,9 @@ func (session *Session) rows2SliceString(rows *core.Rows) (resultsSlice [][]stri
 	}
 
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		record, err := session.engine.row2sliceStr(rows, types, fields)
 		if err != nil {
 			return nil, err
@@ -114,6 +120,9 @@ func (session *Session) rows2Interfaces(rows *core.Rows) (resultsSlice []map[str
 		return nil, err
 	}
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		result, err := session.engine.row2mapInterface(rows, types, fields)
 		if err != nil {
 			return nil, err

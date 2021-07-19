@@ -255,6 +255,9 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 	}
 
 	for rows.Next() {
+		if rows.Err() != nil {
+			return rows.Err()
+		}
 		var newValue = newElemFunc(fields)
 		bean := newValue.Interface()
 
@@ -322,6 +325,9 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 		var i int
 		ids = make([]schemas.PK, 0)
 		for rows.Next() {
+			if rows.Err() != nil {
+				return rows.Err()
+			}
 			i++
 			if i > 500 {
 				session.engine.logger.Debugf("[cacheFind] ids length > 500, no cache")

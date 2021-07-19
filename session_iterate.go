@@ -43,6 +43,9 @@ func (session *Session) Iterate(bean interface{}, fun IterFunc) error {
 
 	i := 0
 	for rows.Next() {
+		if rows.Err() != nil {
+			return rows.Err()
+		}
 		b := reflect.New(rows.beanType).Interface()
 		err = rows.Scan(b)
 		if err != nil {

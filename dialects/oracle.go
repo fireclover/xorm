@@ -677,6 +677,9 @@ func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 	cols := make(map[string]*schemas.Column)
 	colSeq := make([]string, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, nil, rows.Err()
+		}
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
@@ -772,6 +775,9 @@ func (db *oracle) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		table := schemas.NewEmptyTable()
 		err = rows.Scan(&table.Name)
 		if err != nil {
@@ -796,6 +802,9 @@ func (db *oracle) GetIndexes(queryer core.Queryer, ctx context.Context, tableNam
 
 	indexes := make(map[string]*schemas.Index, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		var indexType int
 		var indexName, colName, uniqueness string
 

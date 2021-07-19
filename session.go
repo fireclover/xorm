@@ -392,6 +392,9 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sq
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
 	sliceValueSetFunc func(*reflect.Value, schemas.PK) error) error {
 	for rows.Next() {
+		if rows.Err() != nil {
+			return rows.Err()
+		}
 		var newValue = newElemFunc(fields)
 		bean := newValue.Interface()
 		dataStruct := newValue.Elem()
@@ -435,6 +438,36 @@ func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql
 	return scanResults, nil
 }
 
+func (session *Session) setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult interface{}) error {
+	bs, ok := asBytes(scanResult)
+	if !ok {
+		return fmt.Errorf("unsupported database data type: %#v", scanResult)
+	}
+	if len(bs) == 0 {
+		return nil
+	}
+
+	if fieldType.Kind() == reflect.String {
+		fieldValue.SetString(string(bs))
+		return nil
+	}
+
+	if fieldValue.CanAddr() {
+		err := json.DefaultJSONHandler.Unmarshal(bs, fieldValue.Addr().Interface())
+		if err != nil {
+			return err
+		}
+	} else {
+		x := reflect.New(fieldType)
+		err := json.DefaultJSONHandler.Unmarshal(bs, x.Interface())
+		if err != nil {
+			return err
+		}
+		fieldValue.Set(x.Elem())
+	}
+	return nil
+}
+
 func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflect.Value,
 	scanResult interface{}, table *schemas.Table) error {
 	v, ok := scanResult.(*interface{})
@@ -442,12 +475,6 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		scanResult = *v
 	}
 	if scanResult == nil {
-		return nil
-	}
-
-	rawValue := reflect.Indirect(reflect.ValueOf(scanResult))
-	// if row is null then ignore
-	if rawValue.Interface() == nil {
 		return nil
 	}
 
@@ -477,40 +504,11 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		return structConvert.FromDB(data)
 	}
 
-	rawValueType := reflect.TypeOf(rawValue.Interface())
-	vv := reflect.ValueOf(rawValue.Interface())
+	vv := reflect.ValueOf(scanResult)
 	fieldType := fieldValue.Type()
 
 	if col.IsJSON {
-		var bs []byte
-		if rawValueType.Kind() == reflect.String {
-			bs = []byte(vv.String())
-		} else if rawValueType.ConvertibleTo(schemas.BytesType) {
-			bs = vv.Bytes()
-		} else {
-			return fmt.Errorf("unsupported database data type: %s %v", col.Name, rawValueType.Kind())
-		}
-
-		if len(bs) > 0 {
-			if fieldType.Kind() == reflect.String {
-				fieldValue.SetString(string(bs))
-				return nil
-			}
-			if fieldValue.CanAddr() {
-				err := json.DefaultJSONHandler.Unmarshal(bs, fieldValue.Addr().Interface())
-				if err != nil {
-					return err
-				}
-			} else {
-				x := reflect.New(fieldType)
-				err := json.DefaultJSONHandler.Unmarshal(bs, x.Interface())
-				if err != nil {
-					return err
-				}
-				fieldValue.Set(x.Elem())
-			}
-		}
-		return nil
+		return session.setJSON(fieldValue, fieldType, scanResult)
 	}
 
 	switch fieldType.Kind() {
@@ -529,30 +527,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		}
 		return nil
 	case reflect.Complex64, reflect.Complex128:
-		// TODO: reimplement this
-		var bs []byte
-		if rawValueType.Kind() == reflect.String {
-			bs = []byte(vv.String())
-		} else if rawValueType.ConvertibleTo(schemas.BytesType) {
-			bs = vv.Bytes()
-		}
-
-		if len(bs) > 0 {
-			if fieldValue.CanAddr() {
-				err := json.DefaultJSONHandler.Unmarshal(bs, fieldValue.Addr().Interface())
-				if err != nil {
-					return err
-				}
-			} else {
-				x := reflect.New(fieldType)
-				err := json.DefaultJSONHandler.Unmarshal(bs, x.Interface())
-				if err != nil {
-					return err
-				}
-				fieldValue.Set(x.Elem())
-			}
-		}
-		return nil
+		return session.setJSON(fieldValue, fieldType, scanResult)
 	case reflect.Slice, reflect.Array:
 		bs, ok := asBytes(scanResult)
 		if ok && fieldType.Elem().Kind() == reflect.Uint8 {
@@ -602,33 +577,11 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			fieldValue.Set(reflect.ValueOf(*t).Convert(fieldType))
 			return nil
 		} else if nulVal, ok := fieldValue.Addr().Interface().(sql.Scanner); ok {
-			err := nulVal.Scan(vv.Interface())
+			err := nulVal.Scan(scanResult)
 			if err == nil {
 				return nil
 			}
 			session.engine.logger.Errorf("sql.Sanner error: %v", err)
-		} else if col.IsJSON {
-			if rawValueType.Kind() == reflect.String {
-				x := reflect.New(fieldType)
-				if len([]byte(vv.String())) > 0 {
-					err := json.DefaultJSONHandler.Unmarshal([]byte(vv.String()), x.Interface())
-					if err != nil {
-						return err
-					}
-					fieldValue.Set(x.Elem())
-				}
-				return nil
-			} else if rawValueType.Kind() == reflect.Slice {
-				x := reflect.New(fieldType)
-				if len(vv.Bytes()) > 0 {
-					err := json.DefaultJSONHandler.Unmarshal(vv.Bytes(), x.Interface())
-					if err != nil {
-						return err
-					}
-					fieldValue.Set(x.Elem())
-				}
-				return nil
-			}
 		} else if session.statement.UseCascade {
 			table, err := session.engine.tagParser.ParseWithCache(*fieldValue)
 			if err != nil {
@@ -639,7 +592,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 				return errors.New("unsupported non or composited primary key cascade")
 			}
 			var pk = make(schemas.PK, len(table.PrimaryKeys))
-			pk[0], err = asKind(vv, rawValueType)
+			pk[0], err = asKind(vv, reflect.TypeOf(scanResult))
 			if err != nil {
 				return err
 			}

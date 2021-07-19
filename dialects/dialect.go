@@ -118,6 +118,9 @@ func (db *Base) HasRecords(queryer core.Queryer, ctx context.Context, query stri
 	defer rows.Close()
 
 	if rows.Next() {
+		if rows.Err() != nil {
+			return true, rows.Err()
+		}
 		return true, nil
 	}
 	return false, nil

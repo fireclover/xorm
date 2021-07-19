@@ -193,6 +193,8 @@ func asFloat64(src interface{}) (float64, error) {
 		return float64(v.Int32), nil
 	case *sql.NullInt64:
 		return float64(v.Int64), nil
+	case *sql.NullFloat64:
+		return v.Float64, nil
 	}
 
 	rv := reflect.ValueOf(src)
@@ -717,6 +719,8 @@ func convertAssignV(dv reflect.Value, src interface{}) error {
 
 func asKind(vv reflect.Value, tp reflect.Type) (interface{}, error) {
 	switch tp.Kind() {
+	case reflect.Ptr:
+		return asKind(vv.Elem(), tp.Elem())
 	case reflect.Int64:
 		return vv.Int(), nil
 	case reflect.Int:

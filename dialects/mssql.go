@@ -456,6 +456,9 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	cols := make(map[string]*schemas.Column)
 	colSeq := make([]string, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, nil, rows.Err()
+		}
 		var name, ctype, vdefault string
 		var maxLen, precision, scale int
 		var nullable, isPK, defaultIsNull, isIncrement bool
@@ -524,6 +527,9 @@ func (db *mssql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		table := schemas.NewEmptyTable()
 		var name string
 		err = rows.Scan(&name)
@@ -558,6 +564,9 @@ WHERE IXS.TYPE_DESC='NONCLUSTERED' and OBJECT_NAME(IXS.OBJECT_ID) =?
 
 	indexes := make(map[string]*schemas.Index, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		var indexType int
 		var indexName, colName, isUnique string
 

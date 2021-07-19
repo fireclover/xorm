@@ -59,6 +59,9 @@ func (session *Session) cacheUpdate(table *schemas.Table, tableName, sqlStr stri
 
 		ids = make([]schemas.PK, 0)
 		for rows.Next() {
+			if rows.Err() != nil {
+				return rows.Err()
+			}
 			var res = make([]string, len(table.PrimaryKeys))
 			err = rows.ScanSlice(&res)
 			if err != nil {

@@ -405,6 +405,9 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	cols := make(map[string]*schemas.Column)
 	colSeq := make([]string, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, nil, rows.Err()
+		}
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
@@ -519,6 +522,9 @@ func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		table := schemas.NewEmptyTable()
 		var name, engine string
 		var autoIncr, comment *string
@@ -566,6 +572,9 @@ func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName
 
 	indexes := make(map[string]*schemas.Index, 0)
 	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		var indexType int
 		var indexName, colName, nonUnique string
 		err = rows.Scan(&indexName, &nonUnique, &colName)

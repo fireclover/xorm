@@ -8,11 +8,16 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"xorm.io/xorm/internal/utils"
 )
 
 // String2Time converts a string to time with original location
 func String2Time(s string, originalLocation *time.Location, convertedLocation *time.Location) (*time.Time, error) {
 	if len(s) == 19 {
+		if s == utils.ZeroTime0 || s == utils.ZeroTime1 {
+			return &time.Time{}, nil
+		}
 		dt, err := time.ParseInLocation("2006-01-02 15:04:05", s, originalLocation)
 		if err != nil {
 			return nil, err
