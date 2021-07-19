@@ -169,7 +169,10 @@ func (db *sqlite3) Version(ctx context.Context, queryer core.Queryer) (*schemas.
 
 	var version string
 	if !rows.Next() {
-		return nil, errors.New("Unknow version")
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
+		return nil, errors.New("unknow version")
 	}
 
 	if err := rows.Scan(&version); err != nil {
@@ -416,13 +419,13 @@ func (db *sqlite3) GetColumns(queryer core.Queryer, ctx context.Context, tableNa
 
 	var name string
 	if rows.Next() {
-		if rows.Err() != nil {
-			return nil, nil, rows.Err()
-		}
 		err = rows.Scan(&name)
 		if err != nil {
 			return nil, nil, err
 		}
+	}
+	if rows.Err() != nil {
+		return nil, nil, rows.Err()
 	}
 
 	if name == "" {
@@ -485,6 +488,9 @@ func (db *sqlite3) GetTables(queryer core.Queryer, ctx context.Context) ([]*sche
 		}
 		tables = append(tables, table)
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	return tables, nil
 }
 
@@ -500,9 +506,6 @@ func (db *sqlite3) GetIndexes(queryer core.Queryer, ctx context.Context, tableNa
 
 	indexes := make(map[string]*schemas.Index)
 	for rows.Next() {
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
 		var tmpSQL sql.NullString
 		err = rows.Scan(&tmpSQL)
 		if err != nil {
@@ -546,6 +549,9 @@ func (db *sqlite3) GetIndexes(queryer core.Queryer, ctx context.Context, tableNa
 		}
 		index.IsRegular = isRegular
 		indexes[index.Name] = index
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 
 	return indexes, nil

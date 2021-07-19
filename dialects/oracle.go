@@ -525,6 +525,9 @@ func (db *oracle) Version(ctx context.Context, queryer core.Queryer) (*schemas.V
 
 	var version string
 	if !rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		return nil, errors.New("unknow version")
 	}
 
@@ -677,9 +680,6 @@ func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 	cols := make(map[string]*schemas.Column)
 	colSeq := make([]string, 0)
 	for rows.Next() {
-		if rows.Err() != nil {
-			return nil, nil, rows.Err()
-		}
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
@@ -759,6 +759,9 @@ func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		cols[col.Name] = col
 		colSeq = append(colSeq, col.Name)
 	}
+	if rows.Err() != nil {
+		return nil, nil, rows.Err()
+	}
 
 	return colSeq, cols, nil
 }
@@ -775,9 +778,6 @@ func (db *oracle) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
 		table := schemas.NewEmptyTable()
 		err = rows.Scan(&table.Name)
 		if err != nil {
@@ -785,6 +785,9 @@ func (db *oracle) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 		}
 
 		tables = append(tables, table)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return tables, nil
 }
@@ -800,11 +803,8 @@ func (db *oracle) GetIndexes(queryer core.Queryer, ctx context.Context, tableNam
 	}
 	defer rows.Close()
 
-	indexes := make(map[string]*schemas.Index, 0)
+	indexes := make(map[string]*schemas.Index)
 	for rows.Next() {
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
 		var indexType int
 		var indexName, colName, uniqueness string
 
@@ -837,6 +837,9 @@ func (db *oracle) GetIndexes(queryer core.Queryer, ctx context.Context, tableNam
 			indexes[indexName] = index
 		}
 		index.AddColumn(colName)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return indexes, nil
 }

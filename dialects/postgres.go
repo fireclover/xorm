@@ -810,6 +810,9 @@ func (db *postgres) Version(ctx context.Context, queryer core.Queryer) (*schemas
 
 	var version string
 	if !rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 		return nil, errors.New("unknow version")
 	}
 
@@ -1062,7 +1065,10 @@ func (db *postgres) IsColumnExist(queryer core.Queryer, ctx context.Context, tab
 	}
 	defer rows.Close()
 
-	return rows.Next(), nil
+	if rows.Next() {
+		return true, nil
+	}
+	return false, rows.Err()
 }
 
 func (db *postgres) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
@@ -1098,9 +1104,6 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 	colSeq := make([]string, 0)
 
 	for rows.Next() {
-		if rows.Err() != nil {
-			return nil, nil, rows.Err()
-		}
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
@@ -1216,6 +1219,9 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 		cols[col.Name] = col
 		colSeq = append(colSeq, col.Name)
 	}
+	if rows.Err() != nil {
+		return nil, nil, rows.Err()
+	}
 
 	return colSeq, cols, nil
 }
@@ -1237,9 +1243,6 @@ func (db *postgres) GetTables(queryer core.Queryer, ctx context.Context) ([]*sch
 
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
 		table := schemas.NewEmptyTable()
 		var name string
 		err = rows.Scan(&name)
@@ -1248,6 +1251,9 @@ func (db *postgres) GetTables(queryer core.Queryer, ctx context.Context) ([]*sch
 		}
 		table.Name = name
 		tables = append(tables, table)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return tables, nil
 }
@@ -1279,9 +1285,6 @@ func (db *postgres) GetIndexes(queryer core.Queryer, ctx context.Context, tableN
 
 	indexes := make(map[string]*schemas.Index)
 	for rows.Next() {
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
 		var indexType int
 		var indexName, indexdef string
 		var colNames []string
@@ -1321,6 +1324,9 @@ func (db *postgres) GetIndexes(queryer core.Queryer, ctx context.Context, tableN
 		}
 		index.IsRegular = isRegular
 		indexes[index.Name] = index
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return indexes, nil
 }
@@ -1459,15 +1465,15 @@ func QueryDefaultPostgresSchema(ctx context.Context, queryer core.Queryer) (stri
 	}
 	defer rows.Close()
 	if rows.Next() {
-		if rows.Err() != nil {
-			return "", rows.Err()
-		}
 		var defaultSchema string
 		if err = rows.Scan(&defaultSchema); err != nil {
 			return "", err
 		}
 		parts := strings.Split(defaultSchema, ",")
 		return strings.TrimSpace(parts[len(parts)-1]), nil
+	}
+	if rows.Err() != nil {
+		return "", rows.Err()
 	}
 
 	return "", errors.New("no default schema")

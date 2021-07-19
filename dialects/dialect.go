@@ -118,12 +118,9 @@ func (db *Base) HasRecords(queryer core.Queryer, ctx context.Context, query stri
 	defer rows.Close()
 
 	if rows.Next() {
-		if rows.Err() != nil {
-			return true, rows.Err()
-		}
 		return true, nil
 	}
-	return false, nil
+	return false, rows.Err()
 }
 
 // IsColumnExist returns true if the column of the table exist

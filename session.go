@@ -391,9 +391,6 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sq
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
 	sliceValueSetFunc func(*reflect.Value, schemas.PK) error) error {
 	for rows.Next() {
-		if rows.Err() != nil {
-			return rows.Err()
-		}
 		var newValue = newElemFunc(fields)
 		bean := newValue.Interface()
 		dataStruct := newValue.Elem()
@@ -415,7 +412,7 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sq
 			bean:    bean,
 		})
 	}
-	return nil
+	return rows.Err()
 }
 
 func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql.ColumnType, bean interface{}) ([]interface{}, error) {

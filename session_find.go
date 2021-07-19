@@ -255,9 +255,6 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 	}
 
 	for rows.Next() {
-		if rows.Err() != nil {
-			return rows.Err()
-		}
 		var newValue = newElemFunc(fields)
 		bean := newValue.Interface()
 
@@ -278,7 +275,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 			return err
 		}
 	}
-	return nil
+	return rows.Err()
 }
 
 func convertPKToValue(table *schemas.Table, dst interface{}, pk schemas.PK) error {
@@ -325,9 +322,6 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 		var i int
 		ids = make([]schemas.PK, 0)
 		for rows.Next() {
-			if rows.Err() != nil {
-				return rows.Err()
-			}
 			i++
 			if i > 500 {
 				session.engine.logger.Debugf("[cacheFind] ids length > 500, no cache")
@@ -347,6 +341,9 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 			}
 
 			ids = append(ids, pk)
+		}
+		if rows.Err() != nil {
+			return rows.Err()
 		}
 
 		session.engine.logger.Debugf("[cache] cache sql: %v, %v, %v, %v, %v", ids, tableName, sqlStr, newsql, args)

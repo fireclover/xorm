@@ -159,10 +159,7 @@ func (session *Session) nocacheGet(beanKind reflect.Kind, table *schemas.Table, 
 	defer rows.Close()
 
 	if !rows.Next() {
-		if rows.Err() != nil {
-			return false, rows.Err()
-		}
-		return false, nil
+		return false, rows.Err()
 	}
 
 	// WARN: Alougth rows return true, but we may also return error.
@@ -313,14 +310,14 @@ func (session *Session) cacheGet(bean interface{}, sqlStr string, args ...interf
 		defer rows.Close()
 
 		if rows.Next() {
-			if rows.Err() != nil {
-				return true, rows.Err()
-			}
 			err = rows.ScanSlice(&res)
 			if err != nil {
 				return true, err
 			}
 		} else {
+			if rows.Err() != nil {
+				return false, rows.Err()
+			}
 			return false, ErrCacheFailed
 		}
 

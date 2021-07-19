@@ -286,14 +286,14 @@ func rows2maps(rows *core.Rows) (resultsSlice []map[string][]byte, err error) {
 		return nil, err
 	}
 	for rows.Next() {
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
 		result, err := row2mapBytes(rows, types, fields)
 		if err != nil {
 			return nil, err
 		}
 		resultsSlice = append(resultsSlice, result)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 
 	return resultsSlice, nil
