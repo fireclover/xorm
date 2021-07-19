@@ -1313,7 +1313,6 @@ func TestUpdateIgnoreOnlyFromDBFields(t *testing.T) {
 		assert.EqualValues(t, true, has)
 		assert.EqualValues(t, "", record.OnlyFromDBField)
 		return &record
-
 	}
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(TestOnlyFromDBField))

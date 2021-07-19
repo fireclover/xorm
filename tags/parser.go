@@ -124,6 +124,7 @@ func addIndex(indexName string, table *schemas.Table, col *schemas.Column, index
 	}
 }
 
+// ErrIgnoreField represents an error to ignore field
 var ErrIgnoreField = errors.New("field will be ignored")
 
 func (parser *Parser) parseFieldWithNoTag(fieldIndex int, field reflect.StructField, fieldValue reflect.Value) (*schemas.Column, error) {

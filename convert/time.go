@@ -45,5 +45,5 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 			return &tm, nil
 		}
 	}
-	return nil, fmt.Errorf("unsupported convertion from %s to time", s)
+	return nil, fmt.Errorf("unsupported conversion from %s to time", s)
 }

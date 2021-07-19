@@ -76,9 +76,7 @@ func TestParsePgx(t *testing.T) {
 		} else if err == nil && !reflect.DeepEqual(test.expected, uri.DBName) {
 			t.Errorf("%q got: %#v want: %#v", test.in, uri.DBName, test.expected)
 		}
-
 	}
-
 }
 
 func TestGetIndexColName(t *testing.T) {

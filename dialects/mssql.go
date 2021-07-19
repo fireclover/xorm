@@ -667,8 +667,7 @@ func (p *odbcDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 		for _, c := range kv {
 			vv := strings.Split(strings.TrimSpace(c), "=")
 			if len(vv) == 2 {
-				switch strings.ToLower(vv[0]) {
-				case "database":
+				if strings.ToLower(vv[0]) == "database" {
 					dbName = vv[1]
 				}
 			}

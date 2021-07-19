@@ -325,7 +325,6 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 					copy(afterClosures, session.afterClosures)
 					session.afterInsertBeans[bean] = &afterClosures
 				}
-
 			} else {
 				if _, ok := interface{}(bean).(AfterInsertProcessor); ok {
 					session.afterInsertBeans[bean] = nil

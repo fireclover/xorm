@@ -598,9 +598,3 @@ func (p *sqlite3Driver) GenScanResult(colType string) (interface{}, error) {
 		return &r, nil
 	}
 }
-
-func (b *sqlite3Driver) Features() DriverFeatures {
-	return DriverFeatures{
-		SupportNullable: false,
-	}
-}

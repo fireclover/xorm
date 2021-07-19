@@ -257,9 +257,6 @@ func (db *mysql) SetParams(params map[string]string) {
 			fallthrough
 		case "COMPRESSED":
 			db.rowFormat = t
-			break
-		default:
-			break
 		}
 	}
 }
@@ -699,14 +696,12 @@ func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 				for _, kv := range kvs {
 					splits := strings.Split(kv, "=")
 					if len(splits) == 2 {
-						switch splits[0] {
-						case "charset":
+						if splits[0] == "charset" {
 							uri.Charset = splits[1]
 						}
 					}
 				}
 			}
-
 		}
 	}
 	return uri, nil

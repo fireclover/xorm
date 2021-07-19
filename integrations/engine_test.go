@@ -172,7 +172,6 @@ func TestDumpTables(t *testing.T) {
 		name := fmt.Sprintf("dump_%v-table.sql", tp)
 		t.Run(name, func(t *testing.T) {
 			assert.NoError(t, testEngine.(*xorm.Engine).DumpTablesToFile([]*schemas.Table{tb}, name, tp))
-
 		})
 	}
 

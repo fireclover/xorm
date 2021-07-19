@@ -58,7 +58,6 @@ func TestGetColumnIdx(t *testing.T) {
 func BenchmarkGetColumnWithToLower(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, test := range testsGetColumn {
-
 			if _, ok := table.columnsMap[strings.ToLower(test.name)]; !ok {
 				b.Errorf("Column not found:%s", test.name)
 			}
@@ -69,7 +68,6 @@ func BenchmarkGetColumnWithToLower(b *testing.B) {
 func BenchmarkGetColumnIdxWithToLower(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, test := range testsGetColumn {
-
 			if c, ok := table.columnsMap[strings.ToLower(test.name)]; ok {
 				if test.idx < len(c) {
 					continue

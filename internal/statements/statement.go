@@ -781,7 +781,6 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 						return pkField.Interface(), true, nil
 					}
 					return nil, false, nil
-
 				}
 				return nil, false, fmt.Errorf("not supported %v as %v", fieldValue.Interface(), table.PrimaryKeys)
 			}
@@ -811,16 +810,14 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 					return fieldValue.Bytes(), true, nil
 				}
 				return nil, false, nil
-			} else {
-				bytes, err = json.DefaultJSONHandler.Marshal(fieldValue.Interface())
-				if err != nil {
-					return nil, false, err
-				}
-				return bytes, true, nil
 			}
-		} else {
-			return nil, false, nil
+			bytes, err = json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+			if err != nil {
+				return nil, false, err
+			}
+			return bytes, true, nil
 		}
+		return nil, false, nil
 	}
 	return fieldValue.Interface(), true, nil
 }

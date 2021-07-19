@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Interface2Interface converts interface of pointer as interface of value
 func Interface2Interface(userLocation *time.Location, v interface{}) (interface{}, error) {
 	if v == nil {
 		return nil, nil

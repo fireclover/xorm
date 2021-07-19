@@ -65,6 +65,7 @@ func (s *SQLType) IsTime() bool {
 	return s.IsType(TIME_TYPE)
 }
 
+// IsBool returns true if column is a boolean type
 func (s *SQLType) IsBool() bool {
 	return s.IsType(BOOL_TYPE)
 }

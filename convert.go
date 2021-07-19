@@ -373,7 +373,6 @@ func asTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.
 	case *sql.NullInt64:
 		tm := time.Unix(t.Int64, 0).In(uiLoc)
 		return &tm, nil
-
 	}
 	return nil, fmt.Errorf("unsupported value %#v as time", src)
 }
@@ -751,7 +750,6 @@ func asKind(vv reflect.Value, tp reflect.Type) (interface{}, error) {
 			}
 			return v, nil
 		}
-
 	}
 	return nil, fmt.Errorf("unsupported primary key type: %v, %v", tp, vv)
 }
@@ -946,8 +944,10 @@ var (
 	_ sql.Scanner = &EmptyScanner{}
 )
 
+// EmptyScanner represents an empty scanner which will ignore the scan
 type EmptyScanner struct{}
 
+// Scan implements sql.Scanner
 func (EmptyScanner) Scan(value interface{}) error {
 	return nil
 }
