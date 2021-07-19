@@ -818,8 +818,9 @@ func TestGetBigFloat(t *testing.T) {
 	}
 
 	type GetBigFloat2 struct {
-		Id    int64
-		Money *big.Float `xorm:"decimal(22,2)"`
+		Id     int64
+		Money  *big.Float `xorm:"decimal(22,2)"`
+		Money2 big.Float  `xorm:"decimal(22,2)"`
 	}
 
 	assert.NoError(t, PrepareEngine())
@@ -827,7 +828,8 @@ func TestGetBigFloat(t *testing.T) {
 
 	{
 		var gf2 = GetBigFloat2{
-			Money: big.NewFloat(9999999.99),
+			Money:  big.NewFloat(9999999.99),
+			Money2: *big.NewFloat(99.99),
 		}
 		_, err := testEngine.Insert(&gf2)
 		assert.NoError(t, err)
@@ -845,12 +847,14 @@ func TestGetBigFloat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, has)
 		assert.True(t, gf3.Money.String() == gf2.Money.String(), "%v != %v", gf3.Money.String(), gf2.Money.String())
+		assert.True(t, gf3.Money2.String() == gf2.Money2.String(), "%v != %v", gf3.Money2.String(), gf2.Money2.String())
 
 		var gfs []GetBigFloat2
 		err = testEngine.Find(&gfs)
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, len(gfs))
 		assert.True(t, gfs[0].Money.String() == gf2.Money.String(), "%v != %v", gfs[0].Money.String(), gf2.Money.String())
+		assert.True(t, gfs[0].Money2.String() == gf2.Money2.String(), "%v != %v", gfs[0].Money2.String(), gf2.Money2.String())
 	}
 }
 
