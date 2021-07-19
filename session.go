@@ -364,25 +364,24 @@ func (session *Session) doPrepare(db *core.DB, sqlStr string) (stmt *core.Stmt, 
 	return
 }
 
-func (session *Session) getField(dataStruct *reflect.Value, key string, table *schemas.Table, idx int) (*reflect.Value, error) {
-	var col *schemas.Column
-	if col = table.GetColumnIdx(key, idx); col == nil {
-		return nil, ErrFieldIsNotExist{key, table.Name}
+func (session *Session) getField(dataStruct *reflect.Value, table *schemas.Table, colName string, idx int) (*schemas.Column, *reflect.Value, error) {
+	var col = table.GetColumnIdx(colName, idx)
+	if col == nil {
+		return nil, nil, ErrFieldIsNotExist{colName, table.Name}
 	}
 
 	fieldValue, err := col.ValueOfV(dataStruct)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if fieldValue == nil {
-		return nil, ErrFieldIsNotValid{key, table.Name}
+		return nil, nil, ErrFieldIsNotValid{colName, table.Name}
 	}
-
 	if !fieldValue.IsValid() || !fieldValue.CanSet() {
-		return nil, ErrFieldIsNotValid{key, table.Name}
+		return nil, nil, ErrFieldIsNotValid{colName, table.Name}
 	}
 
-	return fieldValue, nil
+	return col, fieldValue, nil
 }
 
 // Cell cell is a result of one column field
@@ -628,9 +627,9 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 
 	var tempMap = make(map[string]int)
 	var pk schemas.PK
-	for ii, key := range fields {
+	for i, colName := range fields {
 		var idx int
-		var lKey = strings.ToLower(key)
+		var lKey = strings.ToLower(colName)
 		var ok bool
 
 		if idx, ok = tempMap[lKey]; !ok {
@@ -638,13 +637,9 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 		} else {
 			idx = idx + 1
 		}
-
 		tempMap[lKey] = idx
-		col := table.GetColumnIdx(key, idx)
 
-		var scanResult = scanResults[ii]
-
-		fieldValue, err := session.getField(dataStruct, key, table, idx)
+		col, fieldValue, err := session.getField(dataStruct, table, colName, idx)
 		if err != nil {
 			if _, ok := err.(ErrFieldIsNotValid); !ok {
 				session.engine.logger.Warnf("%v", err)
@@ -655,11 +650,11 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 			continue
 		}
 
-		if err := session.convertBeanField(col, fieldValue, scanResult, table); err != nil {
+		if err := session.convertBeanField(col, fieldValue, scanResults[i], table); err != nil {
 			return nil, err
 		}
 		if col.IsPrimaryKey {
-			pk = append(pk, scanResult)
+			pk = append(pk, scanResults[i])
 		}
 	}
 	return pk, nil
