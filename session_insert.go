@@ -362,14 +362,13 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 		var id int64
 		if !rows.Next() {
 			if rows.Err() != nil {
-				return 0, err
+				return 0, rows.Err()
 			}
 			return 0, errors.New("insert successfully but not returned id")
 		}
 		if err := rows.Scan(&id); err != nil {
 			return 1, err
 		}
-
 		aiValue, err := table.AutoIncrColumn().ValueOf(bean)
 		if err != nil {
 			session.engine.logger.Errorf("%v", err)
