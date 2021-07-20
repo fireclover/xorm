@@ -202,7 +202,7 @@ func TestInsertDefault2(t *testing.T) {
 		Id        int64
 		Name      string
 		Url       string    `xorm:"text"`
-		CheckTime time.Time `xorm:"not null default '2000-01-01 00:00:00' TIMESTAMP"`
+		CheckTime time.Time `xorm:"not null default '2000-01-01 00:00:00'"`
 	}
 
 	di := new(DefaultInsert2)
