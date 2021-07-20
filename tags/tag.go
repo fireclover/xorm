@@ -101,11 +101,12 @@ type Handler func(ctx *Context) error
 var (
 	// defaultTagHandlers enumerates all the default tag handler
 	defaultTagHandlers = map[string]Handler{
+		"-":        IgnoreHandler,
 		"<-":       OnlyFromDBTagHandler,
 		"->":       OnlyToDBTagHandler,
 		"PK":       PKTagHandler,
 		"NULL":     NULLTagHandler,
-		"NOT":      IgnoreTagHandler,
+		"NOT":      NotTagHandler,
 		"AUTOINCR": AutoIncrTagHandler,
 		"DEFAULT":  DefaultTagHandler,
 		"CREATED":  CreatedTagHandler,
@@ -130,9 +131,14 @@ func init() {
 	}
 }
 
-// IgnoreTagHandler describes ignored tag handler
-func IgnoreTagHandler(ctx *Context) error {
+// NotTagHandler describes ignored tag handler
+func NotTagHandler(ctx *Context) error {
 	return nil
+}
+
+// IgnoreHandler represetns the field should be ignored
+func IgnoreHandler(ctx *Context) error {
+	return ErrIgnoreField
 }
 
 // OnlyFromDBTagHandler describes mapping direction tag handler

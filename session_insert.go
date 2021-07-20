@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -334,13 +333,18 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 		cleanupProcessorsClosures(&session.afterClosures) // cleanup after used
 	}
 
-	// for postgres, many of them didn't implement lastInsertId, so we should
-	// implemented it ourself.
-	if session.engine.dialect.URI().DBType == schemas.ORACLE && len(table.AutoIncrement) > 0 {
-		res, err := session.queryBytes("select seq_atable.currval from dual", args...)
+	// if there is auto increment column and driver don't support return it
+	if len(table.AutoIncrement) > 0 && !session.engine.driver.Features().SupportReturnInsertedID {
+		var sql = sqlStr
+		if session.engine.dialect.URI().DBType == schemas.ORACLE {
+			sql = "select seq_atable.currval from dual"
+		}
+
+		rows, err := session.queryRows(sql, args...)
 		if err != nil {
 			return 0, err
 		}
+		defer rows.Close()
 
 		defer handleAfterInsertProcessorFunc(bean)
 
@@ -355,53 +359,14 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 			}
 		}
 
-		if len(res) < 1 {
-			return 0, errors.New("insert no error but not returned id")
-		}
-
-		idByte := res[0][table.AutoIncrement]
-		id, err := strconv.ParseInt(string(idByte), 10, 64)
-		if err != nil || id <= 0 {
-			return 1, err
-		}
-
-		aiValue, err := table.AutoIncrColumn().ValueOf(bean)
-		if err != nil {
-			session.engine.logger.Errorf("%v", err)
-		}
-
-		if aiValue == nil || !aiValue.IsValid() || !aiValue.CanSet() {
-			return 1, nil
-		}
-
-		return 1, convertAssignV(aiValue.Addr(), id)
-	} else if len(table.AutoIncrement) > 0 && (session.engine.dialect.URI().DBType == schemas.POSTGRES ||
-		session.engine.dialect.URI().DBType == schemas.MSSQL) {
-		res, err := session.queryBytes(sqlStr, args...)
-
-		if err != nil {
-			return 0, err
-		}
-		defer handleAfterInsertProcessorFunc(bean)
-
-		session.cacheInsert(tableName)
-
-		if table.Version != "" && session.statement.CheckVersion {
-			verValue, err := table.VersionColumn().ValueOf(bean)
-			if err != nil {
-				session.engine.logger.Errorf("%v", err)
-			} else if verValue.IsValid() && verValue.CanSet() {
-				session.incrVersionFieldValue(verValue)
+		var id int64
+		if !rows.Next() {
+			if rows.Err() != nil {
+				return 0, err
 			}
-		}
-
-		if len(res) < 1 {
 			return 0, errors.New("insert successfully but not returned id")
 		}
-
-		idByte := res[0][table.AutoIncrement]
-		id, err := strconv.ParseInt(string(idByte), 10, 64)
-		if err != nil || id <= 0 {
+		if err := rows.Scan(&id); err != nil {
 			return 1, err
 		}
 

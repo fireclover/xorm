@@ -653,6 +653,12 @@ type odbcDriver struct {
 	baseDriver
 }
 
+func (p *odbcDriver) Features() *DriverFeatures {
+	return &DriverFeatures{
+		SupportReturnInsertedID: false,
+	}
+}
+
 func (p *odbcDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	var dbName string
 

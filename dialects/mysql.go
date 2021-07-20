@@ -674,6 +674,12 @@ type mysqlDriver struct {
 	baseDriver
 }
 
+func (p *mysqlDriver) Features() *DriverFeatures {
+	return &DriverFeatures{
+		SupportReturnInsertedID: true,
+	}
+}
+
 func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	dsnPattern := regexp.MustCompile(
 		`^(?:(?P<user>.*?)(?::(?P<passwd>.*))?@)?` + // [user[:password]@]

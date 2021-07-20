@@ -1387,6 +1387,12 @@ func parseOpts(name string, o values) error {
 	return nil
 }
 
+func (p *pqDriver) Features() *DriverFeatures {
+	return &DriverFeatures{
+		SupportReturnInsertedID: false,
+	}
+}
+
 func (p *pqDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	db := &URI{DBType: schemas.POSTGRES}
 	var err error

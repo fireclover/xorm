@@ -18,9 +18,15 @@ type ScanContext struct {
 	UserLocation *time.Location
 }
 
+// DriverFeatures represents driver feature
+type DriverFeatures struct {
+	SupportReturnInsertedID bool
+}
+
 // Driver represents a database driver
 type Driver interface {
 	Parse(string, string) (*URI, error)
+	Features() *DriverFeatures
 	GenScanResult(string) (interface{}, error) // according given column type generating a suitable scan interface
 	Scan(*ScanContext, *core.Rows, []*sql.ColumnType, ...interface{}) error
 }

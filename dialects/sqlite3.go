@@ -565,6 +565,12 @@ type sqlite3Driver struct {
 	baseDriver
 }
 
+func (p *sqlite3Driver) Features() *DriverFeatures {
+	return &DriverFeatures{
+		SupportReturnInsertedID: true,
+	}
+}
+
 func (p *sqlite3Driver) Parse(driverName, dataSourceName string) (*URI, error) {
 	if strings.Contains(dataSourceName, "?") {
 		dataSourceName = dataSourceName[:strings.Index(dataSourceName, "?")]

@@ -242,6 +242,10 @@ func (parser *Parser) parseFieldWithTags(table *schemas.Table, fieldIndex int, f
 }
 
 func (parser *Parser) parseField(table *schemas.Table, fieldIndex int, field reflect.StructField, fieldValue reflect.Value) (*schemas.Column, error) {
+	if isNotTitle(field.Name) {
+		return nil, ErrIgnoreField
+	}
+
 	var (
 		tag       = field.Tag
 		ormTagStr = strings.TrimSpace(tag.Get(parser.identifier))
@@ -282,12 +286,7 @@ func (parser *Parser) Parse(v reflect.Value) (*schemas.Table, error) {
 	table.Name = names.GetTableName(parser.tableMapper, v)
 
 	for i := 0; i < t.NumField(); i++ {
-		var field = t.Field(i)
-		if isNotTitle(field.Name) {
-			continue
-		}
-
-		col, err := parser.parseField(table, i, field, v.Field(i))
+		col, err := parser.parseField(table, i, t.Field(i), v.Field(i))
 		if err == ErrIgnoreField {
 			continue
 		} else if err != nil {

@@ -854,6 +854,12 @@ type godrorDriver struct {
 	baseDriver
 }
 
+func (g *godrorDriver) Features() *DriverFeatures {
+	return &DriverFeatures{
+		SupportReturnInsertedID: false,
+	}
+}
+
 func (g *godrorDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	db := &URI{DBType: schemas.ORACLE}
 	dsnPattern := regexp.MustCompile(
