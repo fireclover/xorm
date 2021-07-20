@@ -5,6 +5,7 @@
 package schemas
 
 import (
+	"math/big"
 	"reflect"
 	"sort"
 	"strings"
@@ -38,6 +39,7 @@ const (
 	TIME_TYPE
 	NUMERIC_TYPE
 	ARRAY_TYPE
+	BOOL_TYPE
 )
 
 // IsType reutrns ture if the column type is the same as the parameter
@@ -61,6 +63,11 @@ func (s *SQLType) IsBlob() bool {
 // IsTime returns true if column is a time type
 func (s *SQLType) IsTime() bool {
 	return s.IsType(TIME_TYPE)
+}
+
+// IsBool returns true if column is a boolean type
+func (s *SQLType) IsBool() bool {
+	return s.IsType(BOOL_TYPE)
 }
 
 // IsNumeric returns true if column is a numeric type
@@ -208,7 +215,8 @@ var (
 		Bytea:            BLOB_TYPE,
 		UniqueIdentifier: BLOB_TYPE,
 
-		Bool: NUMERIC_TYPE,
+		Bool:    BOOL_TYPE,
+		Boolean: BOOL_TYPE,
 
 		Serial:    NUMERIC_TYPE,
 		BigSerial: NUMERIC_TYPE,
@@ -240,6 +248,7 @@ var (
 	intDefault        int
 	uintDefault       uint
 	timeDefault       time.Time
+	bigFloatDefault   big.Float
 )
 
 // enumerates all types
@@ -267,7 +276,8 @@ var (
 	ByteType   = reflect.TypeOf(byteDefault)
 	BytesType  = reflect.SliceOf(ByteType)
 
-	TimeType = reflect.TypeOf(timeDefault)
+	TimeType     = reflect.TypeOf(timeDefault)
+	BigFloatType = reflect.TypeOf(bigFloatDefault)
 )
 
 // enumerates all types
@@ -364,4 +374,10 @@ func SQLType2Type(st SQLType) reflect.Type {
 	default:
 		return reflect.TypeOf("")
 	}
+}
+
+// SQLTypeName returns sql type name
+func SQLTypeName(tp string) string {
+	fields := strings.Split(tp, "(")
+	return fields[0]
 }

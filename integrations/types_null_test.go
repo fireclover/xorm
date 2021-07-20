@@ -7,7 +7,6 @@ package integrations
 import (
 	"database/sql"
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -42,15 +41,22 @@ func (m *CustomStruct) Scan(value interface{}) error {
 		return nil
 	}
 
-	if s, ok := value.([]byte); ok {
-		seps := strings.Split(string(s), "/")
+	var s string
+	switch t := value.(type) {
+	case string:
+		s = t
+	case []byte:
+		s = string(t)
+	}
+	if len(s) > 0 {
+		seps := strings.Split(s, "/")
 		m.Year, _ = strconv.Atoi(seps[0])
 		m.Month, _ = strconv.Atoi(seps[1])
 		m.Day, _ = strconv.Atoi(seps[2])
 		return nil
 	}
 
-	return errors.New("scan data not fit []byte")
+	return fmt.Errorf("scan data %#v not fit []byte", value)
 }
 
 func (m CustomStruct) Value() (driver.Value, error) {

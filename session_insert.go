@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
@@ -324,7 +325,6 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 					copy(afterClosures, session.afterClosures)
 					session.afterInsertBeans[bean] = &afterClosures
 				}
-
 			} else {
 				if _, ok := interface{}(bean).(AfterInsertProcessor); ok {
 					session.afterInsertBeans[bean] = nil
@@ -414,7 +414,7 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 			return 1, nil
 		}
 
-		return 1, convertAssignV(aiValue.Addr(), id)
+		return 1, convertAssignV(*aiValue, id)
 	}
 
 	res, err := session.exec(sqlStr, args...)
@@ -454,7 +454,7 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 		return res.RowsAffected()
 	}
 
-	if err := convertAssignV(aiValue.Addr(), id); err != nil {
+	if err := convertAssignV(*aiValue, id); err != nil {
 		return 0, err
 	}
 
@@ -497,6 +497,16 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 		}
 
 		if col.IsDeleted {
+			colNames = append(colNames, col.Name)
+			if !col.Nullable {
+				if col.SQLType.IsNumeric() {
+					args = append(args, 0)
+				} else {
+					args = append(args, time.Time{}.Format("2006-01-02 15:04:05"))
+				}
+			} else {
+				args = append(args, nil)
+			}
 			continue
 		}
 

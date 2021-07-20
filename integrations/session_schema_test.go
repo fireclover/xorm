@@ -286,6 +286,19 @@ func TestSyncTable3(t *testing.T) {
 	}
 }
 
+func TestSyncTable4(t *testing.T) {
+	type SyncTable6 struct {
+		Id  int64
+		Qty float64 `xorm:"numeric(36,2)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+
+	assert.NoError(t, testEngine.Sync2(new(SyncTable6)))
+
+	assert.NoError(t, testEngine.Sync2(new(SyncTable6)))
+}
+
 func TestIsTableExist(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 

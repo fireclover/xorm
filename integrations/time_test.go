@@ -53,9 +53,18 @@ func TestTimeUserTimeDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type TimeUser2 struct {
@@ -118,9 +127,18 @@ func TestTimeUserCreatedDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type UserCreated2 struct {
@@ -204,9 +222,18 @@ func TestTimeUserUpdatedDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type UserUpdated2 struct {
@@ -311,9 +338,18 @@ func TestTimeUserDeletedDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type UserDeleted2 struct {
@@ -435,9 +471,18 @@ func TestCustomTimeUserDeletedDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type UserDeleted4 struct {

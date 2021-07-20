@@ -169,7 +169,10 @@ func (db *sqlite3) Version(ctx context.Context, queryer core.Queryer) (*schemas.
 
 	var version string
 	if !rows.Next() {
-		return nil, errors.New("Unknow version")
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
+		return nil, errors.New("unknow version")
 	}
 
 	if err := rows.Scan(&version); err != nil {
@@ -233,8 +236,19 @@ func (db *sqlite3) SQLType(c *schemas.Column) string {
 	}
 }
 
-func (db *sqlite3) FormatBytes(bs []byte) string {
-	return fmt.Sprintf("X'%x'", bs)
+func (db *sqlite3) ColumnTypeKind(t string) int {
+	switch strings.ToUpper(t) {
+	case "DATETIME":
+		return schemas.TIME_TYPE
+	case "TEXT":
+		return schemas.TEXT_TYPE
+	case "INTEGER", "REAL", "NUMERIC", "DECIMAL":
+		return schemas.NUMERIC_TYPE
+	case "BLOB":
+		return schemas.BLOB_TYPE
+	default:
+		return schemas.UNKNOW_TYPE
+	}
 }
 
 func (db *sqlite3) IsReserved(name string) bool {
@@ -404,12 +418,14 @@ func (db *sqlite3) GetColumns(queryer core.Queryer, ctx context.Context, tableNa
 	defer rows.Close()
 
 	var name string
-	for rows.Next() {
+	if rows.Next() {
 		err = rows.Scan(&name)
 		if err != nil {
 			return nil, nil, err
 		}
-		break
+	}
+	if rows.Err() != nil {
+		return nil, nil, rows.Err()
 	}
 
 	if name == "" {
@@ -472,6 +488,9 @@ func (db *sqlite3) GetTables(queryer core.Queryer, ctx context.Context) ([]*sche
 		}
 		tables = append(tables, table)
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	return tables, nil
 }
 
@@ -485,7 +504,7 @@ func (db *sqlite3) GetIndexes(queryer core.Queryer, ctx context.Context, tableNa
 	}
 	defer rows.Close()
 
-	indexes := make(map[string]*schemas.Index, 0)
+	indexes := make(map[string]*schemas.Index)
 	for rows.Next() {
 		var tmpSQL sql.NullString
 		err = rows.Scan(&tmpSQL)
@@ -531,6 +550,9 @@ func (db *sqlite3) GetIndexes(queryer core.Queryer, ctx context.Context, tableNa
 		index.IsRegular = isRegular
 		indexes[index.Name] = index
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 
 	return indexes, nil
 }
@@ -540,6 +562,7 @@ func (db *sqlite3) Filters() []Filter {
 }
 
 type sqlite3Driver struct {
+	baseDriver
 }
 
 func (p *sqlite3Driver) Parse(driverName, dataSourceName string) (*URI, error) {
@@ -548,4 +571,30 @@ func (p *sqlite3Driver) Parse(driverName, dataSourceName string) (*URI, error) {
 	}
 
 	return &URI{DBType: schemas.SQLITE, DBName: dataSourceName}, nil
+}
+
+func (p *sqlite3Driver) GenScanResult(colType string) (interface{}, error) {
+	switch colType {
+	case "TEXT":
+		var s sql.NullString
+		return &s, nil
+	case "INTEGER":
+		var s sql.NullInt64
+		return &s, nil
+	case "DATETIME":
+		var s sql.NullTime
+		return &s, nil
+	case "REAL":
+		var s sql.NullFloat64
+		return &s, nil
+	case "NUMERIC", "DECIMAL":
+		var s sql.NullString
+		return &s, nil
+	case "BLOB":
+		var s sql.RawBytes
+		return &s, nil
+	default:
+		var r sql.NullString
+		return &r, nil
+	}
 }

@@ -6,7 +6,6 @@ package xorm
 
 import (
 	"database/sql"
-	"reflect"
 
 	"xorm.io/xorm/core"
 )
@@ -69,58 +68,6 @@ func (session *Session) queryRows(sqlStr string, args ...interface{}) (*core.Row
 
 func (session *Session) queryRow(sqlStr string, args ...interface{}) *core.Row {
 	return core.NewRow(session.queryRows(sqlStr, args...))
-}
-
-func value2Bytes(rawValue *reflect.Value) ([]byte, error) {
-	str, err := value2String(rawValue)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-func row2map(rows *core.Rows, fields []string) (resultsMap map[string][]byte, err error) {
-	result := make(map[string][]byte)
-	scanResultContainers := make([]interface{}, len(fields))
-	for i := 0; i < len(fields); i++ {
-		var scanResultContainer interface{}
-		scanResultContainers[i] = &scanResultContainer
-	}
-	if err := rows.Scan(scanResultContainers...); err != nil {
-		return nil, err
-	}
-
-	for ii, key := range fields {
-		rawValue := reflect.Indirect(reflect.ValueOf(scanResultContainers[ii]))
-		//if row is null then ignore
-		if rawValue.Interface() == nil {
-			result[key] = []byte{}
-			continue
-		}
-
-		if data, err := value2Bytes(&rawValue); err == nil {
-			result[key] = data
-		} else {
-			return nil, err // !nashtsai! REVIEW, should return err or just error log?
-		}
-	}
-	return result, nil
-}
-
-func rows2maps(rows *core.Rows) (resultsSlice []map[string][]byte, err error) {
-	fields, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		result, err := row2map(rows, fields)
-		if err != nil {
-			return nil, err
-		}
-		resultsSlice = append(resultsSlice, result)
-	}
-
-	return resultsSlice, nil
 }
 
 func (session *Session) queryBytes(sqlStr string, args ...interface{}) ([]map[string][]byte, error) {

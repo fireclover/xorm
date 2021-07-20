@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/schemas"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -343,6 +345,29 @@ func TestGetSlice(t *testing.T) {
 	has, err := testEngine.Get(&users)
 	assert.False(t, has)
 	assert.Error(t, err)
+}
+
+func TestGetMap(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type UserinfoMap struct {
+		Uid   int `xorm:"pk autoincr"`
+		IsMan bool
+	}
+
+	assertSync(t, new(UserinfoMap))
+
+	tableName := testEngine.Quote(testEngine.TableName("userinfo_map", true))
+	_, err := testEngine.Exec(fmt.Sprintf("INSERT INTO %s (is_man) VALUES (NULL)", tableName))
+	assert.NoError(t, err)
+
+	var valuesString = make(map[string]string)
+	has, err := testEngine.Table("userinfo_map").Get(&valuesString)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, 2, len(valuesString))
+	assert.Equal(t, "1", valuesString["uid"])
+	assert.Equal(t, "", valuesString["is_man"])
 }
 
 func TestGetError(t *testing.T) {
@@ -765,4 +790,142 @@ func TestGetNil(t *testing.T) {
 	has, err := testEngine.Get(gn)
 	assert.True(t, errors.Is(err, xorm.ErrObjectIsNil))
 	assert.False(t, has)
+}
+
+func TestGetBigFloat(t *testing.T) {
+	type GetBigFloat struct {
+		Id    int64
+		Money *big.Float `xorm:"numeric(22,2)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetBigFloat))
+
+	{
+		var gf = GetBigFloat{
+			Money: big.NewFloat(999999.99),
+		}
+		_, err := testEngine.Insert(&gf)
+		assert.NoError(t, err)
+
+		var m big.Float
+		has, err := testEngine.Table("get_big_float").Cols("money").Where("id=?", gf.Id).Get(&m)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.True(t, m.String() == gf.Money.String(), "%v != %v", m.String(), gf.Money.String())
+		//fmt.Println(m.Cmp(gf.Money))
+		//assert.True(t, m.Cmp(gf.Money) == 0, "%v != %v", m.String(), gf.Money.String())
+	}
+
+	type GetBigFloat2 struct {
+		Id     int64
+		Money  *big.Float `xorm:"decimal(22,2)"`
+		Money2 big.Float  `xorm:"decimal(22,2)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetBigFloat2))
+
+	{
+		var gf2 = GetBigFloat2{
+			Money:  big.NewFloat(9999999.99),
+			Money2: *big.NewFloat(99.99),
+		}
+		_, err := testEngine.Insert(&gf2)
+		assert.NoError(t, err)
+
+		var m2 big.Float
+		has, err := testEngine.Table("get_big_float2").Cols("money").Where("id=?", gf2.Id).Get(&m2)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.True(t, m2.String() == gf2.Money.String(), "%v != %v", m2.String(), gf2.Money.String())
+		//fmt.Println(m.Cmp(gf.Money))
+		//assert.True(t, m.Cmp(gf.Money) == 0, "%v != %v", m.String(), gf.Money.String())
+
+		var gf3 GetBigFloat2
+		has, err = testEngine.ID(gf2.Id).Get(&gf3)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.True(t, gf3.Money.String() == gf2.Money.String(), "%v != %v", gf3.Money.String(), gf2.Money.String())
+		assert.True(t, gf3.Money2.String() == gf2.Money2.String(), "%v != %v", gf3.Money2.String(), gf2.Money2.String())
+
+		var gfs []GetBigFloat2
+		err = testEngine.Find(&gfs)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, len(gfs))
+		assert.True(t, gfs[0].Money.String() == gf2.Money.String(), "%v != %v", gfs[0].Money.String(), gf2.Money.String())
+		assert.True(t, gfs[0].Money2.String() == gf2.Money2.String(), "%v != %v", gfs[0].Money2.String(), gf2.Money2.String())
+	}
+}
+
+func TestGetDecimal(t *testing.T) {
+	type GetDecimal struct {
+		Id    int64
+		Money decimal.Decimal `xorm:"decimal(22,2)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetDecimal))
+
+	{
+		var gf = GetDecimal{
+			Money: decimal.NewFromFloat(999999.99),
+		}
+		_, err := testEngine.Insert(&gf)
+		assert.NoError(t, err)
+
+		var m decimal.Decimal
+		has, err := testEngine.Table("get_decimal").Cols("money").Where("id=?", gf.Id).Get(&m)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.True(t, m.String() == gf.Money.String(), "%v != %v", m.String(), gf.Money.String())
+		//fmt.Println(m.Cmp(gf.Money))
+		//assert.True(t, m.Cmp(gf.Money) == 0, "%v != %v", m.String(), gf.Money.String())
+	}
+
+	type GetDecimal2 struct {
+		Id    int64
+		Money *decimal.Decimal `xorm:"decimal(22,2)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetDecimal2))
+
+	{
+		v := decimal.NewFromFloat(999999.99)
+		var gf = GetDecimal2{
+			Money: &v,
+		}
+		_, err := testEngine.Insert(&gf)
+		assert.NoError(t, err)
+
+		var m decimal.Decimal
+		has, err := testEngine.Table("get_decimal2").Cols("money").Where("id=?", gf.Id).Get(&m)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.True(t, m.String() == gf.Money.String(), "%v != %v", m.String(), gf.Money.String())
+		//fmt.Println(m.Cmp(gf.Money))
+		//assert.True(t, m.Cmp(gf.Money) == 0, "%v != %v", m.String(), gf.Money.String())
+	}
+}
+func TestGetTime(t *testing.T) {
+	type GetTimeStruct struct {
+		Id         int64
+		CreateTime time.Time
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetTimeStruct))
+
+	var gts = GetTimeStruct{
+		CreateTime: time.Now().In(testEngine.GetTZLocation()),
+	}
+	_, err := testEngine.Insert(&gts)
+	assert.NoError(t, err)
+
+	var gn time.Time
+	has, err := testEngine.Table("get_time_struct").Cols(colMapper.Obj2Table("CreateTime")).Get(&gn)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, gts.CreateTime.Format(time.RFC3339), gn.Format(time.RFC3339))
 }
