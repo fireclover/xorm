@@ -6,7 +6,6 @@ package xorm
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 
 	"xorm.io/builder"
@@ -478,7 +477,7 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 			keyType := sliceValue.Type().Key()
 			var ikey interface{}
 			if len(key) == 1 {
-				ikey, err = str2PK(fmt.Sprintf("%v", key[0]), keyType)
+				ikey, err = asKind(reflect.ValueOf(key[0]), keyType)
 				if err != nil {
 					return err
 				}
