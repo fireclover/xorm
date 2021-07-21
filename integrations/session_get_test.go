@@ -9,67 +9,17 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"strconv"
 	"testing"
 	"time"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/contexts"
+	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/schemas"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
-
-func convertInt(v interface{}) (int64, error) {
-	switch v.(type) {
-	case int:
-		return int64(v.(int)), nil
-	case int8:
-		return int64(v.(int8)), nil
-	case int16:
-		return int64(v.(int16)), nil
-	case int32:
-		return int64(v.(int32)), nil
-	case int64:
-		return v.(int64), nil
-	case []byte:
-		i, err := strconv.ParseInt(string(v.([]byte)), 10, 64)
-		if err != nil {
-			return 0, err
-		}
-		return i, nil
-	case string:
-		i, err := strconv.ParseInt(v.(string), 10, 64)
-		if err != nil {
-			return 0, err
-		}
-		return i, nil
-	}
-	return 0, fmt.Errorf("unsupported type: %v", v)
-}
-
-func convertFloat(v interface{}) (float64, error) {
-	switch v.(type) {
-	case float32:
-		return float64(v.(float32)), nil
-	case float64:
-		return v.(float64), nil
-	case string:
-		i, err := strconv.ParseFloat(v.(string), 64)
-		if err != nil {
-			return 0, err
-		}
-		return i, nil
-	case []byte:
-		i, err := strconv.ParseFloat(string(v.([]byte)), 64)
-		if err != nil {
-			return 0, err
-		}
-		return i, nil
-	}
-	return 0, fmt.Errorf("unsupported type: %v", v)
-}
 
 func TestGetVar(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
@@ -261,17 +211,17 @@ func TestGetVar(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, true, has)
 
-	v1, err := convertInt(valuesSliceInter[0])
+	v1, err := convert.AsInt64(valuesSliceInter[0])
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, v1)
 
 	assert.Equal(t, "hi", fmt.Sprintf("%s", valuesSliceInter[1]))
 
-	v3, err := convertInt(valuesSliceInter[2])
+	v3, err := convert.AsInt64(valuesSliceInter[2])
 	assert.NoError(t, err)
 	assert.EqualValues(t, 28, v3)
 
-	v4, err := convertFloat(valuesSliceInter[3])
+	v4, err := convert.AsFloat64(valuesSliceInter[3])
 	assert.NoError(t, err)
 	assert.Equal(t, "1.5", fmt.Sprintf("%v", v4))
 }
