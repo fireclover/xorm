@@ -6,7 +6,7 @@ GOFMT ?= gofmt -s
 TAGS ?=
 SED_INPLACE := sed -i
 
-GO_DIRS := caches contexts integrations convert core dialects internal log migrate names schemas tags
+GO_DIRS := caches contexts integrations core dialects internal log migrate names schemas tags
 GOFILES := $(wildcard *.go)
 GOFILES += $(shell find $(GO_DIRS) -name "*.go" -type f)
 INTEGRATION_PACKAGES := xorm.io/xorm/integrations

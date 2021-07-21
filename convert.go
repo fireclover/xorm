@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"time"
 
-	"xorm.io/xorm/convert"
+	"xorm.io/xorm/internal/convert"
 )
 
 var errNilPtr = errors.New("destination pointer is nil") // embedded in descriptive error
