@@ -44,11 +44,13 @@ Drivers for Go's sql package which currently support database/sql includes:
 
 * [SQLite](https://sqlite.org)
   - [github.com/mattn/go-sqlite3](https://github.com/mattn/go-sqlite3)
+  - [modernc.org/sqlite](https://gitlab.com/cznic/sqlite) (windows unsupported)
 
 * MsSql
   - [github.com/denisenkom/go-mssqldb](https://github.com/denisenkom/go-mssqldb)
 
 * Oracle
+  - [github.com/godror/godror)](https://github.com/godror/godror) (experiment)
   - [github.com/mattn/go-oci8](https://github.com/mattn/go-oci8) (experiment)
 
 ## Installation
