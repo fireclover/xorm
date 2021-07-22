@@ -22,6 +22,7 @@ const (
 	MYSQL    DBType = "mysql"
 	MSSQL    DBType = "mssql"
 	ORACLE   DBType = "oracle"
+	DAMENG   DBType = "dameng"
 )
 
 // SQLType represents SQL types
