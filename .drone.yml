@@ -409,7 +409,7 @@ depends_on:
   - test-mssql
   - test-tidb
   - test-cockroach
-  - test-dm
+  - test-dameng
 trigger:
   ref:
   - refs/heads/master
