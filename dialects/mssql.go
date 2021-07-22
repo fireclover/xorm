@@ -310,7 +310,7 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 		}
 	case schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob:
 		res = schemas.VarBinary
-		if c.Length == -1 {
+		if c.Length == 0 {
 			res += "(MAX)"
 		}
 	case schemas.TimeStamp:
