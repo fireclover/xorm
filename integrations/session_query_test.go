@@ -396,3 +396,25 @@ func TestJoinWithSubQuery(t *testing.T) {
 	assert.EqualValues(t, 1, len(querys))
 	assert.EqualValues(t, q, querys[0])
 }
+
+func TestQueryStringWithLimit(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
+		t.SkipNow()
+		return
+	}
+
+	type QueryWithLimit struct {
+		Id       int64  `xorm:"autoincr pk"`
+		Msg      string `xorm:"varchar(255)"`
+		DepartId int64
+		Money    float32
+	}
+
+	assert.NoError(t, testEngine.Sync2(new(QueryWithLimit)))
+
+	data, err := testEngine.Table("query_with_limit").Limit(20, 20).QueryString()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 0, len(data))
+}

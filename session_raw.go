@@ -6,6 +6,7 @@ package xorm
 
 import (
 	"database/sql"
+	"strings"
 
 	"xorm.io/xorm/core"
 )
@@ -32,7 +33,7 @@ func (session *Session) queryRows(sqlStr string, args ...interface{}) (*core.Row
 
 	if session.isAutoCommit {
 		var db *core.DB
-		if session.sessionType == groupSession {
+		if session.sessionType == groupSession && strings.EqualFold(sqlStr[:6], "select") {
 			db = session.engine.engineGroup.Slave().DB()
 		} else {
 			db = session.DB()

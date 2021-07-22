@@ -6,7 +6,6 @@ package xorm
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 
 	"xorm.io/builder"
@@ -476,12 +475,13 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 		} else if sliceValue.Kind() == reflect.Map {
 			var key = ids[j]
 			keyType := sliceValue.Type().Key()
+			keyValue := reflect.New(keyType)
 			var ikey interface{}
 			if len(key) == 1 {
-				ikey, err = str2PK(fmt.Sprintf("%v", key[0]), keyType)
-				if err != nil {
+				if err := convertAssignV(keyValue, key[0]); err != nil {
 					return err
 				}
+				ikey = keyValue.Elem().Interface()
 			} else {
 				if keyType.Kind() != reflect.Slice {
 					return errors.New("table have multiple primary keys, key is not schemas.PK or slice")

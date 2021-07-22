@@ -18,8 +18,8 @@ import (
 	"strings"
 
 	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
+	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/internal/json"
 	"xorm.io/xorm/internal/statements"
 	"xorm.io/xorm/log"
@@ -435,7 +435,7 @@ func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql
 }
 
 func (session *Session) setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult interface{}) error {
-	bs, ok := asBytes(scanResult)
+	bs, ok := convert.AsBytes(scanResult)
 	if !ok {
 		return fmt.Errorf("unsupported database data type: %#v", scanResult)
 	}
@@ -476,7 +476,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 
 	if fieldValue.CanAddr() {
 		if structConvert, ok := fieldValue.Addr().Interface().(convert.Conversion); ok {
-			data, ok := asBytes(scanResult)
+			data, ok := convert.AsBytes(scanResult)
 			if !ok {
 				return fmt.Errorf("cannot convert %#v as bytes", scanResult)
 			}
@@ -485,7 +485,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	}
 
 	if structConvert, ok := fieldValue.Interface().(convert.Conversion); ok {
-		data, ok := asBytes(scanResult)
+		data, ok := convert.AsBytes(scanResult)
 		if !ok {
 			return fmt.Errorf("cannot convert %#v as bytes", scanResult)
 		}
@@ -525,7 +525,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	case reflect.Complex64, reflect.Complex128:
 		return session.setJSON(fieldValue, fieldType, scanResult)
 	case reflect.Slice, reflect.Array:
-		bs, ok := asBytes(scanResult)
+		bs, ok := convert.AsBytes(scanResult)
 		if ok && fieldType.Elem().Kind() == reflect.Uint8 {
 			if col.SQLType.IsText() {
 				x := reflect.New(fieldType)
@@ -551,7 +551,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		}
 	case reflect.Struct:
 		if fieldType.ConvertibleTo(schemas.BigFloatType) {
-			v, err := asBigFloat(scanResult)
+			v, err := convert.AsBigFloat(scanResult)
 			if err != nil {
 				return err
 			}
@@ -565,7 +565,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 				dbTZ = col.TimeZone
 			}
 
-			t, err := asTime(scanResult, dbTZ, session.engine.TZLocation)
+			t, err := convert.AsTime(scanResult, dbTZ, session.engine.TZLocation)
 			if err != nil {
 				return err
 			}
