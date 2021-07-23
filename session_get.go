@@ -130,9 +130,6 @@ var (
 	valuerTypePlaceHolder driver.Valuer
 	valuerType            = reflect.TypeOf(&valuerTypePlaceHolder).Elem()
 
-	scannerTypePlaceHolder sql.Scanner
-	scannerType            = reflect.TypeOf(&scannerTypePlaceHolder).Elem()
-
 	conversionTypePlaceHolder convert.Conversion
 	conversionType            = reflect.TypeOf(&conversionTypePlaceHolder).Elem()
 )

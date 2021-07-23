@@ -17,6 +17,7 @@ import (
 
 	"gitee.com/travelliu/dm"
 	"xorm.io/xorm/core"
+	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
@@ -1001,7 +1002,7 @@ type damengDriver struct {
 }
 
 // Features return features
-func (p *damengDriver) Features() *DriverFeatures {
+func (d *damengDriver) Features() *DriverFeatures {
 	return &DriverFeatures{
 		SupportReturnInsertedID: false,
 	}
@@ -1009,7 +1010,7 @@ func (p *damengDriver) Features() *DriverFeatures {
 
 // Parse parse the datasource
 // dm://userName:password@ip:port
-func (p *damengDriver) Parse(driverName, dataSourceName string) (*URI, error) {
+func (d *damengDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	u, err := url.Parse(dataSourceName)
 	if err != nil {
 		return nil, err
@@ -1031,7 +1032,7 @@ func (p *damengDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	}, nil
 }
 
-func (g *damengDriver) GenScanResult(colType string) (interface{}, error) {
+func (d *damengDriver) GenScanResult(colType string) (interface{}, error) {
 	switch colType {
 	case "CHAR", "NCHAR", "VARCHAR", "VARCHAR2", "NVARCHAR2", "LONG", "CLOB", "NCLOB":
 		var s sql.NullString
@@ -1049,4 +1050,43 @@ func (g *damengDriver) GenScanResult(colType string) (interface{}, error) {
 		var r sql.RawBytes
 		return &r, nil
 	}
+}
+
+func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.ColumnType, vv ...interface{}) error {
+	var scanResults = make([]interface{}, 0, len(types))
+	var replaces = make([]bool, 0, len(types))
+	var err error
+	for i, v := range vv {
+		var replaced bool
+		var scanResult interface{}
+		switch types[i].DatabaseTypeName() {
+		case "CLOB":
+			scanResult = &dmClobScanner{}
+			replaced = true
+		default:
+			scanResult = v
+		}
+
+		scanResults = append(scanResults, scanResult)
+		replaces = append(replaces, replaced)
+	}
+
+	if err = rows.Scan(scanResults...); err != nil {
+		return err
+	}
+
+	for i, replaced := range replaces {
+		if replaced {
+			switch t := scanResults[i].(type) {
+			case *dmClobScanner:
+				if err := convert.Assign(vv[i], t.data, ctx.DBLocation, ctx.UserLocation); err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("don't support convert %T to %T", t, vv[i])
+			}
+		}
+	}
+
+	return nil
 }
