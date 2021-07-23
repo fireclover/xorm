@@ -248,11 +248,6 @@ func (engine *Engine) SQLType(c *schemas.Column) string {
 	return engine.dialect.SQLType(c)
 }
 
-// AutoIncrStr Database's autoincrement statement
-func (engine *Engine) AutoIncrStr() string {
-	return engine.dialect.AutoIncrStr()
-}
-
 // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 func (engine *Engine) SetConnMaxLifetime(d time.Duration) {
 	engine.DB().SetConnMaxLifetime(d)

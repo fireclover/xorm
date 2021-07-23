@@ -6,14 +6,12 @@ package dialects
 
 import (
 	"context"
-	"crypto/tls"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/schemas"
@@ -21,191 +19,505 @@ import (
 
 var (
 	damengReservedWords = map[string]bool{
-		"ADD":               true,
-		"ALL":               true,
-		"ALTER":             true,
-		"ANALYZE":           true,
-		"AND":               true,
-		"AS":                true,
-		"ASC":               true,
-		"ASENSITIVE":        true,
-		"BEFORE":            true,
-		"BETWEEN":           true,
-		"BIGINT":            true,
-		"BINARY":            true,
-		"BLOB":              true,
-		"BOTH":              true,
-		"BY":                true,
-		"CALL":              true,
-		"CASCADE":           true,
-		"CASE":              true,
-		"CHANGE":            true,
-		"CHAR":              true,
-		"CHARACTER":         true,
-		"CHECK":             true,
-		"COLLATE":           true,
-		"COLUMN":            true,
-		"CONDITION":         true,
-		"CONNECTION":        true,
-		"CONSTRAINT":        true,
-		"CONTINUE":          true,
-		"CONVERT":           true,
-		"CREATE":            true,
-		"CROSS":             true,
-		"CURRENT_DATE":      true,
-		"CURRENT_TIME":      true,
-		"CURRENT_TIMESTAMP": true,
-		"CURRENT_USER":      true,
-		"CURSOR":            true,
-		"DATABASE":          true,
-		"DATABASES":         true,
-		"DAY_HOUR":          true,
-		"DAY_MICROSECOND":   true,
-		"DAY_MINUTE":        true,
-		"DAY_SECOND":        true,
-		"DEC":               true,
-		"DECIMAL":           true,
-		"DECLARE":           true,
-		"DEFAULT":           true,
-		"DELAYED":           true,
-		"DELETE":            true,
-		"DESC":              true,
-		"DESCRIBE":          true,
-		"DETERMINISTIC":     true,
-		"DISTINCT":          true,
-		"DISTINCTROW":       true,
-		"DIV":               true,
-		"DOUBLE":            true,
-		"DROP":              true,
-		"DUAL":              true,
-		"EACH":              true,
-		"ELSE":              true,
-		"ELSEIF":            true,
-		"ENCLOSED":          true,
-		"ESCAPED":           true,
-		"EXISTS":            true,
-		"EXIT":              true,
-		"EXPLAIN":           true,
-		"FALSE":             true,
-		"FETCH":             true,
-		"FLOAT":             true,
-		"FLOAT4":            true,
-		"FLOAT8":            true,
-		"FOR":               true,
-		"FORCE":             true,
-		"FOREIGN":           true,
-		"FROM":              true,
-		"FULLTEXT":          true,
-		"GOTO":              true,
-		"GRANT":             true,
-		"GROUP":             true,
-		"HAVING":            true,
-		"HIGH_PRIORITY":     true,
-		"HOUR_MICROSECOND":  true,
-		"HOUR_MINUTE":       true,
-		"HOUR_SECOND":       true,
-		"IF":                true,
-		"IGNORE":            true,
-		"IN":                true, "INDEX": true,
-		"INFILE": true, "INNER": true, "INOUT": true,
-		"INSENSITIVE": true, "INSERT": true, "INT": true,
-		"INT1": true, "INT2": true, "INT3": true,
-		"INT4": true, "INT8": true, "INTEGER": true,
-		"INTERVAL": true, "INTO": true, "IS": true,
-		"ITERATE": true, "JOIN": true, "KEY": true,
-		"KEYS": true, "KILL": true, "LABEL": true,
-		"LEADING": true, "LEAVE": true, "LEFT": true,
-		"LIKE": true, "LIMIT": true, "LINEAR": true,
-		"LINES": true, "LOAD": true, "LOCALTIME": true,
-		"LOCALTIMESTAMP": true, "LOCK": true, "LONG": true,
-		"LONGBLOB": true, "LONGTEXT": true, "LOOP": true,
-		"LOW_PRIORITY": true, "MATCH": true, "MEDIUMBLOB": true,
-		"MEDIUMINT": true, "MEDIUMTEXT": true, "MIDDLEINT": true,
-		"MINUTE_MICROSECOND": true, "MINUTE_SECOND": true, "MOD": true,
-		"MODIFIES": true, "NATURAL": true, "NOT": true,
-		"NO_WRITE_TO_BINLOG": true, "NULL": true, "NUMERIC": true,
-		"ON	OPTIMIZE": true, "OPTION": true,
-		"OPTIONALLY": true, "OR": true, "ORDER": true,
-		"OUT": true, "OUTER": true, "OUTFILE": true,
-		"PRECISION": true, "PRIMARY": true, "PROCEDURE": true,
-		"PURGE": true, "RAID0": true, "RANGE": true,
-		"READ": true, "READS": true, "REAL": true,
-		"REFERENCES": true, "REGEXP": true, "RELEASE": true,
-		"RENAME": true, "REPEAT": true, "REPLACE": true,
-		"REQUIRE": true, "RESTRICT": true, "RETURN": true,
-		"REVOKE": true, "RIGHT": true, "RLIKE": true,
-		"SCHEMA": true, "SCHEMAS": true, "SECOND_MICROSECOND": true,
-		"SELECT": true, "SENSITIVE": true, "SEPARATOR": true,
-		"SET": true, "SHOW": true, "SMALLINT": true,
-		"SPATIAL": true, "SPECIFIC": true, "SQL": true,
-		"SQLEXCEPTION": true, "SQLSTATE": true, "SQLWARNING": true,
-		"SQL_BIG_RESULT": true, "SQL_CALC_FOUND_ROWS": true, "SQL_SMALL_RESULT": true,
-		"SSL": true, "STARTING": true, "STRAIGHT_JOIN": true,
-		"TABLE": true, "TERMINATED": true, "THEN": true,
-		"TINYBLOB": true, "TINYINT": true, "TINYTEXT": true,
-		"TO": true, "TRAILING": true, "TRIGGER": true,
-		"TRUE": true, "UNDO": true, "UNION": true,
-		"UNIQUE": true, "UNLOCK": true, "UNSIGNED": true,
-		"UPDATE": true, "USAGE": true, "USE": true,
-		"USING": true, "UTC_DATE": true, "UTC_TIME": true,
-		"UTC_TIMESTAMP": true, "VALUES": true, "VARBINARY": true,
-		"VARCHAR":      true,
-		"VARCHARACTER": true,
-		"VARYING":      true,
-		"WHEN":         true,
-		"WHERE":        true,
-		"WHILE":        true,
-		"WITH":         true,
-		"WRITE":        true,
-		"X509":         true,
-		"XOR":          true,
-		"YEAR_MONTH":   true,
-		"ZEROFILL":     true,
+		"ACCESS":                    true,
+		"ACCOUNT":                   true,
+		"ACTIVATE":                  true,
+		"ADD":                       true,
+		"ADMIN":                     true,
+		"ADVISE":                    true,
+		"AFTER":                     true,
+		"ALL":                       true,
+		"ALL_ROWS":                  true,
+		"ALLOCATE":                  true,
+		"ALTER":                     true,
+		"ANALYZE":                   true,
+		"AND":                       true,
+		"ANY":                       true,
+		"ARCHIVE":                   true,
+		"ARCHIVELOG":                true,
+		"ARRAY":                     true,
+		"AS":                        true,
+		"ASC":                       true,
+		"AT":                        true,
+		"AUDIT":                     true,
+		"AUTHENTICATED":             true,
+		"AUTHORIZATION":             true,
+		"AUTOEXTEND":                true,
+		"AUTOMATIC":                 true,
+		"BACKUP":                    true,
+		"BECOME":                    true,
+		"BEFORE":                    true,
+		"BEGIN":                     true,
+		"BETWEEN":                   true,
+		"BFILE":                     true,
+		"BITMAP":                    true,
+		"BLOB":                      true,
+		"BLOCK":                     true,
+		"BODY":                      true,
+		"BY":                        true,
+		"CACHE":                     true,
+		"CACHE_INSTANCES":           true,
+		"CANCEL":                    true,
+		"CASCADE":                   true,
+		"CAST":                      true,
+		"CFILE":                     true,
+		"CHAINED":                   true,
+		"CHANGE":                    true,
+		"CHAR":                      true,
+		"CHAR_CS":                   true,
+		"CHARACTER":                 true,
+		"CHECK":                     true,
+		"CHECKPOINT":                true,
+		"CHOOSE":                    true,
+		"CHUNK":                     true,
+		"CLEAR":                     true,
+		"CLOB":                      true,
+		"CLONE":                     true,
+		"CLOSE":                     true,
+		"CLOSE_CACHED_OPEN_CURSORS": true,
+		"CLUSTER":                   true,
+		"COALESCE":                  true,
+		"COLUMN":                    true,
+		"COLUMNS":                   true,
+		"COMMENT":                   true,
+		"COMMIT":                    true,
+		"COMMITTED":                 true,
+		"COMPATIBILITY":             true,
+		"COMPILE":                   true,
+		"COMPLETE":                  true,
+		"COMPOSITE_LIMIT":           true,
+		"COMPRESS":                  true,
+		"COMPUTE":                   true,
+		"CONNECT":                   true,
+		"CONNECT_TIME":              true,
+		"CONSTRAINT":                true,
+		"CONSTRAINTS":               true,
+		"CONTENTS":                  true,
+		"CONTINUE":                  true,
+		"CONTROLFILE":               true,
+		"CONVERT":                   true,
+		"COST":                      true,
+		"CPU_PER_CALL":              true,
+		"CPU_PER_SESSION":           true,
+		"CREATE":                    true,
+		"CURRENT":                   true,
+		"CURRENT_SCHEMA":            true,
+		"CURREN_USER":               true,
+		"CURSOR":                    true,
+		"CYCLE":                     true,
+		"DANGLING":                  true,
+		"DATABASE":                  true,
+		"DATAFILE":                  true,
+		"DATAFILES":                 true,
+		"DATAOBJNO":                 true,
+		"DATE":                      true,
+		"DBA":                       true,
+		"DBHIGH":                    true,
+		"DBLOW":                     true,
+		"DBMAC":                     true,
+		"DEALLOCATE":                true,
+		"DEBUG":                     true,
+		"DEC":                       true,
+		"DECIMAL":                   true,
+		"DECLARE":                   true,
+		"DEFAULT":                   true,
+		"DEFERRABLE":                true,
+		"DEFERRED":                  true,
+		"DEGREE":                    true,
+		"DELETE":                    true,
+		"DEREF":                     true,
+		"DESC":                      true,
+		"DIRECTORY":                 true,
+		"DISABLE":                   true,
+		"DISCONNECT":                true,
+		"DISMOUNT":                  true,
+		"DISTINCT":                  true,
+		"DISTRIBUTED":               true,
+		"DML":                       true,
+		"DOUBLE":                    true,
+		"DROP":                      true,
+		"DUMP":                      true,
+		"EACH":                      true,
+		"ELSE":                      true,
+		"ENABLE":                    true,
+		"END":                       true,
+		"ENFORCE":                   true,
+		"ENTRY":                     true,
+		"ESCAPE":                    true,
+		"EXCEPT":                    true,
+		"EXCEPTIONS":                true,
+		"EXCHANGE":                  true,
+		"EXCLUDING":                 true,
+		"EXCLUSIVE":                 true,
+		"EXECUTE":                   true,
+		"EXISTS":                    true,
+		"EXPIRE":                    true,
+		"EXPLAIN":                   true,
+		"EXTENT":                    true,
+		"EXTENTS":                   true,
+		"EXTERNALLY":                true,
+		"FAILED_LOGIN_ATTEMPTS":     true,
+		"FALSE":                     true,
+		"FAST":                      true,
+		"FILE":                      true,
+		"FIRST_ROWS":                true,
+		"FLAGGER":                   true,
+		"FLOAT":                     true,
+		"FLOB":                      true,
+		"FLUSH":                     true,
+		"FOR":                       true,
+		"FORCE":                     true,
+		"FOREIGN":                   true,
+		"FREELIST":                  true,
+		"FREELISTS":                 true,
+		"FROM":                      true,
+		"FULL":                      true,
+		"FUNCTION":                  true,
+		"GLOBAL":                    true,
+		"GLOBALLY":                  true,
+		"GLOBAL_NAME":               true,
+		"GRANT":                     true,
+		"GROUP":                     true,
+		"GROUPS":                    true,
+		"HASH":                      true,
+		"HASHKEYS":                  true,
+		"HAVING":                    true,
+		"HEADER":                    true,
+		"HEAP":                      true,
+		"IDENTIFIED":                true,
+		"IDGENERATORS":              true,
+		"IDLE_TIME":                 true,
+		"IF":                        true,
+		"IMMEDIATE":                 true,
+		"IN":                        true,
+		"INCLUDING":                 true,
+		"INCREMENT":                 true,
+		"INDEX":                     true,
+		"INDEXED":                   true,
+		"INDEXES":                   true,
+		"INDICATOR":                 true,
+		"IND_PARTITION":             true,
+		"INITIAL":                   true,
+		"INITIALLY":                 true,
+		"INITRANS":                  true,
+		"INSERT":                    true,
+		"INSTANCE":                  true,
+		"INSTANCES":                 true,
+		"INSTEAD":                   true,
+		"INT":                       true,
+		"INTEGER":                   true,
+		"INTERMEDIATE":              true,
+		"INTERSECT":                 true,
+		"INTO":                      true,
+		"IS":                        true,
+		"ISOLATION":                 true,
+		"ISOLATION_LEVEL":           true,
+		"KEEP":                      true,
+		"KEY":                       true,
+		"KILL":                      true,
+		"LABEL":                     true,
+		"LAYER":                     true,
+		"LESS":                      true,
+		"LEVEL":                     true,
+		"LIBRARY":                   true,
+		"LIKE":                      true,
+		"LIMIT":                     true,
+		"LINK":                      true,
+		"LIST":                      true,
+		"LOB":                       true,
+		"LOCAL":                     true,
+		"LOCK":                      true,
+		"LOCKED":                    true,
+		"LOG":                       true,
+		"LOGFILE":                   true,
+		"LOGGING":                   true,
+		"LOGICAL_READS_PER_CALL":    true,
+		"LOGICAL_READS_PER_SESSION": true,
+		"LONG":                      true,
+		"MANAGE":                    true,
+		"MASTER":                    true,
+		"MAX":                       true,
+		"MAXARCHLOGS":               true,
+		"MAXDATAFILES":              true,
+		"MAXEXTENTS":                true,
+		"MAXINSTANCES":              true,
+		"MAXLOGFILES":               true,
+		"MAXLOGHISTORY":             true,
+		"MAXLOGMEMBERS":             true,
+		"MAXSIZE":                   true,
+		"MAXTRANS":                  true,
+		"MAXVALUE":                  true,
+		"MIN":                       true,
+		"MEMBER":                    true,
+		"MINIMUM":                   true,
+		"MINEXTENTS":                true,
+		"MINUS":                     true,
+		"MINVALUE":                  true,
+		"MLSLABEL":                  true,
+		"MLS_LABEL_FORMAT":          true,
+		"MODE":                      true,
+		"MODIFY":                    true,
+		"MOUNT":                     true,
+		"MOVE":                      true,
+		"MTS_DISPATCHERS":           true,
+		"MULTISET":                  true,
+		"NATIONAL":                  true,
+		"NCHAR":                     true,
+		"NCHAR_CS":                  true,
+		"NCLOB":                     true,
+		"NEEDED":                    true,
+		"NESTED":                    true,
+		"NETWORK":                   true,
+		"NEW":                       true,
+		"NEXT":                      true,
+		"NOARCHIVELOG":              true,
+		"NOAUDIT":                   true,
+		"NOCACHE":                   true,
+		"NOCOMPRESS":                true,
+		"NOCYCLE":                   true,
+		"NOFORCE":                   true,
+		"NOLOGGING":                 true,
+		"NOMAXVALUE":                true,
+		"NOMINVALUE":                true,
+		"NONE":                      true,
+		"NOORDER":                   true,
+		"NOOVERRIDE":                true,
+		"NOPARALLEL":                true,
+		"NOREVERSE":                 true,
+		"NORMAL":                    true,
+		"NOSORT":                    true,
+		"NOT":                       true,
+		"NOTHING":                   true,
+		"NOWAIT":                    true,
+		"NULL":                      true,
+		"NUMBER":                    true,
+		"NUMERIC":                   true,
+		"NVARCHAR2":                 true,
+		"OBJECT":                    true,
+		"OBJNO":                     true,
+		"OBJNO_REUSE":               true,
+		"OF":                        true,
+		"OFF":                       true,
+		"OFFLINE":                   true,
+		"OID":                       true,
+		"OIDINDEX":                  true,
+		"OLD":                       true,
+		"ON":                        true,
+		"ONLINE":                    true,
+		"ONLY":                      true,
+		"OPCODE":                    true,
+		"OPEN":                      true,
+		"OPTIMAL":                   true,
+		"OPTIMIZER_GOAL":            true,
+		"OPTION":                    true,
+		"OR":                        true,
+		"ORDER":                     true,
+		"ORGANIZATION":              true,
+		"OSLABEL":                   true,
+		"OVERFLOW":                  true,
+		"OWN":                       true,
+		"PACKAGE":                   true,
+		"PARALLEL":                  true,
+		"PARTITION":                 true,
+		"PASSWORD":                  true,
+		"PASSWORD_GRACE_TIME":       true,
+		"PASSWORD_LIFE_TIME":        true,
+		"PASSWORD_LOCK_TIME":        true,
+		"PASSWORD_REUSE_MAX":        true,
+		"PASSWORD_REUSE_TIME":       true,
+		"PASSWORD_VERIFY_FUNCTION":  true,
+		"PCTFREE":                   true,
+		"PCTINCREASE":               true,
+		"PCTTHRESHOLD":              true,
+		"PCTUSED":                   true,
+		"PCTVERSION":                true,
+		"PERCENT":                   true,
+		"PERMANENT":                 true,
+		"PLAN":                      true,
+		"PLSQL_DEBUG":               true,
+		"POST_TRANSACTION":          true,
+		"PRECISION":                 true,
+		"PRESERVE":                  true,
+		"PRIMARY":                   true,
+		"PRIOR":                     true,
+		"PRIVATE":                   true,
+		"PRIVATE_SGA":               true,
+		"PRIVILEGE":                 true,
+		"PRIVILEGES":                true,
+		"PROCEDURE":                 true,
+		"PROFILE":                   true,
+		"PUBLIC":                    true,
+		"PURGE":                     true,
+		"QUEUE":                     true,
+		"QUOTA":                     true,
+		"RANGE":                     true,
+		"RAW":                       true,
+		"RBA":                       true,
+		"READ":                      true,
+		"READUP":                    true,
+		"REAL":                      true,
+		"REBUILD":                   true,
+		"RECOVER":                   true,
+		"RECOVERABLE":               true,
+		"RECOVERY":                  true,
+		"REF":                       true,
+		"REFERENCES":                true,
+		"REFERENCING":               true,
+		"REFRESH":                   true,
+		"RENAME":                    true,
+		"REPLACE":                   true,
+		"RESET":                     true,
+		"RESETLOGS":                 true,
+		"RESIZE":                    true,
+		"RESOURCE":                  true,
+		"RESTRICTED":                true,
+		"RETURN":                    true,
+		"RETURNING":                 true,
+		"REUSE":                     true,
+		"REVERSE":                   true,
+		"REVOKE":                    true,
+		"ROLE":                      true,
+		"ROLES":                     true,
+		"ROLLBACK":                  true,
+		"ROW":                       true,
+		"ROWID":                     true,
+		"ROWNUM":                    true,
+		"ROWS":                      true,
+		"RULE":                      true,
+		"SAMPLE":                    true,
+		"SAVEPOINT":                 true,
+		"SB4":                       true,
+		"SCAN_INSTANCES":            true,
+		"SCHEMA":                    true,
+		"SCN":                       true,
+		"SCOPE":                     true,
+		"SD_ALL":                    true,
+		"SD_INHIBIT":                true,
+		"SD_SHOW":                   true,
+		"SEGMENT":                   true,
+		"SEG_BLOCK":                 true,
+		"SEG_FILE":                  true,
+		"SELECT":                    true,
+		"SEQUENCE":                  true,
+		"SERIALIZABLE":              true,
+		"SESSION":                   true,
+		"SESSION_CACHED_CURSORS":    true,
+		"SESSIONS_PER_USER":         true,
+		"SET":                       true,
+		"SHARE":                     true,
+		"SHARED":                    true,
+		"SHARED_POOL":               true,
+		"SHRINK":                    true,
+		"SIZE":                      true,
+		"SKIP":                      true,
+		"SKIP_UNUSABLE_INDEXES":     true,
+		"SMALLINT":                  true,
+		"SNAPSHOT":                  true,
+		"SOME":                      true,
+		"SORT":                      true,
+		"SPECIFICATION":             true,
+		"SPLIT":                     true,
+		"SQL_TRACE":                 true,
+		"STANDBY":                   true,
+		"START":                     true,
+		"STATEMENT_ID":              true,
+		"STATISTICS":                true,
+		"STOP":                      true,
+		"STORAGE":                   true,
+		"STORE":                     true,
+		"STRUCTURE":                 true,
+		"SUCCESSFUL":                true,
+		"SWITCH":                    true,
+		"SYS_OP_ENFORCE_NOT_NULL$":  true,
+		"SYS_OP_NTCIMG$":            true,
+		"SYNONYM":                   true,
+		"SYSDATE":                   true,
+		"SYSDBA":                    true,
+		"SYSOPER":                   true,
+		"SYSTEM":                    true,
+		"TABLE":                     true,
+		"TABLES":                    true,
+		"TABLESPACE":                true,
+		"TABLESPACE_NO":             true,
+		"TABNO":                     true,
+		"TEMPORARY":                 true,
+		"THAN":                      true,
+		"THE":                       true,
+		"THEN":                      true,
+		"THREAD":                    true,
+		"TIMESTAMP":                 true,
+		"TIME":                      true,
+		"TO":                        true,
+		"TOPLEVEL":                  true,
+		"TRACE":                     true,
+		"TRACING":                   true,
+		"TRANSACTION":               true,
+		"TRANSITIONAL":              true,
+		"TRIGGER":                   true,
+		"TRIGGERS":                  true,
+		"TRUE":                      true,
+		"TRUNCATE":                  true,
+		"TX":                        true,
+		"TYPE":                      true,
+		"UB2":                       true,
+		"UBA":                       true,
+		"UID":                       true,
+		"UNARCHIVED":                true,
+		"UNDO":                      true,
+		"UNION":                     true,
+		"UNIQUE":                    true,
+		"UNLIMITED":                 true,
+		"UNLOCK":                    true,
+		"UNRECOVERABLE":             true,
+		"UNTIL":                     true,
+		"UNUSABLE":                  true,
+		"UNUSED":                    true,
+		"UPDATABLE":                 true,
+		"UPDATE":                    true,
+		"USAGE":                     true,
+		"USE":                       true,
+		"USER":                      true,
+		"USING":                     true,
+		"VALIDATE":                  true,
+		"VALIDATION":                true,
+		"VALUE":                     true,
+		"VALUES":                    true,
+		"VARCHAR":                   true,
+		"VARCHAR2":                  true,
+		"VARYING":                   true,
+		"VIEW":                      true,
+		"WHEN":                      true,
+		"WHENEVER":                  true,
+		"WHERE":                     true,
+		"WITH":                      true,
+		"WITHOUT":                   true,
+		"WORK":                      true,
+		"WRITE":                     true,
+		"WRITEDOWN":                 true,
+		"WRITEUP":                   true,
+		"XID":                       true,
+		"YEAR":                      true,
+		"ZONE":                      true,
 	}
 
 	damengQuoter = schemas.Quoter{
-		Prefix:     '`',
-		Suffix:     '`',
+		Prefix:     '"',
+		Suffix:     '"',
 		IsReserved: schemas.AlwaysReserve,
 	}
 )
 
 type dameng struct {
 	Base
-	net               string
-	addr              string
-	params            map[string]string
-	loc               *time.Location
-	timeout           time.Duration
-	tls               *tls.Config
-	allowAllFiles     bool
-	allowOldPasswords bool
-	clientFoundRows   bool
-	rowFormat         string
 }
 
 func (db *dameng) Init(uri *URI) error {
-	db.quoter = mysqlQuoter
+	db.quoter = oracleQuoter
 	return db.Base.Init(db, uri)
 }
 
-var (
-	damengColAliases = map[string]string{
-		"numeric": "decimal",
-	}
-)
-
-// Alias returns a alias of column
-func (db *dameng) Alias(col string) string {
-	v, ok := mysqlColAliases[strings.ToLower(col)]
-	if ok {
-		return v
-	}
-	return col
-}
-
 func (db *dameng) Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error) {
-	rows, err := queryer.QueryContext(ctx, "SELECT @@VERSION")
+	rows, err := queryer.QueryContext(ctx, "select * from v$version where banner like 'Oracle%'")
 	if err != nil {
 		return nil, err
 	}
@@ -222,95 +534,32 @@ func (db *dameng) Version(ctx context.Context, queryer core.Queryer) (*schemas.V
 	if err := rows.Scan(&version); err != nil {
 		return nil, err
 	}
-
-	fields := strings.Split(version, "-")
-	if len(fields) == 3 && fields[1] == "TiDB" {
-		// 5.7.25-TiDB-v3.0.3
-		return &schemas.Version{
-			Number:  strings.TrimPrefix(fields[2], "v"),
-			Level:   fields[0],
-			Edition: fields[1],
-		}, nil
-	}
-
-	var edition string
-	if len(fields) == 2 {
-		edition = fields[1]
-	}
-
 	return &schemas.Version{
-		Number:  fields[0],
-		Edition: edition,
+		Number: version,
 	}, nil
-}
-
-func (db *dameng) SetParams(params map[string]string) {
-	rowFormat, ok := params["rowFormat"]
-	if ok {
-		var t = strings.ToUpper(rowFormat)
-		switch t {
-		case "COMPACT":
-			fallthrough
-		case "REDUNDANT":
-			fallthrough
-		case "DYNAMIC":
-			fallthrough
-		case "COMPRESSED":
-			db.rowFormat = t
-		}
-	}
 }
 
 func (db *dameng) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
-	case schemas.Bool:
-		res = schemas.TinyInt
-		c.Length = 1
-	case schemas.Serial:
-		c.IsAutoIncrement = true
-		c.IsPrimaryKey = true
-		c.Nullable = false
-		res = schemas.Int
-	case schemas.BigSerial:
-		c.IsAutoIncrement = true
-		c.IsPrimaryKey = true
-		c.Nullable = false
-		res = schemas.BigInt
-	case schemas.Bytea:
-		res = schemas.Blob
+	case schemas.Bit, schemas.TinyInt, schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer, schemas.BigInt,
+		schemas.UnsignedBigInt, schemas.UnsignedBit, schemas.UnsignedInt,
+		schemas.Bool,
+		schemas.Serial, schemas.BigSerial:
+		res = "NUMBER"
+	case schemas.Binary, schemas.VarBinary, schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob, schemas.Bytea:
+		return schemas.Blob
+	case schemas.Date, schemas.Time, schemas.DateTime, schemas.TimeStamp:
+		res = schemas.Date
+		return res
 	case schemas.TimeStampz:
-		res = schemas.Char
-		c.Length = 64
-	case schemas.Enum: // mysql enum
-		res = schemas.Enum
-		res += "("
-		opts := ""
-		for v := range c.EnumOptions {
-			opts += fmt.Sprintf(",'%v'", v)
-		}
-		res += strings.TrimLeft(opts, ",")
-		res += ")"
-	case schemas.Set: // mysql set
-		res = schemas.Set
-		res += "("
-		opts := ""
-		for v := range c.SetOptions {
-			opts += fmt.Sprintf(",'%v'", v)
-		}
-		res += strings.TrimLeft(opts, ",")
-		res += ")"
-	case schemas.NVarchar:
-		res = schemas.Varchar
-	case schemas.Uuid:
-		res = schemas.Varchar
-		c.Length = 40
-	case schemas.Json:
-		res = schemas.Text
-	case schemas.UnsignedInt:
-		res = schemas.Int
-	case schemas.UnsignedBigInt:
-		res = schemas.BigInt
+		res = "TIMESTAMP"
+	case schemas.Float, schemas.Double, schemas.Numeric, schemas.Decimal:
+		res = "NUMBER"
+	case schemas.Text, schemas.MediumText, schemas.LongText, schemas.Json:
+		res = "CLOB"
+	case schemas.Char, schemas.Varchar, schemas.TinyText:
+		res = "VARCHAR2"
 	default:
 		res = t
 	}
@@ -318,85 +567,144 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 	hasLen1 := (c.Length > 0)
 	hasLen2 := (c.Length2 > 0)
 
-	if res == schemas.BigInt && !hasLen1 && !hasLen2 {
-		c.Length = 20
-		hasLen1 = true
-	}
-
 	if hasLen2 {
 		res += "(" + strconv.Itoa(c.Length) + "," + strconv.Itoa(c.Length2) + ")"
 	} else if hasLen1 {
 		res += "(" + strconv.Itoa(c.Length) + ")"
 	}
-
-	if c.SQLType.Name == schemas.UnsignedBigInt || c.SQLType.Name == schemas.UnsignedInt {
-		res += " UNSIGNED"
-	}
-
 	return res
 }
 
 func (db *dameng) ColumnTypeKind(t string) int {
 	switch strings.ToUpper(t) {
-	case "DATETIME":
+	case "DATE":
 		return schemas.TIME_TYPE
-	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
+	case "CHAR", "NCHAR", "VARCHAR", "VARCHAR2", "NVARCHAR2", "LONG", "CLOB", "NCLOB":
 		return schemas.TEXT_TYPE
-	case "BIGINT", "TINYINT", "SMALLINT", "MEDIUMINT", "INT", "FLOAT", "REAL", "DOUBLE PRECISION", "DECIMAL", "NUMERIC", "BIT":
+	case "NUMBER":
 		return schemas.NUMERIC_TYPE
-	case "BINARY", "VARBINARY", "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB":
+	case "BLOB":
 		return schemas.BLOB_TYPE
 	default:
 		return schemas.UNKNOW_TYPE
 	}
 }
 
+func (db *dameng) AutoIncrStr() string {
+	return "IDENTITY"
+}
+
 func (db *dameng) IsReserved(name string) bool {
-	_, ok := mysqlReservedWords[strings.ToUpper(name)]
+	_, ok := oracleReservedWords[strings.ToUpper(name)]
 	return ok
 }
 
-func (db *dameng) AutoIncrStr() string {
-	return "AUTO_INCREMENT"
+func (db *dameng) DropTableSQL(tableName string) (string, bool) {
+	return fmt.Sprintf("DROP TABLE %s", db.quoter.Quote(tableName)), false
+}
+
+func (db *dameng) CreateTableSQL(table *schemas.Table, tableName string) ([]string, bool) {
+	if tableName == "" {
+		tableName = table.Name
+	}
+
+	quoter := db.Quoter()
+	var b strings.Builder
+	b.WriteString("CREATE TABLE ")
+	quoter.QuoteTo(&b, tableName)
+	b.WriteString(" (")
+
+	pkList := table.PrimaryKeys
+
+	for i, colName := range table.ColumnsSeq() {
+		col := table.GetColumn(colName)
+		s, _ := ColumnString(db, col, false)
+		b.WriteString(s)
+		if i != len(table.ColumnsSeq())-1 {
+			b.WriteString(", ")
+		}
+	}
+
+	if len(pkList) > 0 {
+		if len(table.ColumnsSeq()) > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(fmt.Sprintf("CONSTRAINT PK_%s PRIMARY KEY (", tableName))
+		quoter.JoinWrite(&b, pkList, ",")
+		b.WriteString(")")
+	}
+	b.WriteString(")")
+
+	return []string{b.String()}, false
+}
+
+func (db *dameng) SetQuotePolicy(quotePolicy QuotePolicy) {
+	switch quotePolicy {
+	case QuotePolicyNone:
+		var q = oracleQuoter
+		q.IsReserved = schemas.AlwaysNoReserve
+		db.quoter = q
+	case QuotePolicyReserved:
+		var q = oracleQuoter
+		q.IsReserved = db.IsReserved
+		db.quoter = q
+	case QuotePolicyAlways:
+		fallthrough
+	default:
+		db.quoter = oracleQuoter
+	}
 }
 
 func (db *dameng) IndexCheckSQL(tableName, idxName string) (string, []interface{}) {
-	args := []interface{}{db.uri.DBName, tableName, idxName}
-	sql := "SELECT `INDEX_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS`"
-	sql += " WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? AND `INDEX_NAME`=?"
-	return sql, args
+	args := []interface{}{tableName, idxName}
+	return `SELECT INDEX_NAME FROM USER_INDEXES ` +
+		`WHERE TABLE_NAME = ? AND INDEX_NAME = ?`, args
 }
 
 func (db *dameng) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
-	sql := "SELECT `TABLE_NAME` from `INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? and `TABLE_NAME`=?"
-	return db.HasRecords(queryer, ctx, sql, db.uri.DBName, tableName)
+	return db.HasRecords(queryer, ctx, `SELECT table_name FROM user_tables WHERE table_name = ?`, tableName)
 }
 
-func (db *dameng) AddColumnSQL(tableName string, col *schemas.Column) string {
-	quoter := db.dialect.Quoter()
-	s, _ := ColumnString(db, col, true)
-	sql := fmt.Sprintf("ALTER TABLE %v ADD %v", quoter.Quote(tableName), s)
-	if len(col.Comment) > 0 {
-		sql += " COMMENT '" + col.Comment + "'"
-	}
-	return sql
+func (db *dameng) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
+	args := []interface{}{tableName, colName}
+	query := "SELECT column_name FROM USER_TAB_COLUMNS WHERE table_name = ?" +
+		" AND column_name = ?"
+	return db.HasRecords(queryer, ctx, query, args...)
+}
+
+func OracleSeqName(tableName string) string {
+	return "SEQ_" + strings.ToUpper(tableName)
 }
 
 func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
-	args := []interface{}{db.uri.DBName, tableName}
-	alreadyQuoted := "(INSTR(VERSION(), 'maria') > 0 && " +
-		"(SUBSTRING_INDEX(VERSION(), '.', 1) > 10 || " +
-		"(SUBSTRING_INDEX(VERSION(), '.', 1) = 10 && " +
-		"(SUBSTRING_INDEX(SUBSTRING(VERSION(), 4), '.', 1) > 2 || " +
-		"(SUBSTRING_INDEX(SUBSTRING(VERSION(), 4), '.', 1) = 2 && " +
-		"SUBSTRING_INDEX(SUBSTRING(VERSION(), 6), '-', 1) >= 7)))))"
-	s := "SELECT `COLUMN_NAME`, `IS_NULLABLE`, `COLUMN_DEFAULT`, `COLUMN_TYPE`," +
-		" `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT`, " +
-		alreadyQuoted + " AS NEEDS_QUOTE " +
-		"FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ?" +
-		" ORDER BY `COLUMNS`.ORDINAL_POSITION"
+	s := `select   column_name   from   user_cons_columns   
+  where   constraint_name   =   (select   constraint_name   from   user_constraints   
+			  where   table_name   =   ?  and   constraint_type   ='P')`
+	var pkName string
+	rows, err := queryer.QueryContext(ctx, s, tableName)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return nil, nil, rows.Err()
+		}
+	} else {
+		err = rows.Scan(&pkName)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	rows.Close()
 
-	rows, err := queryer.QueryContext(ctx, s, args...)
+	s = `SELECT USER_TAB_COLS.COLUMN_NAME, USER_TAB_COLS.DATA_DEFAULT, USER_TAB_COLS.DATA_TYPE, USER_TAB_COLS.DATA_LENGTH, 
+		USER_TAB_COLS.data_precision, USER_TAB_COLS.data_scale, USER_TAB_COLS.NULLABLE,
+		user_col_comments.comments
+		FROM USER_TAB_COLS 
+		LEFT JOIN user_col_comments on user_col_comments.TABLE_NAME=USER_TAB_COLS.TABLE_NAME 
+		AND user_col_comments.COLUMN_NAME=USER_TAB_COLS.COLUMN_NAME
+		WHERE USER_TAB_COLS.table_name = ?`
+	rows, err = queryer.QueryContext(ctx, s, tableName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -408,95 +716,97 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
-		var columnName, nullableStr, colType, colKey, extra, comment string
-		var alreadyQuoted, isUnsigned bool
-		var colDefault *string
-		err = rows.Scan(&columnName, &nullableStr, &colDefault, &colType, &colKey, &extra, &comment, &alreadyQuoted)
+		var colName, colDefault, nullable, dataType, dataPrecision, dataScale, comment sql.NullString
+		var dataLen sql.NullInt64
+
+		err = rows.Scan(&colName, &colDefault, &dataType, &dataLen, &dataPrecision,
+			&dataScale, &nullable, &comment)
 		if err != nil {
 			return nil, nil, err
 		}
-		col.Name = strings.Trim(columnName, "` ")
-		col.Comment = comment
-		if nullableStr == "YES" {
-			col.Nullable = true
+
+		if !colName.Valid {
+			return nil, nil, errors.New("column name is nil")
 		}
 
-		if colDefault != nil && (!alreadyQuoted || *colDefault != "NULL") {
-			col.Default = *colDefault
+		col.Name = strings.Trim(colName.String, `" `)
+		if colDefault.Valid {
+			col.Default = colDefault.String
 			col.DefaultIsEmpty = false
-		} else {
-			col.DefaultIsEmpty = true
 		}
 
-		fields := strings.Fields(colType)
-		if len(fields) == 2 && fields[1] == "unsigned" {
-			isUnsigned = true
+		if nullable.String == "Y" {
+			col.Nullable = true
+		} else {
+			col.Nullable = false
 		}
-		colType = fields[0]
-		cts := strings.Split(colType, "(")
-		colName := cts[0]
-		// Remove the /* mariadb-5.3 */ suffix from coltypes
-		colName = strings.TrimSuffix(colName, "/* mariadb-5.3 */")
-		colType = strings.ToUpper(colName)
-		var len1, len2 int
-		if len(cts) == 2 {
-			idx := strings.Index(cts[1], ")")
-			if colType == schemas.Enum && cts[1][0] == '\'' { // enum
-				options := strings.Split(cts[1][0:idx], ",")
-				col.EnumOptions = make(map[string]int)
-				for k, v := range options {
-					v = strings.TrimSpace(v)
-					v = strings.Trim(v, "'")
-					col.EnumOptions[v] = k
-				}
-			} else if colType == schemas.Set && cts[1][0] == '\'' {
-				options := strings.Split(cts[1][0:idx], ",")
-				col.SetOptions = make(map[string]int)
-				for k, v := range options {
-					v = strings.TrimSpace(v)
-					v = strings.Trim(v, "'")
-					col.SetOptions[v] = k
-				}
-			} else {
-				lens := strings.Split(cts[1][0:idx], ",")
-				len1, err = strconv.Atoi(strings.TrimSpace(lens[0]))
-				if err != nil {
-					return nil, nil, err
-				}
-				if len(lens) == 2 {
-					len2, err = strconv.Atoi(lens[1])
-					if err != nil {
-						return nil, nil, err
-					}
-				}
+
+		if !comment.Valid {
+			col.Comment = comment.String
+		}
+		if pkName != "" && pkName == col.Name {
+			col.IsPrimaryKey = true
+
+			has, err := db.HasRecords(queryer, ctx, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", OracleSeqName(tableName))
+			if err != nil {
+				return nil, nil, err
+			}
+			if has {
+				col.IsAutoIncrement = true
 			}
 		}
-		if isUnsigned {
-			colType = "UNSIGNED " + colType
-		}
-		col.Length = len1
-		col.Length2 = len2
-		if _, ok := schemas.SqlTypes[colType]; ok {
-			col.SQLType = schemas.SQLType{Name: colType, DefaultLength: len1, DefaultLength2: len2}
-		} else {
-			return nil, nil, fmt.Errorf("Unknown colType %v", colType)
+
+		var (
+			ignore     bool
+			dt         string
+			len1, len2 int
+		)
+
+		dts := strings.Split(dataType.String, "(")
+		dt = dts[0]
+		if len(dts) > 1 {
+			lens := strings.Split(dts[1][:len(dts[1])-1], ",")
+			if len(lens) > 1 {
+				len1, _ = strconv.Atoi(lens[0])
+				len2, _ = strconv.Atoi(lens[1])
+			} else {
+				len1, _ = strconv.Atoi(lens[0])
+			}
 		}
 
-		if colKey == "PRI" {
-			col.IsPrimaryKey = true
-		}
-		if colKey == "UNI" {
-			// col.is
+		switch dt {
+		case "VARCHAR2":
+			col.SQLType = schemas.SQLType{Name: schemas.Varchar, DefaultLength: len1, DefaultLength2: len2}
+		case "NVARCHAR2":
+			col.SQLType = schemas.SQLType{Name: schemas.NVarchar, DefaultLength: len1, DefaultLength2: len2}
+		case "TIMESTAMP WITH TIME ZONE":
+			col.SQLType = schemas.SQLType{Name: schemas.TimeStampz, DefaultLength: 0, DefaultLength2: 0}
+		case "NUMBER":
+			col.SQLType = schemas.SQLType{Name: schemas.Double, DefaultLength: len1, DefaultLength2: len2}
+		case "LONG", "LONG RAW", "NCLOB", "CLOB":
+			col.SQLType = schemas.SQLType{Name: schemas.Text, DefaultLength: 0, DefaultLength2: 0}
+		case "RAW":
+			col.SQLType = schemas.SQLType{Name: schemas.Binary, DefaultLength: 0, DefaultLength2: 0}
+		case "ROWID":
+			col.SQLType = schemas.SQLType{Name: schemas.Varchar, DefaultLength: 18, DefaultLength2: 0}
+		case "AQ$_SUBSCRIBERS":
+			ignore = true
+		default:
+			col.SQLType = schemas.SQLType{Name: strings.ToUpper(dt), DefaultLength: len1, DefaultLength2: len2}
 		}
 
-		if extra == "auto_increment" {
-			col.IsAutoIncrement = true
+		if ignore {
+			continue
 		}
 
-		if !col.DefaultIsEmpty {
-			if !alreadyQuoted && col.SQLType.IsText() {
-				col.Default = "'" + col.Default + "'"
-			} else if col.SQLType.IsTime() && !alreadyQuoted && col.Default != "CURRENT_TIMESTAMP" {
+		if _, ok := schemas.SqlTypes[col.SQLType.Name]; !ok {
+			return nil, nil, fmt.Errorf("unknown colType %v %v", dataType.String, col.SQLType)
+		}
+
+		col.Length = int(dataLen.Int64)
+
+		if col.SQLType.IsText() || col.SQLType.IsTime() {
+			if !col.DefaultIsEmpty {
 				col.Default = "'" + col.Default + "'"
 			}
 		}
@@ -506,13 +816,13 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 	if rows.Err() != nil {
 		return nil, nil, rows.Err()
 	}
+
 	return colSeq, cols, nil
 }
 
 func (db *dameng) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
-	args := []interface{}{db.uri.DBName}
-	s := "SELECT `TABLE_NAME`, `ENGINE`, `AUTO_INCREMENT`, `TABLE_COMMENT` from " +
-		"`INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? AND (`ENGINE`='MyISAM' OR `ENGINE` = 'InnoDB' OR `ENGINE` = 'TokuDB')"
+	s := "SELECT table_name FROM user_tables WHERE temporary = 'N' AND table_name NOT LIKE ?"
+	args := []interface{}{strings.ToUpper(db.uri.User), "%$%"}
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
@@ -523,18 +833,11 @@ func (db *dameng) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
 		table := schemas.NewEmptyTable()
-		var name, engine string
-		var autoIncr, comment *string
-		err = rows.Scan(&name, &engine, &autoIncr, &comment)
+		err = rows.Scan(&table.Name)
 		if err != nil {
 			return nil, err
 		}
 
-		table.Name = name
-		if comment != nil {
-			table.Comment = *comment
-		}
-		table.StoreEngine = engine
 		tables = append(tables, table)
 	}
 	if rows.Err() != nil {
@@ -543,26 +846,10 @@ func (db *dameng) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 	return tables, nil
 }
 
-func (db *dameng) SetQuotePolicy(quotePolicy QuotePolicy) {
-	switch quotePolicy {
-	case QuotePolicyNone:
-		var q = mysqlQuoter
-		q.IsReserved = schemas.AlwaysNoReserve
-		db.quoter = q
-	case QuotePolicyReserved:
-		var q = mysqlQuoter
-		q.IsReserved = db.IsReserved
-		db.quoter = q
-	case QuotePolicyAlways:
-		fallthrough
-	default:
-		db.quoter = mysqlQuoter
-	}
-}
-
 func (db *dameng) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
-	args := []interface{}{db.uri.DBName, tableName}
-	s := "SELECT `INDEX_NAME`, `NON_UNIQUE`, `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ?"
+	args := []interface{}{tableName}
+	s := "SELECT t.column_name,i.uniqueness,i.index_name FROM user_ind_columns t,user_indexes i " +
+		"WHERE t.index_name = i.index_name and t.table_name = i.table_name and t.table_name =?"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
@@ -573,36 +860,34 @@ func (db *dameng) GetIndexes(queryer core.Queryer, ctx context.Context, tableNam
 	indexes := make(map[string]*schemas.Index)
 	for rows.Next() {
 		var indexType int
-		var indexName, colName, nonUnique string
-		err = rows.Scan(&indexName, &nonUnique, &colName)
+		var indexName, colName, uniqueness string
+
+		err = rows.Scan(&colName, &uniqueness, &indexName)
 		if err != nil {
 			return nil, err
 		}
 
-		if indexName == "PRIMARY" {
-			continue
-		}
+		indexName = strings.Trim(indexName, `" `)
 
-		if nonUnique == "YES" || nonUnique == "1" {
-			indexType = schemas.IndexType
-		} else {
-			indexType = schemas.UniqueType
-		}
-
-		colName = strings.Trim(colName, "` ")
 		var isRegular bool
 		if strings.HasPrefix(indexName, "IDX_"+tableName) || strings.HasPrefix(indexName, "UQE_"+tableName) {
 			indexName = indexName[5+len(tableName):]
 			isRegular = true
 		}
 
+		if uniqueness == "UNIQUE" {
+			indexType = schemas.UniqueType
+		} else {
+			indexType = schemas.IndexType
+		}
+
 		var index *schemas.Index
 		var ok bool
 		if index, ok = indexes[indexName]; !ok {
 			index = new(schemas.Index)
-			index.IsRegular = isRegular
 			index.Type = indexType
 			index.Name = indexName
+			index.IsRegular = isRegular
 			indexes[indexName] = index
 		}
 		index.AddColumn(colName)
@@ -611,59 +896,6 @@ func (db *dameng) GetIndexes(queryer core.Queryer, ctx context.Context, tableNam
 		return nil, rows.Err()
 	}
 	return indexes, nil
-}
-
-func (db *dameng) CreateTableSQL(table *schemas.Table, tableName string) ([]string, bool) {
-	var sql = "CREATE TABLE IF NOT EXISTS "
-	if tableName == "" {
-		tableName = table.Name
-	}
-
-	quoter := db.Quoter()
-
-	sql += quoter.Quote(tableName)
-	sql += " ("
-
-	if len(table.ColumnsSeq()) > 0 {
-		pkList := table.PrimaryKeys
-
-		for _, colName := range table.ColumnsSeq() {
-			col := table.GetColumn(colName)
-			s, _ := ColumnString(db, col, col.IsPrimaryKey && len(pkList) == 1)
-			sql += s
-			sql = strings.TrimSpace(sql)
-			if len(col.Comment) > 0 {
-				sql += " COMMENT '" + col.Comment + "'"
-			}
-			sql += ", "
-		}
-
-		if len(pkList) > 1 {
-			sql += "PRIMARY KEY ( "
-			sql += quoter.Join(pkList, ",")
-			sql += " ), "
-		}
-
-		sql = sql[:len(sql)-2]
-	}
-	sql += ")"
-
-	if table.StoreEngine != "" {
-		sql += " ENGINE=" + table.StoreEngine
-	}
-
-	var charset = table.Charset
-	if len(charset) == 0 {
-		charset = db.URI().Charset
-	}
-	if len(charset) != 0 {
-		sql += " DEFAULT CHARSET " + charset
-	}
-
-	if db.rowFormat != "" {
-		sql += " ROW_FORMAT=" + db.rowFormat
-	}
-	return []string{sql}, true
 }
 
 func (db *dameng) Filters() []Filter {
@@ -705,30 +937,18 @@ func (p *damengDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	}, nil
 }
 
-func (p *damengDriver) GenScanResult(colType string) (interface{}, error) {
+func (g *damengDriver) GenScanResult(colType string) (interface{}, error) {
 	switch colType {
-	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
+	case "CHAR", "NCHAR", "VARCHAR", "VARCHAR2", "NVARCHAR2", "LONG", "CLOB", "NCLOB":
 		var s sql.NullString
 		return &s, nil
-	case "BIGINT":
-		var s sql.NullInt64
-		return &s, nil
-	case "BYTE", "TINYINT", "SMALLINT", "MEDIUMINT", "INT":
-		var s sql.NullInt32
-		return &s, nil
-	case "FLOAT", "REAL", "DOUBLE PRECISION", "DOUBLE":
-		var s sql.NullFloat64
-		return &s, nil
-	case "DECIMAL", "DEC", "NUMERIC", "NUMBER":
+	case "NUMBER":
 		var s sql.NullString
 		return &s, nil
-	case "DATE", "TIME", "TIMESTAMP":
+	case "DATE":
 		var s sql.NullTime
 		return &s, nil
-	case "BIT":
-		var s sql.RawBytes
-		return &s, nil
-	case "BINARY", "VARBINARY", "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB":
+	case "BLOB":
 		var r sql.RawBytes
 		return &r, nil
 	default:
