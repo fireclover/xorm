@@ -62,7 +62,8 @@ func TestCacheFind(t *testing.T) {
 	}
 
 	boxes = make([]MailBox, 0, 2)
-	assert.NoError(t, testEngine.Alias("a").Where("a.id > -1").Asc("a.id").Find(&boxes))
+	assert.NoError(t, testEngine.Alias("a").Where(testEngine.Quote("a.id")+" > -1").
+		Asc(testEngine.Quote("a.id")).Find(&boxes))
 	assert.EqualValues(t, 2, len(boxes))
 	for i, box := range boxes {
 		assert.Equal(t, inserts[i].Id, box.Id)
@@ -77,7 +78,8 @@ func TestCacheFind(t *testing.T) {
 	}
 
 	boxes2 := make([]MailBox4, 0, 2)
-	assert.NoError(t, testEngine.Table("mail_box").Where("mail_box.id > -1").Asc("mail_box.id").Find(&boxes2))
+	assert.NoError(t, testEngine.Table("mail_box").Where(testEngine.Quote("mail_box.id")+" > -1").
+		Asc(testEngine.Quote("mail_box.id")).Find(&boxes2))
 	assert.EqualValues(t, 2, len(boxes2))
 	for i, box := range boxes2 {
 		assert.Equal(t, inserts[i].Id, box.Id)
