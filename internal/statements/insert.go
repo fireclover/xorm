@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/dialects"
+	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -129,7 +129,7 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 						return "", nil, err
 					}
 				}
-				if _, err := buf.WriteString(dialects.SeqName(tableName) + ".nextval"); err != nil {
+				if _, err := buf.WriteString(utils.SeqName(tableName) + ".nextval"); err != nil {
 					return "", nil, err
 				}
 			}

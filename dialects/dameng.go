@@ -616,11 +616,6 @@ func (db *dameng) DropTableSQL(tableName string) (string, bool) {
 	return fmt.Sprintf("DROP TABLE %s", db.quoter.Quote(tableName)), false
 }
 
-// SeqName returns sequence name for some table
-func SeqName(tableName string) string {
-	return "SEQ_" + strings.ToUpper(tableName)
-}
-
 func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) ([]string, bool, error) {
 	if tableName == "" {
 		tableName = table.Name
@@ -653,7 +648,7 @@ func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 	}
 	b.WriteString(")")
 
-	var seqName = SeqName(tableName)
+	var seqName = utils.SeqName(tableName)
 	if table.AutoIncrColumn() != nil {
 		var cnt int
 		rows, err := queryer.QueryContext(ctx, "SELECT COUNT(*) FROM user_sequences WHERE sequence_name = ?", seqName)

@@ -127,7 +127,7 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 					if i == 0 {
 						colNames = append(colNames, col.Name)
 					}
-					colPlaces = append(colPlaces, dialects.SeqName(tableName)+".nextval")
+					colPlaces = append(colPlaces, utils.SeqName(tableName)+".nextval")
 				}
 				continue
 			}
@@ -327,7 +327,7 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 			if err != nil {
 				return 0, err
 			}
-			sql = fmt.Sprintf("select %s.currval from dual", dialects.SeqName(tableName))
+			sql = fmt.Sprintf("select %s.currval from dual", utils.SeqName(tableName))
 		} else {
 			sql = sqlStr
 			newArgs = args
