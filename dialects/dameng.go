@@ -553,14 +553,16 @@ func (db *dameng) Version(ctx context.Context, queryer core.Queryer) (*schemas.V
 func (db *dameng) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
-	case schemas.TinyInt, "BYTE", schemas.Bool:
+	case schemas.TinyInt, "BYTE":
 		res = "TINYINT"
 	case schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer:
 		return "INTEGER"
-	case schemas.Bit, schemas.BigInt,
+	case schemas.BigInt,
 		schemas.UnsignedBigInt, schemas.UnsignedBit, schemas.UnsignedInt,
 		schemas.Serial, schemas.BigSerial:
 		res = "BIGINT"
+	case schemas.Bit, schemas.Bool:
+		return schemas.Bit
 	case schemas.Binary, schemas.VarBinary, schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob, schemas.Bytea:
 		return schemas.Binary
 	case schemas.Date:
