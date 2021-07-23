@@ -436,7 +436,7 @@ func (engine *Engine) DumpTablesToFile(tables []*schemas.Table, fp string, tp ..
 
 // DumpTables dump specify tables to io.Writer
 func (engine *Engine) DumpTables(tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
-	return engine.dumpTables(tables, w, tp...)
+	return engine.dumpTables(context.Background(), tables, w, tp...)
 }
 
 func formatBool(s string, dstDialect dialects.Dialect) string {
@@ -452,7 +452,7 @@ func formatBool(s string, dstDialect dialects.Dialect) string {
 }
 
 // dumpTables dump database all table structs and data to w with specify db type
-func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
+func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
 	var dstDialect dialects.Dialect
 	if len(tp) == 0 {
 		dstDialect = engine.dialect
@@ -504,7 +504,10 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 			}
 		}
 
-		sqls, _ := dstDialect.CreateTableSQL(dstTable, dstTableName)
+		sqls, _, err := dstDialect.CreateTableSQL(ctx, engine.db, dstTable, dstTableName)
+		if err != nil {
+			return err
+		}
 		for _, s := range sqls {
 			_, err = io.WriteString(w, s+";\n")
 			if err != nil {

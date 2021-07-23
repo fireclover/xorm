@@ -559,9 +559,12 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 		res = "NUMBER"
 	case schemas.Binary, schemas.VarBinary, schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob, schemas.Bytea:
 		return schemas.Blob
-	case schemas.Date, schemas.Time, schemas.DateTime, schemas.TimeStamp:
-		res = schemas.Date
-		return res
+	case schemas.Date:
+		return schemas.Date
+	case schemas.Time:
+		return schemas.Time
+	case schemas.DateTime, schemas.TimeStamp:
+		return schemas.TimeStamp
 	case schemas.TimeStampz:
 		res = "TIMESTAMP"
 	case schemas.Float, schemas.Double, schemas.Numeric, schemas.Decimal:
@@ -613,7 +616,12 @@ func (db *dameng) DropTableSQL(tableName string) (string, bool) {
 	return fmt.Sprintf("DROP TABLE %s", db.quoter.Quote(tableName)), false
 }
 
-func (db *dameng) CreateTableSQL(table *schemas.Table, tableName string) ([]string, bool) {
+// SeqName returns sequence name for some table
+func SeqName(tableName string) string {
+	return "SEQ_" + strings.ToUpper(tableName)
+}
+
+func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) ([]string, bool, error) {
 	if tableName == "" {
 		tableName = table.Name
 	}
@@ -645,7 +653,38 @@ func (db *dameng) CreateTableSQL(table *schemas.Table, tableName string) ([]stri
 	}
 	b.WriteString(")")
 
-	return []string{b.String()}, false
+	var seqName = SeqName(tableName)
+	if table.AutoIncrColumn() != nil {
+		var cnt int
+		rows, err := queryer.QueryContext(ctx, "SELECT COUNT(*) FROM user_sequences WHERE sequence_name = ?", seqName)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+		if !rows.Next() {
+			if rows.Err() != nil {
+				return nil, false, rows.Err()
+			}
+			return nil, false, errors.New("query sequence failed")
+		}
+
+		if err := rows.Scan(&cnt); err != nil {
+			return nil, false, err
+		}
+
+		if cnt == 0 {
+			var sql2 = fmt.Sprintf(`CREATE sequence %s 
+			minvalue 1
+       		nomaxvalue
+       		start with 1
+       		increment by 1
+       		nocycle
+			nocache`, seqName)
+			return []string{b.String(), sql2}, false, nil
+		}
+	}
+
+	return []string{b.String()}, false, nil
 }
 
 func (db *dameng) SetQuotePolicy(quotePolicy QuotePolicy) {
@@ -826,13 +865,13 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 
 		switch dt {
 		case "VARCHAR2":
+			col.SQLType = schemas.SQLType{Name: "VARCHAR2", DefaultLength: len1, DefaultLength2: len2}
+		case "VARCHAR":
 			col.SQLType = schemas.SQLType{Name: schemas.Varchar, DefaultLength: len1, DefaultLength2: len2}
-		case "NVARCHAR2":
-			col.SQLType = schemas.SQLType{Name: schemas.NVarchar, DefaultLength: len1, DefaultLength2: len2}
 		case "TIMESTAMP WITH TIME ZONE":
 			col.SQLType = schemas.SQLType{Name: schemas.TimeStampz, DefaultLength: 0, DefaultLength2: 0}
 		case "NUMBER":
-			col.SQLType = schemas.SQLType{Name: schemas.Double, DefaultLength: len1, DefaultLength2: len2}
+			col.SQLType = schemas.SQLType{Name: "NUMBER", DefaultLength: len1, DefaultLength2: len2}
 		case "LONG", "LONG RAW", "NCLOB", "CLOB":
 			col.SQLType = schemas.SQLType{Name: schemas.Text, DefaultLength: 0, DefaultLength2: 0}
 		case "RAW":
@@ -959,7 +998,7 @@ type damengDriver struct {
 // Features return features
 func (p *damengDriver) Features() *DriverFeatures {
 	return &DriverFeatures{
-		SupportReturnInsertedID: true,
+		SupportReturnInsertedID: false,
 	}
 }
 

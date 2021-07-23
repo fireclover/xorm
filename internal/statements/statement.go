@@ -642,14 +642,6 @@ func (statement *Statement) genColumnStr() string {
 	return buf.String()
 }
 
-// GenCreateTableSQL generated create table SQL
-func (statement *Statement) GenCreateTableSQL() []string {
-	statement.RefTable.StoreEngine = statement.StoreEngine
-	statement.RefTable.Charset = statement.Charset
-	s, _ := statement.dialect.CreateTableSQL(statement.RefTable, statement.TableName())
-	return s
-}
-
 // GenIndexSQL generated create index SQL
 func (statement *Statement) GenIndexSQL() []string {
 	var sqls []string

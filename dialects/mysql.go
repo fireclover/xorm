@@ -678,7 +678,11 @@ func (db *mysql) CreateTableSQL(table *schemas.Table, tableName string) ([]strin
 		b.WriteString(" ROW_FORMAT=")
 		b.WriteString(db.rowFormat)
 	}
+<<<<<<< HEAD
 	return []string{b.String()}, true
+=======
+	return []string{sql}, true, nil
+>>>>>>> 4dbe145 (fix insert)
 }
 
 func (db *mysql) Filters() []Filter {

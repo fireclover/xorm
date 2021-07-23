@@ -166,14 +166,14 @@ func TestCacheGet(t *testing.T) {
 	assert.NoError(t, err)
 
 	var box1 MailBox3
-	has, err := testEngine.Where("id = ?", inserts[0].Id).Get(&box1)
+	has, err := testEngine.Where(testEngine.Quote("id")+" = ?", inserts[0].Id).Get(&box1)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, "user1", box1.Username)
 	assert.EqualValues(t, "pass1", box1.Password)
 
 	var box2 MailBox3
-	has, err = testEngine.Where("id = ?", inserts[0].Id).Get(&box2)
+	has, err = testEngine.Where(testEngine.Quote("id")+" = ?", inserts[0].Id).Get(&box2)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, "user1", box2.Username)

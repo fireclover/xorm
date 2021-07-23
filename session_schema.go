@@ -6,6 +6,7 @@ package xorm
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -40,7 +41,13 @@ func (session *Session) createTable(bean interface{}) error {
 		return err
 	}
 
-	sqlStrs := session.statement.GenCreateTableSQL()
+	session.statement.RefTable.StoreEngine = session.statement.StoreEngine
+	session.statement.RefTable.Charset = session.statement.Charset
+	sqlStrs, _, err := session.engine.dialect.CreateTableSQL(context.Background(), session.engine.db, session.statement.RefTable, session.statement.TableName())
+	if err != nil {
+		return err
+	}
+
 	for _, s := range sqlStrs {
 		_, err := session.exec(s)
 		if err != nil {

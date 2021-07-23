@@ -61,7 +61,7 @@ type Dialect interface {
 
 	GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error)
 	IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error)
-	CreateTableSQL(table *schemas.Table, tableName string) ([]string, bool)
+	CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) ([]string, bool, error)
 	DropTableSQL(tableName string) (string, bool)
 
 	GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error)
@@ -285,43 +285,35 @@ func ColumnString(dialect Dialect, col *schemas.Column, includePrimaryKey bool) 
 		return "", err
 	}
 
-	if err := bd.WriteByte(' '); err != nil {
-		return "", err
-	}
-
 	if includePrimaryKey && col.IsPrimaryKey {
-		if _, err := bd.WriteString("PRIMARY KEY "); err != nil {
+		if _, err := bd.WriteString(" PRIMARY KEY"); err != nil {
 			return "", err
 		}
-
 		if col.IsAutoIncrement {
-			if _, err := bd.WriteString(dialect.AutoIncrStr()); err != nil {
+			if err := bd.WriteByte(' '); err != nil {
 				return "", err
 			}
-			if err := bd.WriteByte(' '); err != nil {
+			if _, err := bd.WriteString(dialect.AutoIncrStr()); err != nil {
 				return "", err
 			}
 		}
 	}
 
 	if col.Default != "" {
-		if _, err := bd.WriteString("DEFAULT "); err != nil {
+		if _, err := bd.WriteString(" DEFAULT "); err != nil {
 			return "", err
 		}
 		if _, err := bd.WriteString(col.Default); err != nil {
 			return "", err
 		}
-		if err := bd.WriteByte(' '); err != nil {
-			return "", err
-		}
 	}
 
 	if col.Nullable {
-		if _, err := bd.WriteString("NULL "); err != nil {
+		if _, err := bd.WriteString(" NULL"); err != nil {
 			return "", err
 		}
 	} else {
-		if _, err := bd.WriteString("NOT NULL "); err != nil {
+		if _, err := bd.WriteString(" NOT NULL"); err != nil {
 			return "", err
 		}
 	}
