@@ -1,6 +1,8 @@
-// Copyright 2015 The Xorm Authors. All rights reserved.
+// Copyright 2021 The Xorm Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
+// +build dm
 
 package dialects
 
@@ -13,9 +15,17 @@ import (
 	"strconv"
 	"strings"
 
+	"gitee.com/travelliu/dm"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/schemas"
 )
+
+func init() {
+	RegisterDriver("dm", &damengDriver{})
+	RegisterDialect(schemas.DAMENG, func() Dialect {
+		return &dameng{}
+	})
+}
 
 var (
 	damengReservedWords = map[string]bool{
@@ -512,7 +522,7 @@ type dameng struct {
 }
 
 func (db *dameng) Init(uri *URI) error {
-	db.quoter = oracleQuoter
+	db.quoter = damengQuoter
 	return db.Base.Init(db, uri)
 }
 
@@ -595,7 +605,7 @@ func (db *dameng) AutoIncrStr() string {
 }
 
 func (db *dameng) IsReserved(name string) bool {
-	_, ok := oracleReservedWords[strings.ToUpper(name)]
+	_, ok := damengReservedWords[strings.ToUpper(name)]
 	return ok
 }
 
@@ -641,17 +651,17 @@ func (db *dameng) CreateTableSQL(table *schemas.Table, tableName string) ([]stri
 func (db *dameng) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		var q = oracleQuoter
+		var q = damengQuoter
 		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
-		var q = oracleQuoter
+		var q = damengQuoter
 		q.IsReserved = db.IsReserved
 		db.quoter = q
 	case QuotePolicyAlways:
 		fallthrough
 	default:
-		db.quoter = oracleQuoter
+		db.quoter = damengQuoter
 	}
 }
 
@@ -672,8 +682,47 @@ func (db *dameng) IsColumnExist(queryer core.Queryer, ctx context.Context, table
 	return db.HasRecords(queryer, ctx, query, args...)
 }
 
-func OracleSeqName(tableName string) string {
+func DamengSeqName(tableName string) string {
 	return "SEQ_" + strings.ToUpper(tableName)
+}
+
+var _ sql.Scanner = &dmClobScanner{}
+
+type dmClobScanner struct {
+	valid bool
+	data  string
+}
+
+func (d *dmClobScanner) Scan(data interface{}) error {
+	if data == nil {
+		return nil
+	}
+
+	switch t := data.(type) {
+	case *dm.DmClob:
+		if t == nil {
+			return nil
+		}
+		l, err := t.GetLength()
+		if err != nil {
+			return err
+		}
+		d.data, err = t.ReadString(1, int(l))
+		if err != nil {
+			return err
+		}
+		d.valid = true
+		return nil
+	case []byte:
+		if t == nil {
+			return nil
+		}
+		d.data = string(t)
+		d.valid = true
+		return nil
+	default:
+		return fmt.Errorf("cannot convert %T as dmClobScanner", data)
+	}
 }
 
 func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
@@ -716,7 +765,8 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
-		var colName, colDefault, nullable, dataType, dataPrecision, dataScale, comment sql.NullString
+		var colDefault dmClobScanner
+		var colName, nullable, dataType, dataPrecision, dataScale, comment sql.NullString
 		var dataLen sql.NullInt64
 
 		err = rows.Scan(&colName, &colDefault, &dataType, &dataLen, &dataPrecision,
@@ -730,8 +780,8 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		}
 
 		col.Name = strings.Trim(colName.String, `" `)
-		if colDefault.Valid {
-			col.Default = colDefault.String
+		if colDefault.valid {
+			col.Default = colDefault.data
 			col.DefaultIsEmpty = false
 		}
 
@@ -747,7 +797,7 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		if pkName != "" && pkName == col.Name {
 			col.IsPrimaryKey = true
 
-			has, err := db.HasRecords(queryer, ctx, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", OracleSeqName(tableName))
+			has, err := db.HasRecords(queryer, ctx, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", DamengSeqName(tableName))
 			if err != nil {
 				return nil, nil, err
 			}

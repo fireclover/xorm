@@ -258,13 +258,13 @@ test-tidb\#%: go-check
 
 .PNONY: test-dameng
 test-dameng: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=dm -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test -tags=dm $(INTEGRATION_PACKAGES) -v -race -db=dm -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="dm://$(TEST_DAMENG_USERNAME):$(TEST_DAMENG_PASSWORD)@$(TEST_DAMENG_HOST)" \
 	-coverprofile=dameng.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-dameng\#%
 test-dameng\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=dm -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test -tags=dm $(INTEGRATION_PACKAGES) -v -race -run $* -db=dm -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="dm://$(TEST_DAMENG_USERNAME):$(TEST_DAMENG_PASSWORD)@$(TEST_DAMENG_HOST)" \
 	-coverprofile=dameng.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
 
