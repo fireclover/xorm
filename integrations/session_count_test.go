@@ -63,7 +63,7 @@ func TestSQLCount(t *testing.T) {
 
 	assertSync(t, new(UserinfoCount2), new(UserinfoBooks))
 
-	total, err := testEngine.SQL("SELECT count(id) FROM " + testEngine.TableName("userinfo_count2", true)).
+	total, err := testEngine.SQL("SELECT count(" + testEngine.Quote("id") + ") FROM " + testEngine.TableName("userinfo_count2", true)).
 		Count()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, total)
@@ -166,7 +166,7 @@ func TestCountWithGroupBy(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	cnt, err := testEngine.GroupBy("name").Count(new(CountWithTableName))
+	cnt, err := testEngine.GroupBy(testEngine.Quote("name")).Count(new(CountWithTableName))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, cnt)
 }
