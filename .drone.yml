@@ -384,7 +384,7 @@ steps:
     TEST_DAMENG_USERNAME: SYSDBA
     TEST_DAMENG_PASSWORD: SYSDBA
   commands:
-  - sleep 10
+  - sleep 30
   - make test-dameng
 
 volumes:
