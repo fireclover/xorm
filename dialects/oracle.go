@@ -539,6 +539,12 @@ func (db *oracle) Version(ctx context.Context, queryer core.Queryer) (*schemas.V
 	}, nil
 }
 
+func (db *oracle) Features() *DialectFeatures {
+	return &DialectFeatures{
+		AutoincrMode: SequenceAutoincrMode,
+	}
+}
+
 func (db *oracle) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {

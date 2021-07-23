@@ -60,7 +60,7 @@ func TestExecTime(t *testing.T) {
 	assert.EqualValues(t, now.In(testEngine.GetTZLocation()).Format("2006-01-02 15:04:05"), results[0]["created"])
 
 	var uet UserinfoExecTime
-	has, err := testEngine.Where("uid=?", 1).Get(&uet)
+	has, err := testEngine.Where("`uid`=?", 1).Get(&uet)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, now.In(testEngine.GetTZLocation()).Format("2006-01-02 15:04:05"), uet.Created.Format("2006-01-02 15:04:05"))

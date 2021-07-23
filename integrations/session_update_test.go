@@ -35,7 +35,7 @@ func TestUpdateMap(t *testing.T) {
 	_, err := testEngine.Insert(&tb)
 	assert.NoError(t, err)
 
-	cnt, err := testEngine.Table("update_table").Where("id = ?", tb.Id).Update(map[string]interface{}{
+	cnt, err := testEngine.Table("update_table").Where("`id` = ?", tb.Id).Update(map[string]interface{}{
 		"name": "test2",
 		"age":  36,
 	})
@@ -166,7 +166,7 @@ func TestForUpdate(t *testing.T) {
 	// use lock
 	fList := make([]ForUpdate, 0)
 	session1.ForUpdate()
-	session1.Where("id = ?", 1)
+	session1.Where("`id` = ?", 1)
 	err = session1.Find(&fList)
 	switch {
 	case err != nil:
@@ -187,7 +187,7 @@ func TestForUpdate(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		f2 := new(ForUpdate)
-		session2.Where("id = ?", 1).ForUpdate()
+		session2.Where("`id` = ?", 1).ForUpdate()
 		has, err := session2.Get(f2) // wait release lock
 		switch {
 		case err != nil:
@@ -207,7 +207,7 @@ func TestForUpdate(t *testing.T) {
 	wg2.Add(1)
 	go func() {
 		f3 := new(ForUpdate)
-		session3.Where("id = ?", 1)
+		session3.Where("`id` = ?", 1)
 		has, err := session3.Get(f3) // wait release lock
 		switch {
 		case err != nil:
@@ -225,7 +225,7 @@ func TestForUpdate(t *testing.T) {
 
 	f := new(ForUpdate)
 	f.Name = "updated by session1"
-	session1.Where("id = ?", 1)
+	session1.Where("`id` = ?", 1)
 	session1.Update(f)
 
 	// release lock
@@ -300,7 +300,7 @@ func TestUpdateMap2(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(UpdateMustCols))
 
-	_, err := testEngine.Table("update_must_cols").Where("id =?", 1).Update(map[string]interface{}{
+	_, err := testEngine.Table("update_must_cols").Where("`id` =?", 1).Update(map[string]interface{}{
 		"bool": true,
 	})
 	assert.NoError(t, err)
@@ -825,7 +825,7 @@ func TestNewUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, af)
 
-	af, err = testEngine.Table(new(TbUserInfo)).Where("phone=?", "13126564922").Update(&changeUsr)
+	af, err = testEngine.Table(new(TbUserInfo)).Where("`phone`=?", "13126564922").Update(&changeUsr)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, af)
 }
@@ -1197,7 +1197,7 @@ func TestUpdateAlias(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = testEngine.Alias("ua").Where("ua.id = ?", 1).Update(&UpdateAlias{
+	_, err = testEngine.Alias("ua").Where("`ua`.`id` = ?", 1).Update(&UpdateAlias{
 		NumIssues: 2,
 		Name:      "lunny xiao",
 	})
@@ -1237,7 +1237,7 @@ func TestUpdateExprs2(t *testing.T) {
 	assert.EqualValues(t, 1, inserted)
 
 	updated, err := testEngine.
-		Where("repo_id = ? AND is_tag = ?", 1, false).
+		Where("`repo_id` = ? AND `is_tag` = ?", 1, false).
 		SetExpr("is_draft", true).
 		SetExpr("num_commits", 0).
 		SetExpr("sha1", "").
@@ -1308,7 +1308,7 @@ func TestUpdateIgnoreOnlyFromDBFields(t *testing.T) {
 
 	assertGetRecord := func() *TestOnlyFromDBField {
 		var record TestOnlyFromDBField
-		has, err := testEngine.Where("id = ?", 1).Get(&record)
+		has, err := testEngine.Where("`id` = ?", 1).Get(&record)
 		assert.NoError(t, err)
 		assert.EqualValues(t, true, has)
 		assert.EqualValues(t, "", record.OnlyFromDBField)

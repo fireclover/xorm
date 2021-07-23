@@ -38,11 +38,21 @@ func (uri *URI) SetSchema(schema string) {
 	}
 }
 
+const (
+	IncrAutoincrMode = iota
+	SequenceAutoincrMode
+)
+
+type DialectFeatures struct {
+	AutoincrMode int // 0 autoincrement column, 1 sequence
+}
+
 // Dialect represents a kind of database
 type Dialect interface {
 	Init(*URI) error
 	URI() *URI
 	Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error)
+	Features() *DialectFeatures
 
 	SQLType(*schemas.Column) string
 	Alias(string) string       // return what a sql type's alias of

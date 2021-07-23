@@ -244,6 +244,12 @@ func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Ve
 	}, nil
 }
 
+func (db *mysql) Features() *DialectFeatures {
+	return &DialectFeatures{
+		AutoincrMode: IncrAutoincrMode,
+	}
+}
+
 func (db *mysql) SetParams(params map[string]string) {
 	rowFormat, ok := params["rowFormat"]
 	if ok {

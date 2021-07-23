@@ -282,6 +282,12 @@ func (db *mssql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Ve
 	}, nil
 }
 
+func (db *mssql) Features() *DialectFeatures {
+	return &DialectFeatures{
+		AutoincrMode: IncrAutoincrMode,
+	}
+}
+
 func (db *mssql) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {

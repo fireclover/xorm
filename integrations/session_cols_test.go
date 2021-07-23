@@ -54,9 +54,9 @@ func TestSetExpr(t *testing.T) {
 
 	tableName := testEngine.TableName(new(UserExprIssue), true)
 	cnt, err = testEngine.SetExpr("issue_id",
-		builder.Select(testEngine.Quote("id")).
+		builder.Select("`id`").
 			From(testEngine.Quote(tableName)).
-			Where(builder.Eq{testEngine.Quote("id"): issue.Id})).
+			Where(builder.Eq{"`id`": issue.Id})).
 		ID(1).
 		Update(new(UserExpr))
 	assert.NoError(t, err)

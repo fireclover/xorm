@@ -18,7 +18,7 @@ func TestClose(t *testing.T) {
 	sess1.Close()
 	assert.True(t, sess1.IsClosed())
 
-	sess2 := testEngine.Where("a = ?", 1)
+	sess2 := testEngine.Where("`a` = ?", 1)
 	sess2.Close()
 	assert.True(t, sess2.IsClosed())
 }

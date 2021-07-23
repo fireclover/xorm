@@ -316,6 +316,7 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 		var sql string
 		var newArgs []interface{}
 		var needCommit bool
+		var id int64
 		if session.engine.dialect.URI().DBType == schemas.ORACLE || session.engine.dialect.URI().DBType == schemas.DAMENG {
 			if session.isAutoCommit { // if it's not in transaction
 				if err := session.Begin(); err != nil {
@@ -327,24 +328,33 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 			if err != nil {
 				return 0, err
 			}
-			sql = fmt.Sprintf("select %s.currval from dual", utils.SeqName(tableName))
+			i := utils.IndexSlice(colNames, table.AutoIncrement)
+			if i > -1 {
+				id, err = convert.AsInt64(args[i])
+				if err != nil {
+					return 0, err
+				}
+			} else {
+				sql = fmt.Sprintf("select %s.currval from dual", utils.SeqName(tableName))
+			}
 		} else {
 			sql = sqlStr
 			newArgs = args
 		}
 
-		var id int64
-		err := session.queryRow(sql, newArgs...).Scan(&id)
-		if err != nil {
-			return 0, err
-		}
-		if needCommit {
-			if err := session.Commit(); err != nil {
+		if id == 0 {
+			err := session.queryRow(sql, newArgs...).Scan(&id)
+			if err != nil {
 				return 0, err
 			}
-		}
-		if id == 0 {
-			return 0, errors.New("insert successfully but not returned id")
+			if needCommit {
+				if err := session.Commit(); err != nil {
+					return 0, err
+				}
+			}
+			if id == 0 {
+				return 0, errors.New("insert successfully but not returned id")
+			}
 		}
 
 		defer handleAfterInsertProcessorFunc(bean)

@@ -173,7 +173,7 @@ func TestNullStructUpdate(t *testing.T) {
 		item.IsMan = sql.NullBool{Bool: true, Valid: true}
 		item.Age = sql.NullInt64{Int64: 34, Valid: true}
 
-		_, err := testEngine.Where("age > ?", 34).Update(item)
+		_, err := testEngine.Where("`age` > ?", 34).Update(item)
 		assert.NoError(t, err)
 	}
 
@@ -260,7 +260,7 @@ func TestNullStructIterate(t *testing.T) {
 	assertSync(t, new(NullType))
 
 	if true {
-		err := testEngine.Where("age IS NOT NULL").OrderBy("age").Iterate(new(NullType),
+		err := testEngine.Where("`age` IS NOT NULL").OrderBy("age").Iterate(new(NullType),
 			func(i int, bean interface{}) error {
 				nultype := bean.(*NullType)
 				fmt.Println(i, nultype)
@@ -276,7 +276,7 @@ func TestNullStructCount(t *testing.T) {
 
 	if true {
 		item := new(NullType)
-		_, err := testEngine.Where("age IS NOT NULL").Count(item)
+		_, err := testEngine.Where("`age` IS NOT NULL").Count(item)
 		assert.NoError(t, err)
 	}
 }
@@ -286,7 +286,7 @@ func TestNullStructRows(t *testing.T) {
 	assertSync(t, new(NullType))
 
 	item := new(NullType)
-	rows, err := testEngine.Where("id > ?", 1).Rows(item)
+	rows, err := testEngine.Where("`id` > ?", 1).Rows(item)
 	assert.NoError(t, err)
 	defer rows.Close()
 
@@ -305,6 +305,6 @@ func TestNullStructDelete(t *testing.T) {
 	_, err := testEngine.ID(1).Delete(item)
 	assert.NoError(t, err)
 
-	_, err = testEngine.Where("id > ?", 1).Delete(item)
+	_, err = testEngine.Where("`id` > ?", 1).Delete(item)
 	assert.NoError(t, err)
 }

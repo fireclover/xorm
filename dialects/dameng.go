@@ -551,6 +551,12 @@ func (db *dameng) Version(ctx context.Context, queryer core.Queryer) (*schemas.V
 	}, nil
 }
 
+func (db *dameng) Features() *DialectFeatures {
+	return &DialectFeatures{
+		AutoincrMode: SequenceAutoincrMode,
+	}
+}
+
 func (db *dameng) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
@@ -561,7 +567,7 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 	case schemas.BigInt,
 		schemas.UnsignedBigInt, schemas.UnsignedBit, schemas.UnsignedInt,
 		schemas.Serial, schemas.BigSerial:
-		res = "BIGINT"
+		return "BIGINT"
 	case schemas.Bit, schemas.Bool:
 		return schemas.Bit
 	case schemas.Binary, schemas.VarBinary, schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob, schemas.Bytea:

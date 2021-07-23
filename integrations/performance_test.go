@@ -32,7 +32,7 @@ func BenchmarkGetVars(b *testing.B) {
 	b.StartTimer()
 	var myname string
 	for i := 0; i < b.N; i++ {
-		has, err := testEngine.Cols("name").Table("benchmark_get_vars").Where("id=?", v.Id).Get(&myname)
+		has, err := testEngine.Cols("name").Table("benchmark_get_vars").Where("`id`=?", v.Id).Get(&myname)
 		b.StopTimer()
 		myname = ""
 		assert.True(b, has)

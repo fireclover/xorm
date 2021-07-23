@@ -730,7 +730,7 @@ func TestLowerCase(t *testing.T) {
 
 	err := testEngine.Sync2(&Lowercase{})
 	assert.NoError(t, err)
-	_, err = testEngine.Where("id > 0").Delete(&Lowercase{})
+	_, err = testEngine.Where("`id` > 0").Delete(&Lowercase{})
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&Lowercase{ended: 1})
