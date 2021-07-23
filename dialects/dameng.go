@@ -17,6 +17,7 @@ import (
 
 	"gitee.com/travelliu/dm"
 	"xorm.io/xorm/core"
+	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -552,13 +553,16 @@ func (db *dameng) Version(ctx context.Context, queryer core.Queryer) (*schemas.V
 func (db *dameng) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
-	case schemas.Bit, schemas.TinyInt, schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer, schemas.BigInt,
+	case schemas.TinyInt, "BYTE", schemas.Bool:
+		res = "TINYINT"
+	case schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer:
+		return "INTEGER"
+	case schemas.Bit, schemas.BigInt,
 		schemas.UnsignedBigInt, schemas.UnsignedBit, schemas.UnsignedInt,
-		schemas.Bool,
 		schemas.Serial, schemas.BigSerial:
-		res = "NUMBER"
+		res = "BIGINT"
 	case schemas.Binary, schemas.VarBinary, schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob, schemas.Bytea:
-		return schemas.Blob
+		return schemas.Binary
 	case schemas.Date:
 		return schemas.Date
 	case schemas.Time:
@@ -567,8 +571,12 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 		return schemas.TimeStamp
 	case schemas.TimeStampz:
 		res = "TIMESTAMP"
-	case schemas.Float, schemas.Double, schemas.Numeric, schemas.Decimal:
-		res = "NUMBER"
+	case schemas.Float:
+		res = "FLOAT"
+	case schemas.Real, schemas.Double:
+		res = "REAL"
+	case schemas.Numeric, schemas.Decimal, "NUMBER":
+		res = "NUMERIC"
 	case schemas.Text, schemas.MediumText, schemas.LongText, schemas.Json:
 		res = "CLOB"
 	case schemas.Char, schemas.Varchar, schemas.TinyText:
