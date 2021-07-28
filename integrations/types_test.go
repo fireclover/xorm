@@ -512,7 +512,7 @@ func TestUnsignedTinyInt(t *testing.T) {
 	case schemas.MYSQL:
 		assert.EqualValues(t, "UNSIGNED TINYINT", tables[0].Columns()[0].SQLType.Name)
 	case schemas.POSTGRES:
-		assert.EqualValues(t, "INT", tables[0].Columns()[0].SQLType.Name)
+		assert.EqualValues(t, "SMALLINT", tables[0].Columns()[0].SQLType.Name)
 	case schemas.MSSQL:
 		assert.EqualValues(t, "INT", tables[0].Columns()[0].SQLType.Name)
 	default:
