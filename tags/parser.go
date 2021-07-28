@@ -296,11 +296,5 @@ func (parser *Parser) Parse(v reflect.Value) (*schemas.Table, error) {
 		table.AddColumn(col)
 	} // end for
 
-	deletedColumn := table.DeletedColumn()
-	// check columns
-	if deletedColumn != nil {
-		deletedColumn.Nullable = true
-	}
-
 	return table, nil
 }
