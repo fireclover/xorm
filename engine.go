@@ -561,36 +561,22 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			}
 			for i, scanResult := range scanResults {
 				stp := schemas.SQLType{Name: types[i].DatabaseTypeName()}
-				if stp.IsNumeric() {
-					s := scanResult.(*sql.NullString)
-					if s.Valid {
-						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
-							return err
-						}
-					} else {
-						if _, err = io.WriteString(w, "NULL"); err != nil {
-							return err
-						}
-					}
-				} else if stp.IsBool() {
-					s := scanResult.(*sql.NullString)
-					if s.Valid {
-						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
-							return err
-						}
-					} else {
-						if _, err = io.WriteString(w, "NULL"); err != nil {
-							return err
-						}
+				s := scanResult.(*sql.NullString)
+				if !s.Valid {
+					if _, err = io.WriteString(w, "NULL"); err != nil {
+						return err
 					}
 				} else {
-					s := scanResult.(*sql.NullString)
-					if s.Valid {
-						if _, err = io.WriteString(w, "'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
+					if stp.IsNumeric() {
+						if _, err = io.WriteString(w, s.String); err != nil {
+							return err
+						}
+					} else if stp.IsBool() {
+						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
 							return err
 						}
 					} else {
-						if _, err = io.WriteString(w, "NULL"); err != nil {
+						if _, err = io.WriteString(w, "'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
 							return err
 						}
 					}
