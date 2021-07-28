@@ -15,6 +15,7 @@ import (
 	"hash/crc32"
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"xorm.io/xorm/contexts"
@@ -464,6 +465,44 @@ func (session *Session) setJSON(fieldValue *reflect.Value, fieldType reflect.Typ
 	return nil
 }
 
+func asKind(vv reflect.Value, tp reflect.Type) (interface{}, error) {
+	switch tp.Kind() {
+	case reflect.Ptr:
+		return asKind(vv.Elem(), tp.Elem())
+	case reflect.Int64:
+		return vv.Int(), nil
+	case reflect.Int:
+		return int(vv.Int()), nil
+	case reflect.Int32:
+		return int32(vv.Int()), nil
+	case reflect.Int16:
+		return int16(vv.Int()), nil
+	case reflect.Int8:
+		return int8(vv.Int()), nil
+	case reflect.Uint64:
+		return vv.Uint(), nil
+	case reflect.Uint:
+		return uint(vv.Uint()), nil
+	case reflect.Uint32:
+		return uint32(vv.Uint()), nil
+	case reflect.Uint16:
+		return uint16(vv.Uint()), nil
+	case reflect.Uint8:
+		return uint8(vv.Uint()), nil
+	case reflect.String:
+		return vv.String(), nil
+	case reflect.Slice:
+		if tp.Elem().Kind() == reflect.Uint8 {
+			v, err := strconv.ParseInt(string(vv.Interface().([]byte)), 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			return v, nil
+		}
+	}
+	return nil, fmt.Errorf("unsupported primary key type: %v, %v", tp, vv)
+}
+
 func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflect.Value,
 	scanResult interface{}, table *schemas.Table) error {
 	v, ok := scanResult.(*interface{})
@@ -612,7 +651,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		}
 	} // switch fieldType.Kind()
 
-	return convertAssignV(fieldValue.Addr(), scanResult)
+	return convert.AssignValue(fieldValue.Addr(), scanResult)
 }
 
 func (session *Session) slice2Bean(scanResults []interface{}, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {

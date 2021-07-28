@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
@@ -378,7 +379,7 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 			return 1, nil
 		}
 
-		return 1, convertAssignV(*aiValue, id)
+		return 1, convert.AssignValue(*aiValue, id)
 	}
 
 	res, err := session.exec(sqlStr, args...)
@@ -418,7 +419,7 @@ func (session *Session) innerInsert(bean interface{}) (int64, error) {
 		return res.RowsAffected()
 	}
 
-	if err := convertAssignV(*aiValue, id); err != nil {
+	if err := convert.AssignValue(*aiValue, id); err != nil {
 		return 0, err
 	}
 

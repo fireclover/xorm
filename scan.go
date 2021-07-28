@@ -235,7 +235,7 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 
 	for i, replaced := range replaces {
 		if replaced {
-			if err = convertAssign(vv[i], scanResults[i], engine.DatabaseTZ, engine.TZLocation); err != nil {
+			if err = convert.Assign(vv[i], scanResults[i], engine.DatabaseTZ, engine.TZLocation); err != nil {
 				return err
 			}
 		}

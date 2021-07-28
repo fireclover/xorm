@@ -10,6 +10,7 @@ import (
 
 	"xorm.io/builder"
 	"xorm.io/xorm/caches"
+	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/internal/statements"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
@@ -280,7 +281,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 func convertPKToValue(table *schemas.Table, dst interface{}, pk schemas.PK) error {
 	cols := table.PKColumns()
 	if len(cols) == 1 {
-		return convertAssign(dst, pk[0], nil, nil)
+		return convert.Assign(dst, pk[0], nil, nil)
 	}
 
 	dst = pk
@@ -478,7 +479,7 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 			keyValue := reflect.New(keyType)
 			var ikey interface{}
 			if len(key) == 1 {
-				if err := convertAssignV(keyValue, key[0]); err != nil {
+				if err := convert.AssignValue(keyValue, key[0]); err != nil {
 					return err
 				}
 				ikey = keyValue.Elem().Interface()
