@@ -586,7 +586,9 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 		res = "REAL"
 	case schemas.Numeric, schemas.Decimal, "NUMBER":
 		res = "NUMERIC"
-	case schemas.Text, schemas.MediumText, schemas.LongText, schemas.Json:
+	case schemas.Text, schemas.Json:
+		res = "TEXT"
+	case schemas.MediumText, schemas.LongText:
 		res = "CLOB"
 	case schemas.Char, schemas.Varchar, schemas.TinyText:
 		res = "VARCHAR2"
@@ -758,6 +760,10 @@ func (d *dmClobScanner) Scan(data interface{}) error {
 		if err != nil {
 			return err
 		}
+		if l == 0 {
+			d.valid = true
+			return nil
+		}
 		d.data, err = t.ReadString(1, int(l))
 		if err != nil {
 			return err
@@ -884,7 +890,7 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 			col.SQLType = schemas.SQLType{Name: schemas.TimeStampz, DefaultLength: 0, DefaultLength2: 0}
 		case "NUMBER":
 			col.SQLType = schemas.SQLType{Name: "NUMBER", DefaultLength: len1, DefaultLength2: len2}
-		case "LONG", "LONG RAW", "NCLOB", "CLOB":
+		case "LONG", "LONG RAW", "NCLOB", "CLOB", "TEXT":
 			col.SQLType = schemas.SQLType{Name: schemas.Text, DefaultLength: 0, DefaultLength2: 0}
 		case "RAW":
 			col.SQLType = schemas.SQLType{Name: schemas.Binary, DefaultLength: 0, DefaultLength2: 0}
@@ -1066,7 +1072,7 @@ func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.Colu
 		var replaced bool
 		var scanResult interface{}
 		switch types[i].DatabaseTypeName() {
-		case "CLOB":
+		case "CLOB", "TEXT":
 			scanResult = &dmClobScanner{}
 			replaced = true
 		default:
