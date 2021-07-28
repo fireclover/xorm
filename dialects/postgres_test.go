@@ -22,20 +22,24 @@ func TestParsePostgres(t *testing.T) {
 		//{"postgres://auser:パスワード@localhost:5432/データベース?sslmode=disable", "データベース", true},
 		{"dbname=db sslmode=disable", "db", true},
 		{"user=auser password=password dbname=db sslmode=disable", "db", true},
+		{"user=auser password='pass word' dbname=db sslmode=disable", "db", true},
+		{"user=auser password='pass word' sslmode=disable dbname='db'", "db", true},
+		{"user=auser password='pass word' sslmode='disable dbname=db'", "db", false},
 		{"", "db", false},
 		{"dbname=db =disable", "db", false},
 	}
 
 	driver := QueryDriver("postgres")
-
 	for _, test := range tests {
-		uri, err := driver.Parse("postgres", test.in)
+		t.Run(test.in, func(t *testing.T) {
+			uri, err := driver.Parse("postgres", test.in)
 
-		if err != nil && test.valid {
-			t.Errorf("%q got unexpected error: %s", test.in, err)
-		} else if err == nil && !reflect.DeepEqual(test.expected, uri.DBName) {
-			t.Errorf("%q got: %#v want: %#v", test.in, uri.DBName, test.expected)
-		}
+			if err != nil && test.valid {
+				t.Errorf("%q got unexpected error: %s", test.in, err)
+			} else if err == nil && !reflect.DeepEqual(test.expected, uri.DBName) {
+				t.Errorf("%q got: %#v want: %#v", test.in, uri.DBName, test.expected)
+			}
+		})
 	}
 }
 

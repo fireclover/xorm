@@ -303,10 +303,15 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 		c.IsPrimaryKey = true
 		c.Nullable = false
 		res = schemas.BigInt
-	case schemas.Bytea, schemas.Blob, schemas.Binary, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob:
+	case schemas.Bytea, schemas.Binary:
 		res = schemas.VarBinary
 		if c.Length == 0 {
 			c.Length = 50
+		}
+	case schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob:
+		res = schemas.VarBinary
+		if c.Length == 0 {
+			res += "(MAX)"
 		}
 	case schemas.TimeStamp:
 		res = schemas.DateTime
