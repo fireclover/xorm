@@ -879,13 +879,13 @@ func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 func (db *postgres) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
-	case schemas.TinyInt:
+	case schemas.TinyInt, schemas.UnsignedTinyInt:
 		res = schemas.SmallInt
 		return res
 	case schemas.Bit:
 		res = schemas.Boolean
 		return res
-	case schemas.MediumInt, schemas.Int, schemas.Integer:
+	case schemas.MediumInt, schemas.Int, schemas.Integer, schemas.UnsignedMediumInt, schemas.UnsignedSmallInt:
 		if c.IsAutoIncrement {
 			return schemas.Serial
 		}

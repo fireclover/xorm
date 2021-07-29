@@ -263,6 +263,7 @@ func (db *mysql) SetParams(params map[string]string) {
 
 func (db *mysql) SQLType(c *schemas.Column) string {
 	var res string
+	var isUnsigned bool
 	switch t := c.SQLType.Name; t {
 	case schemas.Bool:
 		res = schemas.TinyInt
@@ -309,8 +310,19 @@ func (db *mysql) SQLType(c *schemas.Column) string {
 		res = schemas.Text
 	case schemas.UnsignedInt:
 		res = schemas.Int
+		isUnsigned = true
 	case schemas.UnsignedBigInt:
 		res = schemas.BigInt
+		isUnsigned = true
+	case schemas.UnsignedMediumInt:
+		res = schemas.MediumInt
+		isUnsigned = true
+	case schemas.UnsignedSmallInt:
+		res = schemas.SmallInt
+		isUnsigned = true
+	case schemas.UnsignedTinyInt:
+		res = schemas.TinyInt
+		isUnsigned = true
 	default:
 		res = t
 	}
@@ -329,7 +341,7 @@ func (db *mysql) SQLType(c *schemas.Column) string {
 		res += "(" + strconv.Itoa(c.Length) + ")"
 	}
 
-	if c.SQLType.Name == schemas.UnsignedBigInt || c.SQLType.Name == schemas.UnsignedInt {
+	if isUnsigned {
 		res += " UNSIGNED"
 	}
 

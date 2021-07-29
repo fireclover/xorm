@@ -93,6 +93,7 @@ type Context struct {
 	hasCacheTag     bool
 	hasNoCacheTag   bool
 	ignoreNext      bool
+	isUnsigned      bool
 }
 
 // Handler describes tag handler for XORM
@@ -122,6 +123,7 @@ var (
 		"NOCACHE":  NoCacheTagHandler,
 		"COMMENT":  CommentTagHandler,
 		"EXTENDS":  ExtendsTagHandler,
+		"UNSIGNED": UnsignedTagHandler,
 	}
 )
 
@@ -265,6 +267,12 @@ func UniqueTagHandler(ctx *Context) error {
 	} else {
 		ctx.isUnique = true
 	}
+	return nil
+}
+
+// UnsignedTagHandler represents the column is unsigned
+func UnsignedTagHandler(ctx *Context) error {
+	ctx.isUnsigned = true
 	return nil
 }
 

@@ -217,6 +217,10 @@ func (parser *Parser) parseFieldWithTags(table *schemas.Table, fieldIndex int, f
 	if col.SQLType.Name == "" {
 		col.SQLType = schemas.Type2SQLType(field.Type)
 	}
+	if ctx.isUnsigned && col.SQLType.IsNumeric() && !strings.HasPrefix(col.SQLType.Name, "UNSIGNED") {
+		col.SQLType.Name = "UNSIGNED " + col.SQLType.Name
+	}
+
 	parser.dialect.SQLType(col)
 	if col.Length == 0 {
 		col.Length = col.SQLType.DefaultLength

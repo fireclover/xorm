@@ -493,6 +493,45 @@ func TestUnsignedUint32(t *testing.T) {
 	assert.EqualValues(t, uint64(math.MaxUint32), v.Id)
 }
 
+func TestUnsignedTinyInt(t *testing.T) {
+	type MyUnsignedTinyIntStruct struct {
+		Id uint8 `xorm:"unsigned tinyint"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(MyUnsignedTinyIntStruct))
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(tables))
+	assert.EqualValues(t, 1, len(tables[0].Columns()))
+
+	switch testEngine.Dialect().URI().DBType {
+	case schemas.SQLITE:
+		assert.EqualValues(t, "INTEGER", tables[0].Columns()[0].SQLType.Name)
+	case schemas.MYSQL:
+		assert.EqualValues(t, "UNSIGNED TINYINT", tables[0].Columns()[0].SQLType.Name)
+	case schemas.POSTGRES:
+		assert.EqualValues(t, "SMALLINT", tables[0].Columns()[0].SQLType.Name)
+	case schemas.MSSQL:
+		assert.EqualValues(t, "INT", tables[0].Columns()[0].SQLType.Name)
+	default:
+		assert.False(t, true, "Unsigned is not implemented")
+	}
+
+	cnt, err := testEngine.Insert(&MyUnsignedTinyIntStruct{
+		Id: math.MaxUint8,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var v MyUnsignedTinyIntStruct
+	has, err := testEngine.Get(&v)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, uint64(math.MaxUint32), v.Id)
+}
+
 type MyDecimal big.Int
 
 func (d *MyDecimal) FromDB(data []byte) error {
