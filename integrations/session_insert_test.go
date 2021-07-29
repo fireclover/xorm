@@ -1065,3 +1065,82 @@ func TestInsertDeleted(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 }
+
+func TestInsertMultipleMap(t *testing.T) {
+	type InsertMultipleMap struct {
+		Id     int64
+		Width  uint32
+		Height uint32
+		Name   string
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(InsertMultipleMap))
+
+	cnt, err := testEngine.Table(new(InsertMultipleMap)).Insert([]map[string]interface{}{
+		{
+			"width":  20,
+			"height": 10,
+			"name":   "lunny",
+		},
+		{
+			"width":  30,
+			"height": 20,
+			"name":   "xiaolunwen",
+		},
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, cnt)
+
+	var res []InsertMultipleMap
+	err = testEngine.Find(&res)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, len(res))
+	assert.EqualValues(t, InsertMultipleMap{
+		Id:     1,
+		Width:  20,
+		Height: 10,
+		Name:   "lunny",
+	}, res[0])
+	assert.EqualValues(t, InsertMultipleMap{
+		Id:     2,
+		Width:  30,
+		Height: 20,
+		Name:   "xiaolunwen",
+	}, res[1])
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(InsertMultipleMap))
+
+	cnt, err = testEngine.Table(new(InsertMultipleMap)).Insert([]map[string]string{
+		{
+			"width":  "20",
+			"height": "10",
+			"name":   "lunny",
+		},
+		{
+			"width":  "30",
+			"height": "20",
+			"name":   "xiaolunwen",
+		},
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, cnt)
+
+	res = make([]InsertMultipleMap, 0, 2)
+	err = testEngine.Find(&res)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, len(res))
+	assert.EqualValues(t, InsertMultipleMap{
+		Id:     1,
+		Width:  20,
+		Height: 10,
+		Name:   "lunny",
+	}, res[0])
+	assert.EqualValues(t, InsertMultipleMap{
+		Id:     2,
+		Width:  30,
+		Height: 20,
+		Name:   "xiaolunwen",
+	}, res[1])
+}
