@@ -22,7 +22,7 @@ func TestDelete(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserinfoDelete)))
+	assert.NoError(t, testEngine.Sync(new(UserinfoDelete)))
 
 	session := testEngine.NewSession()
 	defer session.Close()
@@ -250,7 +250,7 @@ func TestDelete2(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserinfoDelete2)))
+	assert.NoError(t, testEngine.Sync(new(UserinfoDelete2)))
 
 	user := UserinfoDelete2{}
 	cnt, err := testEngine.Insert(&user)

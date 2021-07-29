@@ -23,7 +23,7 @@ func TestBefore_Get(t *testing.T) {
 		Val  string `xorm:"-"`
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(BeforeTable)))
+	assert.NoError(t, testEngine.Sync(new(BeforeTable)))
 
 	cnt, err := testEngine.Insert(&BeforeTable{
 		Name: "test",
@@ -50,7 +50,7 @@ func TestBefore_Find(t *testing.T) {
 		Val  string `xorm:"-"`
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(BeforeTable2)))
+	assert.NoError(t, testEngine.Sync(new(BeforeTable2)))
 
 	cnt, err := testEngine.Insert([]BeforeTable2{
 		{Name: "test1"},

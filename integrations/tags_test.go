@@ -673,7 +673,7 @@ func TestCreatedUpdated(t *testing.T) {
 		Updated  time.Time `xorm:"updated"`
 	}
 
-	err := testEngine.Sync2(&CreatedUpdated{})
+	err := testEngine.Sync(&CreatedUpdated{})
 	assert.NoError(t, err)
 
 	c := &CreatedUpdated{Name: "test"}
@@ -728,7 +728,7 @@ type Lowercase struct {
 func TestLowerCase(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	err := testEngine.Sync2(&Lowercase{})
+	err := testEngine.Sync(&Lowercase{})
 	assert.NoError(t, err)
 	_, err = testEngine.Where("`id` > 0").Delete(&Lowercase{})
 	assert.NoError(t, err)
@@ -827,7 +827,7 @@ func TestTagComment(t *testing.T) {
 	assert.True(t, cols[0].DefaultIsEmpty)
 	assert.EqualValues(t, "", cols[0].Default)
 
-	assert.NoError(t, testEngine.Sync2(new(TestComment1)))
+	assert.NoError(t, testEngine.Sync(new(TestComment1)))
 
 	tables, err := testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -851,7 +851,7 @@ func TestTagComment(t *testing.T) {
 	assert.True(t, cols[0].DefaultIsEmpty)
 	assert.EqualValues(t, "", cols[0].Default)
 
-	assert.NoError(t, testEngine.Sync2(new(TestComment2)))
+	assert.NoError(t, testEngine.Sync(new(TestComment2)))
 
 	tables, err = testEngine.DBMetas()
 	assert.NoError(t, err)

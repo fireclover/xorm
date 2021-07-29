@@ -53,7 +53,7 @@ func TestAutoTransaction(t *testing.T) {
 		Created time.Time `xorm:"created"`
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(TestTx)))
+	assert.NoError(t, testEngine.Sync(new(TestTx)))
 
 	engine := testEngine.(*xorm.Engine)
 
@@ -87,7 +87,7 @@ func assertSync(t *testing.T, beans ...interface{}) {
 	for _, bean := range beans {
 		t.Run(testEngine.TableName(bean, true), func(t *testing.T) {
 			assert.NoError(t, testEngine.DropTables(bean))
-			assert.NoError(t, testEngine.Sync2(bean))
+			assert.NoError(t, testEngine.Sync(bean))
 		})
 	}
 }

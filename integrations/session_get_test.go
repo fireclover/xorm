@@ -33,7 +33,7 @@ func TestGetVar(t *testing.T) {
 		Created time.Time `xorm:"created"`
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(GetVar)))
+	assert.NoError(t, testEngine.Sync(new(GetVar)))
 
 	var data = GetVar{
 		Msg:   "hi",
@@ -235,7 +235,7 @@ func TestGetStruct(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserinfoGet)))
+	assert.NoError(t, testEngine.Sync(new(UserinfoGet)))
 
 	session := testEngine.NewSession()
 	defer session.Close()
@@ -266,7 +266,7 @@ func TestGetStruct(t *testing.T) {
 		Total  int64
 	}
 
-	assert.NoError(t, testEngine.Sync2(&NoIdUser{}))
+	assert.NoError(t, testEngine.Sync(&NoIdUser{}))
 
 	userCol := testEngine.GetColumnMapper().Obj2Table("User")
 	_, err = testEngine.Where("`"+userCol+"` = ?", "xlw").Delete(&NoIdUser{})
@@ -576,7 +576,7 @@ func (MyGetCustomTableImpletation) TableName() string {
 
 func TestGetCustomTableInterface(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	assert.NoError(t, testEngine.Table(getCustomTableName).Sync2(new(MyGetCustomTableImpletation)))
+	assert.NoError(t, testEngine.Table(getCustomTableName).Sync(new(MyGetCustomTableImpletation)))
 
 	exist, err := testEngine.IsTableExist(getCustomTableName)
 	assert.NoError(t, err)

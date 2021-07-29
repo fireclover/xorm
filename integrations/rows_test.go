@@ -18,7 +18,7 @@ func TestRows(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserRows)))
+	assert.NoError(t, testEngine.Sync(new(UserRows)))
 
 	cnt, err := testEngine.Insert(&UserRows{
 		IsMan: true,
@@ -94,7 +94,7 @@ func TestRowsMyTableName(t *testing.T) {
 
 	var tableName = "user_rows_my_table_name"
 
-	assert.NoError(t, testEngine.Table(tableName).Sync2(new(UserRowsMyTable)))
+	assert.NoError(t, testEngine.Table(tableName).Sync(new(UserRowsMyTable)))
 
 	cnt, err := testEngine.Table(tableName).Insert(&UserRowsMyTable{
 		IsMan: true,
@@ -141,7 +141,7 @@ func (UserRowsSpecTable) TableName() string {
 
 func TestRowsSpecTableName(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	assert.NoError(t, testEngine.Sync2(new(UserRowsSpecTable)))
+	assert.NoError(t, testEngine.Sync(new(UserRowsSpecTable)))
 
 	cnt, err := testEngine.Insert(&UserRowsSpecTable{
 		IsMan: true,

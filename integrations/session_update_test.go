@@ -27,7 +27,7 @@ func TestUpdateMap(t *testing.T) {
 		Age  int
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UpdateTable)))
+	assert.NoError(t, testEngine.Sync(new(UpdateTable)))
 	var tb = UpdateTable{
 		Name: "test",
 		Age:  35,
@@ -78,7 +78,7 @@ func TestUpdateLimit(t *testing.T) {
 		Age  int
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UpdateTable2)))
+	assert.NoError(t, testEngine.Sync(new(UpdateTable2)))
 	var tb = UpdateTable2{
 		Name: "test1",
 		Age:  35,
@@ -382,7 +382,7 @@ func TestUpdate1(t *testing.T) {
 		assert.EqualValues(t, 1, cnt, "delete not returned 1")
 	}
 
-	err = testEngine.StoreEngine("Innodb").Sync2(&Article{})
+	err = testEngine.StoreEngine("Innodb").Sync(&Article{})
 	assert.NoError(t, err)
 
 	defer func() {
@@ -513,7 +513,7 @@ func TestUpdateUpdated(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
 	di := new(UpdatedUpdate)
-	err := testEngine.Sync2(di)
+	err := testEngine.Sync(di)
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&UpdatedUpdate{})
@@ -529,7 +529,7 @@ func TestUpdateUpdated(t *testing.T) {
 	assert.EqualValues(t, ci.Updated.Unix(), di.Updated.Unix())
 
 	di2 := new(UpdatedUpdate2)
-	err = testEngine.Sync2(di2)
+	err = testEngine.Sync(di2)
 	assert.NoError(t, err)
 
 	now := time.Now()
@@ -556,7 +556,7 @@ func TestUpdateUpdated(t *testing.T) {
 	assert.True(t, ci2.Updated >= di21.Updated)
 
 	di3 := new(UpdatedUpdate3)
-	err = testEngine.Sync2(di3)
+	err = testEngine.Sync(di3)
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&UpdatedUpdate3{})
@@ -572,7 +572,7 @@ func TestUpdateUpdated(t *testing.T) {
 	assert.EqualValues(t, ci3.Updated, di3.Updated)
 
 	di4 := new(UpdatedUpdate4)
-	err = testEngine.Sync2(di4)
+	err = testEngine.Sync(di4)
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&UpdatedUpdate4{})
@@ -588,7 +588,7 @@ func TestUpdateUpdated(t *testing.T) {
 	assert.EqualValues(t, ci4.Updated, di4.Updated)
 
 	di5 := new(UpdatedUpdate5)
-	err = testEngine.Sync2(di5)
+	err = testEngine.Sync(di5)
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&UpdatedUpdate5{})

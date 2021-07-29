@@ -18,7 +18,7 @@ func TestIterate(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserIterate)))
+	assert.NoError(t, testEngine.Sync(new(UserIterate)))
 
 	cnt, err := testEngine.Insert(&UserIterate{
 		IsMan: true,
@@ -46,7 +46,7 @@ func TestBufferIterate(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserBufferIterate)))
+	assert.NoError(t, testEngine.Sync(new(UserBufferIterate)))
 
 	var size = 20
 	for i := 0; i < size; i++ {

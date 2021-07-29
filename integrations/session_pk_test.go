@@ -607,7 +607,7 @@ func TestCompositePK(t *testing.T) {
 	assert.NoError(t, err)
 
 	assertSync(t, new(TaskSolution))
-	assert.NoError(t, testEngine.Sync2(new(TaskSolution)))
+	assert.NoError(t, testEngine.Sync(new(TaskSolution)))
 
 	tables2, err := testEngine.DBMetas()
 	assert.NoError(t, err)

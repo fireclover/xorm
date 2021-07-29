@@ -21,7 +21,7 @@ func BenchmarkGetVars(b *testing.B) {
 		Name string
 	}
 
-	assert.NoError(b, testEngine.Sync2(new(BenchmarkGetVars)))
+	assert.NoError(b, testEngine.Sync(new(BenchmarkGetVars)))
 
 	var v = BenchmarkGetVars{
 		Name: "myname",
@@ -52,7 +52,7 @@ func BenchmarkGetStruct(b *testing.B) {
 		Name string
 	}
 
-	assert.NoError(b, testEngine.Sync2(new(BenchmarkGetStruct)))
+	assert.NoError(b, testEngine.Sync(new(BenchmarkGetStruct)))
 
 	var v = BenchmarkGetStruct{
 		Name: "myname",
@@ -84,7 +84,7 @@ func BenchmarkFindStruct(b *testing.B) {
 		Name string
 	}
 
-	assert.NoError(b, testEngine.Sync2(new(BenchmarkFindStruct)))
+	assert.NoError(b, testEngine.Sync(new(BenchmarkFindStruct)))
 
 	var v = BenchmarkFindStruct{
 		Name: "myname",

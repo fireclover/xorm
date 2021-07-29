@@ -263,7 +263,13 @@ func (session *Session) addUnique(tableName, uqeName string) error {
 }
 
 // Sync2 synchronize structs to database tables
+// Depricated
 func (session *Session) Sync2(beans ...interface{}) error {
+	return session.Sync(beans...)
+}
+
+// Sync synchronize structs to database tables
+func (session *Session) Sync(beans ...interface{}) error {
 	engine := session.engine
 
 	if session.isAutoClose {
