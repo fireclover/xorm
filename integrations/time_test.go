@@ -15,8 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func formatTime(t time.Time) string {
-	return t.Format("2006-01-02 15:04:05")
+func formatTime(t time.Time, scales ...int) string {
+	var layout = "2006-01-02 15:04:05"
+	if len(scales) > 0 && scales[0] > 0 {
+		layout += "." + strings.Repeat("0", scales[0])
+	}
+	return t.Format(layout)
 }
 
 func TestTimeUserTime(t *testing.T) {
@@ -564,4 +568,28 @@ func TestDeletedInt64(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, d1, d4)
+}
+
+func TestTimestamp(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type TimestampStruct struct {
+		Id         int64
+		InsertTime time.Time `xorm:"timestamp"`
+	}
+
+	assertSync(t, new(TimestampStruct))
+
+	var d1 = TimestampStruct{
+		InsertTime: time.Now(),
+	}
+	cnt, err := testEngine.Insert(&d1)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var d2 TimestampStruct
+	has, err := testEngine.ID(d1.Id).Get(&d2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, formatTime(d1.InsertTime, 6), formatTime(d2.InsertTime, 6))
 }
