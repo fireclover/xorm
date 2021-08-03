@@ -320,7 +320,7 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 			res = schemas.DateTime
 		}
 	case schemas.TimeStampz:
-		res = "DATETIMEOFFSET"
+		res = "DATETIME2"
 		c.Length = 7
 	case schemas.MediumInt, schemas.TinyInt, schemas.SmallInt, schemas.UnsignedMediumInt, schemas.UnsignedTinyInt, schemas.UnsignedSmallInt:
 		res = schemas.Int
@@ -502,6 +502,8 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 				col.Length /= 2
 				col.Length2 /= 2
 			}
+		case "DATETIME2":
+			col.SQLType = schemas.SQLType{Name: schemas.DateTime, DefaultLength: 7, DefaultLength2: 0}
 		case "IMAGE":
 			col.SQLType = schemas.SQLType{Name: schemas.VarBinary, DefaultLength: 0, DefaultLength2: 0}
 		case "NCHAR":

@@ -571,25 +571,51 @@ func TestDeletedInt64(t *testing.T) {
 }
 
 func TestTimestamp(t *testing.T) {
-	assert.NoError(t, PrepareEngine())
+	{
+		assert.NoError(t, PrepareEngine())
 
-	type TimestampStruct struct {
-		Id         int64
-		InsertTime time.Time `xorm:"DATETIME(6)"`
+		type TimestampStruct struct {
+			Id         int64
+			InsertTime time.Time `xorm:"DATETIME(6)"`
+		}
+
+		assertSync(t, new(TimestampStruct))
+
+		var d1 = TimestampStruct{
+			InsertTime: time.Now(),
+		}
+		cnt, err := testEngine.Insert(&d1)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt)
+
+		var d2 TimestampStruct
+		has, err := testEngine.ID(d1.Id).Get(&d2)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, formatTime(d1.InsertTime, 6), formatTime(d2.InsertTime, 6))
 	}
 
-	assertSync(t, new(TimestampStruct))
+	{
+		assert.NoError(t, PrepareEngine())
 
-	var d1 = TimestampStruct{
-		InsertTime: time.Now(),
+		type TimestampzStruct struct {
+			Id         int64
+			InsertTime time.Time `xorm:"TIMESTAMPZ"`
+		}
+
+		assertSync(t, new(TimestampzStruct))
+
+		var d3 = TimestampzStruct{
+			InsertTime: time.Now(),
+		}
+		cnt, err := testEngine.Insert(&d3)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt)
+
+		var d4 TimestampzStruct
+		has, err := testEngine.ID(d3.Id).Get(&d4)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, formatTime(d3.InsertTime, 6), formatTime(d4.InsertTime, 6))
 	}
-	cnt, err := testEngine.Insert(&d1)
-	assert.NoError(t, err)
-	assert.EqualValues(t, 1, cnt)
-
-	var d2 TimestampStruct
-	has, err := testEngine.ID(d1.Id).Get(&d2)
-	assert.NoError(t, err)
-	assert.True(t, has)
-	assert.EqualValues(t, formatTime(d1.InsertTime, 6), formatTime(d2.InsertTime, 6))
 }
