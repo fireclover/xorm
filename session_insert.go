@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
@@ -137,7 +138,10 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 				continue
 			}
 			if (col.IsCreated || col.IsUpdated) && session.statement.UseAutoTime {
-				val, t := session.engine.nowTime(col)
+				val, t, err := session.engine.nowTime(col)
+				if err != nil {
+					return 0, err
+				}
 				args = append(args, val)
 
 				var colName = col.Name
@@ -427,34 +431,27 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 		if col.MapType == schemas.ONLYFROMDB {
 			continue
 		}
-
-		if col.IsDeleted {
-			colNames = append(colNames, col.Name)
-			if !col.Nullable {
-				if col.SQLType.IsNumeric() {
-					args = append(args, 0)
-				} else {
-					args = append(args, time.Time{}.Format("2006-01-02 15:04:05"))
-				}
-			} else {
-				args = append(args, nil)
-			}
-			continue
-		}
-
 		if session.statement.OmitColumnMap.Contain(col.Name) {
 			continue
 		}
-
 		if len(session.statement.ColumnMap) > 0 && !session.statement.ColumnMap.Contain(col.Name) {
 			continue
 		}
-
 		if session.statement.IncrColumns.IsColExist(col.Name) {
 			continue
 		} else if session.statement.DecrColumns.IsColExist(col.Name) {
 			continue
 		} else if session.statement.ExprColumns.IsColExist(col.Name) {
+			continue
+		}
+
+		if col.IsDeleted {
+			arg, err := dialects.FormatColumnTime(session.engine.dialect, session.engine.DatabaseTZ, col, time.Time{})
+			if err != nil {
+				return nil, nil, err
+			}
+			args = append(args, arg)
+			colNames = append(colNames, col.Name)
 			continue
 		}
 
@@ -478,7 +475,10 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 
 		if (col.IsCreated || col.IsUpdated) && session.statement.UseAutoTime /*&& isZero(fieldValue.Interface())*/ {
 			// if time is non-empty, then set to auto time
-			val, t := session.engine.nowTime(col)
+			val, t, err := session.engine.nowTime(col)
+			if err != nil {
+				return nil, nil, err
+			}
 			args = append(args, val)
 
 			var colName = col.Name

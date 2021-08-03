@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"xorm.io/xorm/internal/utils"
@@ -34,6 +35,14 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		return &dt, nil
 	} else if len(s) == 25 && s[10] == 'T' && s[19] == '+' && s[22] == ':' {
 		dt, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return nil, err
+		}
+		dt = dt.In(convertedLocation)
+		return &dt, nil
+	} else if len(s) >= 21 && s[19] == '.' {
+		var layout = "2006-01-02 15:04:05." + strings.Repeat("0", len(s)-20)
+		dt, err := time.ParseInLocation(layout, s, originalLocation)
 		if err != nil {
 			return nil, err
 		}

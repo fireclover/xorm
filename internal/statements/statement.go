@@ -734,7 +734,11 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 			if !requiredField && (t.IsZero() || !fieldValue.IsValid()) {
 				return nil, false, nil
 			}
-			return dialects.FormatColumnTime(statement.dialect, statement.defaultTimeZone, col, t), true, nil
+			res, err := dialects.FormatColumnTime(statement.dialect, statement.defaultTimeZone, col, t)
+			if err != nil {
+				return nil, false, err
+			}
+			return res, true, nil
 		} else if fieldType.ConvertibleTo(schemas.BigFloatType) {
 			t := fieldValue.Convert(schemas.BigFloatType).Interface().(big.Float)
 			v := t.String()

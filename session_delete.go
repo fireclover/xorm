@@ -212,7 +212,10 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 		paramsLen := len(condArgs)
 		copy(condArgs[1:paramsLen], condArgs[0:paramsLen-1])
 
-		val, t := session.engine.nowTime(deletedColumn)
+		val, t, err := session.engine.nowTime(deletedColumn)
+		if err != nil {
+			return 0, err
+		}
 		condArgs[0] = val
 
 		var colName = deletedColumn.Name

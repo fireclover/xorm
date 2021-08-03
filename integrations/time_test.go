@@ -575,7 +575,7 @@ func TestTimestamp(t *testing.T) {
 
 	type TimestampStruct struct {
 		Id         int64
-		InsertTime time.Time `xorm:"timestamp"`
+		InsertTime time.Time `xorm:"DATETIME(6)"`
 	}
 
 	assertSync(t, new(TimestampStruct))
