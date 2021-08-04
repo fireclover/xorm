@@ -526,8 +526,9 @@ func TestModifyColum(t *testing.T) {
 		SQLType: schemas.SQLType{
 			Name: "VARCHAR",
 		},
-		Length:   16,
-		Nullable: false,
+		Length:         16,
+		Nullable:       false,
+		DefaultIsEmpty: true,
 	})
 	_, err := testEngine.Exec(alterSQL)
 	assert.NoError(t, err)

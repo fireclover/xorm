@@ -335,8 +335,14 @@ func ColumnString(dialect Dialect, col *schemas.Column, includePrimaryKey bool) 
 		if _, err := bd.WriteString(" DEFAULT "); err != nil {
 			return "", err
 		}
-		if _, err := bd.WriteString(col.Default); err != nil {
-			return "", err
+		if col.Default == "" {
+			if _, err := bd.WriteString("''"); err != nil {
+				return "", err
+			}
+		} else {
+			if _, err := bd.WriteString(col.Default); err != nil {
+				return "", err
+			}
 		}
 	}
 
