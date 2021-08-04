@@ -176,6 +176,10 @@ func TestReplace(t *testing.T) {
 			"UPDATE table SET `a` = ~ `a`, `b`='abc`'",
 			"UPDATE table SET [a] = ~ [a], [b]='abc`'",
 		},
+		{
+			"INSERT INTO `insert_where` (`height`,`name`,`repo_id`,`width`,`index`) SELECT $1,$2,$3,$4,coalesce(MAX(`index`),0)+1 FROM `insert_where` WHERE (`repo_id`=$5)",
+			"INSERT INTO [insert_where] ([height],[name],[repo_id],[width],[index]) SELECT $1,$2,$3,$4,coalesce(MAX([index]),0)+1 FROM [insert_where] WHERE ([repo_id]=$5)",
+		},
 	}
 
 	for _, kase := range kases {
