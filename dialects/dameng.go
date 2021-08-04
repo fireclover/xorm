@@ -569,6 +569,9 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 		return "BIGINT"
 	case schemas.Bit, schemas.Bool:
 		return schemas.Bit
+	case schemas.Uuid:
+		res = schemas.Varchar
+		c.Length = 40
 	case schemas.Binary:
 		if c.Length == 0 {
 			return schemas.Binary + "(MAX)"
