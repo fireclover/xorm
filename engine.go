@@ -504,16 +504,26 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			}
 		}
 
-		sqls, _, err := dstDialect.CreateTableSQL(ctx, engine.db, dstTable, dstTableName)
+		sqlstr, _, err := dstDialect.CreateTableSQL(ctx, engine.db, dstTable, dstTableName)
 		if err != nil {
 			return err
 		}
-		for _, s := range sqls {
-			_, err = io.WriteString(w, s+";\n")
+		_, err = io.WriteString(w, sqlstr+";\n")
+		if err != nil {
+			return err
+		}
+
+		if dstTable.AutoIncrement != "" && dstDialect.Features().SupportSequence {
+			sqlstr, err = dstDialect.CreateSequenceSQL(ctx, engine.db, utils.SeqName(dstTableName))
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, sqlstr+";\n")
 			if err != nil {
 				return err
 			}
 		}
+
 		if len(dstTable.PKColumns()) > 0 && dstDialect.URI().DBType == schemas.MSSQL {
 			fmt.Fprintf(w, "SET IDENTITY_INSERT [%s] ON;\n", dstTable.Name)
 		}

@@ -685,10 +685,14 @@ func (db *mysql) CreateTableSQL(table *schemas.Table, tableName string) ([]strin
 		b.WriteString(db.rowFormat)
 	}
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return []string{b.String()}, true
 =======
 	return []string{sql}, true, nil
 >>>>>>> 4dbe145 (fix insert)
+=======
+	return sql, true, nil
+>>>>>>> 21b6352 (Fix more bugs)
 }
 
 func (db *mysql) Filters() []Filter {

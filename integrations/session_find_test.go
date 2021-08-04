@@ -991,7 +991,7 @@ func TestMoreExtends(t *testing.T) {
 	books = make([]MoreExtendsBooksExtend, 0, len(books))
 	err = testEngine.Table("more_extends_books").
 		Alias("m").
-		Select("m.*, `more_extends_users`.*").
+		Select("`m`.*, `more_extends_users`.*").
 		Join("INNER", "more_extends_users", "`m`.`user_id` = `more_extends_users`.`id`").
 		Where("`m`.`name` LIKE ?", "abc").
 		Limit(10, 10).

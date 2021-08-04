@@ -18,7 +18,6 @@ import (
 	"gitee.com/travelliu/dm"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/internal/convert"
-	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -529,7 +528,7 @@ func (db *dameng) Init(uri *URI) error {
 }
 
 func (db *dameng) Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error) {
-	rows, err := queryer.QueryContext(ctx, "select * from v$version where banner like 'Oracle%'")
+	rows, err := queryer.QueryContext(ctx, "SELECT * FROM V$VERSION") // select id_code
 	if err != nil {
 		return nil, err
 	}
@@ -553,7 +552,8 @@ func (db *dameng) Version(ctx context.Context, queryer core.Queryer) (*schemas.V
 
 func (db *dameng) Features() *DialectFeatures {
 	return &DialectFeatures{
-		AutoincrMode: SequenceAutoincrMode,
+		AutoincrMode:    SequenceAutoincrMode,
+		SupportSequence: true,
 	}
 }
 
@@ -570,8 +570,12 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 		return "BIGINT"
 	case schemas.Bit, schemas.Bool:
 		return schemas.Bit
-	case schemas.Binary, schemas.VarBinary, schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob, schemas.Bytea:
-		return schemas.Binary
+	case schemas.Binary:
+		if c.Length == 0 {
+			return schemas.Binary + "(MAX)"
+		}
+	case schemas.VarBinary, schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob, schemas.Bytea:
+		return schemas.VarBinary
 	case schemas.Date:
 		return schemas.Date
 	case schemas.Time:
@@ -635,7 +639,7 @@ func (db *dameng) DropTableSQL(tableName string) (string, bool) {
 	return fmt.Sprintf("DROP TABLE %s", db.quoter.Quote(tableName)), false
 }
 
-func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) ([]string, bool, error) {
+func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
 	if tableName == "" {
 		tableName = table.Name
 	}
@@ -667,38 +671,7 @@ func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 	}
 	b.WriteString(")")
 
-	var seqName = utils.SeqName(tableName)
-	if table.AutoIncrColumn() != nil {
-		var cnt int
-		rows, err := queryer.QueryContext(ctx, "SELECT COUNT(*) FROM user_sequences WHERE sequence_name = ?", seqName)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-		if !rows.Next() {
-			if rows.Err() != nil {
-				return nil, false, rows.Err()
-			}
-			return nil, false, errors.New("query sequence failed")
-		}
-
-		if err := rows.Scan(&cnt); err != nil {
-			return nil, false, err
-		}
-
-		if cnt == 0 {
-			var sql2 = fmt.Sprintf(`CREATE sequence %s 
-			minvalue 1
-       		nomaxvalue
-       		start with 1
-       		increment by 1
-       		nocycle
-			nocache`, seqName)
-			return []string{b.String(), sql2}, false, nil
-		}
-	}
-
-	return []string{b.String()}, false, nil
+	return b.String(), false, nil
 }
 
 func (db *dameng) SetQuotePolicy(quotePolicy QuotePolicy) {
@@ -726,6 +699,26 @@ func (db *dameng) IndexCheckSQL(tableName, idxName string) (string, []interface{
 
 func (db *dameng) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
 	return db.HasRecords(queryer, ctx, `SELECT table_name FROM user_tables WHERE table_name = ?`, tableName)
+}
+
+func (db *dameng) IsSequenceExist(ctx context.Context, queryer core.Queryer, seqName string) (bool, error) {
+	var cnt int
+	rows, err := queryer.QueryContext(ctx, "SELECT COUNT(*) FROM user_sequences WHERE sequence_name = ?", seqName)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return false, rows.Err()
+		}
+		return false, errors.New("query sequence failed")
+	}
+
+	if err := rows.Scan(&cnt); err != nil {
+		return false, err
+	}
+	return cnt > 0, nil
 }
 
 func (db *dameng) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
@@ -839,7 +832,8 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		col.Name = strings.Trim(colName.String, `" `)
 		if colDefault.valid {
 			col.Default = colDefault.data
-			col.DefaultIsEmpty = false
+		} else {
+			col.DefaultIsEmpty = true
 		}
 
 		if nullable.String == "Y" {
@@ -1052,12 +1046,21 @@ func (d *damengDriver) GenScanResult(colType string) (interface{}, error) {
 	case "NUMBER":
 		var s sql.NullString
 		return &s, nil
-	case "DATE":
-		var s sql.NullTime
+	case "BIGINT":
+		var s sql.NullInt64
+		return &s, nil
+	case "INTEGER":
+		var s sql.NullInt32
+		return &s, nil
+	case "DATE", "TIMESTAMP":
+		var s sql.NullString
 		return &s, nil
 	case "BLOB":
 		var r sql.RawBytes
 		return &r, nil
+	case "FLOAT":
+		var s sql.NullFloat64
+		return &s, nil
 	default:
 		var r sql.RawBytes
 		return &r, nil

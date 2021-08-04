@@ -43,17 +43,26 @@ func (session *Session) createTable(bean interface{}) error {
 
 	session.statement.RefTable.StoreEngine = session.statement.StoreEngine
 	session.statement.RefTable.Charset = session.statement.Charset
-	sqlStrs, _, err := session.engine.dialect.CreateTableSQL(context.Background(), session.engine.db, session.statement.RefTable, session.statement.TableName())
+	tableName := session.statement.TableName()
+	refTable := session.statement.RefTable
+	sqlStr, _, err := session.engine.dialect.CreateTableSQL(context.Background(), session.engine.db, refTable, tableName)
 	if err != nil {
 		return err
 	}
+	if _, err := session.exec(sqlStr); err != nil {
+		return err
+	}
 
-	for _, s := range sqlStrs {
-		_, err := session.exec(s)
+	if refTable.AutoIncrement != "" && session.engine.dialect.Features().SupportSequence {
+		sqlStr, err = session.engine.dialect.CreateSequenceSQL(context.Background(), session.engine.db, utils.SeqName(tableName))
 		if err != nil {
 			return err
 		}
+		if _, err := session.exec(sqlStr); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -148,11 +157,32 @@ func (session *Session) dropTable(beanOrTableName interface{}) error {
 		checkIfExist = exist
 	}
 
-	if checkIfExist {
-		_, err := session.exec(sqlStr)
+	if !checkIfExist {
+		return nil
+	}
+	if _, err := session.exec(sqlStr); err != nil {
 		return err
 	}
-	return nil
+
+	if !session.engine.dialect.Features().SupportSequence {
+		return nil
+	}
+
+	var seqName = utils.SeqName(tableName)
+	exist, err := session.engine.dialect.IsSequenceExist(session.ctx, session.getQueryer(), seqName)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		return nil
+	}
+
+	sqlStr, err = session.engine.dialect.DropSequenceSQL(seqName)
+	if err != nil {
+		return err
+	}
+	_, err = session.exec(sqlStr)
+	return err
 }
 
 // IsTableExist if a table is exist
