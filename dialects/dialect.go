@@ -44,8 +44,7 @@ const (
 )
 
 type DialectFeatures struct {
-	AutoincrMode    int // 0 autoincrement column, 1 sequence
-	SupportSequence bool
+	AutoincrMode int // 0 autoincrement column, 1 sequence
 }
 
 // Dialect represents a kind of database

@@ -513,7 +513,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			return err
 		}
 
-		if dstTable.AutoIncrement != "" && dstDialect.Features().SupportSequence {
+		if dstTable.AutoIncrement != "" && dstDialect.Features().AutoincrMode == dialects.SequenceAutoincrMode {
 			sqlstr, err = dstDialect.CreateSequenceSQL(ctx, engine.db, utils.SeqName(dstTableName))
 			if err != nil {
 				return err

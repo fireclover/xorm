@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 
+	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
@@ -53,7 +54,7 @@ func (session *Session) createTable(bean interface{}) error {
 		return err
 	}
 
-	if refTable.AutoIncrement != "" && session.engine.dialect.Features().SupportSequence {
+	if refTable.AutoIncrement != "" && session.engine.dialect.Features().AutoincrMode == dialects.SequenceAutoincrMode {
 		sqlStr, err = session.engine.dialect.CreateSequenceSQL(context.Background(), session.engine.db, utils.SeqName(tableName))
 		if err != nil {
 			return err
@@ -164,7 +165,7 @@ func (session *Session) dropTable(beanOrTableName interface{}) error {
 		return err
 	}
 
-	if !session.engine.dialect.Features().SupportSequence {
+	if session.engine.dialect.Features().AutoincrMode == dialects.IncrAutoincrMode {
 		return nil
 	}
 
