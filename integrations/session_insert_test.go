@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"xorm.io/xorm"
+	"xorm.io/xorm/schemas"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -624,6 +625,11 @@ func TestAnonymousStruct(t *testing.T) {
 }
 
 func TestInsertMap(t *testing.T) {
+	if testEngine.Dialect().URI().DBType == schemas.DAMENG {
+		t.SkipNow()
+		return
+	}
+
 	type InsertMap struct {
 		Id     int64
 		Width  uint32
@@ -727,7 +733,7 @@ func TestInsertWhere(t *testing.T) {
 	}
 
 	inserted, err := testEngine.SetExpr("`index`", "coalesce(MAX(`index`),0)+1").
-		Where("repo_id=?", 1).
+		Where("`repo_id`=?", 1).
 		Insert(&i)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, inserted)
@@ -1067,6 +1073,11 @@ func TestInsertDeleted(t *testing.T) {
 }
 
 func TestInsertMultipleMap(t *testing.T) {
+	if testEngine.Dialect().URI().DBType == schemas.DAMENG {
+		t.SkipNow()
+		return
+	}
+
 	type InsertMultipleMap struct {
 		Id     int64
 		Width  uint32

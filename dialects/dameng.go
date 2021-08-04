@@ -552,8 +552,7 @@ func (db *dameng) Version(ctx context.Context, queryer core.Queryer) (*schemas.V
 
 func (db *dameng) Features() *DialectFeatures {
 	return &DialectFeatures{
-		AutoincrMode:    SequenceAutoincrMode,
-		SupportSequence: true,
+		AutoincrMode: SequenceAutoincrMode,
 	}
 }
 

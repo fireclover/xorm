@@ -658,6 +658,7 @@ func (session *Session) insertMap(columns []string, args []interface{}) (int64, 
 	if err != nil {
 		return 0, err
 	}
+	sql = session.engine.dialect.Quoter().Replace(sql)
 
 	if err := session.cacheInsert(tableName); err != nil {
 		return 0, err
@@ -684,6 +685,7 @@ func (session *Session) insertMultipleMap(columns []string, argss [][]interface{
 	if err != nil {
 		return 0, err
 	}
+	sql = session.engine.dialect.Quoter().Replace(sql)
 
 	if err := session.cacheInsert(tableName); err != nil {
 		return 0, err
