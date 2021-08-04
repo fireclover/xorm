@@ -116,6 +116,8 @@ func TestDump(t *testing.T) {
 	os.Remove(fp)
 	assert.NoError(t, testEngine.DumpAllToFile(fp))
 
+	//panic("")
+
 	assert.NoError(t, PrepareEngine())
 
 	sess := testEngine.NewSession()

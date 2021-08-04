@@ -31,16 +31,20 @@ func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.C
 	t = t.In(tmZone)
 
 	switch col.SQLType.Name {
-	case schemas.Time:
-		s := t.Format("2006-01-02 15:04:05") // time.RFC3339
-		return s[11:19], nil
 	case schemas.Date:
 		return t.Format("2006-01-02"), nil
-	case schemas.DateTime, schemas.TimeStamp:
+	case schemas.Time:
+		var layout = "15:04:05"
 		if col.Length > 0 {
-			return t.Format("2006-01-02 15:04:05." + strings.Repeat("0", col.Length)), nil
+			layout += "." + strings.Repeat("0", col.Length)
 		}
-		return t.Format("2006-01-02 15:04:05"), nil
+		return t.Format(layout), nil
+	case schemas.DateTime, schemas.TimeStamp:
+		var layout = "2006-01-02 15:04:05"
+		if col.Length > 0 {
+			layout += "." + strings.Repeat("0", col.Length)
+		}
+		return t.Format(layout), nil
 	case schemas.Varchar:
 		return t.Format("2006-01-02 15:04:05"), nil
 	case schemas.TimeStampz:

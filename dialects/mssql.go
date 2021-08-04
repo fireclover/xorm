@@ -317,10 +317,10 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 		if c.Length > 3 {
 			res = "DATETIME2"
 		} else {
-			res = schemas.DateTime
+			return schemas.DateTime
 		}
 	case schemas.TimeStampz:
-		res = "DATETIME2"
+		res = "DATETIMEOFFSET"
 		c.Length = 7
 	case schemas.MediumInt, schemas.TinyInt, schemas.SmallInt, schemas.UnsignedMediumInt, schemas.UnsignedTinyInt, schemas.UnsignedSmallInt:
 		res = schemas.Int
@@ -504,6 +504,10 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 			}
 		case "DATETIME2":
 			col.SQLType = schemas.SQLType{Name: schemas.DateTime, DefaultLength: 7, DefaultLength2: 0}
+			col.Length = scale
+		case "DATETIME":
+			col.SQLType = schemas.SQLType{Name: schemas.DateTime, DefaultLength: 3, DefaultLength2: 0}
+			col.Length = scale
 		case "IMAGE":
 			col.SQLType = schemas.SQLType{Name: schemas.VarBinary, DefaultLength: 0, DefaultLength2: 0}
 		case "NCHAR":
