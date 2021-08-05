@@ -285,7 +285,7 @@ func (db *mssql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Ve
 func (db *mssql) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
-	case schemas.Bool:
+	case schemas.Bool, schemas.Boolean:
 		res = schemas.Bit
 		if strings.EqualFold(c.Default, "true") {
 			c.Default = "1"
