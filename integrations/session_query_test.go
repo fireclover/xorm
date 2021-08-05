@@ -223,7 +223,7 @@ func TestQuerySliceStringNoParam(t *testing.T) {
 		assert.EqualValues(t, "0", records[0][1])
 	}
 
-	records, err = testEngine.Table("get_var6").Where(builder.Eq{"id": 1}).QuerySliceString()
+	records, err = testEngine.Table("get_var6").Where(builder.Eq{"`id`": 1}).QuerySliceString()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(records))
 	assert.EqualValues(t, "1", records[0][0])
@@ -256,7 +256,7 @@ func TestQueryInterfaceNoParam(t *testing.T) {
 	assert.EqualValues(t, 1, records[0]["id"])
 	assert.False(t, toBool(records[0]["msg"]))
 
-	records, err = testEngine.Table("get_var5").Where(builder.Eq{"id": 1}).QueryInterface()
+	records, err = testEngine.Table("get_var5").Where(builder.Eq{"`id`": 1}).QueryInterface()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(records))
 	assert.EqualValues(t, 1, records[0]["id"])
@@ -303,7 +303,7 @@ func TestQueryWithBuilder(t *testing.T) {
 		assert.EqualValues(t, 3000, money)
 	}
 
-	results, err := testEngine.Query(builder.Select("*").From(testEngine.TableName("query_with_builder", true)))
+	results, err := testEngine.Query(builder.Select("*").From(testEngine.Quote(testEngine.TableName("query_with_builder", true))))
 	assert.NoError(t, err)
 	assertResult(t, results)
 }
@@ -346,14 +346,14 @@ func TestJoinWithSubQuery(t *testing.T) {
 
 	tbName := testEngine.Quote(testEngine.TableName("join_with_sub_query_depart", true))
 	var querys []JoinWithSubQuery1
-	err = testEngine.Join("INNER", builder.Select("id").From(tbName),
-		"join_with_sub_query_depart.id = join_with_sub_query1.depart_id").Find(&querys)
+	err = testEngine.Join("INNER", builder.Select("`id`").From(tbName),
+		"`join_with_sub_query_depart`.`id` = `join_with_sub_query1`.`depart_id`").Find(&querys)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(querys))
 	assert.EqualValues(t, q, querys[0])
 
 	querys = make([]JoinWithSubQuery1, 0, 1)
-	err = testEngine.Join("INNER", "(SELECT id FROM "+tbName+") join_with_sub_query_depart", "join_with_sub_query_depart.id = join_with_sub_query1.depart_id").
+	err = testEngine.Join("INNER", "(SELECT `id` FROM `"+tbName+"`) join_with_sub_query_depart", "`join_with_sub_query_depart`.`id` = `join_with_sub_query1`.`depart_id`").
 		Find(&querys)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(querys))
