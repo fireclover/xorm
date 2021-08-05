@@ -580,7 +580,7 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 		schemas.UnsignedBigInt, schemas.UnsignedBit, schemas.UnsignedInt,
 		schemas.Serial, schemas.BigSerial:
 		return "BIGINT"
-	case schemas.Bit, schemas.Bool:
+	case schemas.Bit, schemas.Bool, schemas.Boolean:
 		return schemas.Bit
 	case schemas.Uuid:
 		res = schemas.Varchar
@@ -594,11 +594,17 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 	case schemas.Date:
 		return schemas.Date
 	case schemas.Time:
+		if c.Length > 0 {
+			return fmt.Sprintf("%s(%d)", schemas.Time, c.Length)
+		}
 		return schemas.Time
 	case schemas.DateTime, schemas.TimeStamp:
-		return schemas.TimeStamp
+		res = schemas.TimeStamp
 	case schemas.TimeStampz:
-		res = "TIMESTAMP"
+		if c.Length > 0 {
+			return fmt.Sprintf("TIMESTAMP(%d) WITH TIME ZONE", c.Length)
+		}
+		return "TIMESTAMP WITH TIME ZONE"
 	case schemas.Float:
 		res = "FLOAT"
 	case schemas.Real, schemas.Double:
@@ -606,7 +612,7 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 	case schemas.Numeric, schemas.Decimal, "NUMBER":
 		res = "NUMERIC"
 	case schemas.Text, schemas.Json:
-		res = "TEXT"
+		return "TEXT"
 	case schemas.MediumText, schemas.LongText:
 		res = "CLOB"
 	case schemas.Char, schemas.Varchar, schemas.TinyText:
