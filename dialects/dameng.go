@@ -18,6 +18,7 @@ import (
 	"gitee.com/travelliu/dm"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/internal/convert"
+	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -742,10 +743,6 @@ func (db *dameng) IsColumnExist(queryer core.Queryer, ctx context.Context, table
 	return db.HasRecords(queryer, ctx, query, args...)
 }
 
-func DamengSeqName(tableName string) string {
-	return "SEQ_" + strings.ToUpper(tableName)
-}
-
 var _ sql.Scanner = &dmClobScanner{}
 
 type dmClobScanner struct {
@@ -793,20 +790,23 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 	s := `select   column_name   from   user_cons_columns   
   where   constraint_name   =   (select   constraint_name   from   user_constraints   
 			  where   table_name   =   ?  and   constraint_type   ='P')`
-	var pkName string
 	rows, err := queryer.QueryContext(ctx, s, tableName)
 	if err != nil {
 		return nil, nil, err
 	}
-	if !rows.Next() {
-		if rows.Err() != nil {
-			return nil, nil, rows.Err()
-		}
-	} else {
+	defer rows.Close()
+
+	var pkNames []string
+	for rows.Next() {
+		var pkName string
 		err = rows.Scan(&pkName)
 		if err != nil {
 			return nil, nil, err
 		}
+		pkNames = append(pkNames, pkName)
+	}
+	if rows.Err() != nil {
+		return nil, nil, rows.Err()
 	}
 	rows.Close()
 
@@ -859,10 +859,9 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		if !comment.Valid {
 			col.Comment = comment.String
 		}
-		if pkName != "" && pkName == col.Name {
+		if utils.IndexSlice(pkNames, col.Name) > -1 {
 			col.IsPrimaryKey = true
-
-			has, err := db.HasRecords(queryer, ctx, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", DamengSeqName(tableName))
+			has, err := db.HasRecords(queryer, ctx, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", utils.SeqName(tableName))
 			if err != nil {
 				return nil, nil, err
 			}
