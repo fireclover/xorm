@@ -489,9 +489,12 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			}
 		}
 
-		dstTableName := dstTable.Name
+		var dstTableName = dstTable.Name
+		var quoter = dstDialect.Quoter().Quote
+		var quotedDstTableName = quoter(dstTable.Name)
 		if dstDialect.URI().Schema != "" {
 			dstTableName = fmt.Sprintf("%s.%s", dstDialect.URI().Schema, dstTable.Name)
+			quotedDstTableName = fmt.Sprintf("%s.%s", quoter(dstDialect.URI().Schema), quoter(dstTable.Name))
 		}
 		originalTableName := table.Name
 		if engine.dialect.URI().Schema != "" {
@@ -560,7 +563,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 		sess := engine.NewSession()
 		defer sess.Close()
 		for rows.Next() {
-			_, err = io.WriteString(w, "INSERT INTO "+dstDialect.Quoter().Quote(dstTableName)+" ("+destColNames+") VALUES (")
+			_, err = io.WriteString(w, "INSERT INTO "+quotedDstTableName+" ("+destColNames+") VALUES (")
 			if err != nil {
 				return err
 			}

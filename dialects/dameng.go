@@ -556,6 +556,18 @@ func (db *dameng) Features() *DialectFeatures {
 	}
 }
 
+// DropIndexSQL returns a SQL to drop index
+func (db *dameng) DropIndexSQL(tableName string, index *schemas.Index) string {
+	quote := db.dialect.Quoter().Quote
+	var name string
+	if index.IsRegular {
+		name = index.XName(tableName)
+	} else {
+		name = index.Name
+	}
+	return fmt.Sprintf("DROP INDEX %v", quote(name))
+}
+
 func (db *dameng) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
@@ -950,9 +962,10 @@ func (db *dameng) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 }
 
 func (db *dameng) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
-	args := []interface{}{tableName}
+	args := []interface{}{tableName, tableName}
 	s := "SELECT t.column_name,i.uniqueness,i.index_name FROM user_ind_columns t,user_indexes i " +
-		"WHERE t.index_name = i.index_name and t.table_name = i.table_name and t.table_name =?"
+		"WHERE t.index_name = i.index_name and t.table_name = i.table_name and t.table_name =?" +
+		" AND t.index_name not in (SELECT index_name FROM ALL_CONSTRAINTS WHERE CONSTRAINT_TYPE='P' AND table_name = ?)"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
