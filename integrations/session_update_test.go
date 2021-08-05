@@ -349,7 +349,7 @@ func TestUpdate1(t *testing.T) {
 			And("height = ?", user.Height).
 			And("departname = ?", "").
 			And("detail_id = ?", 0).
-			And("is_man = ?", 0).
+			And("is_man = ?", false).
 			Get(&Userinfo{})
 		assert.NoError(t, err)
 		assert.True(t, has, "cannot insert properly")
@@ -825,7 +825,7 @@ func TestNewUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, af)
 
-	af, err = testEngine.Table(new(TbUserInfo)).Where("phone=?", 13126564922).Update(&changeUsr)
+	af, err = testEngine.Table(new(TbUserInfo)).Where("phone=?", "13126564922").Update(&changeUsr)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, af)
 }
