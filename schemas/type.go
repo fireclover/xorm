@@ -227,6 +227,8 @@ var (
 		Serial:    NUMERIC_TYPE,
 		BigSerial: NUMERIC_TYPE,
 
+		"INT8": NUMERIC_TYPE,
+
 		Array: ARRAY_TYPE,
 	}
 )
