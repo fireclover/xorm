@@ -581,7 +581,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 						if _, err = io.WriteString(w, s.String); err != nil {
 							return err
 						}
-					} else if stp.IsBool() {
+					} else if stp.IsBool() || (dstDialect.URI().DBType == schemas.MSSQL && stp.Name == schemas.Bit) {
 						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
 							return err
 						}
