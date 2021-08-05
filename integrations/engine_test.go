@@ -229,6 +229,11 @@ func TestImport(t *testing.T) {
 	_, err := sess.ImportFile("./testdata/import1.sql")
 	assert.NoError(t, err)
 	assert.NoError(t, sess.Commit())
+
+	assert.NoError(t, sess.Begin())
+	_, err = sess.ImportFile("./testdata/import2.sql")
+	assert.NoError(t, err)
+	assert.NoError(t, sess.Commit())
 }
 
 func TestDBVersion(t *testing.T) {

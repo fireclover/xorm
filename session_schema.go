@@ -469,7 +469,7 @@ func (session *Session) Import(r io.Reader) ([]sql.Result, error) {
 					startComment = false
 				}
 			} else {
-				if i > 0 && data[i-1] == '-' && data[i] == '-' {
+				if !inSingleQuote && i > 0 && data[i-1] == '-' && data[i] == '-' {
 					startComment = true
 					continue
 				}
