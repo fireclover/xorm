@@ -5,7 +5,6 @@
 package integrations
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -37,7 +36,7 @@ func TestQueryString(t *testing.T) {
 	_, err := testEngine.InsertOne(data)
 	assert.NoError(t, err)
 
-	records, err := testEngine.QueryString("select * from " + testEngine.TableName("get_var2", true))
+	records, err := testEngine.QueryString("select * from " + testEngine.Quote(testEngine.TableName("get_var2", true)))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(records))
 	assert.Equal(t, 5, len(records[0]))
@@ -63,48 +62,12 @@ func TestQueryString2(t *testing.T) {
 	_, err := testEngine.Insert(data)
 	assert.NoError(t, err)
 
-	records, err := testEngine.QueryString("select * from " + testEngine.TableName("get_var3", true))
+	records, err := testEngine.QueryString("select * from " + testEngine.Quote(testEngine.TableName("get_var3", true)))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(records))
 	assert.Equal(t, 2, len(records[0]))
 	assert.Equal(t, "1", records[0]["id"])
 	assert.True(t, "0" == records[0]["msg"] || "false" == records[0]["msg"])
-}
-
-func toString(i interface{}) string {
-	switch i.(type) {
-	case []byte:
-		return string(i.([]byte))
-	case string:
-		return i.(string)
-	}
-	return fmt.Sprintf("%v", i)
-}
-
-func toInt64(i interface{}) int64 {
-	switch i.(type) {
-	case []byte:
-		n, _ := strconv.ParseInt(string(i.([]byte)), 10, 64)
-		return n
-	case int:
-		return int64(i.(int))
-	case int64:
-		return i.(int64)
-	}
-	return 0
-}
-
-func toFloat64(i interface{}) float64 {
-	switch i.(type) {
-	case []byte:
-		n, _ := strconv.ParseFloat(string(i.([]byte)), 64)
-		return n
-	case float64:
-		return i.(float64)
-	case float32:
-		return float64(i.(float32))
-	}
-	return 0
 }
 
 func toBool(i interface{}) bool {
@@ -138,7 +101,7 @@ func TestQueryInterface(t *testing.T) {
 	_, err := testEngine.InsertOne(data)
 	assert.NoError(t, err)
 
-	records, err := testEngine.QueryInterface("select * from " + testEngine.TableName("get_var_interface", true))
+	records, err := testEngine.QueryInterface("select * from `" + testEngine.TableName("get_var_interface", true) + "`")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(records))
 	assert.Equal(t, 5, len(records[0]))
@@ -192,7 +155,7 @@ func TestQueryNoParams(t *testing.T) {
 	assert.NoError(t, err)
 	assertResult(t, results)
 
-	results, err = testEngine.SQL("select * from " + testEngine.TableName("query_no_params", true)).Query()
+	results, err = testEngine.SQL("select * from `" + testEngine.TableName("query_no_params", true) + "`").Query()
 	assert.NoError(t, err)
 	assertResult(t, results)
 }
@@ -223,7 +186,7 @@ func TestQueryStringNoParam(t *testing.T) {
 		assert.EqualValues(t, "0", records[0]["msg"])
 	}
 
-	records, err = testEngine.Table("get_var4").Where(builder.Eq{"id": 1}).QueryString()
+	records, err = testEngine.Table("get_var4").Where(builder.Eq{"`id`": 1}).QueryString()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(records))
 	assert.EqualValues(t, "1", records[0]["id"])
