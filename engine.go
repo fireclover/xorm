@@ -471,6 +471,7 @@ func (engine *Engine) dumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 		destURI := dialects.URI{
 			DBType: tp[0],
 			DBName: uri.DBName,
+			Schema: uri.Schema,
 		}
 		dstDialect.Init(&destURI)
 	}
