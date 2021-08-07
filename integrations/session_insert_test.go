@@ -746,6 +746,11 @@ func TestInsertWhere(t *testing.T) {
 	i.Index = 1
 	assert.EqualValues(t, i, j)
 
+	if testEngine.Dialect().URI().DBType == schemas.DAMENG {
+		t.SkipNow()
+		return
+	}
+
 	inserted, err = testEngine.Table(new(InsertWhere)).Where("`repo_id`=?", 1).
 		SetExpr("`index`", "coalesce(MAX(`index`),0)+1").
 		Insert(map[string]interface{}{
@@ -851,6 +856,11 @@ func TestInsertExpr2(t *testing.T) {
 	assert.EqualValues(t, 0, ie2.NumCommits)
 	assert.EqualValues(t, 1, ie2.RepoId)
 	assert.EqualValues(t, true, ie2.IsTag)
+
+	if testEngine.Dialect().URI().DBType == schemas.DAMENG {
+		t.SkipNow()
+		return
+	}
 
 	inserted, err = testEngine.Table(new(InsertExprsRelease)).
 		SetExpr("is_draft", true).

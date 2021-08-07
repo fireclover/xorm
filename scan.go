@@ -136,7 +136,10 @@ func (engine *Engine) row2mapStr(rows *core.Rows, types []*sql.ColumnType, field
 		scanResults[i] = &s
 	}
 
-	if err := rows.Scan(scanResults...); err != nil {
+	if err := engine.driver.Scan(&dialects.ScanContext{
+		DBLocation:   engine.DatabaseTZ,
+		UserLocation: engine.TZLocation,
+	}, rows, types, scanResults...); err != nil {
 		return nil, err
 	}
 

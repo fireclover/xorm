@@ -573,7 +573,7 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 	var res string
 	switch t := c.SQLType.Name; t {
 	case schemas.TinyInt, "BYTE":
-		res = "TINYINT"
+		return "TINYINT"
 	case schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer:
 		return "INTEGER"
 	case schemas.BigInt,
@@ -660,6 +660,12 @@ func (db *dameng) DropTableSQL(tableName string) (string, bool) {
 	return fmt.Sprintf("DROP TABLE %s", db.quoter.Quote(tableName)), false
 }
 
+// ModifyColumnSQL returns a SQL to modify SQL
+func (db *dameng) ModifyColumnSQL(tableName string, col *schemas.Column) string {
+	s, _ := ColumnString(db.dialect, col, false)
+	return fmt.Sprintf("ALTER TABLE %s MODIFY %s", tableName, s)
+}
+
 func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
 	if tableName == "" {
 		tableName = table.Name
@@ -675,6 +681,13 @@ func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 
 	for i, colName := range table.ColumnsSeq() {
 		col := table.GetColumn(colName)
+		if col.SQLType.IsBool() && !col.DefaultIsEmpty {
+			if col.Default == "true" {
+				col.Default = "1"
+			} else if col.Default == "false" {
+				col.Default = "0"
+			}
+		}
 		s, _ := ColumnString(db, col, false)
 		b.WriteString(s)
 		if i != len(table.ColumnsSeq())-1 {
@@ -790,6 +803,16 @@ func (d *dmClobScanner) Scan(data interface{}) error {
 	default:
 		return fmt.Errorf("cannot convert %T as dmClobScanner", data)
 	}
+}
+
+func addSingleQuote(name string) string {
+	if len(name) < 2 {
+		return name
+	}
+	if name[0] == '\'' && name[len(name)-1] == '\'' {
+		return name
+	}
+	return fmt.Sprintf("'%s'", name)
 }
 
 func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
@@ -931,7 +954,7 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 
 		if col.SQLType.IsText() || col.SQLType.IsTime() {
 			if !col.DefaultIsEmpty {
-				col.Default = "'" + col.Default + "'"
+				col.Default = addSingleQuote(col.Default)
 			}
 		}
 		cols[col.Name] = col
@@ -1102,6 +1125,9 @@ func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.Colu
 		case "CLOB", "TEXT":
 			scanResult = &dmClobScanner{}
 			replaced = true
+		case "TIMESTAMP":
+			scanResult = &sql.NullString{}
+			replaced = true
 		default:
 			scanResult = v
 		}
@@ -1122,6 +1148,16 @@ func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.Colu
 					return err
 				}
 			default:
+				switch types[i].DatabaseTypeName() {
+				case "TIMESTAMP":
+					ns := t.(*sql.NullString)
+					if !ns.Valid {
+						return nil
+					}
+					s := ns.String
+					fields := strings.Split(s, "+")
+					return convert.Assign(vv[i], strings.Replace(fields[0], "T", " ", -1), ctx.DBLocation, ctx.UserLocation)
+				}
 				return fmt.Errorf("don't support convert %T to %T", t, vv[i])
 			}
 		}

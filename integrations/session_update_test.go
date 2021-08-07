@@ -93,7 +93,12 @@ func TestUpdateLimit(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	cnt, err = testEngine.OrderBy("name desc").Limit(1).Update(&UpdateTable2{
+	if testEngine.Dialect().URI().DBType == schemas.DAMENG {
+		t.SkipNow()
+		return
+	}
+
+	cnt, err = testEngine.OrderBy("`name` desc").Limit(1).Update(&UpdateTable2{
 		Age: 30,
 	})
 	assert.NoError(t, err)
@@ -345,11 +350,11 @@ func TestUpdate1(t *testing.T) {
 		userID := user.Uid
 
 		has, err := testEngine.ID(userID).
-			And("username = ?", user.Username).
-			And("height = ?", user.Height).
-			And("departname = ?", "").
-			And("detail_id = ?", 0).
-			And("is_man = ?", false).
+			And("`username` = ?", user.Username).
+			And("`height` = ?", user.Height).
+			And("`departname` = ?", "").
+			And("`detail_id` = ?", 0).
+			And("`is_man` = ?", false).
 			Get(&Userinfo{})
 		assert.NoError(t, err)
 		assert.True(t, has, "cannot insert properly")
@@ -362,12 +367,12 @@ func TestUpdate1(t *testing.T) {
 		assert.EqualValues(t, 1, cnt, "update not returned 1")
 
 		has, err = testEngine.ID(userID).
-			And("username = ?", updatedUser.Username).
-			And("height IS NULL").
-			And("departname IS NULL").
-			And("is_man IS NULL").
-			And("created IS NULL").
-			And("detail_id = ?", 0).
+			And("`username` = ?", updatedUser.Username).
+			And("`height` IS NULL").
+			And("`departname` IS NULL").
+			And("`is_man` IS NULL").
+			And("`created` IS NULL").
+			And("`detail_id` = ?", 0).
 			Get(&Userinfo{})
 		assert.NoError(t, err)
 		assert.True(t, has, "cannot update with null properly")
@@ -1166,7 +1171,7 @@ func TestUpdateExprs(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = testEngine.SetExpr("num_issues", "num_issues+1").AllCols().Update(&UpdateExprs{
+	_, err = testEngine.SetExpr("num_issues", "`num_issues`+1").AllCols().Update(&UpdateExprs{
 		NumIssues: 3,
 		Name:      "lunny xiao",
 	})
@@ -1197,7 +1202,7 @@ func TestUpdateAlias(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = testEngine.Alias("ua").Where("`ua`.`id` = ?", 1).Update(&UpdateAlias{
+	_, err = testEngine.Alias("ua").Where("ua.`id` = ?", 1).Update(&UpdateAlias{
 		NumIssues: 2,
 		Name:      "lunny xiao",
 	})
@@ -1257,6 +1262,11 @@ func TestUpdateExprs2(t *testing.T) {
 }
 
 func TestUpdateMap3(t *testing.T) {
+	if testEngine.Dialect().URI().DBType == schemas.DAMENG {
+		t.SkipNow()
+		return
+	}
+
 	assert.NoError(t, PrepareEngine())
 
 	type UpdateMapUser struct {
