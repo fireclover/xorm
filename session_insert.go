@@ -123,7 +123,7 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 			}
 			fieldValue := *ptrFieldValue
 			if col.IsAutoIncrement && utils.IsZero(fieldValue.Interface()) {
-				if session.engine.dialect.URI().DBType == schemas.ORACLE || session.engine.dialect.URI().DBType == schemas.DAMENG {
+				if session.engine.dialect.Features().AutoincrMode == dialects.SequenceAutoincrMode {
 					if i == 0 {
 						colNames = append(colNames, col.Name)
 					}
