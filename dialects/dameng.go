@@ -836,8 +836,8 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		col.Indexes = make(map[string]int)
 
 		var colDefault dmClobScanner
-		var colName, nullable, dataType, dataPrecision, dataScale, comment sql.NullString
-		var dataLen sql.NullInt64
+		var colName, nullable, dataType, dataPrecision, comment sql.NullString
+		var dataScale, dataLen sql.NullInt64
 
 		err = rows.Scan(&colName, &colDefault, &dataType, &dataLen, &dataPrecision,
 			&dataScale, &nullable, &comment)
@@ -923,7 +923,11 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 			return nil, nil, fmt.Errorf("unknown colType %v %v", dataType.String, col.SQLType)
 		}
 
-		col.Length = int(dataLen.Int64)
+		if col.SQLType.Name == "TIMESTAMP" {
+			col.Length = int(dataScale.Int64)
+		} else {
+			col.Length = int(dataLen.Int64)
+		}
 
 		if col.SQLType.IsText() || col.SQLType.IsTime() {
 			if !col.DefaultIsEmpty {

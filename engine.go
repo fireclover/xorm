@@ -588,6 +588,11 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
 							return err
 						}
+					} else if sess.engine.dialect.URI().DBType == schemas.DAMENG && stp.IsTime() && len(s.String) == 25 {
+						r := strings.Replace(s.String[:19], "T", " ", -1)
+						if _, err = io.WriteString(w, "'"+r+"'"); err != nil {
+							return err
+						}
 					} else {
 						if _, err = io.WriteString(w, "'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
 							return err
