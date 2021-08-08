@@ -28,7 +28,7 @@ func TestExecAndQuery(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	results, err := testEngine.Query("select * from `" + testEngine.TableName("userinfo_query", true) + "`")
+	results, err := testEngine.Query("select * from " + testEngine.Quote(testEngine.TableName("userinfo_query", true)))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(results))
 	id, err := strconv.Atoi(string(results[0]["uid"]))
@@ -54,7 +54,7 @@ func TestExecTime(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	results, err := testEngine.QueryString("SELECT * FROM `" + testEngine.TableName("userinfo_exec_time", true) + "`")
+	results, err := testEngine.QueryString("SELECT * FROM " + testEngine.Quote(testEngine.TableName("userinfo_exec_time", true)))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(results))
 	assert.EqualValues(t, now.In(testEngine.GetTZLocation()).Format("2006-01-02 15:04:05"), results[0]["created"])
