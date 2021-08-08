@@ -101,7 +101,7 @@ func TestQueryInterface(t *testing.T) {
 	_, err := testEngine.InsertOne(data)
 	assert.NoError(t, err)
 
-	records, err := testEngine.QueryInterface("select * from `" + testEngine.TableName("get_var_interface", true) + "`")
+	records, err := testEngine.QueryInterface("select * from " + testEngine.Quote(testEngine.TableName("get_var_interface", true)))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(records))
 	assert.Equal(t, 5, len(records[0]))
@@ -155,7 +155,7 @@ func TestQueryNoParams(t *testing.T) {
 	assert.NoError(t, err)
 	assertResult(t, results)
 
-	results, err = testEngine.SQL("select * from `" + testEngine.TableName("query_no_params", true) + "`").Query()
+	results, err = testEngine.SQL("select * from " + testEngine.Quote(testEngine.TableName("query_no_params", true))).Query()
 	assert.NoError(t, err)
 	assertResult(t, results)
 }
