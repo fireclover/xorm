@@ -580,12 +580,12 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 						return err
 					}
 				} else {
-					if stp.IsNumeric() {
-						if _, err = io.WriteString(w, s.String); err != nil {
+					if stp.IsBool() || (dstDialect.URI().DBType == schemas.MSSQL && strings.EqualFold(stp.Name, schemas.Bit)) {
+						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
 							return err
 						}
-					} else if stp.IsBool() || (dstDialect.URI().DBType == schemas.MSSQL && stp.Name == schemas.Bit) {
-						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
+					} else if stp.IsNumeric() {
+						if _, err = io.WriteString(w, s.String); err != nil {
 							return err
 						}
 					} else if sess.engine.dialect.URI().DBType == schemas.DAMENG && stp.IsTime() && len(s.String) == 25 {
