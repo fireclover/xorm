@@ -428,7 +428,7 @@ func TestUnsignedUint64(t *testing.T) {
 		assert.EqualValues(t, "INTEGER", tables[0].Columns()[0].SQLType.Name)
 	case schemas.MYSQL:
 		assert.EqualValues(t, "UNSIGNED BIGINT", tables[0].Columns()[0].SQLType.Name)
-	case schemas.POSTGRES:
+	case schemas.POSTGRES, schemas.DAMENG:
 		assert.EqualValues(t, "BIGINT", tables[0].Columns()[0].SQLType.Name)
 	case schemas.MSSQL:
 		assert.EqualValues(t, "BIGINT", tables[0].Columns()[0].SQLType.Name)
@@ -472,9 +472,7 @@ func TestUnsignedUint32(t *testing.T) {
 		assert.EqualValues(t, "INTEGER", tables[0].Columns()[0].SQLType.Name)
 	case schemas.MYSQL:
 		assert.EqualValues(t, "UNSIGNED INT", tables[0].Columns()[0].SQLType.Name)
-	case schemas.POSTGRES:
-		assert.EqualValues(t, "BIGINT", tables[0].Columns()[0].SQLType.Name)
-	case schemas.MSSQL:
+	case schemas.POSTGRES, schemas.MSSQL, schemas.DAMENG:
 		assert.EqualValues(t, "BIGINT", tables[0].Columns()[0].SQLType.Name)
 	default:
 		assert.False(t, true, "Unsigned is not implemented")
