@@ -953,8 +953,8 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 			col.Length = int(dataLen.Int64)
 		}
 
-		if col.SQLType.IsText() || col.SQLType.IsTime() {
-			if !col.DefaultIsEmpty {
+		if col.SQLType.IsTime() {
+			if !col.DefaultIsEmpty && !strings.EqualFold(col.Default, "CURRENT_TIMESTAMP") {
 				col.Default = addSingleQuote(col.Default)
 			}
 		}
