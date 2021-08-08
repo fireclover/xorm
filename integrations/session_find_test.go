@@ -1045,3 +1045,43 @@ func TestUpdateFind(t *testing.T) {
 	err = session.Where("id = ?", tuf.Id).Find(&tufs)
 	assert.NoError(t, err)
 }
+
+func TestFindAnonymousStruct(t *testing.T) {
+	type FindAnonymousStruct struct {
+		Id    int64
+		Name  string
+		Age   int
+		IsMan bool
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(FindAnonymousStruct))
+
+	cnt, err := testEngine.Insert(&FindAnonymousStruct{
+		Name:  "xlw",
+		Age:   42,
+		IsMan: true,
+	})
+	assert.EqualValues(t, 1, cnt)
+	assert.NoError(t, err)
+
+	var findRes = make([]struct {
+		Id   int64
+		Name string
+	}, 0)
+	err = testEngine.Table(new(FindAnonymousStruct)).Find(&findRes)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(findRes))
+	assert.EqualValues(t, 1, findRes[0].Id)
+	assert.EqualValues(t, "xlw", findRes[0].Name)
+
+	findRes = make([]struct {
+		Id   int64
+		Name string
+	}, 0)
+	err = testEngine.Select("`id`,`name`").Table(new(FindAnonymousStruct)).Find(&findRes)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(findRes))
+	assert.EqualValues(t, 1, findRes[0].Id)
+	assert.EqualValues(t, "xlw", findRes[0].Name)
+}
