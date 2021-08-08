@@ -484,7 +484,7 @@ func TestGetStructId(t *testing.T) {
 
 	//var id int64
 	var maxid maxidst
-	sql := "select max(`id`) as id from `" + testEngine.TableName(&TestGetStruct{}, true) + "`"
+	sql := "select max(`id`) as id from " + testEngine.Quote(testEngine.TableName(&TestGetStruct{}, true))
 	has, err := testEngine.SQL(sql).Get(&maxid)
 	assert.NoError(t, err)
 	assert.True(t, has)
@@ -607,7 +607,7 @@ func TestGetNullVar(t *testing.T) {
 		return
 	}
 
-	affected, err := testEngine.Exec("insert into `" + testEngine.TableName(new(TestGetNullVarStruct), true) + "` (`name`,`age`) values (null,null)")
+	affected, err := testEngine.Exec("insert into " + testEngine.Quote(testEngine.TableName(new(TestGetNullVarStruct), true)) + " (`name`,`age`) values (null,null)")
 	assert.NoError(t, err)
 	a, _ := affected.RowsAffected()
 	assert.EqualValues(t, 1, a)
