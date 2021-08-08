@@ -55,7 +55,7 @@ func TestGetVar(t *testing.T) {
 	assert.Equal(t, 28, age)
 
 	var ageMax int
-	has, err = testEngine.SQL("SELECT max(`age`) FROM `"+testEngine.TableName("get_var", true)+"` WHERE `id` = ?", data.Id).Get(&ageMax)
+	has, err = testEngine.SQL("SELECT max(`age`) FROM "+testEngine.Quote(testEngine.TableName("get_var", true))+" WHERE `id` = ?", data.Id).Get(&ageMax)
 	assert.NoError(t, err)
 	assert.Equal(t, true, has)
 	assert.Equal(t, 28, ageMax)
@@ -163,14 +163,14 @@ func TestGetVar(t *testing.T) {
 	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		has, err = testEngine.SQL("SELECT TOP 1 `money` FROM " + testEngine.Quote(testEngine.TableName("get_var", true))).Get(&money2)
 	} else {
-		has, err = testEngine.SQL("SELECT `money` FROM `" + testEngine.TableName("get_var", true) + "` LIMIT 1").Get(&money2)
+		has, err = testEngine.SQL("SELECT `money` FROM " + testEngine.Quote(testEngine.TableName("get_var", true)) + " LIMIT 1").Get(&money2)
 	}
 	assert.NoError(t, err)
 	assert.Equal(t, true, has)
 	assert.Equal(t, "1.5", fmt.Sprintf("%.1f", money2))
 
 	var money3 float64
-	has, err = testEngine.SQL("SELECT `money` FROM `" + testEngine.TableName("get_var", true) + "` WHERE `money` > 20").Get(&money3)
+	has, err = testEngine.SQL("SELECT `money` FROM " + testEngine.Quote(testEngine.TableName("get_var", true)) + " WHERE `money` > 20").Get(&money3)
 	assert.NoError(t, err)
 	assert.Equal(t, false, has)
 
