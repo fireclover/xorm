@@ -192,8 +192,8 @@ func TestInsertDefault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, -1, di.Status)
-	assert.EqualValues(t, di2.Updated.Unix(), di.Updated.Unix())
-	assert.EqualValues(t, di2.Created.Unix(), di.Created.Unix())
+	assert.EqualValues(t, di2.Updated.Unix(), di.Updated.Unix(), di.Updated)
+	assert.EqualValues(t, di2.Created.Unix(), di.Created.Unix(), di.Created)
 }
 
 func TestInsertDefault2(t *testing.T) {

@@ -1163,9 +1163,12 @@ func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.Colu
 					}
 					s := ns.String
 					fields := strings.Split(s, "+")
-					return convert.Assign(vv[i], strings.Replace(fields[0], "T", " ", -1), ctx.DBLocation, ctx.UserLocation)
+					if err := convert.Assign(vv[i], strings.Replace(fields[0], "T", " ", -1), ctx.DBLocation, ctx.UserLocation); err != nil {
+						return err
+					}
+				default:
+					return fmt.Errorf("don't support convert %T to %T", t, vv[i])
 				}
-				return fmt.Errorf("don't support convert %T to %T", t, vv[i])
 			}
 		}
 	}
