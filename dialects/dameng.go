@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build dm
-
 package dialects
 
 import (
@@ -15,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	"gitee.com/travelliu/dm"
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/internal/utils"
@@ -770,13 +767,20 @@ type dmClobScanner struct {
 	data  string
 }
 
+type dmClobObject interface {
+	GetLength() (int64, error)
+	ReadString(int, int) (string, error)
+}
+
+//var _ dmClobObject = &dm.DmClob{}
+
 func (d *dmClobScanner) Scan(data interface{}) error {
 	if data == nil {
 		return nil
 	}
 
 	switch t := data.(type) {
-	case *dm.DmClob:
+	case dmClobObject: // *dm.DmClob
 		if t == nil {
 			return nil
 		}
