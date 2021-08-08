@@ -507,7 +507,7 @@ func TestUnsignedTinyInt(t *testing.T) {
 	assert.EqualValues(t, 1, len(tables[0].Columns()))
 
 	switch testEngine.Dialect().URI().DBType {
-	case schemas.SQLITE:
+	case schemas.SQLITE, schemas.DAMENG:
 		assert.EqualValues(t, "INTEGER", tables[0].Columns()[0].SQLType.Name)
 	case schemas.MYSQL:
 		assert.EqualValues(t, "UNSIGNED TINYINT", tables[0].Columns()[0].SQLType.Name)
@@ -516,7 +516,7 @@ func TestUnsignedTinyInt(t *testing.T) {
 	case schemas.MSSQL:
 		assert.EqualValues(t, "INT", tables[0].Columns()[0].SQLType.Name)
 	default:
-		assert.False(t, true, "Unsigned is not implemented")
+		assert.False(t, true, fmt.Sprintf("Unsigned is not implemented, returned %s", tables[0].Columns()[0].SQLType.Name))
 	}
 
 	cnt, err := testEngine.Insert(&MyUnsignedTinyIntStruct{

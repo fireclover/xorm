@@ -574,7 +574,7 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 	switch t := c.SQLType.Name; t {
 	case schemas.TinyInt, "BYTE":
 		return "TINYINT"
-	case schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer:
+	case schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer, schemas.UnsignedTinyInt:
 		return "INTEGER"
 	case schemas.BigInt,
 		schemas.UnsignedBigInt, schemas.UnsignedBit, schemas.UnsignedInt,
@@ -663,7 +663,7 @@ func (db *dameng) DropTableSQL(tableName string) (string, bool) {
 // ModifyColumnSQL returns a SQL to modify SQL
 func (db *dameng) ModifyColumnSQL(tableName string, col *schemas.Column) string {
 	s, _ := ColumnString(db.dialect, col, false)
-	return fmt.Sprintf("ALTER TABLE %s MODIFY %s", tableName, s)
+	return fmt.Sprintf("ALTER TABLE %s MODIFY %s", db.quoter.Quote(tableName), s)
 }
 
 func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
