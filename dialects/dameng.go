@@ -1078,6 +1078,8 @@ func (d *damengDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 		return nil, errors.New("user/password needed")
 	}
 
+	fmt.Printf("===== %v %#v\n", dataSourceName, u)
+
 	passwd, _ := u.User.Password()
 	return &URI{
 		DBType: schemas.DAMENG,
