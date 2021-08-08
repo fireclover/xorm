@@ -1135,10 +1135,10 @@ func (engine *Engine) Delete(beans ...interface{}) (int64, error) {
 
 // Get retrieve one record from table, bean's non-empty fields
 // are conditions
-func (engine *Engine) Get(bean interface{}) (bool, error) {
+func (engine *Engine) Get(beans ...interface{}) (bool, error) {
 	session := engine.NewSession()
 	defer session.Close()
-	return session.Get(bean)
+	return session.Get(beans...)
 }
 
 // Exist returns true if the record exist otherwise return false

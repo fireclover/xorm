@@ -160,5 +160,49 @@ func TestRowsSpecTableName(t *testing.T) {
 		assert.NoError(t, err)
 		cnt++
 	}
+	assert.NoError(t, rows.Err())
 	assert.EqualValues(t, 1, cnt)
+}
+
+func TestRowsScanVars(t *testing.T) {
+	type RowsScanVars struct {
+		Id   int64
+		Name string
+		Age  int
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assert.NoError(t, testEngine.Sync2(new(RowsScanVars)))
+
+	cnt, err := testEngine.Insert(&RowsScanVars{
+		Name: "xlw",
+		Age:  42,
+	}, &RowsScanVars{
+		Name: "xlw2",
+		Age:  24,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, cnt)
+
+	rows, err := testEngine.Cols("name", "age").Rows(new(RowsScanVars))
+	assert.NoError(t, err)
+	defer rows.Close()
+
+	cnt = 0
+	for rows.Next() {
+		var name string
+		var age int
+		err = rows.Scan(&name, &age)
+		assert.NoError(t, err)
+		if cnt == 0 {
+			assert.EqualValues(t, "xlw", name)
+			assert.EqualValues(t, 42, age)
+		} else if cnt == 1 {
+			assert.EqualValues(t, "xlw2", name)
+			assert.EqualValues(t, 24, age)
+		}
+		cnt++
+	}
+	assert.NoError(t, rows.Err())
+	assert.EqualValues(t, 2, cnt)
 }

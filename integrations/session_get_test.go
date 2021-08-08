@@ -890,3 +890,28 @@ func TestGetTime(t *testing.T) {
 	assert.True(t, has)
 	assert.EqualValues(t, gts.CreateTime.Format(time.RFC3339), gn.Format(time.RFC3339))
 }
+
+func TestGetVars(t *testing.T) {
+	type GetVars struct {
+		Id   int64
+		Name string
+		Age  int
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(GetVars))
+
+	_, err := testEngine.Insert(&GetVars{
+		Name: "xlw",
+		Age:  42,
+	})
+	assert.NoError(t, err)
+
+	var name string
+	var age int
+	has, err := testEngine.Table(new(GetVars)).Cols("name", "age").Get(&name, &age)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, "xlw", name)
+	assert.EqualValues(t, 42, age)
+}

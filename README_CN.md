@@ -231,13 +231,30 @@ err := engine.BufferSize(100).Iterate(&User{Name:name}, func(idx int, bean inter
 })
 // SELECT * FROM user Limit 0, 100
 // SELECT * FROM user Limit 101, 100
+```
 
+Rows 的用法类似 `sql.Rows`。
+
+```Go
 rows, err := engine.Rows(&User{Name:name})
 // SELECT * FROM user
 defer rows.Close()
 bean := new(Struct)
 for rows.Next() {
     err = rows.Scan(bean)
+}
+```
+
+或者
+
+```Go
+rows, err := engine.Cols("name", "age").Rows(&User{Name:name})
+// SELECT * FROM user
+defer rows.Close()
+for rows.Next() {
+    var name string
+    var age int
+    err = rows.Scan(&name, &age)
 }
 ```
 
