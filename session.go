@@ -524,6 +524,9 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 			if !ok {
 				return fmt.Errorf("cannot convert %#v as bytes", scanResult)
 			}
+			if data == nil {
+				return nil
+			}
 			return structConvert.FromDB(data)
 		}
 	}

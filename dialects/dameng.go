@@ -1145,7 +1145,13 @@ func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.Colu
 		if replaced {
 			switch t := scanResults[i].(type) {
 			case *dmClobScanner:
-				if err := convert.Assign(vv[i], t.data, ctx.DBLocation, ctx.UserLocation); err != nil {
+				var d interface{}
+				if t.valid {
+					d = t.data
+				} else {
+					d = nil
+				}
+				if err := convert.Assign(vv[i], d, ctx.DBLocation, ctx.UserLocation); err != nil {
 					return err
 				}
 			default:
