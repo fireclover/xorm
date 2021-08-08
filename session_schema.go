@@ -46,22 +46,22 @@ func (session *Session) createTable(bean interface{}) error {
 	session.statement.RefTable.Charset = session.statement.Charset
 	tableName := session.statement.TableName()
 	refTable := session.statement.RefTable
-	sqlStr, _, err := session.engine.dialect.CreateTableSQL(context.Background(), session.engine.db, refTable, tableName)
-	if err != nil {
-		return err
-	}
-	if _, err := session.exec(sqlStr); err != nil {
-		return err
-	}
-
 	if refTable.AutoIncrement != "" && session.engine.dialect.Features().AutoincrMode == dialects.SequenceAutoincrMode {
-		sqlStr, err = session.engine.dialect.CreateSequenceSQL(context.Background(), session.engine.db, utils.SeqName(tableName))
+		sqlStr, err := session.engine.dialect.CreateSequenceSQL(context.Background(), session.engine.db, utils.SeqName(tableName))
 		if err != nil {
 			return err
 		}
 		if _, err := session.exec(sqlStr); err != nil {
 			return err
 		}
+	}
+
+	sqlStr, _, err := session.engine.dialect.CreateTableSQL(context.Background(), session.engine.db, refTable, tableName)
+	if err != nil {
+		return err
+	}
+	if _, err := session.exec(sqlStr); err != nil {
+		return err
 	}
 
 	return nil

@@ -507,17 +507,8 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			}
 		}
 
-		sqlstr, _, err := dstDialect.CreateTableSQL(ctx, engine.db, dstTable, dstTableName)
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, sqlstr+";\n")
-		if err != nil {
-			return err
-		}
-
 		if dstTable.AutoIncrement != "" && dstDialect.Features().AutoincrMode == dialects.SequenceAutoincrMode {
-			sqlstr, err = dstDialect.CreateSequenceSQL(ctx, engine.db, utils.SeqName(dstTableName))
+			sqlstr, err := dstDialect.CreateSequenceSQL(ctx, engine.db, utils.SeqName(dstTableName))
 			if err != nil {
 				return err
 			}
@@ -525,6 +516,15 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			if err != nil {
 				return err
 			}
+		}
+
+		sqlstr, _, err := dstDialect.CreateTableSQL(ctx, engine.db, dstTable, dstTableName)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, sqlstr+";\n")
+		if err != nil {
+			return err
 		}
 
 		if len(dstTable.PKColumns()) > 0 && dstDialect.URI().DBType == schemas.MSSQL {

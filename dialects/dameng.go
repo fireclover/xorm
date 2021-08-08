@@ -688,6 +688,7 @@ func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 				col.Default = "0"
 			}
 		}
+
 		s, _ := ColumnString(db, col, false)
 		b.WriteString(s)
 		if i != len(table.ColumnsSeq())-1 {
