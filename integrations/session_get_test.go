@@ -14,7 +14,7 @@ import (
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/internal/convert"
+	"xorm.io/xorm/convert"
 	"xorm.io/xorm/schemas"
 
 	"github.com/shopspring/decimal"

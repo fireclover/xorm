@@ -15,8 +15,8 @@ import (
 	"unicode"
 
 	"xorm.io/xorm/caches"
+	"xorm.io/xorm/convert"
 	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/names"
 	"xorm.io/xorm/schemas"
 )
