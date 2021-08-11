@@ -218,8 +218,9 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 				if err := convert.AssignValue(keyValue, pk[0]); err != nil {
 					return err
 				}
+			} else {
+				keyValue.Set(reflect.ValueOf(&pk))
 			}
-			keyValue.Set(reflect.ValueOf(pk))
 
 			if isPointer {
 				containerValue.SetMapIndex(keyValue.Elem(), newValue.Elem().Addr())
