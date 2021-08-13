@@ -972,7 +972,7 @@ func (db *postgres) CreateTableSQL(table *schemas.Table, tableName string) ([]st
 
 	quoter := db.Quoter()
 	var b strings.Builder
-	b.WriteString("CREATE TABLE  IF NOT EXISTS ")
+	b.WriteString("CREATE TABLE IF NOT EXISTS ")
 	quoter.QuoteTo(&b, tableName)
 	b.WriteString(" (")
 
