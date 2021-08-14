@@ -981,15 +981,15 @@ func (db *postgres) CreateTableSQL(table *schemas.Table, tableName string) ([]st
 		s, _ := ColumnString(db, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1)
 		b.WriteString(s)
 
-		if len(table.PrimaryKeys) > 1 {
-			b.WriteString("PRIMARY KEY ( ")
-			b.WriteString(quoter.Join(table.PrimaryKeys, ","))
-			b.WriteString(" )")
-		}
-
 		if i != len(table.ColumnsSeq())-1 {
 			b.WriteString(", ")
 		}
+	}
+
+	if len(table.PrimaryKeys) > 1 {
+		b.WriteString(", PRIMARY KEY (")
+		b.WriteString(quoter.Join(table.PrimaryKeys, ","))
+		b.WriteString(")")
 	}
 
 	b.WriteString(")")
