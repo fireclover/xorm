@@ -965,38 +965,6 @@ func (db *postgres) AutoIncrStr() string {
 	return ""
 }
 
-func (db *postgres) CreateTableSQL(table *schemas.Table, tableName string) ([]string, bool) {
-	if tableName == "" {
-		tableName = table.Name
-	}
-
-	quoter := db.Quoter()
-	var b strings.Builder
-	b.WriteString("CREATE TABLE IF NOT EXISTS ")
-	quoter.QuoteTo(&b, tableName)
-	b.WriteString(" (")
-
-	for i, colName := range table.ColumnsSeq() {
-		col := table.GetColumn(colName)
-		s, _ := ColumnString(db, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1)
-		b.WriteString(s)
-
-		if i != len(table.ColumnsSeq())-1 {
-			b.WriteString(", ")
-		}
-	}
-
-	if len(table.PrimaryKeys) > 1 {
-		b.WriteString(", PRIMARY KEY (")
-		b.WriteString(quoter.Join(table.PrimaryKeys, ","))
-		b.WriteString(")")
-	}
-
-	b.WriteString(")")
-
-	return []string{b.String()}, false
-}
-
 func (db *postgres) IndexCheckSQL(tableName, idxName string) (string, []interface{}) {
 	if len(db.getSchema()) == 0 {
 		args := []interface{}{tableName, idxName}
