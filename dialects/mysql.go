@@ -631,7 +631,7 @@ func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName
 	return indexes, nil
 }
 
-func (db *mysql) CreateTableSQL(table *schemas.Table, tableName string) ([]string, bool) {
+func (db *mysql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
 	if tableName == "" {
 		tableName = table.Name
 	}
@@ -684,15 +684,8 @@ func (db *mysql) CreateTableSQL(table *schemas.Table, tableName string) ([]strin
 		b.WriteString(" ROW_FORMAT=")
 		b.WriteString(db.rowFormat)
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
-	return []string{b.String()}, true
-=======
-	return []string{sql}, true, nil
->>>>>>> 4dbe145 (fix insert)
-=======
-	return sql, true, nil
->>>>>>> 21b6352 (Fix more bugs)
+
+	return b.String(), true, nil
 }
 
 func (db *mysql) Filters() []Filter {

@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
+	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
-	"xorm.io/xorm/internal/convert"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )

@@ -119,7 +119,7 @@ func (db *Base) URI() *URI {
 }
 
 // CreateTableSQL implements Dialect
-func (db *Base) CreateTableSQL(table *schemas.Table, tableName string) ([]string, bool) {
+func (db *Base) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
 	if tableName == "" {
 		tableName = table.Name
 	}
@@ -148,7 +148,7 @@ func (db *Base) CreateTableSQL(table *schemas.Table, tableName string) ([]string
 
 	b.WriteString(")")
 
-	return []string{b.String()}, false
+	return b.String(), false, nil
 }
 
 func (db *Base) CreateSequenceSQL(ctx context.Context, queryer core.Queryer, seqName string) (string, error) {
