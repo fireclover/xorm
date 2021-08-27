@@ -71,16 +71,6 @@ func (session *Session) queryRow(sqlStr string, args ...interface{}) *core.Row {
 	return core.NewRow(session.queryRows(sqlStr, args...))
 }
 
-func (session *Session) queryBytes(sqlStr string, args ...interface{}) ([]map[string][]byte, error) {
-	rows, err := session.queryRows(sqlStr, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	return rows2maps(rows)
-}
-
 func (session *Session) exec(sqlStr string, args ...interface{}) (sql.Result, error) {
 	defer session.resetStatement()
 
