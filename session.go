@@ -123,9 +123,9 @@ func newSession(engine *Engine) *Session {
 		autoResetStatement:     true,
 		prepareStmt:            false,
 
-		afterInsertBeans: make(map[interface{}]*[]func(interface{}), 0),
-		afterUpdateBeans: make(map[interface{}]*[]func(interface{}), 0),
-		afterDeleteBeans: make(map[interface{}]*[]func(interface{}), 0),
+		afterInsertBeans: make(map[interface{}]*[]func(interface{})),
+		afterUpdateBeans: make(map[interface{}]*[]func(interface{})),
+		afterDeleteBeans: make(map[interface{}]*[]func(interface{})),
 		beforeClosures:   make([]func(interface{}), 0),
 		afterClosures:    make([]func(interface{}), 0),
 		afterProcessors:  make([]executedProcessor, 0),
@@ -684,13 +684,12 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 		tempMap[lKey] = idx
 
 		col, fieldValue, err := session.getField(dataStruct, table, colName, idx)
-		if err != nil {
-			if _, ok := err.(ErrFieldIsNotExist); ok {
-				continue
-			} else {
-				return nil, err
-			}
+		if _, ok := err.(ErrFieldIsNotExist); ok {
+			continue
+		} else if err != nil {
+			return nil, err
 		}
+
 		if fieldValue == nil {
 			continue
 		}
