@@ -4,16 +4,6 @@
 
 package xorm
 
-func (session *Session) queryBytes(sqlStr string, args ...interface{}) ([]map[string][]byte, error) {
-	rows, err := session.queryRows(sqlStr, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	return rows2maps(rows)
-}
-
 // Query runs a raw sql and return records as []map[string][]byte
 func (session *Session) Query(sqlOrArgs ...interface{}) ([]map[string][]byte, error) {
 	if session.isAutoClose {
@@ -25,7 +15,13 @@ func (session *Session) Query(sqlOrArgs ...interface{}) ([]map[string][]byte, er
 		return nil, err
 	}
 
-	return session.queryBytes(sqlStr, args...)
+	rows, err := session.queryRows(sqlStr, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return session.engine.scanByteMaps(rows)
 }
 
 // QueryString runs a raw sql and return records as []map[string]string

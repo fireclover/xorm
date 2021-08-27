@@ -129,25 +129,6 @@ func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 	}
 }
 
-func row2mapBytes(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string][]byte, error) {
-	var scanResults = make([]interface{}, len(fields))
-	for i := 0; i < len(fields); i++ {
-		var s sql.NullString
-		scanResults[i] = &s
-	}
-
-	if err := rows.Scan(scanResults...); err != nil {
-		return nil, err
-	}
-
-	result := make(map[string][]byte, len(fields))
-	for ii, key := range fields {
-		s := scanResults[ii].(*sql.NullString)
-		result[key] = []byte(s.String)
-	}
-	return result, nil
-}
-
 func (engine *Engine) scanStringInterface(rows *core.Rows, fields []string, types []*sql.ColumnType) ([]interface{}, error) {
 	var scanResults = make([]interface{}, len(types))
 	for i := 0; i < len(types); i++ {
@@ -225,29 +206,6 @@ func (engine *Engine) scanInterfaces(rows *core.Rows, fields []string, types []*
 		return nil, err
 	}
 	return scanResultContainers, nil
-}
-
-func rows2maps(rows *core.Rows) (resultsSlice []map[string][]byte, err error) {
-	fields, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	types, err := rows.ColumnTypes()
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		result, err := row2mapBytes(rows, types, fields)
-		if err != nil {
-			return nil, err
-		}
-		resultsSlice = append(resultsSlice, result)
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return resultsSlice, nil
 }
 
 ////////////////////
@@ -379,6 +337,40 @@ func (engine *Engine) ScanStringMaps(rows *core.Rows) (resultsSlice []map[string
 			return nil, err
 		}
 		resultsSlice = append(resultsSlice, result)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return resultsSlice, nil
+}
+
+////////////////////
+// row -> map[string][]byte
+
+func convertMapStr2Bytes(m map[string]string) map[string][]byte {
+	var r = make(map[string][]byte, len(m))
+	for k, v := range m {
+		r[k] = []byte(v)
+	}
+	return r
+}
+
+func (engine *Engine) scanByteMaps(rows *core.Rows) (resultsSlice []map[string][]byte, err error) {
+	fields, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+	types, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		result, err := engine.row2mapStr(rows, types, fields)
+		if err != nil {
+			return nil, err
+		}
+		resultsSlice = append(resultsSlice, convertMapStr2Bytes(result))
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()
