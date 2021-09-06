@@ -140,5 +140,5 @@ func (rows *Rows) Close() error {
 		return rows.rows.Close()
 	}
 
-	return rows.Err()
+	return nil
 }
