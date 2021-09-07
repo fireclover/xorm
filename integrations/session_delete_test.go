@@ -213,7 +213,7 @@ func TestUnscopeDelete(t *testing.T) {
 	cnt, err = testEngine.ID(1).Delete(&s)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
-	assert.LessOrEqual(t, 1, int(s.DeletedAt.Unix()-nowUnix))
+	assert.LessOrEqual(t, int(s.DeletedAt.Unix()-nowUnix), 1)
 
 	var s1 UnscopeDeleteStruct
 	has, err := testEngine.ID(1).Get(&s1)
@@ -225,7 +225,7 @@ func TestUnscopeDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, "test", s2.Name)
-	assert.LessOrEqual(t, 1, int(s2.DeletedAt.Unix()-nowUnix))
+	assert.LessOrEqual(t, int(s2.DeletedAt.Unix()-nowUnix), 1)
 
 	cnt, err = testEngine.ID(1).Unscoped().Delete(new(UnscopeDeleteStruct))
 	assert.NoError(t, err)
