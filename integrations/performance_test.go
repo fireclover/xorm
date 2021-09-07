@@ -92,8 +92,8 @@ func BenchmarkFindStruct(b *testing.B) {
 	_, err := testEngine.Insert(&v)
 	assert.NoError(b, err)
 
-	b.StartTimer()
 	var mynames = make([]BenchmarkFindStruct, 0, 1)
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		err := testEngine.Find(&mynames)
 		b.StopTimer()

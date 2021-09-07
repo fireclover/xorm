@@ -308,7 +308,7 @@ func (statement *Statement) colName(col *schemas.Column, tableName string) strin
 		if len(statement.TableAlias) > 0 {
 			nm = statement.TableAlias
 		}
-		return statement.quote(nm) + "." + statement.quote(col.Name)
+		return fmt.Sprintf("%s.%s", statement.quote(nm), statement.quote(col.Name))
 	}
 	return statement.quote(col.Name)
 }
