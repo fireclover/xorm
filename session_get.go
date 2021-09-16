@@ -173,7 +173,12 @@ func (session *Session) nocacheGet(beanKind reflect.Kind, table *schemas.Table, 
 		return true, err
 	}
 
-	return true, session.scan(rows, table, beanKind, beans, types, fields)
+	if err := session.scan(rows, table, beanKind, beans, types, fields); err != nil {
+		return true, err
+	}
+	rows.Close()
+
+	return true, session.executeProcessors()
 }
 
 func (session *Session) scan(rows *core.Rows, table *schemas.Table, firstBeanKind reflect.Kind, beans []interface{}, types []*sql.ColumnType, fields []string) error {
@@ -184,7 +189,14 @@ func (session *Session) scan(rows *core.Rows, table *schemas.Table, firstBeanKin
 			if !isScannableStruct(bean, len(types)) {
 				break
 			}
-			return session.getStruct(rows, types, fields, table, bean)
+			scanResults, err := session.row2Slice(rows, fields, types, bean)
+			if err != nil {
+				return err
+			}
+
+			dataStruct := utils.ReflectValue(bean)
+			_, err = session.slice2Bean(scanResults, fields, bean, &dataStruct, table)
+			return err
 		case reflect.Slice:
 			return session.getSlice(rows, types, fields, bean)
 		case reflect.Map:
@@ -266,21 +278,6 @@ func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields 
 	default:
 		return fmt.Errorf("unspoorted map type: %t", t)
 	}
-}
-
-func (session *Session) getStruct(rows *core.Rows, types []*sql.ColumnType, fields []string, table *schemas.Table, bean interface{}) error {
-	scanResults, err := session.row2Slice(rows, fields, types, bean)
-	if err != nil {
-		return err
-	}
-
-	dataStruct := utils.ReflectValue(bean)
-	_, err = session.slice2Bean(scanResults, fields, bean, &dataStruct, table)
-	if err != nil {
-		return err
-	}
-
-	return session.executeProcessors()
 }
 
 func (session *Session) cacheGet(bean interface{}, sqlStr string, args ...interface{}) (has bool, err error) {
