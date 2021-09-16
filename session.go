@@ -370,7 +370,7 @@ func (session *Session) doPrepare(db *core.DB, sqlStr string) (stmt *core.Stmt, 
 	return
 }
 
-func (session *Session) getField(dataStruct *reflect.Value, table *schemas.Table, colName string, idx int) (*schemas.Column, *reflect.Value, error) {
+func getField(dataStruct *reflect.Value, table *schemas.Table, colName string, idx int) (*schemas.Column, *reflect.Value, error) {
 	var col = table.GetColumnIdx(colName, idx)
 	if col == nil {
 		return nil, nil, ErrFieldIsNotExist{colName, table.Name}
@@ -440,7 +440,7 @@ func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql
 	return scanResults, nil
 }
 
-func (session *Session) setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult interface{}) error {
+func setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult interface{}) error {
 	bs, ok := convert.AsBytes(scanResult)
 	if !ok {
 		return fmt.Errorf("unsupported database data type: %#v", scanResult)
@@ -551,7 +551,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	fieldType := fieldValue.Type()
 
 	if col.IsJSON {
-		return session.setJSON(fieldValue, fieldType, scanResult)
+		return setJSON(fieldValue, fieldType, scanResult)
 	}
 
 	switch fieldType.Kind() {
@@ -570,7 +570,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		}
 		return nil
 	case reflect.Complex64, reflect.Complex128:
-		return session.setJSON(fieldValue, fieldType, scanResult)
+		return setJSON(fieldValue, fieldType, scanResult)
 	case reflect.Slice, reflect.Array:
 		bs, ok := convert.AsBytes(scanResult)
 		if ok && fieldType.Elem().Kind() == reflect.Uint8 {
@@ -683,7 +683,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 		}
 		tempMap[lKey] = idx
 
-		col, fieldValue, err := session.getField(dataStruct, table, colName, idx)
+		col, fieldValue, err := getField(dataStruct, table, colName, idx)
 		if _, ok := err.(ErrFieldIsNotExist); ok {
 			continue
 		} else if err != nil {

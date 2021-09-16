@@ -273,8 +273,6 @@ func (session *Session) getStruct(rows *core.Rows, types []*sql.ColumnType, fiel
 	if err != nil {
 		return err
 	}
-	// close it before convert data
-	rows.Close()
 
 	dataStruct := utils.ReflectValue(bean)
 	_, err = session.slice2Bean(scanResults, fields, bean, &dataStruct, table)

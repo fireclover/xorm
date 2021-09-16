@@ -26,16 +26,27 @@ func TestIterate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
+	cnt, err = testEngine.Insert(&UserIterate{
+		IsMan: false,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
 	cnt = 0
 	err = testEngine.Iterate(new(UserIterate), func(i int, bean interface{}) error {
 		user := bean.(*UserIterate)
-		assert.EqualValues(t, 1, user.Id)
-		assert.EqualValues(t, true, user.IsMan)
+		if cnt == 0 {
+			assert.EqualValues(t, 1, user.Id)
+			assert.EqualValues(t, true, user.IsMan)
+		} else {
+			assert.EqualValues(t, 2, user.Id)
+			assert.EqualValues(t, false, user.IsMan)
+		}
 		cnt++
 		return nil
 	})
 	assert.NoError(t, err)
-	assert.EqualValues(t, 1, cnt)
+	assert.EqualValues(t, 2, cnt)
 }
 
 func TestBufferIterate(t *testing.T) {
