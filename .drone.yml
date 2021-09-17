@@ -56,6 +56,7 @@ steps:
     TEST_MYSQL_PASSWORD:
   commands:
   - TEST_CACHE_ENABLE=true make test-mysql
+  - make test-mysql-tls
   
 - name: test-mysql-utf8mb4
   image: golang:1.15
