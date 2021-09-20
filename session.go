@@ -732,6 +732,12 @@ func (session *Session) incrVersionFieldValue(fieldValue *reflect.Value) {
 
 // Context sets the context on this session
 func (session *Session) Context(ctx context.Context) *Session {
+	if session.ctx != nil {
+		ctx = context.WithValue(ctx, log.SessionIDKey, session.ctx.Value(log.SessionIDKey))
+		ctx = context.WithValue(ctx, log.SessionKey, session.ctx.Value(log.SessionKey))
+		ctx = context.WithValue(ctx, log.SessionShowSQLKey, session.ctx.Value(log.SessionShowSQLKey))
+	}
+
 	session.ctx = ctx
 	return session
 }
