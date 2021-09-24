@@ -337,6 +337,42 @@ func TestInsertCreated(t *testing.T) {
 	assert.EqualValues(t, ci6.Created.Unix(), di6.Created.Unix())
 }
 
+func TestInsertTime(t *testing.T) {
+	type InsertTimeStruct struct {
+		Id        int64
+		CreatedAt time.Time `xorm:"created"`
+		UpdatedAt time.Time `xorm:"updated"`
+		DeletedAt time.Time `xorm:"deleted"`
+		Stime     time.Time
+		Etime     time.Time
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(InsertTimeStruct))
+
+	its := &InsertTimeStruct{
+		Stime: time.Now(),
+		Etime: time.Now(),
+	}
+	cnt, err := testEngine.Insert(its)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var itsGet InsertTimeStruct
+	has, err := testEngine.ID(1).Get(&itsGet)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.False(t, itsGet.Stime.IsZero())
+	assert.False(t, itsGet.Etime.IsZero())
+
+	var itsFind []*InsertTimeStruct
+	err = testEngine.Find(&itsFind)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(itsFind))
+	assert.False(t, itsFind[0].Stime.IsZero())
+	assert.False(t, itsFind[0].Etime.IsZero())
+}
+
 type JSONTime time.Time
 
 func (j JSONTime) format() string {

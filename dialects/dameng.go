@@ -1163,7 +1163,7 @@ func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.Colu
 				case "TIMESTAMP":
 					ns := t.(*sql.NullString)
 					if !ns.Valid {
-						return nil
+						break
 					}
 					s := ns.String
 					fields := strings.Split(s, "+")
