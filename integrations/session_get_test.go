@@ -933,7 +933,7 @@ func TestGetWithPrepare(t *testing.T) {
 	assert.NoError(t, err)
 
 	var v1 GetVarsWithPrepare
-	has, err := testEngine.Prepare().Get(&v1)
+	has, err := testEngine.Prepare().ID(1).Get(&v1)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, "xlw", v1.Name)
@@ -943,16 +943,36 @@ func TestGetWithPrepare(t *testing.T) {
 	defer sess.Close()
 
 	var v2 GetVarsWithPrepare
-	has, err = sess.Prepare().Get(&v2)
+	has, err = sess.Prepare().ID(1).Get(&v2)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, "xlw", v2.Name)
 	assert.EqualValues(t, 42, v2.Age)
 
 	var v3 GetVarsWithPrepare
-	has, err = sess.Prepare().Get(&v3)
+	has, err = sess.Prepare().ID(1).Get(&v3)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, "xlw", v3.Name)
 	assert.EqualValues(t, 42, v3.Age)
+
+	err = sess.Begin()
+	assert.NoError(t, err)
+
+	cnt, err := sess.Prepare().Insert(&GetVarsWithPrepare{
+		Name: "xlw2",
+		Age:  12,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = sess.Prepare().Insert(&GetVarsWithPrepare{
+		Name: "xlw3",
+		Age:  13,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	err = sess.Commit()
+	assert.NoError(t, err)
 }

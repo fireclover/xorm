@@ -157,6 +157,13 @@ func (session *Session) exec(sqlStr string, args ...interface{}) (sql.Result, er
 	session.lastSQLArgs = args
 
 	if !session.isAutoCommit {
+		if session.prepareStmt {
+			stmt, err := session.doPrepareTx(sqlStr)
+			if err != nil {
+				return nil, err
+			}
+			return stmt.ExecContext(session.ctx, args...)
+		}
 		return session.tx.ExecContext(session.ctx, sqlStr, args...)
 	}
 
@@ -165,12 +172,7 @@ func (session *Session) exec(sqlStr string, args ...interface{}) (sql.Result, er
 		if err != nil {
 			return nil, err
 		}
-
-		res, err := stmt.ExecContext(session.ctx, args...)
-		if err != nil {
-			return nil, err
-		}
-		return res, nil
+		return stmt.ExecContext(session.ctx, args...)
 	}
 
 	return session.DB().ExecContext(session.ctx, sqlStr, args...)

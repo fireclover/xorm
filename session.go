@@ -131,6 +131,7 @@ func newSession(engine *Engine) *Session {
 		afterClosures:    make([]func(interface{}), 0),
 		afterProcessors:  make([]executedProcessor, 0),
 		stmtCache:        make(map[uint32]*core.Stmt),
+		txStmtCache:      make(map[uint32]*core.Stmt),
 
 		lastSQL:     "",
 		lastSQLArgs: make([]interface{}, 0),
@@ -151,6 +152,12 @@ func (session *Session) Close() error {
 		}
 	}
 
+	for _, v := range session.txStmtCache {
+		if err := v.Close(); err != nil {
+			return err
+		}
+	}
+
 	if !session.isClosed {
 		// When Close be called, if session is a transaction and do not call
 		// Commit or Rollback, then call Rollback.
@@ -161,6 +168,7 @@ func (session *Session) Close() error {
 		}
 		session.tx = nil
 		session.stmtCache = nil
+		session.txStmtCache = nil
 		session.isClosed = true
 	}
 	return nil
