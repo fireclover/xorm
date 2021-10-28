@@ -74,7 +74,7 @@ Firstly, we should new an engine for a database.
 engine, err := xorm.NewEngine(driverName, dataSourceName)
 ```
 
-* Define a struct and Sync2 table struct to database
+* Define a struct and Sync table struct to database
 
 ```Go
 type User struct {
