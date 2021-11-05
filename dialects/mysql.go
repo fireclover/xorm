@@ -685,7 +685,7 @@ func (db *mysql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table
 		b.WriteString(db.rowFormat)
 	}
 
-	if table.Comment != ""  {
+	if table.Comment != "" {
 		b.WriteString(" COMMENT='")
 		b.WriteString(table.Comment)
 		b.WriteString("'")
