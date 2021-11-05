@@ -352,27 +352,7 @@ func (session *Session) Sync(beans ...interface{}) error {
 					return err
 				}
 
-				// add column comment for postgres
-				if col.Comment != "" && engine.Dialect().URI().DBType == schemas.POSTGRES {
-					// @see: integrations/engine_test.go#TestGetColumns
-					addColumnCommentSql := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s'", session.engine.Quote(tbNameWithSchema), session.engine.Quote(col.Name), col.Comment)
-					_, err = session.Exec(addColumnCommentSql)
-					if err != nil {
-						return err
-					}
-				}
-
 				continue
-			}
-
-			// add column comment for postgres
-			if col.Comment != "" && engine.Dialect().URI().DBType == schemas.POSTGRES {
-				// @see: integrations/engine_test.go#TestGetColumns
-				addColumnCommentSql := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s'", session.engine.Quote(tbNameWithSchema), session.engine.Quote(col.Name), col.Comment)
-				_, err = session.Exec(addColumnCommentSql)
-				if err != nil {
-					return err
-				}
 			}
 
 			err = nil
@@ -415,6 +395,8 @@ func (session *Session) Sync(beans ...interface{}) error {
 						_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
 					}
 				}
+			} else if col.Comment != oriCol.Comment {
+				_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
 			}
 
 			if col.Default != oriCol.Default {

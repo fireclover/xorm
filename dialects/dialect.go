@@ -206,7 +206,7 @@ func (db *Base) IsColumnExist(queryer core.Queryer, ctx context.Context, tableNa
 // AddColumnSQL returns a SQL to add a column
 func (db *Base) AddColumnSQL(tableName string, col *schemas.Column) string {
 	s, _ := ColumnString(db.dialect, col, true)
-	return fmt.Sprintf("ALTER TABLE %v ADD %v", db.dialect.Quoter().Quote(tableName), s)
+	return fmt.Sprintf("ALTER TABLE %s ADD %s", db.dialect.Quoter().Quote(tableName), s)
 }
 
 // CreateIndexSQL returns a SQL to create index
