@@ -19,9 +19,9 @@ type TableComment interface {
 }
 
 var (
-	tpTableName = reflect.TypeOf((*TableName)(nil)).Elem()
+	tpTableName    = reflect.TypeOf((*TableName)(nil)).Elem()
 	tpTableComment = reflect.TypeOf((*TableComment)(nil)).Elem()
-	tvCache     sync.Map
+	tvCache        sync.Map
 )
 
 // GetTableName returns table name
