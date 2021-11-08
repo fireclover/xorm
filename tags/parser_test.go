@@ -26,9 +26,20 @@ func (p ParseTableName2) TableName() string {
 	return "p_parseTableName"
 }
 
-func (p ParseTableName2) TableComment() string {
-	return "p2_testTableComment"
+type ParseTableComment struct{}
+
+type ParseTableComment1 struct{}
+
+type ParseTableComment2 struct{}
+
+func (p ParseTableComment1) TableComment() string {
+	return "p_parseTableComment1"
 }
+
+func (p *ParseTableComment2) TableComment() string {
+	return "p_parseTableComment2"
+}
+
 
 func TestParseTableName(t *testing.T) {
 	parser := NewParser(
@@ -59,17 +70,30 @@ func TestParseTableComment(t *testing.T) {
 		names.SnakeMapper{},
 		caches.NewManager(),
 	)
-	table, err := parser.Parse(reflect.ValueOf(new(ParseTableName1)))
+
+	table, err := parser.Parse(reflect.ValueOf(new(ParseTableComment)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "", table.Name)
+
+	table, err = parser.Parse(reflect.ValueOf(new(ParseTableName1)))
 	assert.NoError(t, err)
 	assert.EqualValues(t, "", table.Comment)
 
-	table, err = parser.Parse(reflect.ValueOf(new(ParseTableName2)))
+	table, err = parser.Parse(reflect.ValueOf(new(ParseTableComment1)))
 	assert.NoError(t, err)
-	assert.EqualValues(t, "p2_testTableComment", table.Comment)
+	assert.EqualValues(t, "p_parseTableComment1", table.Comment)
 
-	table, err = parser.Parse(reflect.ValueOf(ParseTableName2{}))
+	table, err = parser.Parse(reflect.ValueOf(ParseTableComment1{}))
 	assert.NoError(t, err)
-	assert.EqualValues(t, "p2_testTableComment", table.Comment)
+	assert.EqualValues(t, "p_parseTableComment1", table.Comment)
+
+	table, err = parser.Parse(reflect.ValueOf(new(ParseTableComment2)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "p_parseTableComment2", table.Comment)
+
+	table, err = parser.Parse(reflect.ValueOf(ParseTableComment2{}))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "p_parseTableComment2", table.Comment)
 }
 
 func TestUnexportField(t *testing.T) {

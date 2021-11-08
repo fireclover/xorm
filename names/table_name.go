@@ -22,6 +22,7 @@ var (
 	tpTableName    = reflect.TypeOf((*TableName)(nil)).Elem()
 	tpTableComment = reflect.TypeOf((*TableComment)(nil)).Elem()
 	tvCache        sync.Map
+	tcCache        sync.Map
 )
 
 // GetTableName returns table name
@@ -65,6 +66,34 @@ func GetTableName(mapper Mapper, v reflect.Value) string {
 func GetTableComment(v reflect.Value) string {
 	if v.Type().Implements(tpTableComment) {
 		return v.Interface().(TableComment).TableComment()
+	}
+
+	if v.Kind() == reflect.Ptr {//如果是指针
+		v = v.Elem()
+		if v.Type().Implements(tpTableComment) {
+			return v.Interface().(TableComment).TableComment()
+		}
+	} else if v.CanAddr() {//如果可以用地址访问
+		v1 := v.Addr()
+		if v1.Type().Implements(tpTableComment) {
+			return v1.Interface().(TableComment).TableComment()
+		}
+	} else {
+		comment, ok := tcCache.Load(v.Type())
+		if ok {
+			if comment.(string) != "" {
+				return comment.(string)
+			}
+		} else {
+			v2 := reflect.New(v.Type())
+			if v2.Type().Implements(tpTableComment) {
+				tableComment := v2.Interface().(TableComment).TableComment()
+				tcCache.Store(v.Type(), tableComment)
+				return tableComment
+			}
+
+			tcCache.Store(v.Type(), "")
+		}
 	}
 
 	return ""
