@@ -351,7 +351,6 @@ func (session *Session) Sync(beans ...interface{}) error {
 				if err = session.addColumn(col.Name); err != nil {
 					return err
 				}
-
 				continue
 			}
 
