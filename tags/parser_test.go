@@ -72,10 +72,6 @@ func TestParseTableComment(t *testing.T) {
 
 	table, err := parser.Parse(reflect.ValueOf(new(ParseTableComment)))
 	assert.NoError(t, err)
-	assert.EqualValues(t, "", table.Name)
-
-	table, err = parser.Parse(reflect.ValueOf(new(ParseTableName1)))
-	assert.NoError(t, err)
 	assert.EqualValues(t, "", table.Comment)
 
 	table, err = parser.Parse(reflect.ValueOf(new(ParseTableComment1)))
