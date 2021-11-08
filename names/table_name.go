@@ -68,12 +68,12 @@ func GetTableComment(v reflect.Value) string {
 		return v.Interface().(TableComment).TableComment()
 	}
 
-	if v.Kind() == reflect.Ptr {//如果是指针
+	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 		if v.Type().Implements(tpTableComment) {
 			return v.Interface().(TableComment).TableComment()
 		}
-	} else if v.CanAddr() {//如果可以用地址访问
+	} else if v.CanAddr() {
 		v1 := v.Addr()
 		if v1.Type().Implements(tpTableComment) {
 			return v1.Interface().(TableComment).TableComment()
