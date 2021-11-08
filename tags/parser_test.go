@@ -40,7 +40,6 @@ func (p *ParseTableComment2) TableComment() string {
 	return "p_parseTableComment2"
 }
 
-
 func TestParseTableName(t *testing.T) {
 	parser := NewParser(
 		"xorm",
