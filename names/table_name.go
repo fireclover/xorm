@@ -14,8 +14,13 @@ type TableName interface {
 	TableName() string
 }
 
+type TableComment interface {
+	TableComment() string
+}
+
 var (
 	tpTableName = reflect.TypeOf((*TableName)(nil)).Elem()
+	tpTableComment = reflect.TypeOf((*TableComment)(nil)).Elem()
 	tvCache     sync.Map
 )
 
@@ -54,4 +59,13 @@ func GetTableName(mapper Mapper, v reflect.Value) string {
 	}
 
 	return mapper.Obj2Table(v.Type().Name())
+}
+
+// GetTableComment returns table comment
+func GetTableComment(v reflect.Value) string {
+	if v.Type().Implements(tpTableComment) {
+		return v.Interface().(TableComment).TableComment()
+	}
+
+	return ""
 }

@@ -90,14 +90,6 @@ func (parser *Parser) ParseWithCache(v reflect.Value) (*schemas.Table, error) {
 		return nil, err
 	}
 
-	// if bean has Comment Method, then set table.Comment
-	if _, ok := t.MethodByName("Comment"); ok {
-		tableCommentFn := v.MethodByName("Comment")
-		if tableCommentFn.Type().String() == "func() string" {
-			table.Comment = fmt.Sprintf("%s", tableCommentFn.Call(nil)[0])
-		}
-	}
-
 	parser.tableCache.Store(t, table)
 
 	if parser.cacherMgr.GetDefaultCacher() != nil {
@@ -324,6 +316,7 @@ func (parser *Parser) Parse(v reflect.Value) (*schemas.Table, error) {
 	table := schemas.NewEmptyTable()
 	table.Type = t
 	table.Name = names.GetTableName(parser.tableMapper, v)
+	table.Comment = names.GetTableComment(v)
 
 	for i := 0; i < t.NumField(); i++ {
 		col, err := parser.parseField(table, i, t.Field(i), v.Field(i))

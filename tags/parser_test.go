@@ -26,6 +26,10 @@ func (p ParseTableName2) TableName() string {
 	return "p_parseTableName"
 }
 
+func (p ParseTableName2) TableComment() string {
+	return "p2_testTableComment"
+}
+
 func TestParseTableName(t *testing.T) {
 	parser := NewParser(
 		"xorm",
@@ -45,6 +49,27 @@ func TestParseTableName(t *testing.T) {
 	table, err = parser.Parse(reflect.ValueOf(ParseTableName2{}))
 	assert.NoError(t, err)
 	assert.EqualValues(t, "p_parseTableName", table.Name)
+}
+
+func TestParseTableComment(t *testing.T) {
+	parser := NewParser(
+		"xorm",
+		dialects.QueryDialect("mysql"),
+		names.SnakeMapper{},
+		names.SnakeMapper{},
+		caches.NewManager(),
+	)
+	table, err := parser.Parse(reflect.ValueOf(new(ParseTableName1)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "", table.Comment)
+
+	table, err = parser.Parse(reflect.ValueOf(new(ParseTableName2)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "p2_testTableComment", table.Comment)
+
+	table, err = parser.Parse(reflect.ValueOf(ParseTableName2{}))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "p2_testTableComment", table.Comment)
 }
 
 func TestUnexportField(t *testing.T) {
