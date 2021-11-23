@@ -991,13 +991,37 @@ func (db *postgres) IsTableExist(queryer core.Queryer, ctx context.Context, tabl
 		db.getSchema(), tableName)
 }
 
-func (db *postgres) ModifyColumnSQL(tableName string, col *schemas.Column) string {
+func (db *postgres) AddColumnSQL(tableName string, col *schemas.Column) string {
+	s, _ := ColumnString(db.dialect, col, true)
+
+	quoter := db.dialect.Quoter()
+	addColumnSQL := ""
+	commentSQL := "; "
 	if len(db.getSchema()) == 0 || strings.Contains(tableName, ".") {
-		return fmt.Sprintf("alter table %s ALTER COLUMN %s TYPE %s",
-			db.quoter.Quote(tableName), db.quoter.Quote(col.Name), db.SQLType(col))
+		addColumnSQL = fmt.Sprintf("ALTER TABLE %s ADD %s", quoter.Quote(tableName), s)
+		commentSQL += fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s'", quoter.Quote(tableName), quoter.Quote(col.Name), col.Comment)
+		return addColumnSQL + commentSQL
 	}
-	return fmt.Sprintf("alter table %s.%s ALTER COLUMN %s TYPE %s",
-		db.quoter.Quote(db.getSchema()), db.quoter.Quote(tableName), db.quoter.Quote(col.Name), db.SQLType(col))
+
+	addColumnSQL = fmt.Sprintf("ALTER TABLE %s.%s ADD %s", quoter.Quote(db.getSchema()), quoter.Quote(tableName), s)
+	commentSQL += fmt.Sprintf("COMMENT ON COLUMN %s.%s.%s IS '%s'", quoter.Quote(db.getSchema()), quoter.Quote(tableName), quoter.Quote(col.Name), col.Comment)
+	return addColumnSQL + commentSQL
+}
+
+func (db *postgres) ModifyColumnSQL(tableName string, col *schemas.Column) string {
+	quoter := db.dialect.Quoter()
+	modifyColumnSQL := ""
+	commentSQL := "; "
+
+	if len(db.getSchema()) == 0 || strings.Contains(tableName, ".") {
+		modifyColumnSQL = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s", quoter.Quote(tableName), quoter.Quote(col.Name), db.SQLType(col))
+		commentSQL += fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s'", quoter.Quote(tableName), quoter.Quote(col.Name), col.Comment)
+		return modifyColumnSQL + commentSQL
+	}
+
+	modifyColumnSQL = fmt.Sprintf("ALTER TABLE %s.%s ALTER COLUMN %s TYPE %s", quoter.Quote(db.getSchema()), quoter.Quote(tableName), quoter.Quote(col.Name), db.SQLType(col))
+	commentSQL += fmt.Sprintf("COMMENT ON COLUMN %s.%s.%s IS '%s'", quoter.Quote(db.getSchema()), quoter.Quote(tableName), quoter.Quote(col.Name), col.Comment)
+	return modifyColumnSQL + commentSQL
 }
 
 func (db *postgres) DropIndexSQL(tableName string, index *schemas.Index) string {
@@ -1300,6 +1324,26 @@ func (db *postgres) GetIndexes(queryer core.Queryer, ctx context.Context, tableN
 		return nil, rows.Err()
 	}
 	return indexes, nil
+}
+
+func (db *postgres) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
+	quoter := db.dialect.Quoter()
+	if len(db.getSchema()) != 0 && !strings.Contains(tableName, ".") {
+		tableName = fmt.Sprintf("%s.%s", db.getSchema(), tableName)
+	}
+
+	createTableSQL, ok, err := db.Base.CreateTableSQL(ctx, queryer, table, tableName)
+	if err != nil {
+		return "", ok, err
+	}
+
+	commentSql := "; "
+	if table.Comment != "" {
+		// support schema.table -> "schema"."table"
+		commentSql += fmt.Sprintf("COMMENT ON TABLE %s IS '%s'", quoter.Quote(tableName), table.Comment)
+	}
+
+	return createTableSQL + commentSql, true, nil
 }
 
 func (db *postgres) Filters() []Filter {

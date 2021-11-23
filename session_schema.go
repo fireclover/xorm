@@ -394,6 +394,8 @@ func (session *Session) Sync(beans ...interface{}) error {
 						_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
 					}
 				}
+			} else if col.Comment != oriCol.Comment {
+				_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
 			}
 
 			if col.Default != oriCol.Default {
