@@ -392,7 +392,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 			} else if statement.dialect.URI().DBType == schemas.ORACLE {
 				sqlStr = fmt.Sprintf("SELECT * FROM %s WHERE (%s) %s AND ROWNUM=1", tableName, joinStr, condSQL)
 			} else {
-				sqlStr = fmt.Sprintf("SELECT * FROM %s %s WHERE %s LIMIT 1", tableName, joinStr, condSQL)
+				sqlStr = fmt.Sprintf("SELECT 1 FROM %s %s WHERE %s LIMIT 1", tableName, joinStr, condSQL)
 			}
 			args = condArgs
 		} else {
@@ -401,7 +401,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 			} else if statement.dialect.URI().DBType == schemas.ORACLE {
 				sqlStr = fmt.Sprintf("SELECT * FROM  %s %s WHERE ROWNUM=1", tableName, joinStr)
 			} else {
-				sqlStr = fmt.Sprintf("SELECT * FROM %s %s LIMIT 1", tableName, joinStr)
+				sqlStr = fmt.Sprintf("SELECT 1 FROM %s %s LIMIT 1", tableName, joinStr)
 			}
 			args = []interface{}{}
 		}
