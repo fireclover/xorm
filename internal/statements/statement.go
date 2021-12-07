@@ -473,7 +473,7 @@ func (statement *Statement) Desc(colNames ...string) *Statement {
 		if i > 0 {
 			fmt.Fprint(&buf, ", ")
 		}
-		statement.dialect.Quoter().QuoteTo(&buf, col)
+		_ = statement.dialect.Quoter().QuoteTo(&buf, col)
 		fmt.Fprint(&buf, " DESC")
 	}
 	statement.OrderStr = buf.String()
@@ -490,7 +490,7 @@ func (statement *Statement) Asc(colNames ...string) *Statement {
 		if i > 0 {
 			fmt.Fprint(&buf, ", ")
 		}
-		statement.dialect.Quoter().QuoteTo(&buf, col)
+		_ = statement.dialect.Quoter().QuoteTo(&buf, col)
 		fmt.Fprint(&buf, " ASC")
 	}
 	statement.OrderStr = buf.String()
@@ -558,7 +558,7 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		tbName := dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), tablename, true)
 		if !utils.IsSubQuery(tbName) {
 			var buf strings.Builder
-			statement.dialect.Quoter().QuoteTo(&buf, tbName)
+			_ = statement.dialect.Quoter().QuoteTo(&buf, tbName)
 			tbName = buf.String()
 		} else {
 			tbName = statement.ReplaceQuote(tbName)
@@ -569,15 +569,6 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 	statement.JoinStr = buf.String()
 	statement.joinArgs = append(statement.joinArgs, args...)
 	return statement
-}
-
-// tbNameNoSchema get some table's table name
-func (statement *Statement) tbNameNoSchema(table *schemas.Table) string {
-	if len(statement.AltTableName) > 0 {
-		return statement.AltTableName
-	}
-
-	return table.Name
 }
 
 // GroupBy generate "Group By keys" statement
@@ -857,9 +848,6 @@ func (statement *Statement) buildConds2(table *schemas.Table, bean interface{},
 
 		fieldValuePtr, err := col.ValueOf(bean)
 		if err != nil {
-			if !strings.Contains(err.Error(), "is not valid") {
-				//engine.logger.Warn(err)
-			}
 			continue
 		} else if fieldValuePtr == nil {
 			continue

@@ -231,14 +231,12 @@ func TestForUpdate(t *testing.T) {
 	f := new(ForUpdate)
 	f.Name = "updated by session1"
 	session1.Where("`id` = ?", 1)
-	session1.Update(f)
+	_, err = session1.Update(f)
+	assert.NoError(t, err)
 
 	// release lock
 	err = session1.Commit()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert.NoError(t, err)
 
 	wg.Wait()
 }
@@ -253,7 +251,7 @@ func TestWithIn(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assert.NoError(t, testEngine.Sync(new(temp3)))
 
-	testEngine.Insert(&[]temp3{
+	_, err := testEngine.Insert(&[]temp3{
 		{
 			Name: "user1",
 		},
@@ -264,6 +262,7 @@ func TestWithIn(t *testing.T) {
 			Name: "user1",
 		},
 	})
+	assert.NoError(t, err)
 
 	cnt, err := testEngine.In("Id", 1, 2, 3, 4).Update(&temp3{Name: "aa"}, &temp3{Name: "user1"})
 	assert.NoError(t, err)
@@ -318,6 +317,7 @@ func TestUpdate1(t *testing.T) {
 	_, err := testEngine.Insert(&Userinfo{
 		Username: "user1",
 	})
+	assert.NoError(t, err)
 
 	var ori Userinfo
 	has, err := testEngine.Get(&ori)
@@ -925,6 +925,7 @@ func TestDeletedUpdate(t *testing.T) {
 
 	var s1 DeletedUpdatedStruct
 	has, err := testEngine.ID(s.Id).Get(&s1)
+	assert.NoError(t, err)
 	assert.EqualValues(t, true, has)
 
 	cnt, err = testEngine.ID(s.Id).Delete(&DeletedUpdatedStruct{})
@@ -941,6 +942,7 @@ func TestDeletedUpdate(t *testing.T) {
 
 	var s2 DeletedUpdatedStruct
 	has, err = testEngine.ID(s.Id).Get(&s2)
+	assert.NoError(t, err)
 	assert.EqualValues(t, true, has)
 }
 

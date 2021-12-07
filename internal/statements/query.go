@@ -79,7 +79,9 @@ func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (stri
 		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
-	statement.SetRefBean(bean)
+	if err := statement.SetRefBean(bean); err != nil {
+		return "", nil, err
+	}
 
 	var sumStrs = make([]string, 0, len(columns))
 	for _, colName := range columns {
@@ -111,7 +113,9 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 		v := rValue(bean)
 		isStruct = v.Kind() == reflect.Struct
 		if isStruct {
-			statement.SetRefBean(bean)
+			if err := statement.SetRefBean(bean); err != nil {
+				return "", nil, err
+			}
 		}
 	}
 
@@ -168,7 +172,9 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 	var condArgs []interface{}
 	var err error
 	if len(beans) > 0 {
-		statement.SetRefBean(beans[0])
+		if err := statement.SetRefBean(beans[0]); err != nil {
+			return "", nil, err
+		}
 		if err := statement.mergeConds(beans[0]); err != nil {
 			return "", nil, err
 		}

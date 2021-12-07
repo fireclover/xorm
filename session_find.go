@@ -152,7 +152,6 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 			if err != ErrCacheFailed {
 				return err
 			}
-			err = nil // !nashtsai! reset err to nil for ErrCacheFailed
 			session.engine.logger.Warnf("Cache Find Failed")
 		}
 	}

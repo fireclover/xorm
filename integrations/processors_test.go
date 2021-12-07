@@ -104,7 +104,7 @@ func (p *ProcessorsStruct) BeforeDelete() {
 }
 
 func (p *ProcessorsStruct) BeforeSet(col string, cell xorm.Cell) {
-	p.BeforeSetFlag = p.BeforeSetFlag + 1
+	p.BeforeSetFlag++
 }
 
 func (p *ProcessorsStruct) AfterInsert() {
@@ -120,7 +120,7 @@ func (p *ProcessorsStruct) AfterDelete() {
 }
 
 func (p *ProcessorsStruct) AfterSet(col string, cell xorm.Cell) {
-	p.AfterSetFlag = p.AfterSetFlag + 1
+	p.AfterSetFlag++
 }
 
 func TestProcessors(t *testing.T) {

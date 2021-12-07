@@ -40,7 +40,7 @@ func newRows(session *Session, bean interface{}) (*Rows, error) {
 		return nil, err
 	}
 
-	if len(session.statement.TableName()) <= 0 {
+	if len(session.statement.TableName()) == 0 {
 		return nil, ErrTableNotFound
 	}
 

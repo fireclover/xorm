@@ -58,12 +58,13 @@ func TestAutoTransaction(t *testing.T) {
 	engine := testEngine.(*xorm.Engine)
 
 	// will success
-	engine.Transaction(func(session *xorm.Session) (interface{}, error) {
+	_, err := engine.Transaction(func(session *xorm.Session) (interface{}, error) {
 		_, err := session.Insert(TestTx{Msg: "hi"})
 		assert.NoError(t, err)
 
 		return nil, nil
 	})
+	assert.NoError(t, err)
 
 	has, err := engine.Exist(&TestTx{Msg: "hi"})
 	assert.NoError(t, err)
@@ -149,13 +150,14 @@ func TestDumpTables(t *testing.T) {
 
 	assertSync(t, new(TestDumpTableStruct))
 
-	testEngine.Insert([]TestDumpTableStruct{
+	_, err := testEngine.Insert([]TestDumpTableStruct{
 		{Name: "1", IsMan: true},
 		{Name: "2\n"},
 		{Name: "3;"},
 		{Name: "4\n;\n''"},
 		{Name: "5'\n"},
 	})
+	assert.NoError(t, err)
 
 	fp := fmt.Sprintf("%v-table.sql", testEngine.Dialect().URI().DBType)
 	os.Remove(fp)

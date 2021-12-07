@@ -142,6 +142,6 @@ func TestMissingID(t *testing.T) {
 
 func tableCount(db *xorm.Engine, tableName string) (count int) {
 	row := db.DB().QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName))
-	row.Scan(&count)
+	_ = row.Scan(&count)
 	return
 }
