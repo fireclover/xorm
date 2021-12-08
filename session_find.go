@@ -71,7 +71,11 @@ func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...inte
 	}
 
 	// session has stored the conditions so we use `unscoped` to avoid duplicated condition.
-	return session.Unscoped().Count(reflect.New(sliceElementType).Interface())
+	if sliceElementType.Kind() == reflect.Struct {
+		return session.Unscoped().Count(reflect.New(sliceElementType).Interface())
+	}
+
+	return session.Unscoped().Count()
 }
 
 func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{}) error {
