@@ -1202,7 +1202,7 @@ func TestTagTime(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, s.Created.UTC().Format("2006-01-02 15:04:05"),
-		strings.Replace(strings.Replace(tm, "T", " ", -1), "Z", "", -1))
+		strings.ReplaceAll(strings.ReplaceAll(tm, "T", " "), "Z", ""))
 }
 
 func TestTagAutoIncr(t *testing.T) {
@@ -1287,7 +1287,7 @@ func TestVersion1(t *testing.T) {
 	assert.EqualValues(t, newVer.Ver, 2)
 
 	newVer = new(VersionS)
-	has, err = testEngine.ID(ver.Id).Get(newVer)
+	_, err = testEngine.ID(ver.Id).Get(newVer)
 	assert.NoError(t, err)
 	assert.EqualValues(t, newVer.Ver, 2)
 }
@@ -1345,7 +1345,7 @@ func TestVersion3(t *testing.T) {
 	assert.EqualValues(t, newVer.Ver, 2)
 
 	newVer = new(VersionUintS)
-	has, err = testEngine.ID(ver.Id).Get(newVer)
+	_, err = testEngine.ID(ver.Id).Get(newVer)
 	assert.NoError(t, err)
 	assert.EqualValues(t, newVer.Ver, 2)
 }

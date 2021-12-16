@@ -232,7 +232,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 	}
 
 	if cacher := session.engine.GetCacher(tableNameNoQuote); cacher != nil && session.statement.UseCache {
-		session.cacheDelete(table, tableNameNoQuote, deleteSQL, argsForCache...)
+		_ = session.cacheDelete(table, tableNameNoQuote, deleteSQL, argsForCache...)
 	}
 
 	session.statement.RefTable = table

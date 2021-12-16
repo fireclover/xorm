@@ -5,6 +5,7 @@
 package statements
 
 import (
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -37,6 +38,7 @@ func TestMain(m *testing.M) {
 		panic("tags parser is nil")
 	}
 	m.Run()
+	os.Exit(0)
 }
 
 var colStrTests = []struct {

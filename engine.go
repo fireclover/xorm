@@ -467,7 +467,9 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			DBName: uri.DBName,
 			Schema: uri.Schema,
 		}
-		dstDialect.Init(&destURI)
+		if err := dstDialect.Init(&destURI); err != nil {
+			return err
+		}
 	}
 	cacherMgr := caches.NewManager()
 	dstTableCache := tags.NewParser("xorm", dstDialect, engine.GetTableMapper(), engine.GetColumnMapper(), cacherMgr)
@@ -588,7 +590,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 							return err
 						}
 					} else if sess.engine.dialect.URI().DBType == schemas.DAMENG && stp.IsTime() && len(s.String) == 25 {
-						r := strings.Replace(s.String[:19], "T", " ", -1)
+						r := strings.ReplaceAll(s.String[:19], "T", " ")
 						if _, err = io.WriteString(w, "'"+r+"'"); err != nil {
 							return err
 						}
@@ -946,7 +948,7 @@ func (engine *Engine) CreateTables(beans ...interface{}) error {
 	for _, bean := range beans {
 		err = session.createTable(bean)
 		if err != nil {
-			session.Rollback()
+			_ = session.Rollback()
 			return err
 		}
 	}
@@ -966,7 +968,7 @@ func (engine *Engine) DropTables(beans ...interface{}) error {
 	for _, bean := range beans {
 		err = session.dropTable(bean)
 		if err != nil {
-			session.Rollback()
+			_ = session.Rollback()
 			return err
 		}
 	}

@@ -235,6 +235,7 @@ func (engine *Engine) row2mapInterface(rows *core.Rows, types []*sql.ColumnType,
 	return resultsMap, nil
 }
 
+// ScanInterfaceMap scan result from *core.Rows and return a map
 func (engine *Engine) ScanInterfaceMap(rows *core.Rows) (map[string]interface{}, error) {
 	fields, err := rows.Columns()
 	if err != nil {
@@ -248,6 +249,7 @@ func (engine *Engine) ScanInterfaceMap(rows *core.Rows) (map[string]interface{},
 	return engine.row2mapInterface(rows, types, fields)
 }
 
+// ScanInterfaceMaps scan results from *core.Rows and return a slice of map
 func (engine *Engine) ScanInterfaceMaps(rows *core.Rows) (resultsSlice []map[string]interface{}, err error) {
 	fields, err := rows.Columns()
 	if err != nil {
@@ -309,6 +311,7 @@ func (engine *Engine) row2mapStr(rows *core.Rows, types []*sql.ColumnType, field
 	return result, nil
 }
 
+// ScanStringMap scan results from *core.Rows and return a map
 func (engine *Engine) ScanStringMap(rows *core.Rows) (map[string]string, error) {
 	fields, err := rows.Columns()
 	if err != nil {
@@ -321,6 +324,7 @@ func (engine *Engine) ScanStringMap(rows *core.Rows) (map[string]string, error) 
 	return engine.row2mapStr(rows, types, fields)
 }
 
+// ScanStringMaps scan results from *core.Rows and return a slice of map
 func (engine *Engine) ScanStringMaps(rows *core.Rows) (resultsSlice []map[string]string, err error) {
 	fields, err := rows.Columns()
 	if err != nil {
@@ -395,6 +399,7 @@ func (engine *Engine) row2sliceStr(rows *core.Rows, types []*sql.ColumnType, fie
 	return results, nil
 }
 
+// ScanStringSlice scan results from *core.Rows and return a slice of one row
 func (engine *Engine) ScanStringSlice(rows *core.Rows) ([]string, error) {
 	fields, err := rows.Columns()
 	if err != nil {
@@ -408,6 +413,7 @@ func (engine *Engine) ScanStringSlice(rows *core.Rows) ([]string, error) {
 	return engine.row2sliceStr(rows, types, fields)
 }
 
+// ScanStringSlices scan results from *core.Rows and return a slice of all rows
 func (engine *Engine) ScanStringSlices(rows *core.Rows) (resultsSlice [][]string, err error) {
 	fields, err := rows.Columns()
 	if err != nil {

@@ -328,7 +328,7 @@ func TestIsTableEmpty(t *testing.T) {
 		Created     time.Time `xorm:"created"`
 		ILike       int
 		PageView    int
-		From_url    string
+		From_url    string // nolint
 		Pre_url     string `xorm:"unique"` //pre view image's url
 		Uid         int64
 	}

@@ -6,7 +6,6 @@ package xorm
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math/big"
@@ -79,7 +78,7 @@ func (session *Session) get(beans ...interface{}) (bool, error) {
 	var err error
 
 	if session.statement.RawSQL == "" {
-		if len(session.statement.TableName()) <= 0 {
+		if len(session.statement.TableName()) == 0 {
 			return false, ErrTableNotFound
 		}
 		session.statement.Limit(1)
@@ -129,14 +128,6 @@ func (session *Session) get(beans ...interface{}) (bool, error) {
 
 	return true, nil
 }
-
-var (
-	valuerTypePlaceHolder driver.Valuer
-	valuerType            = reflect.TypeOf(&valuerTypePlaceHolder).Elem()
-
-	conversionTypePlaceHolder convert.Conversion
-	conversionType            = reflect.TypeOf(&conversionTypePlaceHolder).Elem()
-)
 
 func isScannableStruct(bean interface{}, typeLen int) bool {
 	switch bean.(type) {

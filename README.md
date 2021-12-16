@@ -141,6 +141,24 @@ affected, err := engine.Insert(&users)
 affected, err := engine.Insert(&user1, &users)
 // INSERT INTO struct1 () values ()
 // INSERT INTO struct2 () values (),(),()
+
+affected, err := engine.Table("user").Insert(map[string]interface{}{
+    "name": "lunny",
+    "age": 18,
+})
+// INSERT INTO user (name, age) values (?,?)
+
+affected, err := engine.Table("user").Insert([]map[string]interface{}{
+    {
+        "name": "lunny",
+        "age": 18,
+    },
+    {
+        "name": "lunny2",
+        "age": 19,
+    },
+})
+// INSERT INTO user (name, age) values (?,?),(?,?)
 ```
 
 * `Get` query one record from database

@@ -101,7 +101,7 @@ func callbackLooper(datas interface{}, step int, actionFunc func(interface{}) er
 		if err = actionFunc(tempInterface); err != nil {
 			return
 		}
-		processedLen = processedLen - step
+		processedLen -= step
 	}
 	return
 }

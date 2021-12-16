@@ -1206,9 +1206,7 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 					col.Default = "'" + col.Default + "'"
 				}
 			} else if col.SQLType.IsTime() {
-				if strings.HasSuffix(col.Default, "::timestamp without time zone") {
-					col.Default = strings.TrimSuffix(col.Default, "::timestamp without time zone")
-				}
+				col.Default = strings.TrimSuffix(col.Default, "::timestamp without time zone")
 			}
 		}
 		cols[col.Name] = col
@@ -1269,7 +1267,7 @@ func (db *postgres) GetIndexes(queryer core.Queryer, ctx context.Context, tableN
 	s := "SELECT indexname, indexdef FROM pg_indexes WHERE tablename=$1"
 	if len(db.getSchema()) != 0 {
 		args = append(args, db.getSchema())
-		s = s + " AND schemaname=$2"
+		s += " AND schemaname=$2"
 	}
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -1337,13 +1335,13 @@ func (db *postgres) CreateTableSQL(ctx context.Context, queryer core.Queryer, ta
 		return "", ok, err
 	}
 
-	commentSql := "; "
+	commentSQL := "; "
 	if table.Comment != "" {
 		// support schema.table -> "schema"."table"
-		commentSql += fmt.Sprintf("COMMENT ON TABLE %s IS '%s'", quoter.Quote(tableName), table.Comment)
+		commentSQL += fmt.Sprintf("COMMENT ON TABLE %s IS '%s'", quoter.Quote(tableName), table.Comment)
 	}
 
-	return createTableSQL + commentSql, true, nil
+	return createTableSQL + commentSQL, true, nil
 }
 
 func (db *postgres) Filters() []Filter {

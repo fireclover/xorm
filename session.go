@@ -704,7 +704,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 		if idx, ok = tempMap[lKey]; !ok {
 			idx = 0
 		} else {
-			idx = idx + 1
+			idx++
 		}
 		tempMap[lKey] = idx
 
