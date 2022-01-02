@@ -12,6 +12,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -438,16 +439,14 @@ func (engine *Engine) DumpTables(tables []*schemas.Table, w io.Writer, tp ...sch
 	return engine.dumpTables(context.Background(), tables, w, tp...)
 }
 
-func formatBool(s string, dstDialect dialects.Dialect) string {
-	if dstDialect.URI().DBType == schemas.MSSQL {
-		switch s {
-		case "true":
+func formatBool(s bool, dstDialect dialects.Dialect) string {
+	if dstDialect.URI().DBType != schemas.POSTGRES {
+		if s {
 			return "1"
-		case "false":
-			return "0"
 		}
+		return "0"
 	}
-	return s
+	return strconv.FormatBool(s)
 }
 
 // dumpTables dump database all table structs and data to w with specify db type
@@ -581,8 +580,13 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 						return err
 					}
 				} else {
-					if stp.IsBool() || (dstDialect.URI().DBType == schemas.MSSQL && strings.EqualFold(stp.Name, schemas.Bit)) {
-						if _, err = io.WriteString(w, formatBool(s.String, dstDialect)); err != nil {
+					if table.Columns()[i].SQLType.IsBool() || stp.IsBool() || (dstDialect.URI().DBType == schemas.MSSQL && strings.EqualFold(stp.Name, schemas.Bit)) {
+						val, err := strconv.ParseBool(s.String)
+						if err != nil {
+							return err
+						}
+
+						if _, err = io.WriteString(w, formatBool(val, dstDialect)); err != nil {
 							return err
 						}
 					} else if stp.IsNumeric() {
