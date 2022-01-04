@@ -490,7 +490,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			return err
 		}
 	} else if dstDialect.URI().DBType == schemas.POSTGRES && engine.dialect.URI().Schema != "" {
-		if _, err := fmt.Fprintf(w, `SELECT set_config('search_path', '%s,' || current_setting('search_path'), false)`, strings.ReplaceAll(engine.dialect.URI().Schema, "'", "''")); err != nil {
+		if _, err := fmt.Fprintf(w, `SELECT set_config('search_path', '%s,' || current_setting('search_path'), false);`+"\n", strings.ReplaceAll(engine.dialect.URI().Schema, "'", "''")); err != nil {
 			return err
 		}
 	}
