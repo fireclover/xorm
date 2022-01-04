@@ -489,6 +489,10 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 		if _, err := io.WriteString(w, "SET sql_mode='NO_BACKSLASH_ESCAPES';\n"); err != nil {
 			return err
 		}
+	} else if dstDialect.URI().DBType == schemas.POSTGRES && engine.dialect.URI().Schema != "" {
+		if _, err := fmt.Fprintf(w, `SELECT set_config('search_path', '%s,' || current_setting('search_path'), false)`, strings.ReplaceAll(engine.dialect.URI().Schema, "'", "''")); err != nil {
+			return err
+		}
 	}
 
 	for i, table := range tables {
