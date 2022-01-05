@@ -638,7 +638,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 									return err
 								}
 								for i := loc[0]; i < loc[1]; i++ {
-									if _, err := fmt.Fprintf(w, "\\x%0x", toCheck[i]); err != nil {
+									if _, err := fmt.Fprintf(w, "\\x%02x", toCheck[i]); err != nil {
 										return err
 									}
 								}
