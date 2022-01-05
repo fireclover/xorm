@@ -776,14 +776,18 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 								}
 							}
 						}
-					} else {
-						// In MSSQL we have to use NChar format to get unicode strings.
-						if dstDialect.URI().DBType == schemas.MSSQL && dstTable.Columns()[i].SQLType.IsText() {
-							if _, err = io.WriteString(w, "N"); err != nil {
+					} else if dstDialect.URI().DBType == schemas.MSSQL {
+						if dstTable.Columns()[i].SQLType.IsBlob() {
+							// MSSQL uses CONVERT(VARBINARY(MAX), '0xDEADBEEF', 1)
+							if _, err := fmt.Fprintf(w, "CONVERT(VARBINARY(MAX), '0x%x', 1)", s.String); err != nil {
+								return err
+							}
+						} else {
+							if _, err = io.WriteString(w, "N'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
 								return err
 							}
 						}
-
+					} else {
 						if _, err = io.WriteString(w, "'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
 							return err
 						}
