@@ -471,7 +471,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 			DBName: uri.DBName,
 			// DO NOT SET SCHEMA HERE
 		}
-		if dstDialect.URI().DBType == schemas.POSTGRES {
+		if tp[0] == schemas.POSTGRES {
 			destURI.Schema = engine.dialect.URI().Schema
 		}
 		if err := dstDialect.Init(&destURI); err != nil {
