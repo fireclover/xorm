@@ -732,6 +732,50 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 								}
 							}
 						}
+					} else if dstDialect.URI().DBType == schemas.DAMENG {
+						if dstTable.Columns()[i].SQLType.IsBlob() {
+							// DAMENG uses HEXTORAW
+							if _, err := fmt.Fprintf(w, "HEXTORAW('%x')", s.String); err != nil {
+								return err
+							}
+						} else {
+							// DAMENG concatentates strings in multiple ways but uses CHAR and has CONCAT
+							// (NOTE: a NUL byte in a text segment will fail)
+							if _, err := io.WriteString(w, "CONCAT("); err != nil {
+								return err
+							}
+							toCheck := strings.ReplaceAll(s.String, "'", "''")
+							for len(toCheck) > 0 {
+								loc := controlCharactersRe.FindStringIndex(toCheck)
+								if loc == nil {
+									if _, err := io.WriteString(w, "'"+toCheck+"')"); err != nil {
+										return err
+									}
+									break
+								}
+								if loc[0] > 0 {
+									if _, err := io.WriteString(w, "'"+toCheck[:loc[0]]+"', "); err != nil {
+										return err
+									}
+								}
+								for i := loc[0]; i < loc[1]-1; i++ {
+									if _, err := io.WriteString(w, "CHAR("+strconv.Itoa(int(toCheck[i]))+"), "); err != nil {
+										return err
+									}
+								}
+								char := toCheck[loc[1]-1]
+								toCheck = toCheck[loc[1]:]
+								if len(toCheck) > 0 {
+									if _, err := io.WriteString(w, "CHAR("+strconv.Itoa(int(char))+"), "); err != nil {
+										return err
+									}
+								} else {
+									if _, err = io.WriteString(w, "CHAR("+strconv.Itoa(int(char))+"))"); err != nil {
+										return err
+									}
+								}
+							}
+						}
 					} else {
 						// In MSSQL we have to use NChar format to get unicode strings.
 						if dstDialect.URI().DBType == schemas.MSSQL && dstTable.Columns()[i].SQLType.IsText() {
