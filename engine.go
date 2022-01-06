@@ -732,14 +732,14 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 								}
 							}
 						}
-					} else if dstDialect.URI().DBType == schemas.DAMENG {
+					} else if dstDialect.URI().DBType == schemas.DAMENG || dstDialect.URI().DBType == schemas.ORACLE {
 						if dstTable.Columns()[i].SQLType.IsBlob() {
-							// DAMENG uses HEXTORAW
+							// ORACLE/DAMENG uses HEXTORAW
 							if _, err := fmt.Fprintf(w, "HEXTORAW('%x')", s.String); err != nil {
 								return err
 							}
 						} else {
-							// DAMENG concatentates strings in multiple ways but uses CHAR and has CONCAT
+							// ORACLE/DAMENG concatentates strings in multiple ways but uses CHAR and has CONCAT
 							// (NOTE: a NUL byte in a text segment will fail)
 							if _, err := io.WriteString(w, "CONCAT("); err != nil {
 								return err
