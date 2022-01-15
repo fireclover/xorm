@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -449,6 +450,8 @@ func formatBool(s bool, dstDialect dialects.Dialect) string {
 	return strconv.FormatBool(s)
 }
 
+var controlCharactersRe = regexp.MustCompile(`[\x00-\x1f\x7f]+`)
+
 // dumpTables dump database all table structs and data to w with specify db type
 func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w io.Writer, tp ...schemas.DBType) error {
 	var dstDialect dialects.Dialect
@@ -464,7 +467,10 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 		destURI := dialects.URI{
 			DBType: tp[0],
 			DBName: uri.DBName,
-			Schema: uri.Schema,
+			// DO NOT SET SCHEMA HERE
+		}
+		if tp[0] == schemas.POSTGRES {
+			destURI.Schema = engine.dialect.URI().Schema
 		}
 		if err := dstDialect.Init(&destURI); err != nil {
 			return err
@@ -477,6 +483,13 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 		time.Now().In(engine.TZLocation).Format("2006-01-02 15:04:05"), engine.dialect.URI().DBType, dstDialect.URI().DBType))
 	if err != nil {
 		return err
+	}
+
+	if dstDialect.URI().DBType == schemas.MYSQL {
+		// For MySQL set NO_BACKLASH_ESCAPES so that strings work properly
+		if _, err := io.WriteString(w, "SET sql_mode='NO_BACKSLASH_ESCAPES';\n"); err != nil {
+			return err
+		}
 	}
 
 	for i, table := range tables {
@@ -597,6 +610,182 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 						r := strings.ReplaceAll(s.String[:19], "T", " ")
 						if _, err = io.WriteString(w, "'"+r+"'"); err != nil {
 							return err
+						}
+					} else if len(s.String) == 0 {
+						if _, err := io.WriteString(w, "''"); err != nil {
+							return err
+						}
+					} else if dstDialect.URI().DBType == schemas.POSTGRES {
+						if dstTable.Columns()[i].SQLType.IsBlob() {
+							// Postgres has the escape format and we should use that for bytea data
+							if _, err := fmt.Fprintf(w, "'\\x%x'", s.String); err != nil {
+								return err
+							}
+						} else {
+							// Postgres concatentates strings using || (NOTE: a NUL byte in a text segment will fail)
+							toCheck := strings.ReplaceAll(s.String, "'", "''")
+							for len(toCheck) > 0 {
+								loc := controlCharactersRe.FindStringIndex(toCheck)
+								if loc == nil {
+									if _, err := io.WriteString(w, "'"+toCheck+"'"); err != nil {
+										return err
+									}
+									break
+								}
+								if loc[0] > 0 {
+									if _, err := io.WriteString(w, "'"+toCheck[:loc[0]]+"' || "); err != nil {
+										return err
+									}
+								}
+								if _, err := io.WriteString(w, "e'"); err != nil {
+									return err
+								}
+								for i := loc[0]; i < loc[1]; i++ {
+									if _, err := fmt.Fprintf(w, "\\x%02x", toCheck[i]); err != nil {
+										return err
+									}
+								}
+								toCheck = toCheck[loc[1]:]
+								if len(toCheck) > 0 {
+									if _, err := io.WriteString(w, "' || "); err != nil {
+										return err
+									}
+								} else {
+									if _, err := io.WriteString(w, "'"); err != nil {
+										return err
+									}
+								}
+							}
+						}
+					} else if dstDialect.URI().DBType == schemas.MYSQL {
+						loc := controlCharactersRe.FindStringIndex(s.String)
+						if loc == nil {
+							if _, err := io.WriteString(w, "'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
+								return err
+							}
+						} else {
+							if _, err := io.WriteString(w, "CONCAT("); err != nil {
+								return err
+							}
+							toCheck := strings.ReplaceAll(s.String, "'", "''")
+							for len(toCheck) > 0 {
+								loc := controlCharactersRe.FindStringIndex(toCheck)
+								if loc == nil {
+									if _, err := io.WriteString(w, "'"+toCheck+"')"); err != nil {
+										return err
+									}
+									break
+								}
+								if loc[0] > 0 {
+									if _, err := io.WriteString(w, "'"+toCheck[:loc[0]]+"', "); err != nil {
+										return err
+									}
+								}
+								for i := loc[0]; i < loc[1]-1; i++ {
+									if _, err := io.WriteString(w, "CHAR("+strconv.Itoa(int(toCheck[i]))+"), "); err != nil {
+										return err
+									}
+								}
+								char := toCheck[loc[1]-1]
+								toCheck = toCheck[loc[1]:]
+								if len(toCheck) > 0 {
+									if _, err := io.WriteString(w, "CHAR("+strconv.Itoa(int(char))+"), "); err != nil {
+										return err
+									}
+								} else {
+									if _, err = io.WriteString(w, "CHAR("+strconv.Itoa(int(char))+"))"); err != nil {
+										return err
+									}
+								}
+							}
+						}
+					} else if dstDialect.URI().DBType == schemas.SQLITE {
+						if dstTable.Columns()[i].SQLType.IsBlob() {
+							// SQLite has its escape format
+							if _, err := fmt.Fprintf(w, "X'%x'", s.String); err != nil {
+								return err
+							}
+						} else {
+							// SQLite concatentates strings using || (NOTE: a NUL byte in a text segment will fail)
+							toCheck := strings.ReplaceAll(s.String, "'", "''")
+							for len(toCheck) > 0 {
+								loc := controlCharactersRe.FindStringIndex(toCheck)
+								if loc == nil {
+									if _, err := io.WriteString(w, "'"+toCheck+"'"); err != nil {
+										return err
+									}
+									break
+								}
+								if loc[0] > 0 {
+									if _, err := io.WriteString(w, "'"+toCheck[:loc[0]]+"' || "); err != nil {
+										return err
+									}
+								}
+								if _, err := fmt.Fprintf(w, "X'%x'", toCheck[loc[0]:loc[1]]); err != nil {
+									return err
+								}
+								toCheck = toCheck[loc[1]:]
+								if len(toCheck) > 0 {
+									if _, err := io.WriteString(w, " || "); err != nil {
+										return err
+									}
+								}
+							}
+						}
+					} else if dstDialect.URI().DBType == schemas.DAMENG || dstDialect.URI().DBType == schemas.ORACLE {
+						if dstTable.Columns()[i].SQLType.IsBlob() {
+							// ORACLE/DAMENG uses HEXTORAW
+							if _, err := fmt.Fprintf(w, "HEXTORAW('%x')", s.String); err != nil {
+								return err
+							}
+						} else {
+							// ORACLE/DAMENG concatentates strings in multiple ways but uses CHAR and has CONCAT
+							// (NOTE: a NUL byte in a text segment will fail)
+							if _, err := io.WriteString(w, "CONCAT("); err != nil {
+								return err
+							}
+							toCheck := strings.ReplaceAll(s.String, "'", "''")
+							for len(toCheck) > 0 {
+								loc := controlCharactersRe.FindStringIndex(toCheck)
+								if loc == nil {
+									if _, err := io.WriteString(w, "'"+toCheck+"')"); err != nil {
+										return err
+									}
+									break
+								}
+								if loc[0] > 0 {
+									if _, err := io.WriteString(w, "'"+toCheck[:loc[0]]+"', "); err != nil {
+										return err
+									}
+								}
+								for i := loc[0]; i < loc[1]-1; i++ {
+									if _, err := io.WriteString(w, "CHAR("+strconv.Itoa(int(toCheck[i]))+"), "); err != nil {
+										return err
+									}
+								}
+								char := toCheck[loc[1]-1]
+								toCheck = toCheck[loc[1]:]
+								if len(toCheck) > 0 {
+									if _, err := io.WriteString(w, "CHAR("+strconv.Itoa(int(char))+"), "); err != nil {
+										return err
+									}
+								} else {
+									if _, err = io.WriteString(w, "CHAR("+strconv.Itoa(int(char))+"))"); err != nil {
+										return err
+									}
+								}
+							}
+						}
+					} else if dstDialect.URI().DBType == schemas.MSSQL {
+						if dstTable.Columns()[i].SQLType.IsBlob() {
+							// MSSQL uses CONVERT(VARBINARY(MAX), '0xDEADBEEF', 1)
+							if _, err := fmt.Fprintf(w, "CONVERT(VARBINARY(MAX), '0x%x', 1)", s.String); err != nil {
+								return err
+							}
+						} else {
+							if _, err = io.WriteString(w, "N'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
+								return err
+							}
 						}
 					} else {
 						if _, err = io.WriteString(w, "'"+strings.ReplaceAll(s.String, "'", "''")+"'"); err != nil {
