@@ -29,6 +29,9 @@ func TableNameNoSchema(dialect Dialect, mapper names.Mapper, tableName interface
 	switch tt := tableName.(type) {
 	case []string:
 		if len(tt) > 1 {
+			if dialect.URI().DBType == schemas.ORACLE {
+				return fmt.Sprintf("%v %v", quote(tt[0]), quote(tt[1]))
+			}
 			return fmt.Sprintf("%v AS %v", quote(tt[0]), quote(tt[1]))
 		} else if len(tt) == 1 {
 			return quote(tt[0])
@@ -54,6 +57,9 @@ func TableNameNoSchema(dialect Dialect, mapper names.Mapper, tableName interface
 			}
 		}
 		if l > 1 {
+			if dialect.URI().DBType == schemas.ORACLE {
+				return fmt.Sprintf("%v %v", quote(table), quote(fmt.Sprintf("%v", tt[1])))
+			}
 			return fmt.Sprintf("%v AS %v", quote(table), quote(fmt.Sprintf("%v", tt[1])))
 		} else if l == 1 {
 			return quote(table)
