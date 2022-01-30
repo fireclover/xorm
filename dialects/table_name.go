@@ -11,6 +11,7 @@ import (
 
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/names"
+	"xorm.io/xorm/schemas"
 )
 
 // TableNameWithSchema will add schema prefix on table name if possible
