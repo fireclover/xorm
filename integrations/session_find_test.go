@@ -1159,3 +1159,31 @@ func TestFindBytesVars(t *testing.T) {
 	assert.EqualValues(t, []byte("bytes1-1"), gbv[3].Bytes1)
 	assert.EqualValues(t, []byte("bytes2-2"), gbv[3].Bytes2)
 }
+
+func TestUpdateFindDate(t *testing.T) {
+	type TestUpdateFindDate struct {
+		Id   int64
+		Name string
+		Tm   time.Time `xorm:"DATE created"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestUpdateFindDate))
+
+	session := testEngine.NewSession()
+	defer session.Close()
+
+	tuf := TestUpdateFindDate{
+		Name: "test",
+	}
+	_, err := session.Insert(&tuf)
+	assert.NoError(t, err)
+	_, err = session.Where("`id` = ?", tuf.Id).Update(&TestUpdateFindDate{})
+	assert.EqualError(t, xorm.ErrNoColumnsTobeUpdated, err.Error())
+
+	var tufs []TestUpdateFindDate
+	err = session.Find(&tufs)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(tufs))
+	assert.EqualValues(t, tuf.Tm.Format("2006-01-02"), tufs[0].Tm.Format("2006-01-02"))
+}
