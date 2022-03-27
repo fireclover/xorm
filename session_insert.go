@@ -501,6 +501,10 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 			continue
 		}
 
+		if col.IsJSON && fieldValue.String() == "" {
+			continue
+		}
+
 		// !evalphobia! set fieldValue as nil when column is nullable and zero-value
 		if _, ok := getFlagForColumn(session.statement.NullableMap, col); ok {
 			if col.Nullable && utils.IsValueZero(fieldValue) {

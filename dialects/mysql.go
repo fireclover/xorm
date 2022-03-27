@@ -304,6 +304,7 @@ func (db *mysql) SQLType(c *schemas.Column) string {
 		c.Length = 40
 	case schemas.Json:
 		res = schemas.Text
+		c.IsJSON = true
 	case schemas.UnsignedInt:
 		res = schemas.Int
 		isUnsigned = true
