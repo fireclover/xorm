@@ -276,10 +276,10 @@ func TestGetColumnsComment(t *testing.T) {
 	var hasComment, noComment string
 	for _, table := range tables {
 		if table.Name == tableName {
-			col := table.GetColumn("has_comment")
+			col := table.GetColumn(testEngine.GetColumnMapper().Obj2Table("HasComment"))
 			assert.NotNil(t, col)
 			hasComment = col.Comment
-			col2 := table.GetColumn("no_comment")
+			col2 := table.GetColumn(testEngine.GetColumnMapper().Obj2Table("NoComment"))
 			assert.NotNil(t, col2)
 			noComment = col2.Comment
 			break
