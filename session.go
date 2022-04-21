@@ -608,15 +608,10 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 				fieldValue.Set(x.Elem())
 			} else {
 				if fieldValue.Len() > 0 {
-					for i := 0; i < fieldValue.Len(); i++ {
-						if i < vv.Len() {
-							fieldValue.Index(i).Set(vv.Index(i))
-						}
-					}
-				} else {
-					for i := 0; i < vv.Len(); i++ {
-						fieldValue.Set(reflect.Append(*fieldValue, vv.Index(i)))
-					}
+					fieldValue.SetLen(0)
+				}
+				for i := 0; i < vv.Len(); i++ {
+					fieldValue.Set(reflect.Append(*fieldValue, vv.Index(i)))
 				}
 			}
 			return nil
