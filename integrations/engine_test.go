@@ -288,3 +288,36 @@ func TestGetColumnsComment(t *testing.T) {
 	assert.Equal(t, comment, hasComment)
 	assert.Zero(t, noComment)
 }
+
+func TestGetColumnsLength(t *testing.T) {
+	var max_length int
+	switch testEngine.Dialect().URI().DBType {
+	case
+		schemas.POSTGRES:
+		max_length = 0
+	case
+		schemas.MYSQL:
+		max_length = 65535
+	default:
+		t.Skip()
+		return
+	}
+
+	type TestLengthStringStruct struct {
+		Content string `xorm:"TEXT NOT NULL"`
+	}
+
+	assertSync(t, new(TestLengthStringStruct))
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	tableLengthStringName := testEngine.GetColumnMapper().Obj2Table("TestLengthStringStruct")
+	for _, table := range tables {
+		if table.Name == tableLengthStringName {
+			col := table.GetColumn("content")
+			assert.Equal(t, col.Length, max_length)
+			assert.Zero(t, col.Length2)
+			break
+		}
+	}
+}
