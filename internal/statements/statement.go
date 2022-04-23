@@ -304,7 +304,7 @@ func (statement *Statement) needTableName() bool {
 
 func (statement *Statement) colName(col *schemas.Column, tableName string) string {
 	if statement.needTableName() {
-		var nm = tableName
+		nm := tableName
 		if len(statement.TableAlias) > 0 {
 			nm = statement.TableAlias
 		}
@@ -765,7 +765,7 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 				if len(table.PrimaryKeys) == 1 {
 					pkField := reflect.Indirect(fieldValue).FieldByName(table.PKColumns()[0].FieldName)
 					// fix non-int pk issues
-					//if pkField.Int() != 0 {
+					// if pkField.Int() != 0 {
 					if pkField.IsValid() && !utils.IsZero(pkField.Interface()) {
 						return pkField.Interface(), true, nil
 					}
@@ -814,7 +814,8 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 func (statement *Statement) buildConds2(table *schemas.Table, bean interface{},
 	includeVersion bool, includeUpdated bool, includeNil bool,
 	includeAutoIncr bool, allUseBool bool, useAllCols bool, unscoped bool,
-	mustColumnMap map[string]bool, tableName, aliasName string, addedTableName bool) (builder.Cond, error) {
+	mustColumnMap map[string]bool, tableName, aliasName string, addedTableName bool,
+) (builder.Cond, error) {
 	var conds []builder.Cond
 	for _, col := range table.Columns() {
 		if !includeVersion && col.IsVersion {
@@ -833,7 +834,7 @@ func (statement *Statement) buildConds2(table *schemas.Table, bean interface{},
 
 		var colName string
 		if addedTableName {
-			var nm = tableName
+			nm := tableName
 			if len(aliasName) > 0 {
 				nm = aliasName
 			}
@@ -864,7 +865,7 @@ func (statement *Statement) buildConds2(table *schemas.Table, bean interface{},
 				continue
 			}
 
-			return nil, fmt.Errorf("column %s is a TEXT type which cannot be as compare condition", col.Name)
+			return nil, fmt.Errorf("column %s is a TEXT type with data %#v which cannot be as compare condition", col.Name, fieldValue.Interface())
 		}
 
 		requiredField := useAllCols
@@ -915,7 +916,7 @@ func (statement *Statement) BuildConds(table *schemas.Table, bean interface{}, i
 
 func (statement *Statement) mergeConds(bean interface{}) error {
 	if !statement.NoAutoCondition && statement.RefTable != nil {
-		var addedTableName = (len(statement.JoinStr) > 0)
+		addedTableName := (len(statement.JoinStr) > 0)
 		autoCond, err := statement.BuildConds(statement.RefTable, bean, true, true, false, true, addedTableName)
 		if err != nil {
 			return err
@@ -953,7 +954,7 @@ func (statement *Statement) convertSQLOrArgs(sqlOrArgs ...interface{}) (string, 
 	switch sqlOrArgs[0].(type) {
 	case string:
 		if len(sqlOrArgs) > 1 {
-			var newArgs = make([]interface{}, 0, len(sqlOrArgs)-1)
+			newArgs := make([]interface{}, 0, len(sqlOrArgs)-1)
 			for _, arg := range sqlOrArgs[1:] {
 				if v, ok := arg.(time.Time); ok {
 					newArgs = append(newArgs, v.In(statement.defaultTimeZone).Format("2006-01-02 15:04:05"))
@@ -977,7 +978,7 @@ func (statement *Statement) convertSQLOrArgs(sqlOrArgs ...interface{}) (string, 
 }
 
 func (statement *Statement) joinColumns(cols []*schemas.Column, includeTableName bool) string {
-	var colnames = make([]string, len(cols))
+	colnames := make([]string, len(cols))
 	for i, col := range cols {
 		if includeTableName {
 			colnames[i] = statement.quote(statement.TableName()) +
@@ -991,7 +992,7 @@ func (statement *Statement) joinColumns(cols []*schemas.Column, includeTableName
 
 // CondDeleted returns the conditions whether a record is soft deleted.
 func (statement *Statement) CondDeleted(col *schemas.Column) builder.Cond {
-	var colName = statement.quote(col.Name)
+	colName := statement.quote(col.Name)
 	if statement.JoinStr != "" {
 		var prefix string
 		if statement.TableAlias != "" {
@@ -1001,7 +1002,7 @@ func (statement *Statement) CondDeleted(col *schemas.Column) builder.Cond {
 		}
 		colName = statement.quote(prefix) + "." + statement.quote(col.Name)
 	}
-	var cond = builder.NewCond()
+	cond := builder.NewCond()
 	if col.SQLType.IsNumeric() {
 		cond = builder.Eq{colName: 0}
 	} else {
