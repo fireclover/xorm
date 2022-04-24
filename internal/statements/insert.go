@@ -43,8 +43,8 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 		return "", nil, err
 	}
 
-	var hasInsertColumns = len(colNames) > 0
-	var needSeq = len(table.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.ORACLE || statement.dialect.URI().DBType == schemas.DAMENG)
+	hasInsertColumns := len(colNames) > 0
+	needSeq := len(table.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.ORACLE || statement.dialect.URI().DBType == schemas.DAMENG)
 	if needSeq {
 		for _, col := range colNames {
 			if strings.EqualFold(col, table.AutoIncrement) {
@@ -188,7 +188,7 @@ func (statement *Statement) GenInsertMapSQL(columns []string, args []interface{}
 		tableName = statement.TableName()
 	)
 
-	if _, err := buf.WriteString(fmt.Sprintf("INSERT INTO %s (", statement.quote(tableName))); err != nil {
+	if _, err := fmt.Fprint(buf, "INSERT INTO ", statement.quote(tableName), " ("); err != nil {
 		return "", nil, err
 	}
 
@@ -215,7 +215,7 @@ func (statement *Statement) GenInsertMapSQL(columns []string, args []interface{}
 			}
 		}
 
-		if _, err := buf.WriteString(fmt.Sprintf(" FROM %s WHERE ", statement.quote(tableName))); err != nil {
+		if _, err := fmt.Fprint(buf, " FROM ", statement.quote(tableName), " WHERE "); err != nil {
 			return "", nil, err
 		}
 
@@ -253,7 +253,7 @@ func (statement *Statement) GenInsertMultipleMapSQL(columns []string, argss [][]
 		tableName = statement.TableName()
 	)
 
-	if _, err := buf.WriteString(fmt.Sprintf("INSERT INTO %s (", statement.quote(tableName))); err != nil {
+	if _, err := fmt.Fprint(buf, "INSERT INTO ", statement.quote(tableName), " ("); err != nil {
 		return "", nil, err
 	}
 

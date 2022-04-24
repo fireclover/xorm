@@ -28,7 +28,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 		return "", nil, ErrTableNotFound
 	}
 
-	var columnStr = statement.ColumnStr()
+	columnStr := statement.ColumnStr()
 	if len(statement.SelectStr) > 0 {
 		columnStr = statement.SelectStr
 	} else {
@@ -83,7 +83,7 @@ func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (stri
 		return "", nil, err
 	}
 
-	var sumStrs = make([]string, 0, len(columns))
+	sumStrs := make([]string, 0, len(columns))
 	for _, colName := range columns {
 		if !strings.Contains(colName, " ") && !strings.Contains(colName, "(") {
 			colName = statement.quote(colName)
@@ -119,7 +119,7 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 		}
 	}
 
-	var columnStr = statement.ColumnStr()
+	columnStr := statement.ColumnStr()
 	if len(statement.SelectStr) > 0 {
 		columnStr = statement.SelectStr
 	} else {
@@ -180,7 +180,7 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 		}
 	}
 
-	var selectSQL = statement.SelectStr
+	selectSQL := statement.SelectStr
 	if len(selectSQL) <= 0 {
 		if statement.IsDistinct {
 			selectSQL = fmt.Sprintf("count(DISTINCT %s)", statement.ColumnStr())
@@ -211,8 +211,8 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 
 func (statement *Statement) fromBuilder() *strings.Builder {
 	var builder strings.Builder
-	var quote = statement.quote
-	var dialect = statement.dialect
+	quote := statement.quote
+	dialect := statement.dialect
 
 	builder.WriteString(" FROM ")
 
@@ -304,7 +304,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 	}
 
 	var buf strings.Builder
-	fmt.Fprintf(&buf, "SELECT %v%v%v%v%v", distinct, top, columnStr, fromStr, whereStr)
+	fmt.Fprint(&buf, "SELECT ", distinct, top, columnStr, fromStr, whereStr)
 	if len(mssqlCondi) > 0 {
 		if len(whereStr) > 0 {
 			fmt.Fprint(&buf, " AND ", mssqlCondi)
@@ -326,9 +326,9 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 		if dialect.URI().DBType != schemas.MSSQL && dialect.URI().DBType != schemas.ORACLE {
 			if statement.Start > 0 {
 				if pLimitN != nil {
-					fmt.Fprintf(&buf, " LIMIT %v OFFSET %v", *pLimitN, statement.Start)
+					fmt.Fprint(&buf, " LIMIT ", *pLimitN, " OFFSET ", statement.Start)
 				} else {
-					fmt.Fprintf(&buf, " LIMIT 0 OFFSET %v", statement.Start)
+					fmt.Fprint(&buf, " LIMIT 0 OFFSET ", statement.Start)
 				}
 			} else if pLimitN != nil {
 				fmt.Fprint(&buf, " LIMIT ", *pLimitN)
@@ -341,8 +341,8 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 				if rawColStr == "*" {
 					rawColStr = "at.*"
 				}
-				fmt.Fprintf(&buf, "SELECT %v FROM (SELECT %v,ROWNUM RN FROM (%v) at WHERE ROWNUM <= %d) aat WHERE RN > %d",
-					columnStr, rawColStr, oldString, statement.Start+*pLimitN, statement.Start)
+				fmt.Fprint(&buf, "SELECT ", columnStr, " FROM (SELECT ", rawColStr, ",ROWNUM RN FROM (", oldString, ") at WHERE ROWNUM <= ", statement.Start+*pLimitN, ") aat WHERE RN > ",
+					statement.Start)
 			}
 		}
 	}
@@ -436,7 +436,7 @@ func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interfa
 		return "", nil, ErrTableNotFound
 	}
 
-	var columnStr = statement.ColumnStr()
+	columnStr := statement.ColumnStr()
 	if len(statement.SelectStr) > 0 {
 		columnStr = statement.SelectStr
 	} else {
