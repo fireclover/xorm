@@ -492,10 +492,16 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		}
 		col.Length = len1
 		col.Length2 = len2
-		if _, ok := schemas.SqlTypes[colType]; ok {
-			col.SQLType = schemas.SQLType{Name: colType, DefaultLength: len1, DefaultLength2: len2}
-		} else {
+		if _, ok := schemas.SqlTypes[colType]; !ok {
+			if !strings.HasPrefix(colType, "UNSIGNED ") {
+				return nil, nil, fmt.Errorf("unknown colType %v", colType)
+			}
+			colType = colType[len("UNSIGNED "):]
+		}
+		if _, ok := schemas.SqlTypes[colType]; !ok {
 			return nil, nil, fmt.Errorf("unknown colType %v", colType)
+		} else {
+			col.SQLType = schemas.SQLType{Name: colType, DefaultLength: len1, DefaultLength2: len2}
 		}
 
 		if colKey == "PRI" {
