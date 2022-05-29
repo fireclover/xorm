@@ -1006,10 +1006,17 @@ func (engine *Engine) Asc(colNames ...string) *Session {
 }
 
 // OrderBy will generate "ORDER BY order"
-func (engine *Engine) OrderBy(order interface{}, args ...interface{}) *Session {
+func (engine *Engine) OrderBy(order string) *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true
-	return session.OrderBy(order, args...)
+	return session.OrderBy(order)
+}
+
+// OrderByWithArgs will generate "ORDER BY order"
+func (engine *Engine) OrderByWithArgs(order interface{}, args ...interface{}) *Session {
+	session := engine.NewSession()
+	session.isAutoClose = true
+	return session.OrderByWithArgs(order, args...)
 }
 
 // Prepare enables prepare statement

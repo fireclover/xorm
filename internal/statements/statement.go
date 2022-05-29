@@ -457,7 +457,12 @@ func (statement *Statement) Limit(limit int, start ...int) *Statement {
 }
 
 // OrderBy generate "Order By order" statement
-func (statement *Statement) OrderBy(order interface{}, args ...interface{}) *Statement {
+func (statement *Statement) OrderBy(order string) *Statement {
+	return statement.OrderByWithArgs(order)
+}
+
+// OrderByWithArgs generate "Order By order" statement
+func (statement *Statement) OrderByWithArgs(order interface{}, args ...interface{}) *Statement {
 	var rawOrder string
 	switch order.(type) {
 	case (*builder.Builder):
