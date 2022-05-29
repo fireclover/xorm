@@ -468,7 +468,6 @@ func (statement *Statement) OrderBy(order interface{}, args ...interface{}) *Sta
 		}
 	case string:
 		rawOrder = order.(string)
-		statement.RawParams = args
 	default:
 		statement.LastError = ErrUnSupportedSQLType
 		return statement
