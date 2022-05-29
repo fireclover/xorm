@@ -44,6 +44,7 @@ type Statement struct {
 	LimitN          *int
 	idParam         schemas.PK
 	OrderStr        string
+	orderArgs       []interface{}
 	JoinStr         string
 	joinArgs        []interface{}
 	GroupByStr      string
@@ -129,7 +130,7 @@ func (statement *Statement) Reset() {
 	statement.RefTable = nil
 	statement.Start = 0
 	statement.LimitN = nil
-	statement.OrderStr = ""
+	statement.ResetOrderBy()
 	statement.UseCascade = true
 	statement.JoinStr = ""
 	statement.joinArgs = make([]interface{}, 0)
@@ -454,12 +455,32 @@ func (statement *Statement) Limit(limit int, start ...int) *Statement {
 	return statement
 }
 
+// ResetOrderBy reset ordery conditions
+func (statement *Statement) ResetOrderBy() {
+	statement.OrderStr = ""
+	statement.orderArgs = nil
+}
+
+// WriteOrderBy write order by to writer
+func (statement *Statement) WriteOrderBy(w *builder.BytesWriter) error {
+	if len(statement.OrderStr) > 0 {
+		if _, err := fmt.Fprintf(w, " ORDER BY %s", statement.OrderStr); err != nil {
+			return err
+		}
+		w.Append(statement.orderArgs...)
+	}
+	return nil
+}
+
 // OrderBy generate "Order By order" statement
-func (statement *Statement) OrderBy(order string) *Statement {
+func (statement *Statement) OrderBy(order string, args ...interface{}) *Statement {
 	if len(statement.OrderStr) > 0 {
 		statement.OrderStr += ", "
 	}
 	statement.OrderStr += statement.ReplaceQuote(order)
+	if len(args) > 0 {
+		statement.orderArgs = append(statement.orderArgs, args...)
+	}
 	return statement
 }
 
@@ -914,7 +935,8 @@ func (statement *Statement) BuildConds(table *schemas.Table, bean interface{}, i
 		statement.unscoped, statement.MustColumnMap, statement.TableName(), statement.TableAlias, addedTableName)
 }
 
-func (statement *Statement) mergeConds(bean interface{}) error {
+// MergeConds merge conditions from bean and id
+func (statement *Statement) MergeConds(bean interface{}) error {
 	if !statement.NoAutoCondition && statement.RefTable != nil {
 		addedTableName := (len(statement.JoinStr) > 0)
 		autoCond, err := statement.BuildConds(statement.RefTable, bean, true, true, false, true, addedTableName)
@@ -925,15 +947,6 @@ func (statement *Statement) mergeConds(bean interface{}) error {
 	}
 
 	return statement.ProcessIDParam()
-}
-
-// GenConds generates conditions
-func (statement *Statement) GenConds(bean interface{}) (string, []interface{}, error) {
-	if err := statement.mergeConds(bean); err != nil {
-		return "", nil, err
-	}
-
-	return statement.GenCondSQL(statement.cond)
 }
 
 func (statement *Statement) quoteColumnStr(columnStr string) string {
