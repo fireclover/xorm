@@ -598,6 +598,14 @@ func (statement *Statement) GroupBy(keys string) *Statement {
 	return statement
 }
 
+func (statement *Statement) WriteGroupBy(w builder.Writer) error {
+	if len(statement.GroupByStr) > 0 {
+		_, err := fmt.Fprintf(w, " GROUP BY %s", statement.GroupByStr)
+		return err
+	}
+	return nil
+}
+
 // Having generate "Having conditions" statement
 func (statement *Statement) Having(conditions string) *Statement {
 	statement.HavingStr = fmt.Sprintf("HAVING %v", statement.ReplaceQuote(conditions))

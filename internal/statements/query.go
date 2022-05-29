@@ -297,16 +297,19 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 				}
 			}
 
-			var groupStr string
-			if len(statement.GroupByStr) > 0 {
-				groupStr = fmt.Sprintf(" GROUP BY %s", statement.GroupByStr)
-			}
-
-			if _, err := fmt.Fprintf(mssqlCondi, "(%s NOT IN (SELECT TOP %d %s%s%s%s%s))",
-				column, statement.Start, column, fromStr, whereStr, orderByWriter.String(), groupStr); err != nil {
+			if _, err := fmt.Fprintf(mssqlCondi, "(%s NOT IN (SELECT TOP %d %s%s%s%s",
+				column, statement.Start, column, fromStr, whereStr, orderByWriter.String()); err != nil {
 				return "", nil, err
 			}
 			mssqlCondi.Append(orderByWriter.Args()...)
+
+			if err := statement.WriteGroupBy(mssqlCondi); err != nil {
+				return "", nil, err
+			}
+
+			if _, err := fmt.Fprint(mssqlCondi, "))"); err != nil {
+				return "", nil, err
+			}
 		}
 	}
 
@@ -322,8 +325,8 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 		buf.Append(mssqlCondi.Args()...)
 	}
 
-	if statement.GroupByStr != "" {
-		fmt.Fprint(buf, " GROUP BY ", statement.GroupByStr)
+	if err := statement.WriteGroupBy(buf); err != nil {
+		return "", nil, err
 	}
 	if statement.HavingStr != "" {
 		fmt.Fprint(buf, " ", statement.HavingStr)
