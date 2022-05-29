@@ -44,6 +44,7 @@ type Statement struct {
 	LimitN          *int
 	idParam         schemas.PK
 	OrderStr        string
+	OrderArgs       []interface{}
 	JoinStr         string
 	joinArgs        []interface{}
 	GroupByStr      string
@@ -130,6 +131,7 @@ func (statement *Statement) Reset() {
 	statement.Start = 0
 	statement.LimitN = nil
 	statement.OrderStr = ""
+	statement.OrderArgs = nil
 	statement.UseCascade = true
 	statement.JoinStr = ""
 	statement.joinArgs = make([]interface{}, 0)
@@ -455,11 +457,28 @@ func (statement *Statement) Limit(limit int, start ...int) *Statement {
 }
 
 // OrderBy generate "Order By order" statement
-func (statement *Statement) OrderBy(order string) *Statement {
+func (statement *Statement) OrderBy(order interface{}, args ...interface{}) *Statement {
+	var rawOrder string
+	switch order.(type) {
+	case (*builder.Builder):
+		var err error
+		rawOrder, args, err = order.(*builder.Builder).ToSQL()
+		if err != nil {
+			statement.LastError = err
+		}
+	case string:
+		rawOrder = order.(string)
+		statement.RawParams = args
+	default:
+		statement.LastError = ErrUnSupportedSQLType
+		return statement
+	}
+
 	if len(statement.OrderStr) > 0 {
 		statement.OrderStr += ", "
 	}
-	statement.OrderStr += statement.ReplaceQuote(order)
+	statement.OrderStr += statement.ReplaceQuote(rawOrder)
+	statement.OrderArgs = append(statement.OrderArgs, args...)
 	return statement
 }
 

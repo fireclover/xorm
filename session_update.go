@@ -60,7 +60,7 @@ func (session *Session) cacheUpdate(table *schemas.Table, tableName, sqlStr stri
 
 		ids = make([]schemas.PK, 0)
 		for rows.Next() {
-			var res = make([]string, len(table.PrimaryKeys))
+			res := make([]string, len(table.PrimaryKeys))
 			err = rows.ScanSlice(&res)
 			if err != nil {
 				return err
@@ -176,8 +176,8 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	// --
 
 	var err error
-	var isMap = t.Kind() == reflect.Map
-	var isStruct = t.Kind() == reflect.Struct
+	isMap := t.Kind() == reflect.Map
+	isStruct := t.Kind() == reflect.Struct
 	if isStruct {
 		if err := session.statement.SetRefBean(bean); err != nil {
 			return 0, err
@@ -226,7 +226,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 				args = append(args, val)
 			}
 
-			var colName = col.Name
+			colName := col.Name
 			if isStruct {
 				session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 					col := table.GetColumn(colName)
@@ -279,7 +279,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		condBeanIsStruct := false
 		if len(condiBean) > 0 {
 			if c, ok := condiBean[0].(map[string]interface{}); ok {
-				var eq = make(builder.Eq)
+				eq := make(builder.Eq)
 				for k, v := range c {
 					eq[session.engine.Quote(k)] = v
 				}
@@ -357,10 +357,11 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	}
 
 	if st.OrderStr != "" {
-		condSQL += fmt.Sprintf(" ORDER BY %v", st.OrderStr)
+		condSQL += fmt.Sprintf(" ORDER BY %s", st.OrderStr)
+		condArgs = append(condArgs, st.OrderArgs...)
 	}
 
-	var tableName = session.statement.TableName()
+	tableName := session.statement.TableName()
 	// TODO: Oracle support needed
 	var top string
 	if st.LimitN != nil {
@@ -410,7 +411,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		}
 	}
 
-	var tableAlias = session.engine.Quote(tableName)
+	tableAlias := session.engine.Quote(tableName)
 	var fromSQL string
 	if session.statement.TableAlias != "" {
 		switch session.engine.dialect.URI().DBType {
@@ -535,7 +536,7 @@ func (session *Session) genUpdateColumns(bean interface{}) ([]string, []interfac
 			}
 			args = append(args, val)
 
-			var colName = col.Name
+			colName := col.Name
 			session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 				col := table.GetColumn(colName)
 				setColumnTime(bean, col, t)

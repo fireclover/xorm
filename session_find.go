@@ -63,6 +63,9 @@ func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...inte
 	if session.statement.OrderStr != "" {
 		session.statement.OrderStr = ""
 	}
+	if session.statement.OrderArgs != nil {
+		session.statement.OrderArgs = nil
+	}
 	if session.statement.LimitN != nil {
 		session.statement.LimitN = nil
 	}
@@ -85,15 +88,15 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 	}
 
 	sliceValue := reflect.Indirect(reflect.ValueOf(rowsSlicePtr))
-	var isSlice = sliceValue.Kind() == reflect.Slice
-	var isMap = sliceValue.Kind() == reflect.Map
+	isSlice := sliceValue.Kind() == reflect.Slice
+	isMap := sliceValue.Kind() == reflect.Map
 	if !isSlice && !isMap {
 		return errors.New("needs a pointer to a slice or a map")
 	}
 
 	sliceElementType := sliceValue.Type().Elem()
 
-	var tp = tpStruct
+	tp := tpStruct
 	if session.statement.RefTable == nil {
 		if sliceElementType.Kind() == reflect.Ptr {
 			if sliceElementType.Elem().Kind() == reflect.Struct {
@@ -190,7 +193,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 		return err
 	}
 
-	var newElemFunc = func(fields []string) reflect.Value {
+	newElemFunc := func(fields []string) reflect.Value {
 		return utils.New(elemType, len(fields), len(fields))
 	}
 
@@ -235,7 +238,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 	}
 
 	if elemType.Kind() == reflect.Struct {
-		var newValue = newElemFunc(fields)
+		newValue := newElemFunc(fields)
 		tb, err := session.engine.tagParser.ParseWithCache(newValue)
 		if err != nil {
 			return err
@@ -249,7 +252,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 	}
 
 	for rows.Next() {
-		var newValue = newElemFunc(fields)
+		newValue := newElemFunc(fields)
 		bean := newValue.Interface()
 
 		switch elemType.Kind() {
@@ -310,7 +313,7 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 				session.engine.logger.Debugf("[cacheFind] ids length > 500, no cache")
 				return ErrCacheFailed
 			}
-			var res = make([]string, len(table.PrimaryKeys))
+			res := make([]string, len(table.PrimaryKeys))
 			err = rows.ScanSlice(&res)
 			if err != nil {
 				return err
@@ -342,7 +345,7 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 
 	ididxes := make(map[string]int)
 	var ides []schemas.PK
-	var temps = make([]interface{}, len(ids))
+	temps := make([]interface{}, len(ids))
 
 	for idx, id := range ids {
 		sid, err := id.ToString()
@@ -457,7 +460,7 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 				sliceValue.Set(reflect.Append(sliceValue, reflect.Indirect(reflect.ValueOf(bean))))
 			}
 		} else if sliceValue.Kind() == reflect.Map {
-			var key = ids[j]
+			key := ids[j]
 			keyType := sliceValue.Type().Key()
 			keyValue := reflect.New(keyType)
 			var ikey interface{}

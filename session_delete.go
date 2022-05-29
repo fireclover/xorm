@@ -129,9 +129,9 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 		return 0, ErrNeedDeletedCond
 	}
 
-	var tableNameNoQuote = session.statement.TableName()
-	var tableName = session.engine.Quote(tableNameNoQuote)
-	var table = session.statement.RefTable
+	tableNameNoQuote := session.statement.TableName()
+	tableName := session.engine.Quote(tableNameNoQuote)
+	table := session.statement.RefTable
 	var deleteSQL string
 	if len(condSQL) > 0 {
 		deleteSQL = fmt.Sprintf("DELETE FROM %v WHERE %v", tableName, condSQL)
@@ -142,6 +142,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 	var orderSQL string
 	if len(session.statement.OrderStr) > 0 {
 		orderSQL += fmt.Sprintf(" ORDER BY %s", session.statement.OrderStr)
+		condArgs = append(condArgs, session.statement.OrderArgs...)
 	}
 	if pLimitN != nil && *pLimitN > 0 {
 		limitNValue := *pLimitN
@@ -224,7 +225,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 		}
 		condArgs[0] = val
 
-		var colName = deletedColumn.Name
+		colName := deletedColumn.Name
 		session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 			col := table.GetColumn(colName)
 			setColumnTime(bean, col, t)

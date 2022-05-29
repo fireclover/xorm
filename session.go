@@ -275,8 +275,8 @@ func (session *Session) Limit(limit int, start ...int) *Session {
 
 // OrderBy provide order by query condition, the input parameter is the content
 // after order by on a sql statement.
-func (session *Session) OrderBy(order string) *Session {
-	session.statement.OrderBy(order)
+func (session *Session) OrderBy(order interface{}, args ...interface{}) *Session {
+	session.statement.OrderBy(order, args...)
 	return session
 }
 

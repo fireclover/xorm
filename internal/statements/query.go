@@ -28,7 +28,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 		return "", nil, ErrTableNotFound
 	}
 
-	var columnStr = statement.ColumnStr()
+	columnStr := statement.ColumnStr()
 	if len(statement.SelectStr) > 0 {
 		columnStr = statement.SelectStr
 	} else {
@@ -83,7 +83,7 @@ func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (stri
 		return "", nil, err
 	}
 
-	var sumStrs = make([]string, 0, len(columns))
+	sumStrs := make([]string, 0, len(columns))
 	for _, colName := range columns {
 		if !strings.Contains(colName, " ") && !strings.Contains(colName, "(") {
 			colName = statement.quote(colName)
@@ -119,7 +119,7 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 		}
 	}
 
-	var columnStr = statement.ColumnStr()
+	columnStr := statement.ColumnStr()
 	if len(statement.SelectStr) > 0 {
 		columnStr = statement.SelectStr
 	} else {
@@ -180,7 +180,7 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 		}
 	}
 
-	var selectSQL = statement.SelectStr
+	selectSQL := statement.SelectStr
 	if len(selectSQL) <= 0 {
 		if statement.IsDistinct {
 			selectSQL = fmt.Sprintf("count(DISTINCT %s)", statement.ColumnStr())
@@ -211,8 +211,8 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 
 func (statement *Statement) fromBuilder() *strings.Builder {
 	var builder strings.Builder
-	var quote = statement.quote
-	var dialect = statement.dialect
+	quote := statement.quote
+	dialect := statement.dialect
 
 	builder.WriteString(" FROM ")
 
@@ -290,8 +290,9 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 			}
 
 			var orderStr string
-			if needOrderBy && len(statement.OrderStr) > 0 {
-				orderStr = fmt.Sprintf(" ORDER BY %s", statement.OrderStr)
+			if needOrderBy && statement.OrderStr != "" {
+				orderStr = fmt.Sprintf(" ORDER BY %s", orderStr)
+				condArgs = append(condArgs, statement.OrderArgs...)
 			}
 
 			var groupStr string
@@ -321,6 +322,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 	}
 	if needOrderBy && statement.OrderStr != "" {
 		fmt.Fprint(&buf, " ORDER BY ", statement.OrderStr)
+		condArgs = append(condArgs, statement.OrderArgs...)
 	}
 	if needLimit {
 		if dialect.URI().DBType != schemas.MSSQL && dialect.URI().DBType != schemas.ORACLE {
@@ -436,7 +438,7 @@ func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interfa
 		return "", nil, ErrTableNotFound
 	}
 
-	var columnStr = statement.ColumnStr()
+	columnStr := statement.ColumnStr()
 	if len(statement.SelectStr) > 0 {
 		columnStr = statement.SelectStr
 	} else {
