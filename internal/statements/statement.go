@@ -455,6 +455,10 @@ func (statement *Statement) Limit(limit int, start ...int) *Statement {
 	return statement
 }
 
+func (statement *Statement) HasOrderBy() bool {
+	return statement.OrderStr != ""
+}
+
 // ResetOrderBy reset ordery conditions
 func (statement *Statement) ResetOrderBy() {
 	statement.OrderStr = ""

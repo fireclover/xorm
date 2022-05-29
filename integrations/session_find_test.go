@@ -249,7 +249,7 @@ func TestOrder(t *testing.T) {
 	assert.NoError(t, err)
 
 	users = make([]Userinfo, 0)
-	err = testEngine.OrderBy("case username like ? desc", "a").Find(&users)
+	err = testEngine.OrderBy("CASE WHEN username LIKE ? THEN 0 ELSE 1 END DESC", "a").Find(&users)
 	assert.NoError(t, err)
 }
 

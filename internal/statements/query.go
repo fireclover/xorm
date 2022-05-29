@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"xorm.io/builder"
+	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -250,12 +251,13 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 		distinct = "DISTINCT "
 	}
 
-	condSQL, condArgs, err := statement.GenCondSQL(statement.cond)
-	if err != nil {
+	condWriter := builder.NewWriter()
+	if err := statement.cond.WriteTo(condWriter); err != nil {
 		return "", nil, err
 	}
-	if len(condSQL) > 0 {
-		whereStr = fmt.Sprintf(" WHERE %s", condSQL)
+
+	if condWriter.Len() > 0 {
+		whereStr = " WHERE "
 	}
 
 	pLimitN := statement.LimitN
@@ -297,11 +299,13 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 				}
 			}
 
-			if _, err := fmt.Fprintf(mssqlCondi, "(%s NOT IN (SELECT TOP %d %s%s%s%s",
-				column, statement.Start, column, fromStr, whereStr, orderByWriter.String()); err != nil {
+			if _, err := fmt.Fprintf(mssqlCondi, "(%s NOT IN (SELECT TOP %d %s%s%s",
+				column, statement.Start, column, fromStr, whereStr); err != nil {
 				return "", nil, err
 			}
-			mssqlCondi.Append(orderByWriter.Args()...)
+			if err := utils.WriteBuilder(mssqlCondi, condWriter, orderByWriter); err != nil {
+				return "", nil, err
+			}
 
 			if err := statement.WriteGroupBy(mssqlCondi); err != nil {
 				return "", nil, err
@@ -315,14 +319,19 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 
 	buf := builder.NewWriter()
 	fmt.Fprintf(buf, "SELECT %v%v%v%v%v", distinct, top, columnStr, fromStr, whereStr)
+	if err := utils.WriteBuilder(buf, condWriter); err != nil {
+		return "", nil, err
+	}
 	if mssqlCondi.Len() > 0 {
 		if len(whereStr) > 0 {
 			fmt.Fprint(buf, " AND ")
 		} else {
 			fmt.Fprint(buf, " WHERE ")
 		}
-		fmt.Fprint(buf, mssqlCondi.String())
-		buf.Append(mssqlCondi.Args()...)
+
+		if err := utils.WriteBuilder(buf, mssqlCondi); err != nil {
+			return "", nil, err
+		}
 	}
 
 	if err := statement.WriteGroupBy(buf); err != nil {
@@ -361,10 +370,10 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 		}
 	}
 	if statement.IsForUpdate {
-		return dialect.ForUpdateSQL(buf.String()), condArgs, nil
+		return dialect.ForUpdateSQL(buf.String()), buf.Args(), nil
 	}
 
-	return buf.String(), condArgs, nil
+	return buf.String(), buf.Args(), nil
 }
 
 // GenExistSQL generates Exist SQL

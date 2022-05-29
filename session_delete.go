@@ -11,6 +11,7 @@ import (
 
 	"xorm.io/builder"
 	"xorm.io/xorm/caches"
+	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -86,16 +87,6 @@ func (session *Session) cacheDelete(table *schemas.Table, tableName, sqlStr stri
 	}
 	session.engine.logger.Debugf("[cache] clear cache table: %v", tableName)
 	cacher.ClearIds(tableName)
-	return nil
-}
-
-func writeBuilder(w *builder.BytesWriter, inputs ...*builder.BytesWriter) error {
-	for _, input := range inputs {
-		if _, err := fmt.Fprint(w, input.String()); err != nil {
-			return err
-		}
-		w.Append(input.Args()...)
-	}
 	return nil
 }
 
@@ -194,7 +185,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 	copy(argsForCache, deleteSQLWriter.Args())
 	argsForCache = append(deleteSQLWriter.Args(), argsForCache...)
 	if session.statement.GetUnscoped() || table == nil || table.DeletedColumn() == nil { // tag "deleted" is disabled
-		if err := writeBuilder(realSQLWriter, deleteSQLWriter, orderCondWriter); err != nil {
+		if err := utils.WriteBuilder(realSQLWriter, deleteSQLWriter, orderCondWriter); err != nil {
 			return 0, err
 		}
 	} else {
@@ -212,7 +203,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 		realSQLWriter.Append(val)
 		realSQLWriter.Append(condWriter.Args()...)
 
-		if err := writeBuilder(realSQLWriter, orderCondWriter); err != nil {
+		if err := utils.WriteBuilder(realSQLWriter, orderCondWriter); err != nil {
 			return 0, err
 		}
 
