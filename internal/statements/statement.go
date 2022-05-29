@@ -462,7 +462,7 @@ func (statement *Statement) ResetOrderBy() {
 }
 
 // WriteOrderBy write order by to writer
-func (statement *Statement) WriteOrderBy(w *builder.BytesWriter) error {
+func (statement *Statement) WriteOrderBy(w builder.Writer) error {
 	if len(statement.OrderStr) > 0 {
 		if _, err := fmt.Fprintf(w, " ORDER BY %s", statement.OrderStr); err != nil {
 			return err
