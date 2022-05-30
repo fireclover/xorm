@@ -4,7 +4,27 @@
 
 package statements
 
-import "xorm.io/builder"
+import (
+	"xorm.io/builder"
+	"xorm.io/xorm/schemas"
+)
+
+type QuoteReplacer struct {
+	*builder.BytesWriter
+	quoter schemas.Quoter
+}
+
+func (q *QuoteReplacer) Write(p []byte) (n int, err error) {
+	c := q.quoter.Replace(string(p))
+	return q.BytesWriter.Builder.WriteString(c)
+}
+
+func (statement *Statement) quoteReplacer(w *builder.BytesWriter) *QuoteReplacer {
+	return &QuoteReplacer{
+		BytesWriter: w,
+		quoter:      statement.dialect.Quoter(),
+	}
+}
 
 // Where add Where statement
 func (statement *Statement) Where(query interface{}, args ...interface{}) *Statement {
@@ -15,7 +35,7 @@ func (statement *Statement) Where(query interface{}, args ...interface{}) *State
 func (statement *Statement) And(query interface{}, args ...interface{}) *Statement {
 	switch qr := query.(type) {
 	case string:
-		cond := builder.Expr(qr, args...)
+		cond := builder.Expr(statement.ReplaceQuote(qr), args...)
 		statement.cond = statement.cond.And(cond)
 	case map[string]interface{}:
 		cond := make(builder.Eq)

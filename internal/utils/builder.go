@@ -10,8 +10,13 @@ import (
 	"xorm.io/builder"
 )
 
+type BuildReader interface {
+	String() string
+	Args() []interface{}
+}
+
 // WriteBuilder writes writers to one
-func WriteBuilder(w *builder.BytesWriter, inputs ...*builder.BytesWriter) error {
+func WriteBuilder(w *builder.BytesWriter, inputs ...BuildReader) error {
 	for _, input := range inputs {
 		if _, err := fmt.Fprint(w, input.String()); err != nil {
 			return err

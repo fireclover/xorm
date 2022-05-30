@@ -231,7 +231,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 	}
 
 	condWriter := builder.NewWriter()
-	if err := statement.cond.WriteTo(condWriter); err != nil {
+	if err := statement.cond.WriteTo(statement.quoteReplacer(condWriter)); err != nil {
 		return "", nil, err
 	}
 
@@ -282,7 +282,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 				if _, err := fmt.Fprint(mssqlCondi, whereStr); err != nil {
 					return "", nil, err
 				}
-				if err := utils.WriteBuilder(mssqlCondi, condWriter); err != nil {
+				if err := utils.WriteBuilder(mssqlCondi, statement.quoteReplacer(condWriter)); err != nil {
 					return "", nil, err
 				}
 			}
@@ -311,7 +311,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 		if _, err := fmt.Fprint(buf, whereStr); err != nil {
 			return "", nil, err
 		}
-		if err := utils.WriteBuilder(buf, condWriter); err != nil {
+		if err := utils.WriteBuilder(buf, statement.quoteReplacer(condWriter)); err != nil {
 			return "", nil, err
 		}
 	}
