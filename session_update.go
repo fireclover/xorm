@@ -258,10 +258,11 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 			}
 			colNames = append(colNames, session.engine.Quote(expr.ColName)+"="+tp)
 		case *builder.Builder:
-			subQuery, subArgs, err := session.statement.GenCondSQL(tp)
+			subQuery, subArgs, err := builder.ToSQL(tp)
 			if err != nil {
 				return 0, err
 			}
+			subQuery = session.statement.ReplaceQuote(subQuery)
 			colNames = append(colNames, session.engine.Quote(expr.ColName)+"=("+subQuery+")")
 			args = append(args, subArgs...)
 		default:
