@@ -371,7 +371,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 
 			whereWriter = builder.NewWriter()
 			fmt.Fprint(whereWriter, "WHERE ")
-			if err := cond.WriteTo(whereWriter); err != nil {
+			if err := cond.WriteTo(st.QuoteReplacer(whereWriter)); err != nil {
 				return 0, err
 			}
 		case schemas.POSTGRES:
@@ -382,7 +382,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 
 			whereWriter = builder.NewWriter()
 			fmt.Fprint(whereWriter, "WHERE ")
-			if err := cond.WriteTo(whereWriter); err != nil {
+			if err := cond.WriteTo(st.QuoteReplacer(whereWriter)); err != nil {
 				return 0, err
 			}
 		case schemas.MSSQL:
