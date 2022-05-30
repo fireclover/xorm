@@ -188,34 +188,6 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 	return sqlStr, condArgs, nil
 }
 
-func (statement *Statement) writeAlias(w builder.Writer) error {
-	if statement.TableAlias != "" {
-		if statement.dialect.URI().DBType == schemas.ORACLE {
-			if _, err := fmt.Fprint(w, " ", statement.quote(statement.TableAlias)); err != nil {
-				return err
-			}
-		} else {
-			if _, err := fmt.Fprint(w, " AS ", statement.quote(statement.TableAlias)); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (statement *Statement) writeTableName(w builder.Writer) error {
-	if statement.dialect.URI().DBType == schemas.MSSQL && strings.Contains(statement.TableName(), "..") {
-		if _, err := fmt.Fprint(w, statement.TableName()); err != nil {
-			return err
-		}
-	} else {
-		if _, err := fmt.Fprint(w, statement.quote(statement.TableName())); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (statement *Statement) writeFrom(w builder.Writer) error {
 	if _, err := fmt.Fprint(w, " FROM "); err != nil {
 		return err
@@ -491,10 +463,6 @@ func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interfa
 		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
-	var sqlStr string
-	var args []interface{}
-	var err error
-
 	if len(statement.TableName()) <= 0 {
 		return "", nil, ErrTableNotFound
 	}
@@ -527,16 +495,5 @@ func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interfa
 
 	statement.cond = statement.cond.And(autoCond)
 
-	sqlStr, args, err = statement.genSelectSQL(columnStr, true, true)
-	if err != nil {
-		return "", nil, err
-	}
-
-	// for mssql and use limit
-	qs := strings.Count(sqlStr, "?")
-	if len(args)*2 == qs {
-		args = append(args, args...)
-	}
-
-	return sqlStr, args, nil
+	return statement.genSelectSQL(columnStr, true, true)
 }
