@@ -414,15 +414,16 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	}
 
 	updateWriter := builder.NewWriter()
-	if _, err := fmt.Fprintf(updateWriter, "UPDATE %v%v SET %v %v%v",
+	if _, err := fmt.Fprintf(updateWriter, "UPDATE %v%v SET %v %v",
 		top,
 		tableAlias,
 		strings.Join(colNames, ", "),
-		fromSQL,
-		whereWriter.String()); err != nil {
+		fromSQL); err != nil {
 		return 0, err
 	}
-	updateWriter.Append(whereWriter.Args()...)
+	if err := utils.WriteBuilder(updateWriter, whereWriter); err != nil {
+		return 0, err
+	}
 
 	res, err := session.exec(updateWriter.String(), append(args, updateWriter.Args()...)...)
 	if err != nil {

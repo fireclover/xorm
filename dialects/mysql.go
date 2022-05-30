@@ -400,7 +400,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		" `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT`, `CHARACTER_MAXIMUM_LENGTH`, " +
 		alreadyQuoted + " AS NEEDS_QUOTE " +
 		"FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ?" +
-		" ORDER BY `COLUMNS`.ORDINAL_POSITION"
+		" ORDER BY `COLUMNS`.ORDINAL_POSITION ASC"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {

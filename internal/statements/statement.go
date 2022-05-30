@@ -603,17 +603,25 @@ func (statement *Statement) GroupBy(keys string) *Statement {
 }
 
 func (statement *Statement) WriteGroupBy(w builder.Writer) error {
-	if len(statement.GroupByStr) > 0 {
-		_, err := fmt.Fprintf(w, " GROUP BY %s", statement.GroupByStr)
-		return err
+	if statement.GroupByStr == "" {
+		return nil
 	}
-	return nil
+	_, err := fmt.Fprintf(w, " GROUP BY %s", statement.GroupByStr)
+	return err
 }
 
 // Having generate "Having conditions" statement
 func (statement *Statement) Having(conditions string) *Statement {
 	statement.HavingStr = fmt.Sprintf("HAVING %v", statement.ReplaceQuote(conditions))
 	return statement
+}
+
+func (statement *Statement) writeHaving(w builder.Writer) error {
+	if statement.HavingStr == "" {
+		return nil
+	}
+	_, err := fmt.Fprint(w, " ", statement.HavingStr)
+	return err
 }
 
 // SetUnscoped always disable struct tag "deleted"
