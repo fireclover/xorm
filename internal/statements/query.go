@@ -450,7 +450,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 				return "", nil, err
 			}
 		}
-		if _, err := fmt.Fprintf(buf, "LIMIT 1"); err != nil {
+		if _, err := fmt.Fprintf(buf, " LIMIT 1"); err != nil {
 			return "", nil, err
 		}
 	}
