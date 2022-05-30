@@ -122,7 +122,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 		}
 	}
 
-	if err = session.statement.Conds().WriteTo(condWriter); err != nil {
+	if err = session.statement.Conds().WriteTo(session.statement.QuoteReplacer(condWriter)); err != nil {
 		return 0, err
 	}
 

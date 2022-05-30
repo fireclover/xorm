@@ -231,7 +231,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 	}
 
 	condWriter := builder.NewWriter()
-	if err := statement.cond.WriteTo(statement.quoteReplacer(condWriter)); err != nil {
+	if err := statement.cond.WriteTo(statement.QuoteReplacer(condWriter)); err != nil {
 		return "", nil, err
 	}
 
@@ -282,7 +282,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 				if _, err := fmt.Fprint(mssqlCondi, whereStr); err != nil {
 					return "", nil, err
 				}
-				if err := utils.WriteBuilder(mssqlCondi, statement.quoteReplacer(condWriter)); err != nil {
+				if err := utils.WriteBuilder(mssqlCondi, statement.QuoteReplacer(condWriter)); err != nil {
 					return "", nil, err
 				}
 			}
@@ -311,7 +311,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 		if _, err := fmt.Fprint(buf, whereStr); err != nil {
 			return "", nil, err
 		}
-		if err := utils.WriteBuilder(buf, statement.quoteReplacer(condWriter)); err != nil {
+		if err := utils.WriteBuilder(buf, statement.QuoteReplacer(condWriter)); err != nil {
 			return "", nil, err
 		}
 	}
@@ -409,7 +409,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 			if _, err := fmt.Fprintf(buf, " WHERE "); err != nil {
 				return "", nil, err
 			}
-			if err := statement.Conds().WriteTo(buf); err != nil {
+			if err := statement.Conds().WriteTo(statement.QuoteReplacer(buf)); err != nil {
 				return "", nil, err
 			}
 		}
@@ -424,7 +424,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 			return "", nil, err
 		}
 		if statement.Conds().IsValid() {
-			if err := statement.Conds().WriteTo(buf); err != nil {
+			if err := statement.Conds().WriteTo(statement.QuoteReplacer(buf)); err != nil {
 				return "", nil, err
 			}
 			if _, err := fmt.Fprintf(buf, " AND "); err != nil {
@@ -445,7 +445,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 			if _, err := fmt.Fprintf(buf, " WHERE "); err != nil {
 				return "", nil, err
 			}
-			if err := statement.Conds().WriteTo(buf); err != nil {
+			if err := statement.Conds().WriteTo(statement.QuoteReplacer(buf)); err != nil {
 				return "", nil, err
 			}
 		}

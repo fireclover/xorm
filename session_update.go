@@ -348,7 +348,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	if cond.IsValid() {
 		fmt.Fprint(whereWriter, "WHERE ")
 	}
-	if err := cond.WriteTo(whereWriter); err != nil {
+	if err := cond.WriteTo(st.QuoteReplacer(whereWriter)); err != nil {
 		return 0, err
 	}
 	if err := st.WriteOrderBy(whereWriter); err != nil {

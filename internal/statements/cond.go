@@ -19,7 +19,7 @@ func (q *QuoteReplacer) Write(p []byte) (n int, err error) {
 	return q.BytesWriter.Builder.WriteString(c)
 }
 
-func (statement *Statement) quoteReplacer(w *builder.BytesWriter) *QuoteReplacer {
+func (statement *Statement) QuoteReplacer(w *builder.BytesWriter) *QuoteReplacer {
 	return &QuoteReplacer{
 		BytesWriter: w,
 		quoter:      statement.dialect.Quoter(),
@@ -35,7 +35,7 @@ func (statement *Statement) Where(query interface{}, args ...interface{}) *State
 func (statement *Statement) And(query interface{}, args ...interface{}) *Statement {
 	switch qr := query.(type) {
 	case string:
-		cond := builder.Expr(statement.ReplaceQuote(qr), args...)
+		cond := builder.Expr(qr, args...)
 		statement.cond = statement.cond.And(cond)
 	case map[string]interface{}:
 		cond := make(builder.Eq)
