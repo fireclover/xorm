@@ -12,19 +12,19 @@ import (
 )
 
 func (statement *Statement) HasOrderBy() bool {
-	return statement.OrderStr != ""
+	return statement.orderStr != ""
 }
 
 // ResetOrderBy reset ordery conditions
 func (statement *Statement) ResetOrderBy() {
-	statement.OrderStr = ""
+	statement.orderStr = ""
 	statement.orderArgs = nil
 }
 
 // WriteOrderBy write order by to writer
 func (statement *Statement) WriteOrderBy(w builder.Writer) error {
-	if len(statement.OrderStr) > 0 {
-		if _, err := fmt.Fprintf(w, " ORDER BY %s", statement.OrderStr); err != nil {
+	if len(statement.orderStr) > 0 {
+		if _, err := fmt.Fprintf(w, " ORDER BY %s", statement.orderStr); err != nil {
 			return err
 		}
 		w.Append(statement.orderArgs...)
@@ -34,10 +34,10 @@ func (statement *Statement) WriteOrderBy(w builder.Writer) error {
 
 // OrderBy generate "Order By order" statement
 func (statement *Statement) OrderBy(order string, args ...interface{}) *Statement {
-	if len(statement.OrderStr) > 0 {
-		statement.OrderStr += ", "
+	if len(statement.orderStr) > 0 {
+		statement.orderStr += ", "
 	}
-	statement.OrderStr += statement.ReplaceQuote(order)
+	statement.orderStr += statement.ReplaceQuote(order)
 	if len(args) > 0 {
 		statement.orderArgs = append(statement.orderArgs, args...)
 	}
@@ -47,8 +47,8 @@ func (statement *Statement) OrderBy(order string, args ...interface{}) *Statemen
 // Desc generate `ORDER BY xx DESC`
 func (statement *Statement) Desc(colNames ...string) *Statement {
 	var buf strings.Builder
-	if len(statement.OrderStr) > 0 {
-		fmt.Fprint(&buf, statement.OrderStr, ", ")
+	if len(statement.orderStr) > 0 {
+		fmt.Fprint(&buf, statement.orderStr, ", ")
 	}
 	for i, col := range colNames {
 		if i > 0 {
@@ -57,15 +57,15 @@ func (statement *Statement) Desc(colNames ...string) *Statement {
 		_ = statement.dialect.Quoter().QuoteTo(&buf, col)
 		fmt.Fprint(&buf, " DESC")
 	}
-	statement.OrderStr = buf.String()
+	statement.orderStr = buf.String()
 	return statement
 }
 
 // Asc provide asc order by query condition, the input parameters are columns.
 func (statement *Statement) Asc(colNames ...string) *Statement {
 	var buf strings.Builder
-	if len(statement.OrderStr) > 0 {
-		fmt.Fprint(&buf, statement.OrderStr, ", ")
+	if len(statement.orderStr) > 0 {
+		fmt.Fprint(&buf, statement.orderStr, ", ")
 	}
 	for i, col := range colNames {
 		if i > 0 {
@@ -74,6 +74,6 @@ func (statement *Statement) Asc(colNames ...string) *Statement {
 		_ = statement.dialect.Quoter().QuoteTo(&buf, col)
 		fmt.Fprint(&buf, " ASC")
 	}
-	statement.OrderStr = buf.String()
+	statement.orderStr = buf.String()
 	return statement
 }

@@ -43,7 +43,7 @@ type Statement struct {
 	Start           int
 	LimitN          *int
 	idParam         schemas.PK
-	OrderStr        string
+	orderStr        string
 	orderArgs       []interface{}
 	JoinStr         string
 	joinArgs        []interface{}
