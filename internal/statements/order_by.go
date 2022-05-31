@@ -33,11 +33,22 @@ func (statement *Statement) WriteOrderBy(w builder.Writer) error {
 }
 
 // OrderBy generate "Order By order" statement
-func (statement *Statement) OrderBy(order string, args ...interface{}) *Statement {
+func (statement *Statement) OrderBy(order interface{}, args ...interface{}) *Statement {
 	if len(statement.orderStr) > 0 {
 		statement.orderStr += ", "
 	}
-	statement.orderStr += statement.ReplaceQuote(order)
+	var rawOrder string
+	switch t := order.(type) {
+	case (*builder.Expression):
+		rawOrder = t.Content()
+		args = t.Args()
+	case string:
+		rawOrder = t
+	default:
+		statement.LastError = ErrUnSupportedSQLType
+		return statement
+	}
+	statement.orderStr += statement.ReplaceQuote(rawOrder)
 	if len(args) > 0 {
 		statement.orderArgs = append(statement.orderArgs, args...)
 	}

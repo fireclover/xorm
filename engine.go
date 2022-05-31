@@ -1006,7 +1006,7 @@ func (engine *Engine) Asc(colNames ...string) *Session {
 }
 
 // OrderBy will generate "ORDER BY order"
-func (engine *Engine) OrderBy(order string, args ...interface{}) *Session {
+func (engine *Engine) OrderBy(order interface{}, args ...interface{}) *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true
 	return session.OrderBy(order, args...)

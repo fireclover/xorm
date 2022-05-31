@@ -17,5 +17,5 @@ require (
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/ziutek/mymysql v1.5.4
 	modernc.org/sqlite v1.14.2
-	xorm.io/builder v0.3.9
+	xorm.io/builder v0.3.11-0.20220531020008-1bd24a7dc978
 )
