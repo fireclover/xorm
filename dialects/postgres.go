@@ -862,11 +862,11 @@ func (db *postgres) needQuote(name string) bool {
 func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		var q = postgresQuoter
+		q := postgresQuoter
 		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
-		var q = postgresQuoter
+		q := postgresQuoter
 		q.IsReserved = db.needQuote
 		db.quoter = q
 	case QuotePolicyAlways:
@@ -1125,7 +1125,7 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 		col.Name = strings.Trim(colName, `" `)
 
 		if colDefault != nil {
-			var theDefault = *colDefault
+			theDefault := *colDefault
 			// cockroach has type with the default value with :::
 			// and postgres with ::, we should remove them before store them
 			idx := strings.Index(theDefault, ":::")
@@ -1301,15 +1301,8 @@ func (db *postgres) GetIndexes(queryer core.Queryer, ctx context.Context, tableN
 		}
 		colNames = getIndexColName(indexdef)
 
-		isSkip := false
-		//Oid It's a special index. You can't put it in
-		for _, element := range colNames {
-			if "oid" == element {
-				isSkip = true
-				break
-			}
-		}
-		if isSkip {
+		// Oid It's a special index. You can't put it in. TODO: This is not perfect.
+		if indexName == tableName+"_oid_index" && len(colNames) == 1 && colNames[0] == "oid" {
 			continue
 		}
 
