@@ -27,7 +27,7 @@ func TestShadowGetVar(t *testing.T) {
 	if testEngine.Dialect().URI().DBType != schemas.MYSQL {
 		return
 	}
-	type GetVar1 struct {
+	type ShadowGetVar struct {
 		Id      int64  `xorm:"autoincr pk"`
 		Msg     string `xorm:"varchar(255)"`
 		Age     int
@@ -36,9 +36,9 @@ func TestShadowGetVar(t *testing.T) {
 	}
 	testEngine.SetShadow(dialects.NewFalseShadow())
 
-	assert.NoError(t, testEngine.Context(context.Background()).Sync(new(GetVar1)))
+	assert.NoError(t, testEngine.Context(context.Background()).Sync(new(ShadowGetVar)))
 
-	data := GetVar1{
+	data := ShadowGetVar{
 		Msg:   "hi",
 		Age:   28,
 		Money: 1.5,
