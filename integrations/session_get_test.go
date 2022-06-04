@@ -24,6 +24,8 @@ import (
 )
 
 func TestShadowGetVar(t *testing.T) {
+	//db, mock, err := sqlmock.New()
+
 	testEngine, err := xorm.NewEngine(string(schemas.MYSQL), "root:root@tcp(127.0.0.1:3306)/test?charset=utf8")
 	assert.NoError(t, err)
 	testEngine.ShowSQL(true)

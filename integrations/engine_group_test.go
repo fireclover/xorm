@@ -6,6 +6,7 @@ package integrations
 
 import (
 	"testing"
+	"xorm.io/xorm/dialects"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
@@ -32,4 +33,5 @@ func TestEngineGroup(t *testing.T) {
 	eg.SetColumnMapper(master.GetColumnMapper())
 	eg.SetLogLevel(log.LOG_INFO)
 	eg.ShowSQL(true)
+	eg.SetShadow(dialects.NewFalseShadow())
 }

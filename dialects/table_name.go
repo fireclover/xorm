@@ -105,7 +105,7 @@ func FullTableName(ctx context.Context, dialect Dialect, mapper names.Mapper, be
 		tbName = TableNameWithSchema(dialect, tbName)
 	}
 	if dialect.URI() != nil &&
-		(dialect.URI().DBType == schemas.MYSQL || dialect.URI().DBType == schemas.SQLITE) &&
+		dialect.URI().DBType == schemas.MYSQL &&
 		dialect.IsShadow(ctx) && !hasShadowPrefix(tbName) {
 		tbName = ShadowDBNamePrefix + TableNameWithDBName(dialect, tbName)
 	}
