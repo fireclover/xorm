@@ -301,6 +301,16 @@ type Article struct {
 	Status  int8   `xorm:"TINYINT(4)"`
 }
 
+type ShadowArticle struct {
+	Id      int32  `xorm:"pk INT autoincr"`
+	Name    string `xorm:"VARCHAR(45)"`
+	Img     string `xorm:"VARCHAR(100)"`
+	Aside   string `xorm:"VARCHAR(200)"`
+	Desc    string `xorm:"VARCHAR(200)"`
+	Content string `xorm:"TEXT"`
+	Status  int8   `xorm:"TINYINT(4)"`
+}
+
 func TestUpdateMap2(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(UpdateMustCols))
@@ -1472,25 +1482,37 @@ func TestNilFromDB(t *testing.T) {
 	assert.NotNil(t, tt4.Field1.cb)
 }
 
+type ShadowUserinfo struct {
+	Uid        int64  `xorm:"id pk not null autoincr"`
+	Username   string `xorm:"unique"`
+	Departname string
+	Alias      string `xorm:"-"`
+	Created    time.Time
+	Detail     Userdetail `xorm:"detail_id int(11)"`
+	Height     float64
+	Avatar     []byte
+	IsMan      bool
+}
+
 func TestShadowMysqlUpdate1(t *testing.T) {
 	if testEngine.Dialect().URI().DBType != schemas.MYSQL {
 		return
 	}
 	testEngine.SetShadow(dialects.NewFalseShadow())
-	assert.NoError(t, testEngine.Context(context.Background()).Sync(&Userinfo{}))
+	assert.NoError(t, testEngine.Context(context.Background()).Sync(&ShadowUserinfo{}))
 
-	_, err := testEngine.Insert(&Userinfo{
+	_, err := testEngine.Insert(&ShadowUserinfo{
 		Username: "user1",
 	})
 	assert.NoError(t, err)
 
-	var ori Userinfo
+	var ori ShadowUserinfo
 	has, err := testEngine.Get(&ori)
 	assert.NoError(t, err)
 	assert.True(t, has)
 
 	// update by id
-	user := Userinfo{Username: "xxx", Height: 1.2}
+	user := ShadowUserinfo{Username: "xxx", Height: 1.2}
 	cnt, err := testEngine.ID(ori.Uid).Update(&user)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
@@ -1500,7 +1522,7 @@ func TestShadowMysqlUpdate1(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	cnt, err = testEngine.Update(&Userinfo{Username: "yyy"}, &user)
+	cnt, err = testEngine.Update(&ShadowUserinfo{Username: "yyy"}, &user)
 	assert.NoError(t, err)
 
 	total, err := testEngine.Count(&user)
@@ -1509,7 +1531,7 @@ func TestShadowMysqlUpdate1(t *testing.T) {
 
 	// nullable update
 	{
-		user := &Userinfo{Username: "not null data", Height: 180.5}
+		user := &ShadowUserinfo{Username: "not null data", Height: 180.5}
 		_, err := testEngine.Insert(user)
 		assert.NoError(t, err)
 		userID := user.Uid
@@ -1520,11 +1542,11 @@ func TestShadowMysqlUpdate1(t *testing.T) {
 			And("`departname` = ?", "").
 			And("`detail_id` = ?", 0).
 			And("`is_man` = ?", false).
-			Get(&Userinfo{})
+			Get(&ShadowUserinfo{})
 		assert.NoError(t, err)
 		assert.True(t, has, "cannot insert properly")
 
-		updatedUser := &Userinfo{Username: "null data"}
+		updatedUser := &ShadowUserinfo{Username: "null data"}
 		cnt, err = testEngine.ID(userID).
 			Nullable("height", "departname", "is_man", "created").
 			Update(updatedUser)
@@ -1538,30 +1560,30 @@ func TestShadowMysqlUpdate1(t *testing.T) {
 			And("`is_man` IS NULL").
 			And("`created` IS NULL").
 			And("`detail_id` = ?", 0).
-			Get(&Userinfo{})
+			Get(&ShadowUserinfo{})
 		assert.NoError(t, err)
 		assert.True(t, has, "cannot update with null properly")
 
-		cnt, err = testEngine.ID(userID).Delete(&Userinfo{})
+		cnt, err = testEngine.ID(userID).Delete(&ShadowUserinfo{})
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, cnt, "delete not returned 1")
 	}
 
-	err = testEngine.StoreEngine("Innodb").Sync(&Article{})
+	err = testEngine.StoreEngine("Innodb").Sync(&ShadowArticle{})
 	assert.NoError(t, err)
 
 	defer func() {
-		err = testEngine.DropTables(&Article{})
+		err = testEngine.DropTables(&ShadowArticle{})
 		assert.NoError(t, err)
 	}()
 
-	a := &Article{0, "1", "2", "3", "4", "5", 2}
+	a := &ShadowArticle{0, "1", "2", "3", "4", "5", 2}
 	cnt, err = testEngine.Insert(a)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt, fmt.Sprintf("insert not returned 1 but %d", cnt))
 	assert.Greater(t, a.Id, int32(0), "insert returned id is 0")
 
-	cnt, err = testEngine.ID(a.Id).Update(&Article{Name: "6"})
+	cnt, err = testEngine.ID(a.Id).Update(&ShadowArticle{Name: "6"})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 

@@ -199,28 +199,27 @@ func TestShadowCacheDelete(t *testing.T) {
 	}
 
 	testEngine.SetShadow(dialects.NewFalseShadow())
-
 	oldCacher := testEngine.GetDefaultCacher()
 	cacher := caches.NewLRUCacher(caches.NewMemoryStore(), 1000)
 	testEngine.SetDefaultCacher(cacher)
 
-	type ShadowCacheDeleteStruct struct {
+	type CacheDeleteStruct struct {
 		Id int64
 	}
-	assert.NoError(t, testEngine.Context(context.Background()).Sync(&ShadowCacheDeleteStruct{}))
-	err := testEngine.CreateTables(&ShadowCacheDeleteStruct{})
+	assert.NoError(t, testEngine.Context(context.Background()).Sync(&CacheDeleteStruct{}))
+	err := testEngine.CreateTables(&CacheDeleteStruct{})
 	assert.NoError(t, err)
 
-	_, err = testEngine.Insert(&ShadowCacheDeleteStruct{})
+	_, err = testEngine.Insert(&CacheDeleteStruct{})
 	assert.NoError(t, err)
 
-	aff, err := testEngine.Delete(&ShadowCacheDeleteStruct{
+	aff, err := testEngine.Delete(&CacheDeleteStruct{
 		Id: 1,
 	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, aff, 1)
 
-	aff, err = testEngine.Unscoped().Delete(&ShadowCacheDeleteStruct{
+	aff, err = testEngine.Unscoped().Delete(&CacheDeleteStruct{
 		Id: 1,
 	})
 	assert.NoError(t, err)
