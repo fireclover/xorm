@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 	"time"
-	"xorm.io/xorm"
 	"xorm.io/xorm/dialects"
 
 	"xorm.io/xorm/caches"
@@ -195,10 +194,10 @@ func TestCacheDelete(t *testing.T) {
 }
 
 func TestShadowCacheDelete(t *testing.T) {
-	testEngine, err := xorm.NewEngine(string(schemas.MYSQL), "root:root@tcp(127.0.0.1:3306)/test?charset=utf8")
-	assert.NoError(t, err)
-	testEngine.ShowSQL(true)
-	_, err = testEngine.NewSession().Exec("CREATE DATABASE IF NOT EXISTS shadow_test")
+	if testEngine.Dialect().URI().DBType != schemas.MYSQL {
+		return
+	}
+
 	testEngine.SetShadow(dialects.NewFalseShadow())
 
 	oldCacher := testEngine.GetDefaultCacher()
@@ -209,7 +208,7 @@ func TestShadowCacheDelete(t *testing.T) {
 		Id int64
 	}
 	assert.NoError(t, testEngine.Context(context.Background()).Sync(&CacheDeleteStruct{}))
-	err = testEngine.CreateTables(&CacheDeleteStruct{})
+	err := testEngine.CreateTables(&CacheDeleteStruct{})
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&CacheDeleteStruct{})

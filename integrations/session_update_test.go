@@ -1472,15 +1472,14 @@ func TestNilFromDB(t *testing.T) {
 	assert.NotNil(t, tt4.Field1.cb)
 }
 
-func TestShadowUpdate1(t *testing.T) {
-	testEngine, err := xorm.NewEngine(string(schemas.MYSQL), "root:root@tcp(127.0.0.1:3306)/test?charset=utf8")
-	assert.NoError(t, err)
-	testEngine.ShowSQL(true)
-	_, err = testEngine.NewSession().Exec("CREATE DATABASE IF NOT EXISTS shadow_test")
+func TestShadowMysqlUpdate1(t *testing.T) {
+	if testEngine.Dialect().URI().DBType != schemas.MYSQL {
+		return
+	}
 	testEngine.SetShadow(dialects.NewFalseShadow())
 	assert.NoError(t, testEngine.Context(context.Background()).Sync(&Userinfo{}))
 
-	_, err = testEngine.Insert(&Userinfo{
+	_, err := testEngine.Insert(&Userinfo{
 		Username: "user1",
 	})
 	assert.NoError(t, err)

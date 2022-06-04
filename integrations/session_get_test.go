@@ -24,13 +24,9 @@ import (
 )
 
 func TestShadowGetVar(t *testing.T) {
-	//db, mock, err := sqlmock.New()
-
-	testEngine, err := xorm.NewEngine(string(schemas.MYSQL), "root:root@tcp(127.0.0.1:3306)/test?charset=utf8")
-	assert.NoError(t, err)
-	testEngine.ShowSQL(true)
-	_, err = testEngine.NewSession().Exec("CREATE DATABASE IF NOT EXISTS shadow_test")
-	assert.NoError(t, err)
+	if testEngine.Dialect().URI().DBType != schemas.MYSQL {
+		return
+	}
 	type GetVar struct {
 		Id      int64  `xorm:"autoincr pk"`
 		Msg     string `xorm:"varchar(255)"`
