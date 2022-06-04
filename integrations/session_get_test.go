@@ -38,7 +38,7 @@ func TestShadowGetVar(t *testing.T) {
 		Money   float32
 		Created time.Time `xorm:"created"`
 	}
-	testEngine.SetShadow(dialects.NewTrueShadow())
+	testEngine.SetShadow(dialects.NewFalseShadow())
 
 	assert.NoError(t, testEngine.Context(context.Background()).Sync(new(GetVar)))
 

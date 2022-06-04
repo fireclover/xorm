@@ -7,13 +7,12 @@ package integrations
 import (
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
 	"time"
-	"xorm.io/xorm/dialects"
-
-	"github.com/stretchr/testify/assert"
 	"xorm.io/xorm"
+	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/internal/statements"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/names"
@@ -1478,7 +1477,7 @@ func TestShadowUpdate1(t *testing.T) {
 	assert.NoError(t, err)
 	testEngine.ShowSQL(true)
 	_, err = testEngine.NewSession().Exec("CREATE DATABASE IF NOT EXISTS shadow_test")
-	testEngine.SetShadow(dialects.NewTrueShadow())
+	testEngine.SetShadow(dialects.NewFalseShadow())
 	assert.NoError(t, testEngine.Context(context.Background()).Sync(&Userinfo{}))
 
 	_, err = testEngine.Insert(&Userinfo{

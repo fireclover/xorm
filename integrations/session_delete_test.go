@@ -199,7 +199,7 @@ func TestShadowCacheDelete(t *testing.T) {
 	assert.NoError(t, err)
 	testEngine.ShowSQL(true)
 	_, err = testEngine.NewSession().Exec("CREATE DATABASE IF NOT EXISTS shadow_test")
-	testEngine.SetShadow(dialects.NewTrueShadow())
+	testEngine.SetShadow(dialects.NewFalseShadow())
 
 	oldCacher := testEngine.GetDefaultCacher()
 	cacher := caches.NewLRUCacher(caches.NewMemoryStore(), 1000)
