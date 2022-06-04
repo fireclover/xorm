@@ -113,6 +113,7 @@ func newSession(engine *Engine) *Session {
 		engine: engine,
 		tx:     nil,
 		statement: statements.NewStatement(
+			ctx,
 			engine.dialect,
 			engine.tagParser,
 			engine.DatabaseTZ,

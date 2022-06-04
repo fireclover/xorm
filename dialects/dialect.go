@@ -89,6 +89,8 @@ type Dialect interface {
 
 	Filters() []Filter
 	SetParams(params map[string]string)
+	IsShadow(ctx context.Context) bool
+	SetShadowable(s Shadowable)
 }
 
 // Base represents a basic dialect and all real dialects could embed this struct
@@ -96,6 +98,7 @@ type Base struct {
 	dialect Dialect
 	uri     *URI
 	quoter  schemas.Quoter
+	shadow  Shadowable
 }
 
 // Alias returned col itself
@@ -252,6 +255,16 @@ func (db *Base) ForUpdateSQL(query string) string {
 
 // SetParams set params
 func (db *Base) SetParams(params map[string]string) {
+}
+
+func (db *Base) IsShadow(ctx context.Context) bool {
+	if db.shadow != nil {
+		return db.shadow.IsShadow(ctx)
+	}
+	return false
+}
+func (db *Base) SetShadowable(shadow Shadowable) {
+	db.shadow = shadow
 }
 
 var (

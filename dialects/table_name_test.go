@@ -5,6 +5,7 @@
 package dialects
 
 import (
+	"context"
 	"testing"
 
 	"xorm.io/xorm/names"
@@ -23,8 +24,14 @@ func (mcc *MCC) TableName() string {
 }
 
 func TestFullTableName(t *testing.T) {
-	dialect := QueryDialect("mysql")
-
-	assert.EqualValues(t, "mcc", FullTableName(dialect, names.SnakeMapper{}, &MCC{}))
-	assert.EqualValues(t, "mcc", FullTableName(dialect, names.SnakeMapper{}, "mcc"))
+	dialect, err := OpenDialect("mysql", "root:root@tcp(127.0.0.1:3306)/test?charset=utf8")
+	if err != nil {
+		panic("unknow dialect")
+	}
+	dialect.SetShadowable(NewTrueShadow())
+	assert.EqualValues(t, "shadow_test.mcc", FullTableName(context.Background(), dialect, names.SnakeMapper{}, &MCC{}))
+	assert.EqualValues(t, "shadow_test.mcc", FullTableName(context.Background(), dialect, names.SnakeMapper{}, "mcc"))
+	dialect.SetShadowable(NewFalseShadow())
+	assert.EqualValues(t, "mcc", FullTableName(context.Background(), dialect, names.SnakeMapper{}, &MCC{}))
+	assert.EqualValues(t, "mcc", FullTableName(context.Background(), dialect, names.SnakeMapper{}, "mcc"))
 }

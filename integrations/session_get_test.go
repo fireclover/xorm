@@ -5,6 +5,7 @@
 package integrations
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -21,6 +22,214 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestShadowGetVar(t *testing.T) {
+	testEngine, err := xorm.NewEngine(string(schemas.MYSQL), "root:root@tcp(127.0.0.1:3306)/test?charset=utf8")
+	assert.NoError(t, err)
+	testEngine.ShowSQL(true)
+	_, err = testEngine.NewSession().Exec("CREATE DATABASE IF NOT EXISTS shadow_test")
+	assert.NoError(t, err)
+	type GetVar struct {
+		Id      int64  `xorm:"autoincr pk"`
+		Msg     string `xorm:"varchar(255)"`
+		Age     int
+		Money   float32
+		Created time.Time `xorm:"created"`
+	}
+	testEngine.SetShadow(dialects.NewTrueShadow())
+
+	assert.NoError(t, testEngine.Context(context.Background()).Sync(new(GetVar)))
+
+	data := GetVar{
+		Msg:   "hi",
+		Age:   28,
+		Money: 1.5,
+	}
+	_, err = testEngine.InsertOne(&data)
+	assert.NoError(t, err)
+
+	var msg string
+	has, err := testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("msg").Get(&msg)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, "hi", msg)
+
+	var age int
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").Get(&age)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, 28, age)
+
+	var ageMax int
+	has, err = testEngine.SQL("SELECT max(`age`) FROM "+testEngine.Quote(testEngine.ContextTableName(context.Background(), "get_var"))+" WHERE `id` = ?", data.Id).Get(&ageMax)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, 28, ageMax)
+
+	var age2 int64
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").
+		Where("`age` > ?", 20).
+		And("`age` < ?", 30).
+		Get(&age2)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age2)
+
+	var age3 int8
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").Get(&age3)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age3)
+
+	var age4 int16
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").
+		Where("`age` > ?", 20).
+		And("`age` < ?", 30).
+		Get(&age4)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age4)
+
+	var age5 int32
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").
+		Where("`age` > ?", 20).
+		And("`age` < ?", 30).
+		Get(&age5)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age5)
+
+	var age6 int
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").Get(&age6)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age6)
+
+	var age7 int64
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").
+		Where("`age` > ?", 20).
+		And("`age` < ?", 30).
+		Get(&age7)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age7)
+
+	var age8 int8
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").Get(&age8)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age8)
+
+	var age9 int16
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").
+		Where("`age` > ?", 20).
+		And("`age` < ?", 30).
+		Get(&age9)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age9)
+
+	var age10 int32
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("age").
+		Where("`age` > ?", 20).
+		And("`age` < ?", 30).
+		Get(&age10)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.EqualValues(t, 28, age10)
+
+	var id sql.NullInt64
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("id").Get(&id)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, true, id.Valid)
+
+	var msgNull sql.NullString
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("msg").Get(&msgNull)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, true, msgNull.Valid)
+	assert.EqualValues(t, data.Msg, msgNull.String)
+
+	var nullMoney sql.NullFloat64
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("money").Get(&nullMoney)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, true, nullMoney.Valid)
+	assert.EqualValues(t, data.Money, nullMoney.Float64)
+
+	var money float64
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Cols("money").Get(&money)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, "1.5", fmt.Sprintf("%.1f", money))
+
+	var money2 float64
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
+		has, err = testEngine.SQL("SELECT TOP 1 `money` FROM " + testEngine.Quote(testEngine.ContextTableName(context.Background(), "get_var"))).Get(&money2)
+	} else {
+		has, err = testEngine.SQL("SELECT `money` FROM " + testEngine.Quote(testEngine.ContextTableName(context.Background(), "get_var")) + " LIMIT 1").Get(&money2)
+	}
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, "1.5", fmt.Sprintf("%.1f", money2))
+
+	var money3 float64
+	has, err = testEngine.SQL("SELECT `money` FROM " + testEngine.Quote(testEngine.ContextTableName(context.Background(), "get_var")) + " WHERE `money` > 20").Get(&money3)
+	assert.NoError(t, err)
+	assert.Equal(t, false, has)
+
+	valuesString := make(map[string]string)
+	has, err = testEngine.Table("get_var").Get(&valuesString)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, 5, len(valuesString))
+	assert.Equal(t, "1", valuesString["id"])
+	assert.Equal(t, "hi", valuesString["msg"])
+	assert.Equal(t, "28", valuesString["age"])
+	assert.Equal(t, "1.5", valuesString["money"])
+
+	// for mymysql driver, interface{} will be []byte, so ignore it currently
+	if testEngine.DriverName() != "mymysql" {
+		valuesInter := make(map[string]interface{})
+		has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Where("`id` = ?", 1).Select("*").Get(&valuesInter)
+		assert.NoError(t, err)
+		assert.Equal(t, true, has)
+		assert.Equal(t, 5, len(valuesInter))
+		assert.EqualValues(t, 1, valuesInter["id"])
+		assert.Equal(t, "hi", fmt.Sprintf("%s", valuesInter["msg"]))
+		assert.EqualValues(t, 28, valuesInter["age"])
+		assert.Equal(t, "1.5", fmt.Sprintf("%v", valuesInter["money"]))
+	}
+
+	valuesSliceString := make([]string, 5)
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Get(&valuesSliceString)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+	assert.Equal(t, "1", valuesSliceString[0])
+	assert.Equal(t, "hi", valuesSliceString[1])
+	assert.Equal(t, "28", valuesSliceString[2])
+	assert.Equal(t, "1.5", valuesSliceString[3])
+
+	valuesSliceInter := make([]interface{}, 5)
+	has, err = testEngine.Table(testEngine.ContextTableName(context.Background(), "get_var")).Get(&valuesSliceInter)
+	assert.NoError(t, err)
+	assert.Equal(t, true, has)
+
+	v1, err := convert.AsInt64(valuesSliceInter[0])
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, v1)
+
+	assert.Equal(t, "hi", fmt.Sprintf("%s", valuesSliceInter[1]))
+
+	v3, err := convert.AsInt64(valuesSliceInter[2])
+	assert.NoError(t, err)
+	assert.EqualValues(t, 28, v3)
+
+	v4, err := convert.AsFloat64(valuesSliceInter[3])
+	assert.NoError(t, err)
+	assert.Equal(t, "1.5", fmt.Sprintf("%v", v4))
+}
 
 func TestGetVar(t *testing.T) {
 	assert.NoError(t, PrepareEngine())

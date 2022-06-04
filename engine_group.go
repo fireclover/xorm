@@ -265,3 +265,16 @@ func (eg *EngineGroup) Rows(bean interface{}) (*Rows, error) {
 	sess.isAutoClose = true
 	return sess.Rows(bean)
 }
+
+// SetShadow Set whether to use shadow database algorithm, should be called after modify the cache setting
+func (eg *EngineGroup) SetShadow(shadow dialects.Shadowable) {
+	eg.Engine.SetShadow(shadow)
+	for i := 0; i < len(eg.slaves); i++ {
+		eg.slaves[i].SetShadow(shadow)
+	}
+}
+
+// ContextTableName returns table name with schema and database prefix if has
+func (engine *EngineGroup) ContextTableName(ctx context.Context, bean interface{}, includeSchema ...bool) string {
+	return dialects.FullTableName(ctx, engine.dialect, engine.GetTableMapper(), bean, includeSchema...)
+}

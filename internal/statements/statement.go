@@ -5,6 +5,7 @@
 package statements
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"fmt"
@@ -36,6 +37,7 @@ var (
 
 // Statement save all the sql info for executing SQL
 type Statement struct {
+	ctx             context.Context
 	RefTable        *schemas.Table
 	dialect         dialects.Dialect
 	defaultTimeZone *time.Location
@@ -82,8 +84,9 @@ type Statement struct {
 }
 
 // NewStatement creates a new statement
-func NewStatement(dialect dialects.Dialect, tagParser *tags.Parser, defaultTimeZone *time.Location) *Statement {
+func NewStatement(ctx context.Context, dialect dialects.Dialect, tagParser *tags.Parser, defaultTimeZone *time.Location) *Statement {
 	statement := &Statement{
+		ctx:             ctx,
 		dialect:         dialect,
 		tagParser:       tagParser,
 		defaultTimeZone: defaultTimeZone,
@@ -186,7 +189,8 @@ func (statement *Statement) SetRefValue(v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	statement.tableName = dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), v, true)
+	statement.tableName = dialects.FullTableName(statement.ctx, statement.dialect,
+		statement.tagParser.GetTableMapper(), v, true)
 	return nil
 }
 
@@ -201,7 +205,8 @@ func (statement *Statement) SetRefBean(bean interface{}) error {
 	if err != nil {
 		return err
 	}
-	statement.tableName = dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), bean, true)
+	statement.tableName = dialects.FullTableName(statement.ctx, statement.dialect,
+		statement.tagParser.GetTableMapper(), bean, true)
 	return nil
 }
 
@@ -280,7 +285,8 @@ func (statement *Statement) SetTable(tableNameOrBean interface{}) error {
 		}
 	}
 
-	statement.AltTableName = dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), tableNameOrBean, true)
+	statement.AltTableName = dialects.FullTableName(statement.ctx, statement.dialect, statement.tagParser.GetTableMapper(),
+		tableNameOrBean, true)
 	return nil
 }
 

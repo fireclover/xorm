@@ -291,7 +291,11 @@ func (engine *Engine) NoCascade() *Session {
 
 // MapCacher Set a table use a special cacher
 func (engine *Engine) MapCacher(bean interface{}, cacher caches.Cacher) error {
-	engine.SetCacher(dialects.FullTableName(engine.dialect, engine.GetTableMapper(), bean, true), cacher)
+	for _, v := range []dialects.Shadowable{dialects.NewTrueShadow(), dialects.NewFalseShadow()} {
+		engine.dialect.SetShadowable(v)
+		engine.SetCacher(dialects.FullTableName(context.Background(), engine.dialect, engine.GetTableMapper(), bean, true), cacher)
+		engine.SetCacher(dialects.FullTableName(context.Background(), engine.dialect, engine.GetTableMapper(), bean, true), cacher)
+	}
 	return nil
 }
 
@@ -1067,7 +1071,12 @@ func (engine *Engine) IsTableExist(beanOrTableName interface{}) (bool, error) {
 
 // TableName returns table name with schema prefix if has
 func (engine *Engine) TableName(bean interface{}, includeSchema ...bool) string {
-	return dialects.FullTableName(engine.dialect, engine.GetTableMapper(), bean, includeSchema...)
+	return dialects.FullTableName(context.Background(), engine.dialect, engine.GetTableMapper(), bean, includeSchema...)
+}
+
+// ContextTableName returns table name with schema and database prefix if has
+func (engine *Engine) ContextTableName(ctx context.Context, bean interface{}, includeSchema ...bool) string {
+	return dialects.FullTableName(ctx, engine.dialect, engine.GetTableMapper(), bean, includeSchema...)
 }
 
 // CreateIndexes create indexes
@@ -1086,23 +1095,29 @@ func (engine *Engine) CreateUniques(bean interface{}) error {
 
 // ClearCacheBean if enabled cache, clear the cache bean
 func (engine *Engine) ClearCacheBean(bean interface{}, id string) error {
-	tableName := dialects.FullTableName(engine.dialect, engine.GetTableMapper(), bean)
-	cacher := engine.GetCacher(tableName)
-	if cacher != nil {
-		cacher.ClearIds(tableName)
-		cacher.DelBean(tableName, id)
+	for _, v := range []dialects.Shadowable{dialects.NewTrueShadow(), dialects.NewFalseShadow()} {
+		engine.dialect.SetShadowable(v)
+		tableName := dialects.FullTableName(context.Background(), engine.dialect, engine.GetTableMapper(), bean)
+		cacher := engine.GetCacher(tableName)
+		if cacher != nil {
+			cacher.ClearIds(tableName)
+			cacher.DelBean(tableName, id)
+		}
 	}
 	return nil
 }
 
 // ClearCache if enabled cache, clear some tables' cache
 func (engine *Engine) ClearCache(beans ...interface{}) error {
-	for _, bean := range beans {
-		tableName := dialects.FullTableName(engine.dialect, engine.GetTableMapper(), bean)
-		cacher := engine.GetCacher(tableName)
-		if cacher != nil {
-			cacher.ClearIds(tableName)
-			cacher.ClearBeans(tableName)
+	for _, v := range []dialects.Shadowable{dialects.NewTrueShadow(), dialects.NewFalseShadow()} {
+		engine.dialect.SetShadowable(v)
+		for _, bean := range beans {
+			tableName := dialects.FullTableName(context.Background(), engine.dialect, engine.GetTableMapper(), bean)
+			cacher := engine.GetCacher(tableName)
+			if cacher != nil {
+				cacher.ClearIds(tableName)
+				cacher.ClearBeans(tableName)
+			}
 		}
 	}
 	return nil
@@ -1430,4 +1445,9 @@ func (engine *Engine) Transaction(f func(*Session) (interface{}, error)) (interf
 	}
 
 	return result, nil
+}
+
+// SetShadow Set whether to use shadow database algorithm, should be called after modify the cache setting
+func (engine *Engine) SetShadow(shadow dialects.Shadowable) {
+	engine.dialect.SetShadowable(shadow)
 }

@@ -5,6 +5,7 @@
 package statements
 
 import (
+	"context"
 	"os"
 	"reflect"
 	"strings"
@@ -171,7 +172,7 @@ func (TestType) TableName() string {
 }
 
 func createTestStatement() (*Statement, error) {
-	statement := NewStatement(dialect, tagParser, time.Local)
+	statement := NewStatement(context.Background(), dialect, tagParser, time.Local)
 	if err := statement.SetRefValue(reflect.ValueOf(TestType{})); err != nil {
 		return nil, err
 	}

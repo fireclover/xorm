@@ -5,6 +5,7 @@
 package dialects
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
@@ -14,12 +15,26 @@ import (
 	"xorm.io/xorm/schemas"
 )
 
+const ShadowDBNamePrefix = "shadow_"
+
 // TableNameWithSchema will add schema prefix on table name if possible
 func TableNameWithSchema(dialect Dialect, tableName string) string {
 	// Add schema name as prefix of table name.
 	// Only for postgres database.
 	if dialect.URI().Schema != "" && !strings.Contains(tableName, ".") {
 		return fmt.Sprintf("%s.%s", dialect.URI().Schema, tableName)
+	}
+	return tableName
+}
+
+// TableNameWithDBName will add database name prefix on table name if possible
+func TableNameWithDBName(dialect Dialect, tableName string) string {
+	// Add schema name as prefix of table name.
+	// Only for postgres database.
+	if dialect.URI().DBName != "" &&
+		dialect.URI().DBType == schemas.MYSQL &&
+		strings.Index(tableName, ".") == -1 {
+		return fmt.Sprintf("%s.%s", dialect.URI().DBName, tableName)
 	}
 	return tableName
 }
@@ -84,10 +99,19 @@ func TableNameNoSchema(dialect Dialect, mapper names.Mapper, tableName interface
 }
 
 // FullTableName returns table name with quote and schema according parameter
-func FullTableName(dialect Dialect, mapper names.Mapper, bean interface{}, includeSchema ...bool) string {
+func FullTableName(ctx context.Context, dialect Dialect, mapper names.Mapper, bean interface{}, includeSchema ...bool) string {
 	tbName := TableNameNoSchema(dialect, mapper, bean)
 	if len(includeSchema) > 0 && includeSchema[0] && !utils.IsSubQuery(tbName) {
 		tbName = TableNameWithSchema(dialect, tbName)
 	}
+	if dialect.URI() != nil &&
+		(dialect.URI().DBType == schemas.MYSQL || dialect.URI().DBType == schemas.SQLITE) &&
+		dialect.IsShadow(ctx) && !hasShadowPrefix(tbName) {
+		tbName = ShadowDBNamePrefix + TableNameWithDBName(dialect, tbName)
+	}
 	return tbName
+}
+
+func hasShadowPrefix(tableName string) bool {
+	return strings.HasPrefix(tableName, ShadowDBNamePrefix)
 }

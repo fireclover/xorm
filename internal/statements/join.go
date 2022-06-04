@@ -51,7 +51,7 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), statement.quote(aliasName), statement.ReplaceQuote(condition))
 		statement.joinArgs = append(statement.joinArgs, subQueryArgs...)
 	default:
-		tbName := dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), tablename, true)
+		tbName := dialects.FullTableName(statement.ctx, statement.dialect, statement.tagParser.GetTableMapper(), tablename, true)
 		if !utils.IsSubQuery(tbName) {
 			var buf strings.Builder
 			_ = statement.dialect.Quoter().QuoteTo(&buf, tbName)

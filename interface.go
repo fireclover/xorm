@@ -123,8 +123,10 @@ type EngineInterface interface {
 	StoreEngine(storeEngine string) *Session
 	TableInfo(bean interface{}) (*schemas.Table, error)
 	TableName(interface{}, ...bool) string
+	ContextTableName(context.Context, interface{}, ...bool) string
 	UnMapType(reflect.Type)
 	EnableSessionID(bool)
+	SetShadow(shadow dialects.Shadowable)
 }
 
 var (

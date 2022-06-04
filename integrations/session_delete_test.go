@@ -5,8 +5,11 @@
 package integrations
 
 import (
+	"context"
 	"testing"
 	"time"
+	"xorm.io/xorm"
+	"xorm.io/xorm/dialects"
 
 	"xorm.io/xorm/caches"
 	"xorm.io/xorm/schemas"
@@ -171,6 +174,42 @@ func TestCacheDelete(t *testing.T) {
 	}
 
 	err := testEngine.CreateTables(&CacheDeleteStruct{})
+	assert.NoError(t, err)
+
+	_, err = testEngine.Insert(&CacheDeleteStruct{})
+	assert.NoError(t, err)
+
+	aff, err := testEngine.Delete(&CacheDeleteStruct{
+		Id: 1,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, aff, 1)
+
+	aff, err = testEngine.Unscoped().Delete(&CacheDeleteStruct{
+		Id: 1,
+	})
+	assert.NoError(t, err)
+	assert.EqualValues(t, aff, 0)
+
+	testEngine.SetDefaultCacher(oldCacher)
+}
+
+func TestShadowCacheDelete(t *testing.T) {
+	testEngine, err := xorm.NewEngine(string(schemas.MYSQL), "root:root@tcp(127.0.0.1:3306)/test?charset=utf8")
+	assert.NoError(t, err)
+	testEngine.ShowSQL(true)
+	_, err = testEngine.NewSession().Exec("CREATE DATABASE IF NOT EXISTS shadow_test")
+	testEngine.SetShadow(dialects.NewTrueShadow())
+
+	oldCacher := testEngine.GetDefaultCacher()
+	cacher := caches.NewLRUCacher(caches.NewMemoryStore(), 1000)
+	testEngine.SetDefaultCacher(cacher)
+
+	type CacheDeleteStruct struct {
+		Id int64
+	}
+	assert.NoError(t, testEngine.Context(context.Background()).Sync(&CacheDeleteStruct{}))
+	err = testEngine.CreateTables(&CacheDeleteStruct{})
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&CacheDeleteStruct{})

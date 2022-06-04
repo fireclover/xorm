@@ -5,10 +5,12 @@
 package integrations
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
+	"xorm.io/xorm/dialects"
 
 	"github.com/stretchr/testify/assert"
 	"xorm.io/xorm"
@@ -1469,4 +1471,139 @@ func TestNilFromDB(t *testing.T) {
 	assert.True(t, has)
 	assert.NotNil(t, tt4.Field1)
 	assert.NotNil(t, tt4.Field1.cb)
+}
+
+func TestShadowUpdate1(t *testing.T) {
+	testEngine, err := xorm.NewEngine(string(schemas.MYSQL), "root:root@tcp(127.0.0.1:3306)/test?charset=utf8")
+	assert.NoError(t, err)
+	testEngine.ShowSQL(true)
+	_, err = testEngine.NewSession().Exec("CREATE DATABASE IF NOT EXISTS shadow_test")
+	testEngine.SetShadow(dialects.NewTrueShadow())
+	assert.NoError(t, testEngine.Context(context.Background()).Sync(&Userinfo{}))
+
+	_, err = testEngine.Insert(&Userinfo{
+		Username: "user1",
+	})
+	assert.NoError(t, err)
+
+	var ori Userinfo
+	has, err := testEngine.Get(&ori)
+	assert.NoError(t, err)
+	assert.True(t, has)
+
+	// update by id
+	user := Userinfo{Username: "xxx", Height: 1.2}
+	cnt, err := testEngine.ID(ori.Uid).Update(&user)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	condi := Condi{"username": "zzz", "departname": ""}
+	cnt, err = testEngine.Table(&user).ID(ori.Uid).Update(&condi)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = testEngine.Update(&Userinfo{Username: "yyy"}, &user)
+	assert.NoError(t, err)
+
+	total, err := testEngine.Count(&user)
+	assert.NoError(t, err)
+	assert.EqualValues(t, cnt, total)
+
+	// nullable update
+	{
+		user := &Userinfo{Username: "not null data", Height: 180.5}
+		_, err := testEngine.Insert(user)
+		assert.NoError(t, err)
+		userID := user.Uid
+
+		has, err := testEngine.ID(userID).
+			And("`username` = ?", user.Username).
+			And("`height` = ?", user.Height).
+			And("`departname` = ?", "").
+			And("`detail_id` = ?", 0).
+			And("`is_man` = ?", false).
+			Get(&Userinfo{})
+		assert.NoError(t, err)
+		assert.True(t, has, "cannot insert properly")
+
+		updatedUser := &Userinfo{Username: "null data"}
+		cnt, err = testEngine.ID(userID).
+			Nullable("height", "departname", "is_man", "created").
+			Update(updatedUser)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt, "update not returned 1")
+
+		has, err = testEngine.ID(userID).
+			And("`username` = ?", updatedUser.Username).
+			And("`height` IS NULL").
+			And("`departname` IS NULL").
+			And("`is_man` IS NULL").
+			And("`created` IS NULL").
+			And("`detail_id` = ?", 0).
+			Get(&Userinfo{})
+		assert.NoError(t, err)
+		assert.True(t, has, "cannot update with null properly")
+
+		cnt, err = testEngine.ID(userID).Delete(&Userinfo{})
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt, "delete not returned 1")
+	}
+
+	err = testEngine.StoreEngine("Innodb").Sync(&Article{})
+	assert.NoError(t, err)
+
+	defer func() {
+		err = testEngine.DropTables(&Article{})
+		assert.NoError(t, err)
+	}()
+
+	a := &Article{0, "1", "2", "3", "4", "5", 2}
+	cnt, err = testEngine.Insert(a)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt, fmt.Sprintf("insert not returned 1 but %d", cnt))
+	assert.Greater(t, a.Id, int32(0), "insert returned id is 0")
+
+	cnt, err = testEngine.ID(a.Id).Update(&Article{Name: "6"})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var s = "test"
+
+	col1 := &UpdateAllCols{Ptr: &s}
+	err = testEngine.Sync(col1)
+	assert.NoError(t, err)
+
+	_, err = testEngine.Insert(col1)
+	assert.NoError(t, err)
+
+	col2 := &UpdateAllCols{col1.Id, true, "", nil}
+	_, err = testEngine.ID(col2.Id).AllCols().Update(col2)
+	assert.NoError(t, err)
+
+	col3 := &UpdateAllCols{}
+	has, err = testEngine.ID(col2.Id).Get(col3)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, *col2, *col3)
+
+	{
+		col1 := &UpdateMustCols{}
+		err = testEngine.Sync(col1)
+		assert.NoError(t, err)
+
+		_, err = testEngine.Insert(col1)
+		assert.NoError(t, err)
+
+		col2 := &UpdateMustCols{col1.Id, true, ""}
+		boolStr := testEngine.GetColumnMapper().Obj2Table("Bool")
+		stringStr := testEngine.GetColumnMapper().Obj2Table("String")
+		_, err = testEngine.ID(col2.Id).MustCols(boolStr, stringStr).Update(col2)
+		assert.NoError(t, err)
+
+		col3 := &UpdateMustCols{}
+		has, err := testEngine.ID(col2.Id).Get(col3)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, *col2, *col3)
+	}
 }

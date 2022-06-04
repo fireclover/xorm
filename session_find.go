@@ -392,6 +392,7 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 
 		statement := session.statement
 		session.statement = statements.NewStatement(
+			session.ctx,
 			session.engine.dialect,
 			session.engine.tagParser,
 			session.engine.DatabaseTZ,
