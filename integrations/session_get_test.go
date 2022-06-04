@@ -43,7 +43,7 @@ func TestShadowGetVar(t *testing.T) {
 		Age:   28,
 		Money: 1.5,
 	}
-	_, err = testEngine.InsertOne(&data)
+	_, err := testEngine.InsertOne(&data)
 	assert.NoError(t, err)
 
 	var msg string
