@@ -280,11 +280,7 @@ func (session *Session) Sync(beans ...interface{}) error {
 		if len(session.statement.AltTableName) > 0 {
 			tbName = session.statement.AltTableName
 		} else {
-			if session.ctx != nil {
-				tbName = engine.ContextTableName(session.ctx, bean)
-			} else {
-				tbName = engine.TableName(bean)
-			}
+			tbName = engine.ContextTableName(session.ctx, bean)
 		}
 		tbNameWithSchema := engine.tbNameWithSchema(tbName)
 
