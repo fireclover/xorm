@@ -162,12 +162,16 @@ var (
 		"ZEROFILL":     true,
 	}
 
-	mysqlQuoter = schemas.Quoter{
-		Prefix:     '`',
-		Suffix:     '`',
-		IsReserved: schemas.AlwaysReserve,
-	}
+	mysqlQuoter schemas.Quoter
 )
+
+func init() {
+	var err error
+	mysqlQuoter, err = schemas.NewQuoter('`', '`', schemas.AlwaysReserve)
+	if err != nil {
+		panic(err)
+	}
+}
 
 type mysql struct {
 	Base
@@ -560,13 +564,11 @@ func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 func (db *mysql) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		q := mysqlQuoter
-		q.IsReserved = schemas.AlwaysNoReserve
-		db.quoter = q
+		db.quoter = mysqlQuoter
+		db.quoter.SetIsReserved(schemas.AlwaysNoReserve)
 	case QuotePolicyReserved:
-		q := mysqlQuoter
-		q.IsReserved = db.IsReserved
-		db.quoter = q
+		db.quoter = mysqlQuoter
+		db.quoter.SetIsReserved(db.IsReserved)
 	case QuotePolicyAlways:
 		fallthrough
 	default:

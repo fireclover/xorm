@@ -144,12 +144,16 @@ var (
 		"WITHOUT":           true,
 	}
 
-	sqlite3Quoter = schemas.Quoter{
-		Prefix:     '`',
-		Suffix:     '`',
-		IsReserved: schemas.AlwaysReserve,
-	}
+	sqlite3Quoter schemas.Quoter
 )
+
+func init() {
+	var err error
+	sqlite3Quoter, err = schemas.NewQuoter('`', '`', schemas.AlwaysReserve)
+	if err != nil {
+		panic(err)
+	}
+}
 
 type sqlite3 struct {
 	Base
@@ -193,13 +197,11 @@ func (db *sqlite3) Features() *DialectFeatures {
 func (db *sqlite3) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		var q = sqlite3Quoter
-		q.IsReserved = schemas.AlwaysNoReserve
-		db.quoter = q
+		db.quoter = sqlite3Quoter
+		db.quoter.SetIsReserved(schemas.AlwaysNoReserve)
 	case QuotePolicyReserved:
-		var q = sqlite3Quoter
-		q.IsReserved = db.IsReserved
-		db.quoter = q
+		db.quoter = sqlite3Quoter
+		db.quoter.SetIsReserved(db.IsReserved)
 	case QuotePolicyAlways:
 		fallthrough
 	default:

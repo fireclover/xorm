@@ -768,12 +768,16 @@ var (
 		"ZONE":                             true,
 	}
 
-	postgresQuoter = schemas.Quoter{
-		Prefix:     '"',
-		Suffix:     '"',
-		IsReserved: schemas.AlwaysReserve,
-	}
+	postgresQuoter schemas.Quoter
 )
+
+func init() {
+	var err error
+	postgresQuoter, err = schemas.NewQuoter('"', '"', schemas.AlwaysReserve)
+	if err != nil {
+		panic(err)
+	}
+}
 
 var (
 	// DefaultPostgresSchema default postgres schema
@@ -862,13 +866,11 @@ func (db *postgres) needQuote(name string) bool {
 func (db *postgres) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		q := postgresQuoter
-		q.IsReserved = schemas.AlwaysNoReserve
-		db.quoter = q
+		db.quoter = postgresQuoter
+		db.quoter.SetIsReserved(schemas.AlwaysNoReserve)
 	case QuotePolicyReserved:
-		q := postgresQuoter
-		q.IsReserved = db.needQuote
-		db.quoter = q
+		db.quoter = postgresQuoter
+		db.quoter.SetIsReserved(db.IsReserved)
 	case QuotePolicyAlways:
 		fallthrough
 	default:

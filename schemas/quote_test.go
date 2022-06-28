@@ -12,9 +12,10 @@ import (
 )
 
 func TestAlwaysQuoteTo(t *testing.T) {
+	quoter, err := NewQuoter('[', ']', AlwaysReserve)
+	assert.NoError(t, err)
 	var (
-		quoter = Quoter{'[', ']', AlwaysReserve}
-		kases  = []struct {
+		kases = []struct {
 			expected string
 			value    string
 		}{
@@ -33,12 +34,15 @@ func TestAlwaysQuoteTo(t *testing.T) {
 			{`["myschema].[mytable"]`, `"myschema.mytable"`},
 			{"[message_user] AS [sender]", "`message_user` AS `sender`"},
 			{"[myschema].[mytable] AS [table]", "myschema.mytable AS table"},
-			{" [mytable]", " mytable"},
-			{"  [mytable]", "  mytable"},
-			{"[mytable] ", "mytable "},
-			{"[mytable]  ", "mytable  "},
-			{" [mytable] ", " mytable "},
-			{"  [mytable]  ", "  mytable  "},
+			{"[mytable]", " mytable"},
+			{"[mytable]", "  mytable"},
+			{"[mytable]", "mytable "},
+			{"[mytable]", "mytable  "},
+			{"[mytable]", " mytable "},
+			{"[mytable]", "  mytable  "},
+			{"[table] AS [t] use index ([myindex])", "`table` AS `t` use index (`myindex`)"},
+			{"[table] AS [t] use index ([myindex])", "`table` AS `t`    use    index    (`myindex`)    "},
+			{"[table] AS [t] force index ([myindex])", "table AS t    force    index    (myindex)    "},
 		}
 	)
 
@@ -53,10 +57,11 @@ func TestAlwaysQuoteTo(t *testing.T) {
 }
 
 func TestReversedQuoteTo(t *testing.T) {
+	quoter, err := NewQuoter('[', ']', func(s string) bool {
+		return s == "mytable"
+	})
+	assert.NoError(t, err)
 	var (
-		quoter = Quoter{'[', ']', func(s string) bool {
-			return s == "mytable"
-		}}
 		kases = []struct {
 			expected string
 			value    string
@@ -82,16 +87,18 @@ func TestReversedQuoteTo(t *testing.T) {
 	for _, v := range kases {
 		t.Run(v.value, func(t *testing.T) {
 			buf := &strings.Builder{}
-			quoter.QuoteTo(buf, v.value)
+			err := quoter.QuoteTo(buf, v.value)
+			assert.NoError(t, err)
 			assert.EqualValues(t, v.expected, buf.String())
 		})
 	}
 }
 
 func TestNoQuoteTo(t *testing.T) {
+	quoter, err := NewQuoter('[', ']', AlwaysNoReserve)
+	assert.NoError(t, err)
 	var (
-		quoter = Quoter{'[', ']', AlwaysNoReserve}
-		kases  = []struct {
+		kases = []struct {
 			expected string
 			value    string
 		}{
@@ -125,7 +132,8 @@ func TestNoQuoteTo(t *testing.T) {
 
 func TestJoin(t *testing.T) {
 	cols := []string{"f1", "f2", "f3"}
-	quoter := Quoter{'[', ']', AlwaysReserve}
+	quoter, err := NewQuoter('[', ']', AlwaysReserve)
+	assert.NoError(t, err)
 
 	assert.EqualValues(t, "[a],[b]", quoter.Join([]string{"a", " b"}, ","))
 
@@ -133,13 +141,14 @@ func TestJoin(t *testing.T) {
 
 	assert.EqualValues(t, "[f1], [f2], [f3]", quoter.Join(cols, ", "))
 
-	quoter.IsReserved = AlwaysNoReserve
+	quoter.SetIsReserved(AlwaysNoReserve)
 	assert.EqualValues(t, "f1, f2, f3", quoter.Join(cols, ", "))
 }
 
 func TestStrings(t *testing.T) {
 	cols := []string{"f1", "f2", "t3.f3", "t4.*"}
-	quoter := Quoter{'[', ']', AlwaysReserve}
+	quoter, err := NewQuoter('[', ']', AlwaysReserve)
+	assert.NoError(t, err)
 
 	quotedCols := quoter.Strings(cols)
 	assert.EqualValues(t, []string{"[f1]", "[f2]", "[t3].[f3]", "[t4].*"}, quotedCols)
@@ -151,14 +160,18 @@ func TestTrim(t *testing.T) {
 		"[schema].[table_name]": "schema.table_name",
 	}
 
+	quoter, err := NewQuoter('[', ']', AlwaysReserve)
+	assert.NoError(t, err)
+
 	for src, dst := range kases {
 		assert.EqualValues(t, src, CommonQuoter.Trim(src))
-		assert.EqualValues(t, dst, Quoter{'[', ']', AlwaysReserve}.Trim(src))
+		assert.EqualValues(t, dst, quoter.Trim(src))
 	}
 }
 
 func TestReplace(t *testing.T) {
-	q := Quoter{'[', ']', AlwaysReserve}
+	q, err := NewQuoter('[', ']', AlwaysReserve)
+	assert.NoError(t, err)
 	var kases = []struct {
 		source   string
 		expected string

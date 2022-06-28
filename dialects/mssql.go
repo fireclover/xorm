@@ -206,12 +206,16 @@ var (
 		"PROC":                           true,
 	}
 
-	mssqlQuoter = schemas.Quoter{
-		Prefix:     '[',
-		Suffix:     ']',
-		IsReserved: schemas.AlwaysReserve,
-	}
+	mssqlQuoter schemas.Quoter
 )
+
+func init() {
+	var err error
+	mssqlQuoter, err = schemas.NewQuoter('[', ']', schemas.AlwaysReserve)
+	if err != nil {
+		panic(err)
+	}
+}
 
 type mssql struct {
 	Base
@@ -403,13 +407,11 @@ func (db *mssql) IsReserved(name string) bool {
 func (db *mssql) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		var q = mssqlQuoter
-		q.IsReserved = schemas.AlwaysNoReserve
-		db.quoter = q
+		db.quoter = mssqlQuoter
+		db.quoter.SetIsReserved(schemas.AlwaysNoReserve)
 	case QuotePolicyReserved:
-		var q = mssqlQuoter
-		q.IsReserved = db.IsReserved
-		db.quoter = q
+		db.quoter = mssqlQuoter
+		db.quoter.SetIsReserved(db.IsReserved)
 	case QuotePolicyAlways:
 		fallthrough
 	default:

@@ -509,12 +509,16 @@ var (
 		"ZONE":                      true,
 	}
 
-	damengQuoter = schemas.Quoter{
-		Prefix:     '"',
-		Suffix:     '"',
-		IsReserved: schemas.AlwaysReserve,
-	}
+	damengQuoter schemas.Quoter
 )
+
+func init() {
+	var err error
+	damengQuoter, err = schemas.NewQuoter('"', '"', schemas.AlwaysReserve)
+	if err != nil {
+		panic(err)
+	}
+}
 
 type dameng struct {
 	Base
@@ -729,13 +733,11 @@ func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 func (db *dameng) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		var q = damengQuoter
-		q.IsReserved = schemas.AlwaysNoReserve
-		db.quoter = q
+		db.quoter = damengQuoter
+		db.quoter.SetIsReserved(schemas.AlwaysNoReserve)
 	case QuotePolicyReserved:
-		var q = damengQuoter
-		q.IsReserved = db.IsReserved
-		db.quoter = q
+		db.quoter = damengQuoter
+		db.quoter.SetIsReserved(db.IsReserved)
 	case QuotePolicyAlways:
 		fallthrough
 	default:

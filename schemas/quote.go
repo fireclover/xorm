@@ -5,14 +5,52 @@
 package schemas
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 )
 
 // Quoter represents a quoter to the SQL table name and column name
 type Quoter struct {
-	Prefix     byte
-	Suffix     byte
-	IsReserved func(string) bool
+	prefix     byte
+	suffix     byte
+	isReserved func(string) bool
+	re         *regexp.Regexp
+}
+
+var regexCharsToEscape = map[byte]struct{}{
+	'[': {}, ']': {}, '(': {}, ')': {}, '{': {}, '}': {}, '*': {}, '+': {}, '?': {}, '|': {}, '^': {}, '$': {}, '.': {}, '\\': {}, '`': {},
+}
+
+func escapedRegexBytes(in byte) []byte {
+	if _, ok := regexCharsToEscape[in]; !ok {
+		return []byte{in}
+	}
+	return []byte{'\\', in}
+}
+
+func NewQuoter(prefix byte, suffix byte, isReserved func(string) bool) (Quoter, error) {
+	regexPrefix := escapedRegexBytes(prefix)
+	regexSuffix := escapedRegexBytes(suffix)
+
+	regex := fmt.Sprintf(`(?i)^\s*([^.\s]+|\x60[^.\s]+\x60|%s[^.\s]+%s)(?:\s*\.\s*([^.\s]+|\x60[^.\s]+\x60|%s[^.\s]+%s))?\s*?(?:\s+as\s+([^.\s]+|\x60[^.\s]+\x60|%s[^.\s]+%s))?(?:\s+(use|force)\s+index\s+\(([^.\s]+|\x60[^.\s]+\x60|%s[^.\s]+%s)\))?\s*$`,
+		regexPrefix, regexSuffix, regexPrefix, regexSuffix, regexPrefix, regexSuffix, regexPrefix, regexSuffix,
+	)
+	re, err := regexp.Compile(regex)
+	if err != nil {
+		return Quoter{}, err
+	}
+
+	return Quoter{
+		prefix:     prefix,
+		suffix:     suffix,
+		isReserved: isReserved,
+		re:         re,
+	}, nil
+}
+
+func (q *Quoter) SetIsReserved(isReserved func(string) bool) {
+	q.isReserved = isReserved
 }
 
 var (
@@ -22,16 +60,24 @@ var (
 	// AlwaysReserve always reverse the word
 	AlwaysReserve = func(string) bool { return true }
 
-	// CommanQuoteMark represnets the common quote mark
-	CommanQuoteMark byte = '`'
+	// CommonQuoteMark represents the common quote mark
+	CommonQuoteMark byte = '`'
 
-	// CommonQuoter represetns a common quoter
-	CommonQuoter = Quoter{CommanQuoteMark, CommanQuoteMark, AlwaysReserve}
+	// CommonQuoter represents a common quoter
+	CommonQuoter Quoter
 )
+
+func init() {
+	var err error
+	CommonQuoter, err = NewQuoter(CommonQuoteMark, CommonQuoteMark, AlwaysReserve)
+	if err != nil {
+		panic(err)
+	}
+}
 
 // IsEmpty return true if no prefix and suffix
 func (q Quoter) IsEmpty() bool {
-	return q.Prefix == 0 && q.Suffix == 0
+	return q.prefix == 0 && q.suffix == 0
 }
 
 // Quote quote a string
@@ -50,10 +96,10 @@ func (q Quoter) Trim(s string) string {
 	var buf strings.Builder
 	for i := 0; i < len(s); i++ {
 		switch {
-		case i == 0 && s[i] == q.Prefix:
-		case i == len(s)-1 && s[i] == q.Suffix:
-		case s[i] == q.Suffix && s[i+1] == '.':
-		case s[i] == q.Prefix && s[i-1] == '.':
+		case i == 0 && s[i] == q.prefix:
+		case i == len(s)-1 && s[i] == q.suffix:
+		case s[i] == q.suffix && s[i+1] == '.':
+		case s[i] == q.prefix && s[i-1] == '.':
 		default:
 			buf.WriteByte(s[i])
 		}
@@ -93,51 +139,10 @@ func (q Quoter) JoinWrite(b *strings.Builder, a []string, sep string) error {
 	return nil
 }
 
-func findWord(v string, start int) int {
-	for j := start; j < len(v); j++ {
-		switch v[j] {
-		case '.', ' ':
-			return j
-		}
-	}
-	return len(v)
-}
-
-func findStart(value string, start int) int {
-	if value[start] == '.' {
-		return start + 1
-	}
-	if value[start] != ' ' {
-		return start
-	}
-
-	var k = -1
-	for j := start; j < len(value); j++ {
-		if value[j] != ' ' {
-			k = j
-			break
-		}
-	}
-	if k == -1 {
-		return len(value)
-	}
-
-	if (value[k] == 'A' || value[k] == 'a') && (value[k+1] == 'S' || value[k+1] == 's') {
-		k += 2
-	}
-
-	for j := k; j < len(value); j++ {
-		if value[j] != ' ' {
-			return j
-		}
-	}
-	return len(value)
-}
-
 func (q Quoter) quoteWordTo(buf *strings.Builder, word string) error {
 	var realWord = word
-	if (word[0] == CommanQuoteMark && word[len(word)-1] == CommanQuoteMark) ||
-		(word[0] == q.Prefix && word[len(word)-1] == q.Suffix) {
+	if (word[0] == CommonQuoteMark && word[len(word)-1] == CommonQuoteMark) ||
+		(word[0] == q.prefix && word[len(word)-1] == q.suffix) {
 		realWord = word[1 : len(word)-1]
 	}
 
@@ -146,9 +151,9 @@ func (q Quoter) quoteWordTo(buf *strings.Builder, word string) error {
 		return err
 	}
 
-	isReserved := q.IsReserved(realWord)
+	isReserved := q.isReserved(realWord)
 	if isReserved && realWord != "*" {
-		if err := buf.WriteByte(q.Prefix); err != nil {
+		if err := buf.WriteByte(q.prefix); err != nil {
 			return err
 		}
 	}
@@ -156,7 +161,7 @@ func (q Quoter) quoteWordTo(buf *strings.Builder, word string) error {
 		return err
 	}
 	if isReserved && realWord != "*" {
-		return buf.WriteByte(q.Suffix)
+		return buf.WriteByte(q.suffix)
 	}
 
 	return nil
@@ -174,25 +179,48 @@ func (q Quoter) quoteWordTo(buf *strings.Builder, word string) error {
 //   schema.[name] -> [schema].[name]
 //   name AS a  ->  [name] AS a
 //   schema.name AS a  ->  [schema].[name] AS a
-func (q Quoter) QuoteTo(buf *strings.Builder, value string) error {
-	var i int
-	for i < len(value) {
-		start := findStart(value, i)
-		if start > i {
-			if _, err := buf.WriteString(value[i:start]); err != nil {
-				return err
-			}
-		}
-		if start == len(value) {
-			return nil
-		}
+func (q Quoter) QuoteTo(buf *strings.Builder, value string) (err error) {
+	matches := q.re.FindStringSubmatch(value)
+	if len(matches) != 6 {
+		return fmt.Errorf("unable to determine quoting for %q", value)
+	}
 
-		var nextEnd = findWord(value, start)
-		if err := q.quoteWordTo(buf, value[start:nextEnd]); err != nil {
+	schema := matches[1]
+	table := matches[2]
+	alias := matches[3]
+	indexMethod := matches[4]
+	index := matches[5]
+	if table == "" {
+		table = schema
+		schema = ""
+	}
+
+	if schema != "" {
+		if err = q.quoteWordTo(buf, schema); err != nil {
 			return err
 		}
-		i = nextEnd
+		buf.WriteByte('.')
 	}
+	if err = q.quoteWordTo(buf, table); err != nil {
+		return err
+	}
+	if alias != "" {
+		buf.WriteString(" AS ")
+		if err = q.quoteWordTo(buf, alias); err != nil {
+			return err
+		}
+	}
+	if index != "" {
+		_, err = fmt.Fprintf(buf, " %s index (", indexMethod)
+		if err != nil {
+			return err
+		}
+		if err = q.quoteWordTo(buf, index); err != nil {
+			return err
+		}
+		buf.WriteByte(')')
+	}
+
 	return nil
 }
 
@@ -216,21 +244,21 @@ func (q Quoter) Replace(sql string) string {
 
 	var beginSingleQuote bool
 	for i := 0; i < len(sql); i++ {
-		if !beginSingleQuote && sql[i] == CommanQuoteMark {
+		if !beginSingleQuote && sql[i] == CommonQuoteMark {
 			var j = i + 1
 			for ; j < len(sql); j++ {
-				if sql[j] == CommanQuoteMark {
+				if sql[j] == CommonQuoteMark {
 					break
 				}
 			}
 			word := sql[i+1 : j]
-			isReserved := q.IsReserved(word)
+			isReserved := q.isReserved(word)
 			if isReserved {
-				buf.WriteByte(q.Prefix)
+				buf.WriteByte(q.prefix)
 			}
 			buf.WriteString(word)
 			if isReserved {
-				buf.WriteByte(q.Suffix)
+				buf.WriteByte(q.suffix)
 			}
 			i = j
 		} else {

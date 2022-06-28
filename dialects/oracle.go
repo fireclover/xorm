@@ -500,12 +500,16 @@ var (
 		"ZONE":                      true,
 	}
 
-	oracleQuoter = schemas.Quoter{
-		Prefix:     '"',
-		Suffix:     '"',
-		IsReserved: schemas.AlwaysReserve,
-	}
+	oracleQuoter schemas.Quoter
 )
+
+func init() {
+	var err error
+	oracleQuoter, err = schemas.NewQuoter('"', '"', schemas.AlwaysReserve)
+	if err != nil {
+		panic(err)
+	}
+}
 
 type oracle struct {
 	Base
@@ -641,13 +645,11 @@ func (db *oracle) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 func (db *oracle) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		var q = oracleQuoter
-		q.IsReserved = schemas.AlwaysNoReserve
-		db.quoter = q
+		db.quoter = oracleQuoter
+		db.quoter.SetIsReserved(schemas.AlwaysNoReserve)
 	case QuotePolicyReserved:
-		var q = oracleQuoter
-		q.IsReserved = db.IsReserved
-		db.quoter = q
+		db.quoter = oracleQuoter
+		db.quoter.SetIsReserved(db.IsReserved)
 	case QuotePolicyAlways:
 		fallthrough
 	default:
