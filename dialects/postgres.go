@@ -934,9 +934,9 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 	hasLen2 := (c.Length2 > 0)
 
 	if hasLen2 {
-		res += "(" + strconv.Itoa(c.Length) + "," + strconv.Itoa(c.Length2) + ")"
+		res += "(" + strconv.FormatInt(c.Length, 10) + "," + strconv.FormatInt(c.Length2, 10) + ")"
 	} else if hasLen1 {
-		res += "(" + strconv.Itoa(c.Length) + ")"
+		res += "(" + strconv.FormatInt(c.Length, 10) + ")"
 	}
 	return res
 }
@@ -1110,9 +1110,9 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 			return nil, nil, err
 		}
 
-		var maxLen int
+		var maxLen int64
 		if maxLenStr != nil {
-			maxLen, err = strconv.Atoi(*maxLenStr)
+			maxLen, err = strconv.ParseInt(*maxLenStr, 10, 64)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1186,7 +1186,7 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s A
 			startIdx := strings.Index(strings.ToLower(dataType), "string(")
 			if startIdx != -1 && strings.HasSuffix(dataType, ")") {
 				length := dataType[startIdx+8 : len(dataType)-1]
-				l, _ := strconv.Atoi(length)
+				l, _ := strconv.ParseInt(length, 10, 64)
 				col.SQLType = schemas.SQLType{Name: "STRING", DefaultLength: l, DefaultLength2: 0}
 			} else {
 				col.SQLType = schemas.SQLType{Name: strings.ToUpper(dataType), DefaultLength: 0, DefaultLength2: 0}
