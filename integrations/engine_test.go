@@ -290,13 +290,11 @@ func TestGetColumnsComment(t *testing.T) {
 }
 
 func TestGetColumnsLength(t *testing.T) {
-	var max_length int
+	var max_length int64
 	switch testEngine.Dialect().URI().DBType {
-	case
-		schemas.POSTGRES:
+	case schemas.POSTGRES:
 		max_length = 0
-	case
-		schemas.MYSQL:
+	case schemas.MYSQL:
 		max_length = 65535
 	default:
 		t.Skip()
