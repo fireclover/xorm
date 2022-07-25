@@ -40,6 +40,13 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		}
 		dt = dt.In(convertedLocation)
 		return &dt, nil
+	}  else if len(s) >= 21 && s[10] == 'T' {
+		dt, err := time.ParseInLocation("2006-01-02T15:04:05", s[:19], originalLocation)
+		if err != nil {
+			return nil, err
+		}
+		dt = dt.In(convertedLocation)
+		return &dt, nil
 	} else if len(s) >= 21 && s[19] == '.' {
 		var layout = "2006-01-02 15:04:05." + strings.Repeat("0", len(s)-20)
 		dt, err := time.ParseInLocation(layout, s, originalLocation)
