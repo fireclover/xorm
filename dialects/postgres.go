@@ -1030,11 +1030,10 @@ func (db *postgres) DropIndexSQL(tableName string, index *schemas.Index) string 
 	tableParts := strings.Split(strings.Replace(tableName, `"`, "", -1), ".")
 	tableName = tableParts[len(tableParts)-1]
 
-	if !strings.HasPrefix(idxName, "UQE_") &&
-		!strings.HasPrefix(idxName, "IDX_") {
-		if index.Type == schemas.UniqueType {
+	if index.IsRegular {
+		if index.Type == schemas.UniqueType && !strings.HasPrefix(idxName, "UQE_") {
 			idxName = fmt.Sprintf("UQE_%v_%v", tableName, index.Name)
-		} else {
+		} else if index.Type == schemas.IndexType && !strings.HasPrefix(idxName, "IDX_") {
 			idxName = fmt.Sprintf("IDX_%v_%v", tableName, index.Name)
 		}
 	}
