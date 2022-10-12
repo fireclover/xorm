@@ -771,7 +771,9 @@ var (
 	postgresQuoter = schemas.Quoter{
 		Prefix:     '"',
 		Suffix:     '"',
-		IsReserved: schemas.AlwaysReserve,
+		IsReserved:  func(s string) bool {
+			return postgresReservedWords[strings.ToUpper(s)]
+		},
 	}
 )
 
