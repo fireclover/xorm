@@ -794,3 +794,9 @@ func (session *Session) PingContext(ctx context.Context) error {
 	session.engine.logger.Infof("PING DATABASE %v", session.engine.DriverName())
 	return session.DB().PingContext(ctx)
 }
+
+// disable version check
+func (session *Session) NoVersionCheck() *Session {
+	session.statement.CheckVersion = false
+	return session
+}
