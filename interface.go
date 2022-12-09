@@ -52,7 +52,7 @@ type Interface interface {
 	NoAutoCondition(...bool) *Session
 	NotIn(string, ...interface{}) *Session
 	Nullable(...string) *Session
-	Join(joinOperator string, tablename interface{}, condition string, args ...interface{}) *Session
+	Join(joinOperator string, tablename interface{}, condition interface{}, args ...interface{}) *Session
 	Omit(columns ...string) *Session
 	OrderBy(order interface{}, args ...interface{}) *Session
 	Ping() error

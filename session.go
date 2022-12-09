@@ -330,7 +330,7 @@ func (session *Session) NoCache() *Session {
 }
 
 // Join join_operator should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
-func (session *Session) Join(joinOperator string, tablename interface{}, condition string, args ...interface{}) *Session {
+func (session *Session) Join(joinOperator string, tablename interface{}, condition interface{}, args ...interface{}) *Session {
 	session.statement.Join(joinOperator, tablename, condition, args...)
 	return session
 }

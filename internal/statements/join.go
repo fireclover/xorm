@@ -15,12 +15,29 @@ import (
 )
 
 // Join The joinOP should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
-func (statement *Statement) Join(joinOP string, tablename interface{}, condition string, args ...interface{}) *Statement {
+func (statement *Statement) Join(joinOP string, tablename interface{}, condition interface{}, args ...interface{}) *Statement {
 	var buf strings.Builder
 	if len(statement.JoinStr) > 0 {
 		fmt.Fprintf(&buf, "%v %v JOIN ", statement.JoinStr, joinOP)
 	} else {
 		fmt.Fprintf(&buf, "%v JOIN ", joinOP)
+	}
+
+	condStr := ""
+	condArgs := []interface{}{}
+	switch condTp := condition.(type) {
+	case string:
+		condStr = condTp
+	case builder.Cond:
+		var err error
+		condStr, condArgs, err = builder.ToSQL(condTp)
+		if err != nil {
+			statement.LastError = err
+			return statement
+		}
+	default:
+		statement.LastError = fmt.Errorf("unsupported join condition type: %v", condTp)
+		return statement
 	}
 
 	switch tp := tablename.(type) {
@@ -35,8 +52,8 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
 		aliasName = schemas.CommonQuoter.Trim(aliasName)
 
-		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), statement.quote(aliasName), statement.ReplaceQuote(condition))
-		statement.joinArgs = append(statement.joinArgs, subQueryArgs...)
+		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), statement.quote(aliasName), statement.ReplaceQuote(condStr))
+		statement.joinArgs = append(append(statement.joinArgs, subQueryArgs...), condArgs...)
 	case *builder.Builder:
 		subSQL, subQueryArgs, err := tp.ToSQL()
 		if err != nil {
@@ -48,8 +65,8 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
 		aliasName = schemas.CommonQuoter.Trim(aliasName)
 
-		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), statement.quote(aliasName), statement.ReplaceQuote(condition))
-		statement.joinArgs = append(statement.joinArgs, subQueryArgs...)
+		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), statement.quote(aliasName), statement.ReplaceQuote(condStr))
+		statement.joinArgs = append(append(statement.joinArgs, subQueryArgs...), condArgs...)
 	default:
 		tbName := dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), tablename, true)
 		if !utils.IsSubQuery(tbName) {
@@ -59,7 +76,8 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		} else {
 			tbName = statement.ReplaceQuote(tbName)
 		}
-		fmt.Fprintf(&buf, "%s ON %v", tbName, statement.ReplaceQuote(condition))
+		fmt.Fprintf(&buf, "%s ON %v", tbName, statement.ReplaceQuote(condStr))
+		statement.joinArgs = append(statement.joinArgs, condArgs...)
 	}
 
 	statement.JoinStr = buf.String()

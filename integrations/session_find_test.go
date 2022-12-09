@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"xorm.io/builder"
 	"xorm.io/xorm"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/names"
@@ -964,6 +965,10 @@ func TestFindJoin(t *testing.T) {
 
 	scenes = make([]SceneItem, 0)
 	err = testEngine.Join("INNER", "order", "`scene_item`.`device_id`=`order`.`id`").Find(&scenes)
+	assert.NoError(t, err)
+
+	scenes = make([]SceneItem, 0)
+	err = testEngine.Join("INNER", "order", builder.Expr("`scene_item`.`device_id`=`order`.`id`")).Find(&scenes)
 	assert.NoError(t, err)
 }
 
