@@ -82,7 +82,6 @@ func (eg *EngineGroup) Close() error {
 // Context returned a group session
 func (eg *EngineGroup) Context(ctx context.Context) *Session {
 	sess := eg.NewSession()
-	sess.isAutoClose = true
 	return sess.Context(ctx)
 }
 

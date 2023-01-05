@@ -1395,7 +1395,6 @@ func (engine *Engine) tbNameWithSchema(v string) string {
 // Context creates a session with the context
 func (engine *Engine) Context(ctx context.Context) *Session {
 	session := engine.NewSession()
-	session.isAutoClose = true
 	return session.Context(ctx)
 }
 
