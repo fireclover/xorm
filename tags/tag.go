@@ -285,7 +285,7 @@ func CommentTagHandler(ctx *Context) error {
 // SQLTypeTagHandler describes SQL Type tag handler
 func SQLTypeTagHandler(ctx *Context) error {
 	ctx.col.SQLType = schemas.SQLType{Name: ctx.tagUname}
-	if ctx.tagUname == "JSON" {
+	if ctx.tagUname == "JSON" || ctx.tagUname == "JSONB" {
 		ctx.col.IsJSON = true
 	}
 	if len(ctx.params) == 0 {
