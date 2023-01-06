@@ -1,3 +1,4 @@
+//go:build !go1.15
 // +build !go1.15
 
 package xorm
@@ -26,6 +27,7 @@ type EngineInterface interface {
 	Context(context.Context) *Session
 	CreateTables(...interface{}) error
 	DBMetas() ([]*schemas.Table, error)
+	DBVersion() (*schemas.Version, error)
 	Dialect() dialects.Dialect
 	DriverName() string
 	DropTables(...interface{}) error
@@ -40,10 +42,12 @@ type EngineInterface interface {
 	MapCacher(interface{}, caches.Cacher) error
 	NewSession() *Session
 	NoAutoTime() *Session
+	Prepare() *Session
 	Quote(string) string
 	SetCacher(string, caches.Cacher)
 	SetConnMaxLifetime(time.Duration)
 	SetColumnMapper(names.Mapper)
+	SetTagIdentifier(string)
 	SetDefaultCacher(caches.Cacher)
 	SetLogger(logger interface{})
 	SetLogLevel(log.LogLevel)
