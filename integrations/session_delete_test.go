@@ -270,23 +270,23 @@ func TestDelete2(t *testing.T) {
 func TestTruncate(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	type User struct {
+	type TruncateUser struct {
 		Uid int64 `xorm:"id pk not null autoincr"`
 	}
 
-	assert.NoError(t, testEngine.Sync(new(User)))
+	assert.NoError(t, testEngine.Sync(new(TruncateUser)))
 
-	cnt, err := testEngine.Insert(&User{})
+	cnt, err := testEngine.Insert(&TruncateUser{})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	_, err = testEngine.Delete(&User{})
+	_, err = testEngine.Delete(&TruncateUser{})
 	assert.Error(t, err)
 
-	_, err = testEngine.Truncate(&User{})
+	_, err = testEngine.Truncate(&TruncateUser{})
 	assert.NoError(t, err)
 
-	user2 := User{}
+	user2 := TruncateUser{}
 	has, err := testEngine.ID(1).Get(&user2)
 	assert.NoError(t, err)
 	assert.False(t, has)
