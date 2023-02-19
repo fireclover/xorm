@@ -1241,6 +1241,7 @@ func (engine *Engine) Delete(beans ...interface{}) (int64, error) {
 }
 
 // Truncate records, bean's non-empty fields are conditions
+// In contrast to Delete this method allows deletes without conditions.
 func (engine *Engine) Truncate(beans ...interface{}) (int64, error) {
 	session := engine.NewSession()
 	defer session.Close()

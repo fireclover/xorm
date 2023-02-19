@@ -97,6 +97,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 }
 
 // Truncate records, bean's non-empty fields are conditions
+// In contrast to Delete this method allows deletes without conditions.
 func (session *Session) Truncate(beans ...interface{}) (int64, error) {
 	return session.delete(beans, false)
 }
