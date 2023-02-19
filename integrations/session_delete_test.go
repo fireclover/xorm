@@ -208,7 +208,7 @@ func TestUnscopeDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var nowUnix = time.Now().Unix()
+	nowUnix := time.Now().Unix()
 	var s UnscopeDeleteStruct
 	cnt, err = testEngine.ID(1).Delete(&s)
 	assert.NoError(t, err)
@@ -271,7 +271,7 @@ func TestTruncate(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
 	type User struct {
-		Uid   int64 `xorm:"id pk not null autoincr"`
+		Uid int64 `xorm:"id pk not null autoincr"`
 	}
 
 	assert.NoError(t, testEngine.Sync(new(User)))
