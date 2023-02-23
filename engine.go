@@ -815,6 +815,9 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 				return err
 			}
 		}
+		// !datbeohbbh! if no error, manually close
+		rows.Close()
+		sess.Close()
 	}
 	return nil
 }
@@ -1230,10 +1233,19 @@ func (engine *Engine) Update(bean interface{}, condiBeans ...interface{}) (int64
 }
 
 // Delete records, bean's non-empty fields are conditions
+// At least one condition must be set.
 func (engine *Engine) Delete(beans ...interface{}) (int64, error) {
 	session := engine.NewSession()
 	defer session.Close()
 	return session.Delete(beans...)
+}
+
+// Truncate records, bean's non-empty fields are conditions
+// In contrast to Delete this method allows deletes without conditions.
+func (engine *Engine) Truncate(beans ...interface{}) (int64, error) {
+	session := engine.NewSession()
+	defer session.Close()
+	return session.Truncate(beans...)
 }
 
 // Get retrieve one record from table, bean's non-empty fields

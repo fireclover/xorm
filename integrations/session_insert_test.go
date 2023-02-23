@@ -744,7 +744,8 @@ func TestInsertMap(t *testing.T) {
 	assert.EqualValues(t, "lunny", ims[3].Name)
 }
 
-/*INSERT INTO `issue` (`repo_id`, `poster_id`, ... ,`name`, `content`, ... ,`index`)
+/*
+INSERT INTO `issue` (`repo_id`, `poster_id`, ... ,`name`, `content`, ... ,`index`)
 SELECT $1, $2, ..., $14, $15, ..., MAX(`index`) + 1 FROM `issue` WHERE `repo_id` = $1;
 */
 func TestInsertWhere(t *testing.T) {
