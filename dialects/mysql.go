@@ -738,6 +738,7 @@ func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 }
 
 func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
+	colType = strings.Replace(colType, "UNSIGNED ", "", -1)
 	switch colType {
 	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
 		var s sql.NullString
