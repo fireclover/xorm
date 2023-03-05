@@ -1416,6 +1416,11 @@ func (engine *Engine) SetDefaultContext(ctx context.Context) {
 	engine.defaultContext = ctx
 }
 
+// GetDefaultContext get the default context
+func (engine *Engine) GetDefaultContext() context.Context {
+	return engine.defaultContext
+}
+
 // PingContext tests if database is alive
 func (engine *Engine) PingContext(ctx context.Context) error {
 	session := engine.NewSession()
@@ -1439,6 +1444,28 @@ func (engine *Engine) Transaction(f func(*Session) (interface{}, error)) (interf
 
 	if err := session.Commit(); err != nil {
 		return result, err
+	}
+
+	return result, nil
+}
+
+// !datbeohbbh! Transaction Execute sql wrapped in a transaction with provided context
+func (engine *Engine) TransactionContext(ctx context.Context, f func(context.Context, *Session) (interface{}, error)) (interface{}, error) {
+	session := engine.NewSession().Context(ctx)
+	defer session.Close()
+
+	if err := session.Begin(); err != nil {
+		return nil, err
+	}
+	defer session.Rollback()
+
+	result, err := f(ctx, session)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := session.Commit(); err != nil {
+		return nil, err
 	}
 
 	return result, nil

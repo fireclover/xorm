@@ -84,6 +84,48 @@ func TestAutoTransaction(t *testing.T) {
 	assert.EqualValues(t, false, has)
 }
 
+func TestTransactionContext(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type TestTxContext struct {
+		Id      int64     `xorm:"autoincr pk"`
+		Msg     string    `xorm:"varchar(255)"`
+		Created time.Time `xorm:"created"`
+	}
+
+	assert.NoError(t, testEngine.Sync(&TestTxContext{}))
+
+	engine := testEngine.(*xorm.Engine)
+	ctx, cancel := context.WithTimeout(engine.GetDefaultContext(), 5*time.Second)
+	defer cancel()
+
+	// will success
+	_, err := engine.TransactionContext(ctx, func(ctx context.Context, session *xorm.Session) (interface{}, error) {
+		_, err := session.Insert(TestTxContext{Msg: "hi"})
+		assert.NoError(t, err)
+
+		return nil, nil
+	})
+	assert.NoError(t, err)
+
+	has, err := engine.Exist(&TestTxContext{Msg: "hi"})
+	assert.NoError(t, err)
+	assert.True(t, has)
+
+	// will rollback
+	_, err = engine.TransactionContext(ctx, func(ctx context.Context, session *xorm.Session) (interface{}, error) {
+		_, err := session.Insert(TestTxContext{Msg: "hello"})
+		assert.NoError(t, err)
+
+		return nil, fmt.Errorf("rollback")
+	})
+	assert.Error(t, err)
+
+	has, err = engine.Exist(&TestTxContext{Msg: "hello"})
+	assert.NoError(t, err)
+	assert.False(t, has)
+}
+
 func assertSync(t *testing.T, beans ...interface{}) {
 	for _, bean := range beans {
 		t.Run(testEngine.TableName(bean, true), func(t *testing.T) {
