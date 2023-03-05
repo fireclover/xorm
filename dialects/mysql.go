@@ -749,10 +749,10 @@ func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
 	case "TINYINT", "SMALLINT", "MEDIUMINT", "INT":
 		var s sql.NullInt32
 		return &s, nil
-	case "FLOAT", "REAL", "DOUBLE PRECISION", "DOUBLE":
+	case "FLOAT", "REAL", "DOUBLE PRECISION", "DOUBLE", "DECIMAL":
 		var s sql.NullFloat64
 		return &s, nil
-	case "DECIMAL", "NUMERIC":
+	case "NUMERIC":
 		var s sql.NullString
 		return &s, nil
 	case "DATETIME", "TIMESTAMP":
