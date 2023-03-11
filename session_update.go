@@ -145,9 +145,10 @@ func (session *Session) cacheUpdate(table *schemas.Table, tableName, sqlStr stri
 // Update records, bean's non-empty fields are updated contents,
 // condiBean' non-empty filds are conditions
 // CAUTION:
-//        1.bool will defaultly be updated content nor conditions
-//         You should call UseBool if you have bool to use.
-//        2.float32 & float64 may be not inexact as conditions
+//
+//	1.bool will defaultly be updated content nor conditions
+//	 You should call UseBool if you have bool to use.
+//	2.float32 & float64 may be not inexact as conditions
 func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int64, error) {
 	if session.isAutoClose {
 		defer session.Close()
@@ -189,7 +190,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 
 		if session.statement.ColumnStr() == "" {
 			colNames, args, err = session.statement.BuildUpdates(v, false, false,
-				false, false, true)
+				false, false, false, true)
 		} else {
 			colNames, args, err = session.genUpdateColumns(bean)
 		}
@@ -480,7 +481,7 @@ func (session *Session) genUpdateColumns(bean interface{}) ([]string, []interfac
 	args := make([]interface{}, 0, len(table.ColumnsSeq()))
 
 	for _, col := range table.Columns() {
-		if !col.IsVersion && !col.IsCreated && !col.IsUpdated {
+		if !col.IsVersion && !col.IsCreated && !col.IsUpdated && !col.IsPrimaryKey {
 			if session.statement.OmitColumnMap.Contain(col.Name) {
 				continue
 			}
