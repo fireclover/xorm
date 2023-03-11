@@ -91,7 +91,18 @@ func (session *Session) cacheDelete(table *schemas.Table, tableName, sqlStr stri
 }
 
 // Delete records, bean's non-empty fields are conditions
+// At least one condition must be set.
 func (session *Session) Delete(beans ...interface{}) (int64, error) {
+	return session.delete(beans, true)
+}
+
+// Truncate records, bean's non-empty fields are conditions
+// In contrast to Delete this method allows deletes without conditions.
+func (session *Session) Truncate(beans ...interface{}) (int64, error) {
+	return session.delete(beans, false)
+}
+
+func (session *Session) delete(beans []interface{}, mustHaveConditions bool) (int64, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -127,7 +138,7 @@ func (session *Session) Delete(beans ...interface{}) (int64, error) {
 	}
 
 	pLimitN := session.statement.LimitN
-	if condWriter.Len() == 0 && (pLimitN == nil || *pLimitN == 0) {
+	if mustHaveConditions && condWriter.Len() == 0 && (pLimitN == nil || *pLimitN == 0) {
 		return 0, ErrNeedDeletedCond
 	}
 

@@ -31,6 +31,7 @@ type Interface interface {
 	Decr(column string, arg ...interface{}) *Session
 	Desc(...string) *Session
 	Delete(...interface{}) (int64, error)
+	Truncate(...interface{}) (int64, error)
 	Distinct(columns ...string) *Session
 	DropIndexes(bean interface{}) error
 	Exec(sqlOrArgs ...interface{}) (sql.Result, error)
