@@ -16,6 +16,231 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestInsertOnConflictDoNothing(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	t.Run("NoUnique", func(t *testing.T) {
+		// InsertOnConflictDoNothing does not work if there is no unique constraint
+		type NoUniques struct {
+			ID   int64 `xorm:"pk autoincr"`
+			Data string
+		}
+		assert.NoError(t, testEngine.Sync(new(NoUniques)))
+
+		toInsert := &NoUniques{Data: "shouldErr"}
+		n, err := testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.Error(t, err)
+		assert.Equal(t, int64(0), n)
+		assert.Equal(t, int64(0), toInsert.ID)
+
+		toInsert = &NoUniques{Data: ""}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.Error(t, err)
+		assert.Equal(t, int64(0), n)
+		assert.Equal(t, int64(0), toInsert.ID)
+	})
+
+	t.Run("OneUnique", func(t *testing.T) {
+		type OneUnique struct {
+			ID   int64  `xorm:"pk autoincr"`
+			Data string `xorm:"UNIQUE NOT NULL"`
+		}
+
+		assert.NoError(t, testEngine.Sync2(&OneUnique{}))
+		_, _ = testEngine.Exec("DELETE FROM one_unique")
+
+		// Insert with the default value for the unique field
+		toInsert := &OneUnique{}
+		n, err := testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+		assert.NotEqual(t, int64(0), toInsert.ID)
+
+		// but not twice
+		toInsert = &OneUnique{}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+		assert.Equal(t, int64(0), toInsert.ID)
+
+		// Successfully insert test
+		toInsert = &OneUnique{Data: "test"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+		assert.NotEqual(t, int64(0), toInsert.ID)
+
+		// Successfully insert test2
+		toInsert = &OneUnique{Data: "test2"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+		assert.NotEqual(t, int64(0), toInsert.ID)
+
+		// Successfully don't reinsert test
+		toInsert = &OneUnique{Data: "test"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+		assert.Equal(t, int64(0), toInsert.ID)
+	})
+
+	t.Run("MultiUnique", func(t *testing.T) {
+		type MultiUnique struct {
+			ID        int64 `xorm:"pk autoincr"`
+			NotUnique string
+			Data1     string `xorm:"UNIQUE(s) NOT NULL"`
+			Data2     string `xorm:"UNIQUE(s) NOT NULL"`
+		}
+
+		assert.NoError(t, testEngine.Sync2(&MultiUnique{}))
+		_, _ = testEngine.Exec("DELETE FROM multi_unique")
+
+		// Insert with default values
+		toInsert := &MultiUnique{}
+		n, err := testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+		assert.NotEqual(t, int64(0), toInsert.ID)
+
+		// successfully insert test, t1
+		toInsert = &MultiUnique{Data1: "test", NotUnique: "t1"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+		assert.NotEqual(t, int64(0), toInsert.ID)
+
+		// successfully insert test2, t1
+		toInsert = &MultiUnique{Data1: "test2", NotUnique: "t1"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+		assert.NotEqual(t, int64(0), toInsert.ID)
+
+		// successfully don't insert test2, t2
+		toInsert = &MultiUnique{Data1: "test2", NotUnique: "t2"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+		assert.Equal(t, int64(0), toInsert.ID)
+
+		// successfully don't insert test, t2
+		toInsert = &MultiUnique{Data1: "test", NotUnique: "t2"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+		assert.Equal(t, int64(0), toInsert.ID)
+
+		// successfully insert test/test2, t2
+		toInsert = &MultiUnique{Data1: "test", Data2: "test2", NotUnique: "t1"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+		assert.NotEqual(t, int64(0), toInsert.ID)
+
+		// successfully don't insert test/test2, t2
+		toInsert = &MultiUnique{Data1: "test", Data2: "test2", NotUnique: "t2"}
+		n, err = testEngine.InsertOnConflictDoNothing(toInsert)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+		assert.Equal(t, int64(0), toInsert.ID)
+	})
+
+	t.Run("MultiMultiUnique", func(t *testing.T) {
+		type MultiMultiUnique struct {
+			ID    int64  `xorm:"pk autoincr"`
+			Data0 string `xorm:"UNIQUE NOT NULL"`
+			Data1 string `xorm:"UNIQUE(s) NOT NULL"`
+			Data2 string `xorm:"UNIQUE(s) NOT NULL"`
+		}
+
+		assert.NoError(t, testEngine.Sync2(&MultiMultiUnique{}))
+		_, _ = testEngine.Exec("DELETE FROM multi_multi_unique")
+
+		// Insert with default values
+		n, err := testEngine.InsertOnConflictDoNothing(&MultiMultiUnique{})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Insert with value for t1, <test, "">
+		n, err = testEngine.InsertOnConflictDoNothing(&MultiMultiUnique{Data1: "test", Data0: "t1"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Fail insert with value for t1, <test2, "">
+		n, err = testEngine.InsertOnConflictDoNothing(&MultiMultiUnique{Data2: "test2", Data0: "t1"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+
+		// Insert with value for t2, <test2, "">
+		n, err = testEngine.InsertOnConflictDoNothing(&MultiMultiUnique{Data2: "test2", Data0: "t2"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Fail insert with value for t2, <test2, "">
+		n, err = testEngine.InsertOnConflictDoNothing(&MultiMultiUnique{Data2: "test2", Data0: "t2"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+
+		// Fail insert with value for t2, <test, "">
+		n, err = testEngine.InsertOnConflictDoNothing(&MultiMultiUnique{Data1: "test", Data0: "t2"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+
+		// Insert with value for t3, <test, test2>
+		n, err = testEngine.InsertOnConflictDoNothing(&MultiMultiUnique{Data1: "test", Data2: "test2", Data0: "t3"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// fail insert with value for t2, <test, test2>
+		n, err = testEngine.InsertOnConflictDoNothing(&MultiMultiUnique{Data1: "test", Data2: "test2", Data0: "t2"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+	})
+
+	t.Run("NoPK", func(t *testing.T) {
+		type NoPrimaryKey struct {
+			NotID   int64
+			Uniqued string `xorm:"UNIQUE"`
+		}
+
+		assert.NoError(t, testEngine.Sync2(&NoPrimaryKey{}))
+		_, _ = testEngine.Exec("DELETE FROM no_primary_unique")
+
+		empty := &NoPrimaryKey{}
+
+		// Insert default
+		n, err := testEngine.InsertOnConflictDoNothing(empty)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Insert with 1
+		n, err = testEngine.InsertOnConflictDoNothing(&NoPrimaryKey{Uniqued: "1"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Fail reinsert default
+		n, err = testEngine.InsertOnConflictDoNothing(&NoPrimaryKey{NotID: 1})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+
+		// Fail reinsert default
+		n, err = testEngine.InsertOnConflictDoNothing(&NoPrimaryKey{NotID: 2})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+
+		// Insert with 2
+		n, err = testEngine.InsertOnConflictDoNothing(&NoPrimaryKey{NotID: 2, Uniqued: "2"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Fail reinsert with 2
+		n, err = testEngine.InsertOnConflictDoNothing(&NoPrimaryKey{NotID: 1, Uniqued: "2"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), n)
+	})
+}
+
 func TestInsertOne(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
@@ -142,8 +367,13 @@ func TestInsert(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(Userinfo))
 
-	user := Userinfo{0, "xiaolunwen", "dev", "lunny", time.Now(),
-		Userdetail{Id: 1}, 1.78, []byte{1, 2, 3}, true}
+	user := Userinfo{
+		0, "xiaolunwen", "dev", "lunny", time.Now(),
+		Userdetail{Id: 1},
+		1.78,
+		[]byte{1, 2, 3},
+		true,
+	}
 	cnt, err := testEngine.Insert(&user)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt, "insert not returned 1")
@@ -161,8 +391,10 @@ func TestInsertAutoIncr(t *testing.T) {
 	assertSync(t, new(Userinfo))
 
 	// auto increment insert
-	user := Userinfo{Username: "xiaolunwen2", Departname: "dev", Alias: "lunny", Created: time.Now(),
-		Detail: Userdetail{Id: 1}, Height: 1.78, Avatar: []byte{1, 2, 3}, IsMan: true}
+	user := Userinfo{
+		Username: "xiaolunwen2", Departname: "dev", Alias: "lunny", Created: time.Now(),
+		Detail: Userdetail{Id: 1}, Height: 1.78, Avatar: []byte{1, 2, 3}, IsMan: true,
+	}
 	cnt, err := testEngine.Insert(&user)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
@@ -184,7 +416,7 @@ func TestInsertDefault(t *testing.T) {
 	err := testEngine.Sync(di)
 	assert.NoError(t, err)
 
-	var di2 = DefaultInsert{Name: "test"}
+	di2 := DefaultInsert{Name: "test"}
 	_, err = testEngine.Omit(testEngine.GetColumnMapper().Obj2Table("Status")).Insert(&di2)
 	assert.NoError(t, err)
 
@@ -210,7 +442,7 @@ func TestInsertDefault2(t *testing.T) {
 	err := testEngine.Sync(di)
 	assert.NoError(t, err)
 
-	var di2 = DefaultInsert2{Name: "test"}
+	di2 := DefaultInsert2{Name: "test"}
 	_, err = testEngine.Omit(testEngine.GetColumnMapper().Obj2Table("CheckTime")).Insert(&di2)
 	assert.NoError(t, err)
 
@@ -438,7 +670,7 @@ func TestCreatedJsonTime(t *testing.T) {
 	assert.True(t, has)
 	assert.EqualValues(t, time.Time(ci5.Created).Unix(), time.Time(di5.Created).Unix())
 
-	var dis = make([]MyJSONTime, 0)
+	dis := make([]MyJSONTime, 0)
 	err = testEngine.Find(&dis)
 	assert.NoError(t, err)
 }
@@ -762,7 +994,7 @@ func TestInsertWhere(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(InsertWhere))
 
-	var i = InsertWhere{
+	i := InsertWhere{
 		RepoId: 1,
 		Width:  10,
 		Height: 20,
@@ -872,7 +1104,7 @@ func TestInsertExpr2(t *testing.T) {
 
 	assertSync(t, new(InsertExprsRelease))
 
-	var ie = InsertExprsRelease{
+	ie := InsertExprsRelease{
 		RepoId: 1,
 		IsTag:  true,
 	}
@@ -1047,7 +1279,7 @@ func TestInsertIntSlice(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(InsertIntSlice)))
 
-	var v = InsertIntSlice{
+	v := InsertIntSlice{
 		NameIDs: []int{1, 2},
 	}
 	cnt, err := testEngine.Insert(&v)
@@ -1064,7 +1296,7 @@ func TestInsertIntSlice(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var v3 = InsertIntSlice{
+	v3 := InsertIntSlice{
 		NameIDs: nil,
 	}
 	cnt, err = testEngine.Insert(&v3)

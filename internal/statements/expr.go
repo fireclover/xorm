@@ -59,9 +59,17 @@ func (expr *Expr) WriteArgs(w *builder.BytesWriter) error {
 type exprParams []Expr
 
 func (exprs exprParams) ColNames() []string {
-	var cols = make([]string, 0, len(exprs))
+	cols := make([]string, 0, len(exprs))
 	for _, expr := range exprs {
 		cols = append(cols, expr.ColName)
+	}
+	return cols
+}
+
+func (exprs exprParams) ColNamesTrim() []string {
+	cols := make([]string, 0, len(exprs))
+	for _, expr := range exprs {
+		cols = append(cols, schemas.CommonQuoter.Trim(expr.ColName))
 	}
 	return cols
 }

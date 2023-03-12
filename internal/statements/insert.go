@@ -30,7 +30,6 @@ func (statement *Statement) writeInsertOutput(buf *strings.Builder, table *schem
 func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) (string, []interface{}, error) {
 	var (
 		buf       = builder.NewWriter()
-		exprs     = statement.ExprColumns
 		table     = statement.RefTable
 		tableName = statement.TableName()
 	)
@@ -43,129 +42,8 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 		return "", nil, err
 	}
 
-	var hasInsertColumns = len(colNames) > 0
-	var needSeq = len(table.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.ORACLE || statement.dialect.URI().DBType == schemas.DAMENG)
-	if needSeq {
-		for _, col := range colNames {
-			if strings.EqualFold(col, table.AutoIncrement) {
-				needSeq = false
-				break
-			}
-		}
-	}
-
-	if !hasInsertColumns && statement.dialect.URI().DBType != schemas.ORACLE &&
-		statement.dialect.URI().DBType != schemas.DAMENG {
-		if statement.dialect.URI().DBType == schemas.MYSQL {
-			if _, err := buf.WriteString(" VALUES ()"); err != nil {
-				return "", nil, err
-			}
-		} else {
-			if err := statement.writeInsertOutput(buf.Builder, table); err != nil {
-				return "", nil, err
-			}
-			if _, err := buf.WriteString(" DEFAULT VALUES"); err != nil {
-				return "", nil, err
-			}
-		}
-	} else {
-		if _, err := buf.WriteString(" ("); err != nil {
-			return "", nil, err
-		}
-
-		if needSeq {
-			colNames = append(colNames, table.AutoIncrement)
-		}
-
-		if err := statement.dialect.Quoter().JoinWrite(buf.Builder, append(colNames, exprs.ColNames()...), ","); err != nil {
-			return "", nil, err
-		}
-
-		if _, err := buf.WriteString(")"); err != nil {
-			return "", nil, err
-		}
-		if err := statement.writeInsertOutput(buf.Builder, table); err != nil {
-			return "", nil, err
-		}
-
-		if statement.Conds().IsValid() {
-			if _, err := buf.WriteString(" SELECT "); err != nil {
-				return "", nil, err
-			}
-
-			if err := statement.WriteArgs(buf, args); err != nil {
-				return "", nil, err
-			}
-
-			if needSeq {
-				if len(args) > 0 {
-					if _, err := buf.WriteString(","); err != nil {
-						return "", nil, err
-					}
-				}
-				if _, err := buf.WriteString(utils.SeqName(tableName) + ".nextval"); err != nil {
-					return "", nil, err
-				}
-			}
-			if len(exprs) > 0 {
-				if _, err := buf.WriteString(","); err != nil {
-					return "", nil, err
-				}
-				if err := exprs.WriteArgs(buf); err != nil {
-					return "", nil, err
-				}
-			}
-
-			if _, err := buf.WriteString(" FROM "); err != nil {
-				return "", nil, err
-			}
-
-			if err := statement.dialect.Quoter().QuoteTo(buf.Builder, tableName); err != nil {
-				return "", nil, err
-			}
-
-			if _, err := buf.WriteString(" WHERE "); err != nil {
-				return "", nil, err
-			}
-
-			if err := statement.Conds().WriteTo(buf); err != nil {
-				return "", nil, err
-			}
-		} else {
-			if _, err := buf.WriteString(" VALUES ("); err != nil {
-				return "", nil, err
-			}
-
-			if err := statement.WriteArgs(buf, args); err != nil {
-				return "", nil, err
-			}
-
-			// Insert tablename (id) Values(seq_tablename.nextval)
-			if needSeq {
-				if hasInsertColumns {
-					if _, err := buf.WriteString(","); err != nil {
-						return "", nil, err
-					}
-				}
-				if _, err := buf.WriteString(utils.SeqName(tableName) + ".nextval"); err != nil {
-					return "", nil, err
-				}
-			}
-
-			if len(exprs) > 0 {
-				if _, err := buf.WriteString(","); err != nil {
-					return "", nil, err
-				}
-			}
-
-			if err := exprs.WriteArgs(buf); err != nil {
-				return "", nil, err
-			}
-
-			if _, err := buf.WriteString(")"); err != nil {
-				return "", nil, err
-			}
-		}
+	if err := statement.genInsertValues(buf, colNames, args); err != nil {
+		return "", nil, err
 	}
 
 	if len(table.AutoIncrement) > 0 && statement.dialect.URI().DBType == schemas.POSTGRES {
@@ -178,6 +56,169 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 	}
 
 	return buf.String(), buf.Args(), nil
+}
+
+func (statement *Statement) includeAutoIncrement(colNames []string) bool {
+	includesAutoIncrement := len(statement.RefTable.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.ORACLE || statement.dialect.URI().DBType == schemas.DAMENG)
+	if includesAutoIncrement {
+		for _, col := range colNames {
+			if strings.EqualFold(col, statement.RefTable.AutoIncrement) {
+				includesAutoIncrement = false
+				break
+			}
+		}
+	}
+	return includesAutoIncrement
+}
+
+func (statement *Statement) genInsertValues(buf *builder.BytesWriter, colNames []string, args []interface{}) error {
+	var (
+		exprs = statement.ExprColumns
+		table = statement.RefTable
+	)
+
+	hasInsertColumns := len(colNames) > 0
+	includeAutoIncrement := statement.includeAutoIncrement(colNames)
+
+	// Empty insert - i.e. insert default values only
+	if !hasInsertColumns && statement.dialect.URI().DBType != schemas.ORACLE &&
+		statement.dialect.URI().DBType != schemas.DAMENG {
+
+		if statement.dialect.URI().DBType == schemas.MYSQL {
+			// MySQL doesn't have DEFAULT VALUES and uses VALUES () for this.
+			if _, err := buf.WriteString(" VALUES ()"); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		// (MSSQL: return the inserted values)
+		if err := statement.writeInsertOutput(buf.Builder, table); err != nil {
+			return err
+		}
+
+		// All others use DEFAULT VALUES
+		if _, err := buf.WriteString(" DEFAULT VALUES"); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// We have some values - Write the column names we need to insert:
+	if _, err := buf.WriteString(" ("); err != nil {
+		return err
+	}
+
+	if includeAutoIncrement {
+		colNames = append(colNames, table.AutoIncrement)
+	}
+
+	if err := statement.dialect.Quoter().JoinWrite(buf.Builder, append(colNames, exprs.ColNames()...), ","); err != nil {
+		return err
+	}
+
+	if _, err := buf.WriteString(")"); err != nil {
+		return err
+	}
+
+	// (MSSQL: return the inserted values)
+	if err := statement.writeInsertOutput(buf.Builder, table); err != nil {
+		return err
+	}
+
+	return statement.genInsertValuesValues(buf, includeAutoIncrement, colNames, args)
+}
+
+func (statement *Statement) genInsertValuesValues(buf *builder.BytesWriter, includeAutoIncrement bool, colNames []string, args []interface{}) error {
+	var (
+		exprs     = statement.ExprColumns
+		tableName = statement.TableName()
+	)
+	hasInsertColumns := len(colNames) > 0
+
+	if statement.Conds().IsValid() {
+		// We have conditions which we're trying to insert
+		if _, err := buf.WriteString(" SELECT "); err != nil {
+			return err
+		}
+
+		if err := statement.WriteArgs(buf, args); err != nil {
+			return err
+		}
+
+		if includeAutoIncrement {
+			if len(args) > 0 {
+				if _, err := buf.WriteString(","); err != nil {
+					return err
+				}
+			}
+			if _, err := buf.WriteString(utils.SeqName(tableName) + ".nextval"); err != nil {
+				return err
+			}
+		}
+
+		if len(exprs) > 0 {
+			if _, err := buf.WriteString(","); err != nil {
+				return err
+			}
+			if err := exprs.WriteArgs(buf); err != nil {
+				return err
+			}
+		}
+
+		if _, err := buf.WriteString(" FROM "); err != nil {
+			return err
+		}
+
+		if err := statement.dialect.Quoter().QuoteTo(buf.Builder, tableName); err != nil {
+			return err
+		}
+
+		if _, err := buf.WriteString(" WHERE "); err != nil {
+			return err
+		}
+
+		if err := statement.Conds().WriteTo(buf); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Direct insertion of values
+	if _, err := buf.WriteString(" VALUES ("); err != nil {
+		return err
+	}
+
+	if err := statement.WriteArgs(buf, args); err != nil {
+		return err
+	}
+
+	// Insert tablename (id) Values(seq_tablename.nextval)
+	if includeAutoIncrement {
+		if hasInsertColumns {
+			if _, err := buf.WriteString(","); err != nil {
+				return err
+			}
+		}
+		if _, err := buf.WriteString(utils.SeqName(tableName) + ".nextval"); err != nil {
+			return err
+		}
+	}
+
+	if len(exprs) > 0 {
+		if _, err := buf.WriteString(","); err != nil {
+			return err
+		}
+	}
+
+	if err := exprs.WriteArgs(buf); err != nil {
+		return err
+	}
+
+	if _, err := buf.WriteString(")"); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GenInsertMapSQL generates insert map SQL
@@ -196,51 +237,12 @@ func (statement *Statement) GenInsertMapSQL(columns []string, args []interface{}
 		return "", nil, err
 	}
 
-	// if insert where
-	if statement.Conds().IsValid() {
-		if _, err := buf.WriteString(") SELECT "); err != nil {
-			return "", nil, err
-		}
+	if _, err := buf.WriteString(")"); err != nil {
+		return "", nil, err
+	}
 
-		if err := statement.WriteArgs(buf, args); err != nil {
-			return "", nil, err
-		}
-
-		if len(exprs) > 0 {
-			if _, err := buf.WriteString(","); err != nil {
-				return "", nil, err
-			}
-			if err := exprs.WriteArgs(buf); err != nil {
-				return "", nil, err
-			}
-		}
-
-		if _, err := buf.WriteString(fmt.Sprintf(" FROM %s WHERE ", statement.quote(tableName))); err != nil {
-			return "", nil, err
-		}
-
-		if err := statement.Conds().WriteTo(buf); err != nil {
-			return "", nil, err
-		}
-	} else {
-		if _, err := buf.WriteString(") VALUES ("); err != nil {
-			return "", nil, err
-		}
-		if err := statement.WriteArgs(buf, args); err != nil {
-			return "", nil, err
-		}
-
-		if len(exprs) > 0 {
-			if _, err := buf.WriteString(","); err != nil {
-				return "", nil, err
-			}
-			if err := exprs.WriteArgs(buf); err != nil {
-				return "", nil, err
-			}
-		}
-		if _, err := buf.WriteString(")"); err != nil {
-			return "", nil, err
-		}
+	if err := statement.genInsertValuesValues(buf, false, columns, args); err != nil {
+		return "", nil, err
 	}
 
 	return buf.String(), buf.Args(), nil

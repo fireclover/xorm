@@ -1224,6 +1224,13 @@ func (engine *Engine) InsertOne(bean interface{}) (int64, error) {
 	return session.InsertOne(bean)
 }
 
+// InsertOnConflictDoNothing attempt to insert a record but on conflict do nothing
+func (engine *Engine) InsertOnConflictDoNothing(beans ...interface{}) (int64, error) {
+	session := engine.NewSession()
+	defer session.Close()
+	return session.InsertOnConflictDoNothing(beans...)
+}
+
 // Update records, bean's non-empty fields are updated contents,
 // condiBean' non-empty filds are conditions
 // CAUTION:
@@ -1235,6 +1242,13 @@ func (engine *Engine) Update(bean interface{}, condiBeans ...interface{}) (int64
 	session := engine.NewSession()
 	defer session.Close()
 	return session.Update(bean, condiBeans...)
+}
+
+// Upsert attempt to insert a record but on conflict do update
+func (engine *Engine) Upsert(beans ...interface{}) (int64, error) {
+	session := engine.NewSession()
+	defer session.Close()
+	return session.Upsert(beans...)
 }
 
 // Delete records, bean's non-empty fields are conditions

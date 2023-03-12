@@ -5,10 +5,10 @@
 package xorm
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
-	"sort"
 	"strings"
 	"time"
 
@@ -156,14 +156,14 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 				}
 				args = append(args, val)
 
-				var colName = col.Name
+				colName := col.Name
 				session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 					col := table.GetColumn(colName)
 					setColumnTime(bean, col, t)
 				})
 			} else if col.IsVersion && session.statement.CheckVersion {
 				args = append(args, 1)
-				var colName = col.Name
+				colName := col.Name
 				session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 					col := table.GetColumn(colName)
 					setColumnInt(bean, col, 1)
@@ -276,7 +276,7 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 		processor.BeforeInsert()
 	}
 
-	var tableName = session.statement.TableName()
+	tableName := session.statement.TableName()
 	table := session.statement.RefTable
 
 	colNames, args, err := session.genInsertColumns(bean)
@@ -290,102 +290,9 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 	}
 	sqlStr = session.engine.dialect.Quoter().Replace(sqlStr)
 
-	handleAfterInsertProcessorFunc := func(bean interface{}) {
-		if session.isAutoCommit {
-			for _, closure := range session.afterClosures {
-				closure(bean)
-			}
-			if processor, ok := interface{}(bean).(AfterInsertProcessor); ok {
-				processor.AfterInsert()
-			}
-		} else {
-			lenAfterClosures := len(session.afterClosures)
-			if lenAfterClosures > 0 {
-				if value, has := session.afterInsertBeans[bean]; has && value != nil {
-					*value = append(*value, session.afterClosures...)
-				} else {
-					afterClosures := make([]func(interface{}), lenAfterClosures)
-					copy(afterClosures, session.afterClosures)
-					session.afterInsertBeans[bean] = &afterClosures
-				}
-			} else {
-				if _, ok := interface{}(bean).(AfterInsertProcessor); ok {
-					session.afterInsertBeans[bean] = nil
-				}
-			}
-		}
-		cleanupProcessorsClosures(&session.afterClosures) // cleanup after used
-	}
-
 	// if there is auto increment column and driver don't support return it
 	if len(table.AutoIncrement) > 0 && !session.engine.driver.Features().SupportReturnInsertedID {
-		var sql string
-		var newArgs []interface{}
-		var needCommit bool
-		var id int64
-		if session.engine.dialect.URI().DBType == schemas.ORACLE || session.engine.dialect.URI().DBType == schemas.DAMENG {
-			if session.isAutoCommit { // if it's not in transaction
-				if err := session.Begin(); err != nil {
-					return 0, err
-				}
-				needCommit = true
-			}
-			_, err := session.exec(sqlStr, args...)
-			if err != nil {
-				return 0, err
-			}
-			i := utils.IndexSlice(colNames, table.AutoIncrement)
-			if i > -1 {
-				id, err = convert.AsInt64(args[i])
-				if err != nil {
-					return 0, err
-				}
-			} else {
-				sql = fmt.Sprintf("select %s.currval from dual", utils.SeqName(tableName))
-			}
-		} else {
-			sql = sqlStr
-			newArgs = args
-		}
-
-		if id == 0 {
-			err := session.queryRow(sql, newArgs...).Scan(&id)
-			if err != nil {
-				return 0, err
-			}
-			if needCommit {
-				if err := session.Commit(); err != nil {
-					return 0, err
-				}
-			}
-			if id == 0 {
-				return 0, errors.New("insert successfully but not returned id")
-			}
-		}
-
-		defer handleAfterInsertProcessorFunc(bean)
-
-		_ = session.cacheInsert(tableName)
-
-		if table.Version != "" && session.statement.CheckVersion {
-			verValue, err := table.VersionColumn().ValueOf(bean)
-			if err != nil {
-				session.engine.logger.Errorf("%v", err)
-			} else if verValue.IsValid() && verValue.CanSet() {
-				session.incrVersionFieldValue(verValue)
-			}
-		}
-
-		aiValue, err := table.AutoIncrColumn().ValueOf(bean)
-		if err != nil {
-			session.engine.logger.Errorf("%v", err)
-		}
-
-		if aiValue == nil || !aiValue.IsValid() || !aiValue.CanSet() {
-			return 1, nil
-		}
-
-		return 1, convert.AssignValue(*aiValue, id)
+		return session.execInsertSqlNoAutoReturn(sqlStr, bean, colNames, args)
 	}
 
 	res, err := session.exec(sqlStr, args...)
@@ -393,7 +300,7 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 		return 0, err
 	}
 
-	defer handleAfterInsertProcessorFunc(bean)
+	defer session.handleAfterInsertProcessorFunc(bean)
 
 	_ = session.cacheInsert(tableName)
 
@@ -430,31 +337,6 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 	}
 
 	return res.RowsAffected()
-}
-
-// InsertOne insert only one struct into database as a record.
-// The in parameter bean must a struct or a point to struct. The return
-// parameter is inserted and error
-// Deprecated: Please use Insert directly
-func (session *Session) InsertOne(bean interface{}) (int64, error) {
-	if session.isAutoClose {
-		defer session.Close()
-	}
-
-	return session.insertStruct(bean)
-}
-
-func (session *Session) cacheInsert(table string) error {
-	if !session.statement.UseCache {
-		return nil
-	}
-	cacher := session.engine.cacherMgr.GetCacher(table)
-	if cacher == nil {
-		return nil
-	}
-	session.engine.logger.Debugf("[cache] clear SQL: %v", table)
-	cacher.ClearIds(table)
-	return nil
 }
 
 // genInsertColumns generates insert needed columns
@@ -517,7 +399,7 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 			}
 			args = append(args, val)
 
-			var colName = col.Name
+			colName := col.Name
 			session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 				col := table.GetColumn(colName)
 				setColumnTime(bean, col, t)
@@ -537,6 +419,112 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 	return colNames, args, nil
 }
 
+func (session *Session) execInsertSqlNoAutoReturn(sqlStr string, bean interface{}, colNames []string, args []interface{}) (int64, error) {
+	var newSql string
+	var newArgs []interface{}
+	var needCommit bool
+	var id int64
+
+	tableName := session.statement.TableName()
+	table := session.statement.RefTable
+
+	if session.engine.dialect.URI().DBType == schemas.ORACLE || session.engine.dialect.URI().DBType == schemas.DAMENG {
+		if session.isAutoCommit { // if it's not in transaction
+			if err := session.Begin(); err != nil {
+				return 0, err
+			}
+			needCommit = true
+		}
+		res, err := session.exec(sqlStr, args...)
+		if err != nil {
+			return 0, err
+		}
+		n, err := res.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		if n == 0 {
+			return 0, sql.ErrNoRows
+		}
+		i := utils.IndexSlice(colNames, table.AutoIncrement)
+		if i > -1 {
+			id, err = convert.AsInt64(args[i])
+			if err != nil {
+				return 0, err
+			}
+		} else {
+			newSql = fmt.Sprintf("select %s.currval from dual", utils.SeqName(tableName))
+		}
+	} else {
+		newSql = sqlStr
+		newArgs = args
+	}
+
+	if id == 0 {
+		err := session.queryRow(newSql, newArgs...).Scan(&id)
+		if err != nil {
+			return 0, err
+		}
+		if needCommit {
+			if err := session.Commit(); err != nil {
+				return 0, err
+			}
+		}
+		if id == 0 {
+			return 0, errors.New("insert successfully but not returned id")
+		}
+	}
+
+	defer session.handleAfterInsertProcessorFunc(bean)
+
+	_ = session.cacheInsert(tableName)
+
+	if table.Version != "" && session.statement.CheckVersion {
+		verValue, err := table.VersionColumn().ValueOf(bean)
+		if err != nil {
+			session.engine.logger.Errorf("%v", err)
+		} else if verValue.IsValid() && verValue.CanSet() {
+			session.incrVersionFieldValue(verValue)
+		}
+	}
+
+	aiValue, err := table.AutoIncrColumn().ValueOf(bean)
+	if err != nil {
+		session.engine.logger.Errorf("%v", err)
+	}
+
+	if aiValue == nil || !aiValue.IsValid() || !aiValue.CanSet() {
+		return 1, nil
+	}
+
+	return 1, convert.AssignValue(*aiValue, id)
+}
+
+// InsertOne insert only one struct into database as a record.
+// The in parameter bean must a struct or a point to struct. The return
+// parameter is inserted and error
+// Deprecated: Please use Insert directly
+func (session *Session) InsertOne(bean interface{}) (int64, error) {
+	if session.isAutoClose {
+		defer session.Close()
+	}
+
+	return session.insertStruct(bean)
+}
+
+func (session *Session) cacheInsert(table string) error {
+	if !session.statement.UseCache {
+		return nil
+	}
+	cacher := session.engine.cacherMgr.GetCacher(table)
+	if cacher == nil {
+		return nil
+	}
+	session.engine.logger.Debugf("[cache] clear SQL: %v", table)
+	cacher.ClearIds(table)
+	return nil
+}
+
 func (session *Session) insertMapInterface(m map[string]interface{}) (int64, error) {
 	if len(m) == 0 {
 		return 0, ErrParamsType
@@ -547,19 +535,7 @@ func (session *Session) insertMapInterface(m map[string]interface{}) (int64, err
 		return 0, ErrTableNotFound
 	}
 
-	var columns = make([]string, 0, len(m))
-	exprs := session.statement.ExprColumns
-	for k := range m {
-		if !exprs.IsColExist(k) {
-			columns = append(columns, k)
-		}
-	}
-	sort.Strings(columns)
-
-	var args = make([]interface{}, 0, len(m))
-	for _, colName := range columns {
-		args = append(args, m[colName])
-	}
+	columns, args := utils.MapToSlices(m, session.statement.ExprColumns.ColNamesTrim(), schemas.CommonQuoter.Trim)
 
 	return session.insertMap(columns, args)
 }
@@ -574,23 +550,7 @@ func (session *Session) insertMultipleMapInterface(maps []map[string]interface{}
 		return 0, ErrTableNotFound
 	}
 
-	var columns = make([]string, 0, len(maps[0]))
-	exprs := session.statement.ExprColumns
-	for k := range maps[0] {
-		if !exprs.IsColExist(k) {
-			columns = append(columns, k)
-		}
-	}
-	sort.Strings(columns)
-
-	var argss = make([][]interface{}, 0, len(maps))
-	for _, m := range maps {
-		var args = make([]interface{}, 0, len(m))
-		for _, colName := range columns {
-			args = append(args, m[colName])
-		}
-		argss = append(argss, args)
-	}
+	columns, argss := utils.MultipleMapToSlices(maps, session.statement.ExprColumns.ColNamesTrim(), schemas.CommonQuoter.Trim)
 
 	return session.insertMultipleMap(columns, argss)
 }
@@ -605,20 +565,7 @@ func (session *Session) insertMapString(m map[string]string) (int64, error) {
 		return 0, ErrTableNotFound
 	}
 
-	var columns = make([]string, 0, len(m))
-	exprs := session.statement.ExprColumns
-	for k := range m {
-		if !exprs.IsColExist(k) {
-			columns = append(columns, k)
-		}
-	}
-
-	sort.Strings(columns)
-
-	var args = make([]interface{}, 0, len(m))
-	for _, colName := range columns {
-		args = append(args, m[colName])
-	}
+	columns, args := utils.MapStringToSlices(m, session.statement.ExprColumns.ColNamesTrim(), schemas.CommonQuoter.Trim)
 
 	return session.insertMap(columns, args)
 }
@@ -633,23 +580,7 @@ func (session *Session) insertMultipleMapString(maps []map[string]string) (int64
 		return 0, ErrTableNotFound
 	}
 
-	var columns = make([]string, 0, len(maps[0]))
-	exprs := session.statement.ExprColumns
-	for k := range maps[0] {
-		if !exprs.IsColExist(k) {
-			columns = append(columns, k)
-		}
-	}
-	sort.Strings(columns)
-
-	var argss = make([][]interface{}, 0, len(maps))
-	for _, m := range maps {
-		var args = make([]interface{}, 0, len(m))
-		for _, colName := range columns {
-			args = append(args, m[colName])
-		}
-		argss = append(argss, args)
-	}
+	columns, argss := utils.MultipleMapStringToSlices(maps, session.statement.ExprColumns.ColNamesTrim(), schemas.CommonQuoter.Trim)
 
 	return session.insertMultipleMap(columns, argss)
 }
@@ -706,4 +637,31 @@ func (session *Session) insertMultipleMap(columns []string, argss [][]interface{
 		return 0, err
 	}
 	return affected, nil
+}
+
+func (session *Session) handleAfterInsertProcessorFunc(bean interface{}) {
+	if session.isAutoCommit {
+		for _, closure := range session.afterClosures {
+			closure(bean)
+		}
+		if processor, ok := interface{}(bean).(AfterInsertProcessor); ok {
+			processor.AfterInsert()
+		}
+	} else {
+		lenAfterClosures := len(session.afterClosures)
+		if lenAfterClosures > 0 {
+			if value, has := session.afterInsertBeans[bean]; has && value != nil {
+				*value = append(*value, session.afterClosures...)
+			} else {
+				afterClosures := make([]func(interface{}), lenAfterClosures)
+				copy(afterClosures, session.afterClosures)
+				session.afterInsertBeans[bean] = &afterClosures
+			}
+		} else {
+			if _, ok := interface{}(bean).(AfterInsertProcessor); ok {
+				session.afterInsertBeans[bean] = nil
+			}
+		}
+	}
+	cleanupProcessorsClosures(&session.afterClosures) // cleanup after used
 }

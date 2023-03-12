@@ -44,7 +44,8 @@ type Interface interface {
 	In(string, ...interface{}) *Session
 	Incr(column string, arg ...interface{}) *Session
 	Insert(...interface{}) (int64, error)
-	InsertOne(interface{}) (int64, error)
+	InsertOne(interface{}) (int64, error) // Deprecated: Please use Insert directly
+	InsertOnConflictDoNothing(beans ...interface{}) (int64, error)
 	IsTableEmpty(bean interface{}) (bool, error)
 	IsTableExist(beanOrTableName interface{}) (bool, error)
 	Iterate(interface{}, IterFunc) error
@@ -71,6 +72,7 @@ type Interface interface {
 	Table(tableNameOrBean interface{}) *Session
 	Unscoped() *Session
 	Update(bean interface{}, condiBeans ...interface{}) (int64, error)
+	Upsert(beans ...interface{}) (int64, error)
 	UseBool(...string) *Session
 	Where(interface{}, ...interface{}) *Session
 }
