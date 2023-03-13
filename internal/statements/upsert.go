@@ -72,17 +72,21 @@ func (statement *Statement) GenUpsertSQL(doUpdate bool, columns []string, args [
 		if doUpdate {
 			// FIXME: mysql >= 8.0.19 should use table alias
 			write(" ON DUPLICATE KEY ")
-			write("UPDATE SET ", updateColumns[0], " = VALUES(", updateColumns[0], ")")
+			write("UPDATE ", updateColumns[0], " = VALUES(", updateColumns[0], ")")
 			for _, column := range updateColumns[1:] {
 				write(", ", column, " = VALUES(", column, ")")
 			}
-
+			// if len(table.AutoIncrement) > 0 {
+			// 	write(", ", quote(table.AutoIncrement), " = ", quote(table.AutoIncrement))
+			// }
 		}
 	default:
 		return "", nil, fmt.Errorf("unimplemented") // FIXME: UPSERT
 	}
 
-	if len(table.AutoIncrement) > 0 && statement.dialect.URI().DBType == schemas.POSTGRES {
+	if len(table.AutoIncrement) > 0 &&
+		(statement.dialect.URI().DBType == schemas.POSTGRES ||
+			statement.dialect.URI().DBType == schemas.SQLITE) {
 		write(" RETURNING ")
 		if err := statement.dialect.Quoter().QuoteTo(buf.Builder, table.AutoIncrement); err != nil {
 			return "", nil, err
@@ -231,19 +235,22 @@ func (statement *Statement) GenUpsertMapSQL(doUpdate bool, columns []string, arg
 		if doUpdate {
 			// FIXME: mysql >= 8.0.19 should use table alias
 			write(" ON DUPLICATE KEY ")
-			write("UPDATE SET ", updateColumns[0], " = VALUES(", updateColumns[0], ")")
+			write("UPDATE ", updateColumns[0], " = VALUES(", updateColumns[0], ")")
 			for _, column := range updateColumns[1:] {
 				write(", ", column, " = VALUES(", column, ")")
+			}
+			if len(table.AutoIncrement) > 0 {
+				write(", ", quote(table.AutoIncrement), " = ", quote(table.AutoIncrement))
 			}
 		}
 	default:
 		return "", nil, fmt.Errorf("unimplemented") // FIXME: UPSERT
 	}
 
-	if len(table.AutoIncrement) > 0 && statement.dialect.URI().DBType == schemas.POSTGRES {
-		if _, err := buf.WriteString(" RETURNING "); err != nil {
-			return "", nil, err
-		}
+	if len(table.AutoIncrement) > 0 &&
+		(statement.dialect.URI().DBType == schemas.POSTGRES ||
+			statement.dialect.URI().DBType == schemas.SQLITE) {
+		write(" RETURNING ")
 		if err := statement.dialect.Quoter().QuoteTo(buf.Builder, table.AutoIncrement); err != nil {
 			return "", nil, err
 		}

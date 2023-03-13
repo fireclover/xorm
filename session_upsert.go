@@ -181,7 +181,7 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 	sqlStr = session.engine.dialect.Quoter().Replace(sqlStr)
 
 	// if there is auto increment column and driver doesn't support return it
-	if len(table.AutoIncrement) > 0 && !session.engine.driver.Features().SupportReturnInsertedID {
+	if len(table.AutoIncrement) > 0 && (!session.engine.driver.Features().SupportReturnInsertedID || session.engine.dialect.URI().DBType == schemas.SQLITE) {
 		n, err := session.execInsertSqlNoAutoReturn(sqlStr, bean, colNames, args)
 		if err == sql.ErrNoRows {
 			return n, nil
@@ -206,14 +206,18 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 			session.incrVersionFieldValue(verValue)
 		}
 	}
-
-	if table.AutoIncrement == "" {
-		return res.RowsAffected()
-	}
-
 	n, err := res.RowsAffected()
 	if err != nil || n == 0 {
 		return 0, err
+	}
+
+	if session.engine.dialect.URI().DBType == schemas.MYSQL && n == 2 {
+		// for MYSQL if INSERT ... ON CONFLICT RowsAffected == 2 means UPDATE
+		n = 1
+	}
+
+	if table.AutoIncrement == "" {
+		return n, nil
 	}
 
 	var id int64
