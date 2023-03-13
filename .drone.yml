@@ -11,7 +11,7 @@ trigger:
   - refs/pull/*/head
 steps:
 - name: test-vet
-  image: golang:1.15
+  image: golang:1.17
   pull: always
   volumes:
   - name: cache
@@ -19,7 +19,7 @@ steps:
   commands:
     - make vet
 - name: test-sqlite3
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -31,7 +31,7 @@ steps:
     - make test-sqlite3
     - TEST_CACHE_ENABLE=true make test-sqlite3
 - name: test-sqlite
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -41,7 +41,7 @@ steps:
     - make test-sqlite
     - TEST_QUOTE_POLICY=reserved make test-sqlite
 - name: test-mysql
-  image: golang:1.15
+  image: golang:1.17
   pull: never
   volumes:
   - name: cache
@@ -58,7 +58,7 @@ steps:
   - TEST_CACHE_ENABLE=true make test-mysql
   
 - name: test-mysql-utf8mb4
-  image: golang:1.15
+  image: golang:1.17
   pull: never
   volumes:
   - name: cache
@@ -98,7 +98,7 @@ trigger:
   - refs/pull/*/head
 steps:
 - name: test-mysql8
-  image: golang:1.15
+  image: golang:1.17
   pull: never
   volumes:
   - name: cache
@@ -136,7 +136,7 @@ trigger:
   - refs/pull/*/head
 steps:
 - name: test-mariadb
-  image: golang:1.15
+  image: golang:1.17
   pull: never
   volumes:
   - name: cache
@@ -175,7 +175,7 @@ trigger:
 steps:
 - name: test-postgres
   pull: never
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -190,7 +190,7 @@ steps:
 
 - name: test-postgres-schema
   pull: never
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -207,7 +207,7 @@ steps:
 
 - name: test-pgx
   pull: never
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -225,7 +225,7 @@ steps:
 
 - name: test-pgx-schema
   pull: never
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -267,7 +267,7 @@ trigger:
 steps:
 - name: test-mssql
   pull: never
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -306,7 +306,7 @@ trigger:
 steps:
 - name: test-tidb
   pull: never
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -339,7 +339,7 @@ trigger:
 steps:
 - name: test-cockroach
   pull: never
-  image: golang:1.15
+  image: golang:1.17
   volumes:
   - name: cache
     path: /go/pkg/mod
@@ -375,7 +375,7 @@ services:
 # steps:
 # - name: test-dameng
 #   pull: never
-#   image: golang:1.15
+#   image: golang:1.17
 #   volumes:
 #   - name: cache
 #     path: /go/pkg/mod
@@ -416,7 +416,7 @@ trigger:
   - refs/pull/*/head
 steps:
 - name: merge_coverage
-  image: golang:1.15
+  image: golang:1.17
   commands:
   - make coverage
 
