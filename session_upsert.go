@@ -37,7 +37,7 @@ func (session *Session) upsert(doUpdate bool, beans ...interface{}) (int64, erro
 		switch v := bean.(type) {
 		case map[string]interface{}:
 			cnt, err = session.upsertMapInterface(doUpdate, v)
-		case []map[string]interface{}: // FIXME: handle multiple
+		case []map[string]interface{}: // FIXME: handle multiple?
 			for _, m := range v {
 				cnt, err := session.upsertMapInterface(doUpdate, m)
 				if err != nil {
@@ -47,7 +47,7 @@ func (session *Session) upsert(doUpdate bool, beans ...interface{}) (int64, erro
 			}
 		case map[string]string:
 			cnt, err = session.upsertMapString(doUpdate, v)
-		case []map[string]string: // FIXME: handle multiple
+		case []map[string]string: // FIXME: handle multiple?
 			for _, m := range v {
 				cnt, err := session.upsertMapString(doUpdate, m)
 				if err != nil {
@@ -57,7 +57,7 @@ func (session *Session) upsert(doUpdate bool, beans ...interface{}) (int64, erro
 			}
 		default:
 			sliceValue := reflect.Indirect(reflect.ValueOf(bean))
-			if sliceValue.Kind() == reflect.Slice { // FIXME: handle multiple
+			if sliceValue.Kind() == reflect.Slice { // FIXME: handle multiple?
 				if sliceValue.Len() <= 0 {
 					return 0, ErrNoElementsOnSlice
 				}
