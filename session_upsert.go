@@ -121,7 +121,7 @@ func (session *Session) upsertMap(doUpdate bool, columns []string, args []interf
 	if err != nil {
 		return 0, err
 	}
-	if numberOfUniqueConstraints > 1 {
+	if doUpdate && numberOfUniqueConstraints > 1 {
 		return 0, fmt.Errorf("cannot upsert if there is more than one unique constraint")
 	}
 
@@ -176,7 +176,7 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 	if err != nil {
 		return 0, err
 	}
-	if numberOfUniqueConstraints > 1 {
+	if doUpdate && numberOfUniqueConstraints > 1 {
 		return 0, fmt.Errorf("cannot upsert if there is more than one unique constraint")
 	}
 
