@@ -18,6 +18,7 @@ import (
 	"xorm.io/xorm/schemas"
 )
 
+// ifAddColUpdate add includePrimaryKey
 func (statement *Statement) ifAddColUpdate(col *schemas.Column, includeVersion, includeUpdated, includeNil,
 	includeAutoIncr, includePrimaryKey, update bool) (bool, error) {
 	columnMap := statement.ColumnMap
