@@ -82,7 +82,7 @@ func (statement *Statement) GenUpsertSQL(doUpdate bool, columns []string, args [
 		return "", nil, fmt.Errorf("unimplemented") // FIXME: UPSERT
 	}
 
-	if len(table.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.POSTGRES || statement.dialect.URI().DBType == schemas.SQLITE) {
+	if len(table.AutoIncrement) > 0 && statement.dialect.URI().DBType == schemas.POSTGRES {
 		write(" RETURNING ")
 		if err := statement.dialect.Quoter().QuoteTo(buf.Builder, table.AutoIncrement); err != nil {
 			return "", nil, err
@@ -240,7 +240,7 @@ func (statement *Statement) GenUpsertMapSQL(doUpdate bool, columns []string, arg
 		return "", nil, fmt.Errorf("unimplemented") // FIXME: UPSERT
 	}
 
-	if len(table.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.POSTGRES || statement.dialect.URI().DBType == schemas.SQLITE) {
+	if len(table.AutoIncrement) > 0 && statement.dialect.URI().DBType == schemas.POSTGRES {
 		if _, err := buf.WriteString(" RETURNING "); err != nil {
 			return "", nil, err
 		}
