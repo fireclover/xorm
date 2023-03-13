@@ -157,9 +157,9 @@ func (statement *Statement) genMergeSQL(doUpdate bool, columns []string, args []
 		}
 		countUniques++
 		write("(")
-		write("src.", quote(index.Cols[0]), "= target.", quote(index.Cols[0]))
+		write("src.", quote(index.Cols[0]), " = target.", quote(index.Cols[0]))
 		for _, col := range index.Cols[1:] {
-			write(" AND src.", quote(col), "= target.", quote(col))
+			write(" AND src.", quote(col), " = target.", quote(col))
 		}
 		write(")")
 	}
@@ -175,7 +175,7 @@ func (statement *Statement) genMergeSQL(doUpdate bool, columns []string, args []
 	}
 	write(" WHEN NOT MATCHED THEN INSERT ")
 	includeAutoIncrement := statement.includeAutoIncrement(columns)
-	if len(columns) == 0 {
+	if len(columns) == 0 && statement.dialect.URI().DBType == schemas.MSSQL {
 		write(" DEFAULT VALUES ")
 	} else {
 		// We have some values - Write the column names we need to insert:
