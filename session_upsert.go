@@ -37,7 +37,7 @@ func (session *Session) upsert(doUpdate bool, beans ...interface{}) (int64, erro
 		switch v := bean.(type) {
 		case map[string]interface{}:
 			cnt, err = session.upsertMapInterface(doUpdate, v)
-		case []map[string]interface{}:
+		case []map[string]interface{}: // FIXME: handle multiple
 			for _, m := range v {
 				cnt, err := session.upsertMapInterface(doUpdate, m)
 				if err != nil {
@@ -47,7 +47,7 @@ func (session *Session) upsert(doUpdate bool, beans ...interface{}) (int64, erro
 			}
 		case map[string]string:
 			cnt, err = session.upsertMapString(doUpdate, v)
-		case []map[string]string:
+		case []map[string]string: // FIXME: handle multiple
 			for _, m := range v {
 				cnt, err := session.upsertMapString(doUpdate, m)
 				if err != nil {
@@ -57,7 +57,7 @@ func (session *Session) upsert(doUpdate bool, beans ...interface{}) (int64, erro
 			}
 		default:
 			sliceValue := reflect.Indirect(reflect.ValueOf(bean))
-			if sliceValue.Kind() == reflect.Slice {
+			if sliceValue.Kind() == reflect.Slice { // FIXME: handle multiple
 				if sliceValue.Len() <= 0 {
 					return 0, ErrNoElementsOnSlice
 				}
@@ -140,7 +140,7 @@ func (session *Session) upsertMap(doUpdate bool, columns []string, args []interf
 	if err != nil {
 		return 0, err
 	}
-	return affected, fmt.Errorf("unimplemented")
+	return affected, nil
 }
 
 func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, error) {
@@ -273,21 +273,37 @@ func (session *Session) getUniqueColumns(colNames []string, args []interface{}) 
 			}
 
 			if indexColumn.MapType == schemas.ONLYFROMDB || indexColumn.IsAutoIncrement {
-				continue
+				continue indexCol
 			}
+			// FIXME: what do we do here?!
 			if session.statement.OmitColumnMap.Contain(indexColumn.Name) {
-				continue
+				continue indexCol
 			}
+			// FIXME: what do we do here?!
 			if len(session.statement.ColumnMap) > 0 && !session.statement.ColumnMap.Contain(indexColumn.Name) {
-				continue
+				continue indexCol
 			}
 			// FIXME: what do we do here?!
 			if session.statement.IncrColumns.IsColExist(indexColumn.Name) {
-				continue
+				for _, exprCol := range session.statement.IncrColumns {
+					if exprCol.ColName == indexColumn.Name {
+						uniqueColValMap[indexColumnName] = exprCol.Arg
+					}
+				}
+				continue indexCol
 			} else if session.statement.DecrColumns.IsColExist(indexColumn.Name) {
-				continue
+				for _, exprCol := range session.statement.DecrColumns {
+					if exprCol.ColName == indexColumn.Name {
+						uniqueColValMap[indexColumnName] = exprCol.Arg
+					}
+				}
+				continue indexCol
 			} else if session.statement.ExprColumns.IsColExist(indexColumn.Name) {
-				continue
+				for _, exprCol := range session.statement.ExprColumns {
+					if exprCol.ColName == indexColumn.Name {
+						uniqueColValMap[indexColumnName] = exprCol.Arg
+					}
+				}
 			}
 
 			// FIXME: not sure if there's anything else we can do
