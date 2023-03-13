@@ -19,11 +19,11 @@ import (
 )
 
 func (statement *Statement) ifAddColUpdate(col *schemas.Column, includeVersion, includeUpdated, includeNil,
-	includeAutoIncr, isPrimaryKey, update bool) (bool, error) {
+	includeAutoIncr, includePrimaryKey, update bool) (bool, error) {
 	columnMap := statement.ColumnMap
 	omitColumnMap := statement.OmitColumnMap
 	unscoped := statement.unscoped
-	if !isPrimaryKey && col.IsPrimaryKey {
+	if !includePrimaryKey && col.IsPrimaryKey {
 		return false, nil
 	}
 	if !includeVersion && col.IsVersion {
@@ -66,7 +66,7 @@ func (statement *Statement) ifAddColUpdate(col *schemas.Column, includeVersion, 
 // BuildUpdates auto generating update columnes and values according a struct
 func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 	includeVersion, includeUpdated, includeNil,
-	includeAutoIncr, isPrimaryKey, update bool) ([]string, []interface{}, error) {
+	includeAutoIncr, includePrimaryKey, update bool) ([]string, []interface{}, error) {
 	table := statement.RefTable
 	allUseBool := statement.allUseBool
 	useAllCols := statement.useAllCols
@@ -78,7 +78,7 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 
 	for _, col := range table.Columns() {
 		ok, err := statement.ifAddColUpdate(col, includeVersion, includeUpdated, includeNil,
-			includeAutoIncr, isPrimaryKey, update)
+			includeAutoIncr, includePrimaryKey, update)
 		if err != nil {
 			return nil, nil, err
 		}
