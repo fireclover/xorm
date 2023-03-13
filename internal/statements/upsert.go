@@ -58,7 +58,7 @@ func (statement *Statement) GenUpsertSQL(doUpdate bool, columns []string, args [
 	}
 
 	switch statement.dialect.URI().DBType {
-	case schemas.SQLITE, schemas.POSTGRES:
+	case schemas.SQLITE:
 		write(" ON CONFLICT DO ")
 		if doUpdate {
 			write("UPDATE SET ", updateColumns[0], " = excluded.", updateColumns[0])
@@ -67,6 +67,24 @@ func (statement *Statement) GenUpsertSQL(doUpdate bool, columns []string, args [
 			}
 		} else {
 			write("NOTHING")
+		}
+	case schemas.POSTGRES:
+		if doUpdate {
+			for _, index := range table.Indexes {
+				if index.Type != schemas.UniqueType {
+					continue
+				}
+				write(" ON CONFLICT (", quote(index.Cols[0]))
+				for _, col := range index.Cols[1:] {
+					write(", ", quote(col))
+				}
+				write(") DO UPDATE SET ", updateColumns[0], " = excluded.", updateColumns[0])
+				for _, column := range updateColumns[1:] {
+					write(", ", column, " = excluded.", column)
+				}
+			}
+		} else {
+			write(" ON CONFLICT DO NOTHING")
 		}
 	case schemas.MYSQL:
 		if doUpdate {
