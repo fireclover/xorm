@@ -378,53 +378,19 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("MultiMultiUnique", func(t *testing.T) {
 		type MultiMultiUniqueUpsert struct {
-			ID    int64  `xorm:"pk autoincr"`
-			Data0 string `xorm:"UNIQUE NOT NULL"`
-			Data1 string `xorm:"UNIQUE(s) NOT NULL"`
-			Data2 string `xorm:"UNIQUE(s) NOT NULL"`
+			ID        int64 `xorm:"pk autoincr"`
+			NotUnique string
+			Data0     string `xorm:"UNIQUE NOT NULL"`
+			Data1     string `xorm:"UNIQUE(s) NOT NULL"`
+			Data2     string `xorm:"UNIQUE(s) NOT NULL"`
 		}
 
 		assert.NoError(t, testEngine.Sync2(&MultiMultiUniqueUpsert{}))
 		_, _ = testEngine.Exec("DELETE FROM multi_multi_unique")
 
-		// Insert with default values
+		// Cannot upsert if there is more than one unique constraint
 		n, err := testEngine.Upsert(&MultiMultiUniqueUpsert{})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), n)
-
-		// Insert with value for t1, <test, "">
-		n, err = testEngine.Upsert(&MultiMultiUniqueUpsert{Data1: "test", Data0: "t1"})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), n)
-
-		// Fail insert with value for t1, <test2, "">
-		n, err = testEngine.Upsert(&MultiMultiUniqueUpsert{Data2: "test2", Data0: "t1"})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), n)
-
-		// Insert with value for t2, <test2, "">
-		n, err = testEngine.Upsert(&MultiMultiUniqueUpsert{Data2: "test2", Data0: "t2"})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), n)
-
-		// Fail insert with value for t2, <test2, "">
-		n, err = testEngine.Upsert(&MultiMultiUniqueUpsert{Data2: "test2", Data0: "t2"})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), n)
-
-		// Fail insert with value for t2, <test, "">
-		n, err = testEngine.Upsert(&MultiMultiUniqueUpsert{Data1: "test", Data0: "t2"})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), n)
-
-		// Insert with value for t3, <test, test2>
-		n, err = testEngine.Upsert(&MultiMultiUniqueUpsert{Data1: "test", Data2: "test2", Data0: "t3"})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), n)
-
-		// fail insert with value for t2, <test, test2>
-		n, err = testEngine.Upsert(&MultiMultiUniqueUpsert{Data1: "test", Data2: "test2", Data0: "t2"})
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.Equal(t, int64(0), n)
 	})
 

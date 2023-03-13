@@ -117,9 +117,12 @@ func (session *Session) upsertMap(doUpdate bool, columns []string, args []interf
 		return 0, ErrTableNotFound
 	}
 
-	uniqueColValMap, err := session.getUniqueColumns(columns, args)
+	uniqueColValMap, numberOfUniqueConstraints, err := session.getUniqueColumns(columns, args)
 	if err != nil {
 		return 0, err
+	}
+	if numberOfUniqueConstraints > 1 {
+		return 0, fmt.Errorf("cannot upsert if there is more than one unique constraint")
 	}
 
 	sql, args, err := session.statement.GenUpsertMapSQL(doUpdate, columns, args, uniqueColValMap)
@@ -169,9 +172,12 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 		return 0, err
 	}
 
-	uniqueColValMap, err := session.getUniqueColumns(colNames, args)
+	uniqueColValMap, numberOfUniqueConstraints, err := session.getUniqueColumns(colNames, args)
 	if err != nil {
 		return 0, err
+	}
+	if numberOfUniqueConstraints > 1 {
+		return 0, fmt.Errorf("cannot upsert if there is more than one unique constraint")
 	}
 
 	sqlStr, args, err := session.statement.GenUpsertSQL(doUpdate, colNames, args, uniqueColValMap)
@@ -242,11 +248,11 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 	return n, err
 }
 
-func (session *Session) getUniqueColumns(colNames []string, args []interface{}) (uniqueColValMap map[string]interface{}, err error) {
+func (session *Session) getUniqueColumns(colNames []string, args []interface{}) (uniqueColValMap map[string]interface{}, numberOfUniqueConstraints int, err error) {
 	uniqueColValMap = make(map[string]interface{})
 	table := session.statement.RefTable
 	if len(table.Indexes) == 0 {
-		return nil, fmt.Errorf("provided bean has no unique constraints")
+		return nil, 0, fmt.Errorf("provided bean has no unique constraints")
 	}
 
 	// Iterate across the indexes in the provided table
@@ -254,7 +260,7 @@ func (session *Session) getUniqueColumns(colNames []string, args []interface{}) 
 		if index.Type != schemas.UniqueType {
 			continue
 		}
-
+		numberOfUniqueConstraints++
 		// index is a Unique constraint
 	indexCol:
 		for _, indexColumnName := range index.Cols {
@@ -311,8 +317,8 @@ func (session *Session) getUniqueColumns(colNames []string, args []interface{}) 
 			}
 
 			// FIXME: not sure if there's anything else we can do
-			return nil, fmt.Errorf("provided bean does not provide a value for unique constraint %s field %s which has no default", index.Name, indexColumnName)
+			return nil, 0, fmt.Errorf("provided bean does not provide a value for unique constraint %s field %s which has no default", index.Name, indexColumnName)
 		}
 	}
-	return uniqueColValMap, nil
+	return uniqueColValMap, numberOfUniqueConstraints, nil
 }
