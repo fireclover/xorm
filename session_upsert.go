@@ -212,6 +212,8 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 			session.incrVersionFieldValue(verValue)
 		}
 	}
+
+	id, iderr := res.LastInsertId()
 	n, err := res.RowsAffected()
 	if err != nil || n == 0 {
 		return 0, err
@@ -222,14 +224,12 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 		n = 1
 	}
 
-	if table.AutoIncrement == "" {
-		return n, nil
+	if iderr != nil || id <= 0 {
+		return n, err
 	}
 
-	var id int64
-	id, err = res.LastInsertId()
-	if err != nil || id <= 0 {
-		return n, err
+	if table.AutoIncrement == "" {
+		return n, nil
 	}
 
 	aiValue, err := table.AutoIncrColumn().ValueOf(bean)
