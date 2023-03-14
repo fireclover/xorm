@@ -247,11 +247,30 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 	return n, err
 }
 
-func (session *Session) getUniqueColumns(colNames []string, args []interface{}) (uniqueColValMap map[string]interface{}, numberOfUniqueConstraints int, err error) {
+func (session *Session) getUniqueColumns(argColumns []string, args []interface{}) (uniqueColValMap map[string]interface{}, numberOfUniqueConstraints int, err error) {
 	uniqueColValMap = make(map[string]interface{})
 	table := session.statement.RefTable
-	if len(table.Indexes) == 0 {
+	if len(table.Indexes) == 0 && (len(table.PrimaryKeys) == 0 || (len(table.PrimaryKeys) == 1 && table.AutoIncrement == table.PrimaryKeys[0])) {
 		return nil, 0, fmt.Errorf("provided bean has no unique constraints")
+	}
+
+	// Check the primary key
+	primaryColumnIncluded := false
+primaryCol:
+	for _, primaryKeyColumn := range table.PrimaryKeys {
+		for i, column := range argColumns {
+			if column == primaryKeyColumn {
+				uniqueColValMap[column] = args[i]
+				primaryColumnIncluded = true
+				continue primaryCol
+			}
+		}
+		if primaryKeyColumn != table.AutoIncrement {
+			primaryColumnIncluded = true
+		}
+	}
+	if primaryColumnIncluded {
+		numberOfUniqueConstraints++
 	}
 
 	// Iterate across the indexes in the provided table
@@ -269,7 +288,7 @@ func (session *Session) getUniqueColumns(colNames []string, args []interface{}) 
 			}
 
 			// Now iterate across colNames and add to the uniqueCols
-			for i, col := range colNames {
+			for i, col := range argColumns {
 				if col == indexColumnName {
 					uniqueColValMap[col] = args[i]
 					continue indexCol

@@ -436,4 +436,48 @@ func TestUpsert(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), n)
 	})
+
+	t.Run("NoAutoIncrementPK", func(t *testing.T) {
+		type NoAutoIncrementPrimaryKey struct {
+			Name      string `xorm:"pk"`
+			Number    int    `xorm:"pk"`
+			NotUnique string
+		}
+
+		assert.NoError(t, testEngine.Sync2(&NoAutoIncrementPrimaryKey{}))
+		_, _ = testEngine.Exec("DELETE FROM no_primary_unique")
+
+		empty := &NoAutoIncrementPrimaryKey{}
+
+		// Insert default
+		n, err := testEngine.Upsert(empty)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Insert with 1
+		one := &NoAutoIncrementPrimaryKey{Name: "one", Number: 1}
+		n, err = testEngine.Upsert(one)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Update default
+		n, err = testEngine.Upsert(&NoAutoIncrementPrimaryKey{NotUnique: "notunique"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Update again
+		n, err = testEngine.Upsert(&NoAutoIncrementPrimaryKey{NotUnique: "again"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Insert with 2
+		n, err = testEngine.Upsert(&NoAutoIncrementPrimaryKey{Name: "two", Number: 2})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+
+		// Fail reinsert with 2
+		n, err = testEngine.Upsert(&NoAutoIncrementPrimaryKey{Name: "one", Number: 1, NotUnique: "updated"})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), n)
+	})
 }

@@ -70,6 +70,23 @@ func (statement *Statement) GenUpsertSQL(doUpdate bool, columns []string, args [
 		}
 	case schemas.POSTGRES:
 		if doUpdate {
+			primaryColumnIncluded := false
+			for _, primaryKeyColumn := range table.PrimaryKeys {
+				if _, has := uniqueColValMap[primaryKeyColumn]; !has {
+					continue
+				}
+				primaryColumnIncluded = true
+			}
+			if primaryColumnIncluded {
+				write(" ON CONFLICT (", quote(table.PrimaryKeys[0]))
+				for _, col := range table.PrimaryKeys[1:] {
+					write(", ", quote(col))
+				}
+				write(") DO UPDATE SET ", updateColumns[0], " = excluded.", updateColumns[0])
+				for _, column := range updateColumns[1:] {
+					write(", ", column, " = excluded.", column)
+				}
+			}
 			for _, index := range table.Indexes {
 				if index.Type != schemas.UniqueType {
 					continue
@@ -166,6 +183,23 @@ func (statement *Statement) genMergeSQL(doUpdate bool, columns []string, args []
 	write(") AS src ON (")
 
 	countUniques := 0
+	primaryColumnIncluded := false
+	for _, primaryKeyColumn := range table.PrimaryKeys {
+		if _, has := uniqueColValMap[primaryKeyColumn]; !has {
+			continue
+		}
+		if !primaryColumnIncluded {
+			write("(")
+		} else {
+			write(" AND ")
+		}
+		write("src.", quote(primaryKeyColumn), " = target.", quote(primaryKeyColumn))
+		primaryColumnIncluded = true
+	}
+	if primaryColumnIncluded {
+		write(")")
+		countUniques++
+	}
 	for _, index := range table.Indexes {
 		if index.Type != schemas.UniqueType {
 			continue
