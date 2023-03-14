@@ -94,6 +94,9 @@ func (statement *Statement) GenUpsertSQL(doUpdate bool, columns []string, args [
 			for _, column := range updateColumns[1:] {
 				write(", ", column, " = VALUES(", column, ")")
 			}
+			if len(table.AutoIncrement) > 0 {
+				write(", ", quote(table.AutoIncrement), " = LAST_INSERT_ID(", quote(table.AutoIncrement), ")")
+			}
 		}
 	default:
 		return "", nil, fmt.Errorf("unimplemented") // FIXME: UPSERT
@@ -282,7 +285,7 @@ func (statement *Statement) GenUpsertMapSQL(doUpdate bool, columns []string, arg
 				write(", ", column, " = VALUES(", column, ")")
 			}
 			if len(table.AutoIncrement) > 0 {
-				write(", ", quote(table.AutoIncrement), " = ", quote(table.AutoIncrement))
+				write(", ", quote(table.AutoIncrement), " = LAST_INSERT_ID(", quote(table.AutoIncrement), ")")
 			}
 		}
 	default:
