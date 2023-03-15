@@ -98,12 +98,14 @@ func (statement *Statement) GenUpsertSQL(doUpdate bool, addOuput bool, columns [
 		return "", nil, fmt.Errorf("unimplemented") // FIXME: UPSERT
 	}
 
-	if len(table.AutoIncrement) > 0 &&
-		(statement.dialect.URI().DBType == schemas.POSTGRES ||
-			statement.dialect.URI().DBType == schemas.SQLITE) {
-		write(" RETURNING ")
-		if err := statement.dialect.Quoter().QuoteTo(buf.Builder, table.AutoIncrement); err != nil {
-			return "", nil, err
+	if addOuput {
+		if len(table.AutoIncrement) > 0 &&
+			(statement.dialect.URI().DBType == schemas.POSTGRES ||
+				statement.dialect.URI().DBType == schemas.SQLITE) {
+			write(" RETURNING ")
+			if err := statement.dialect.Quoter().QuoteTo(buf.Builder, table.AutoIncrement); err != nil {
+				return "", nil, err
+			}
 		}
 	}
 

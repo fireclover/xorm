@@ -31,6 +31,8 @@ func (session *Session) upsert(doUpdate bool, beans ...interface{}) (int64, erro
 		session.autoResetStatement = true
 		session.resetStatement()
 	}()
+
+	fmt.Println(session.statement.TableName())
 	for _, bean := range beans {
 		var cnt int64
 		var err error
@@ -114,6 +116,9 @@ func (session *Session) upsertMapString(doUpdate bool, m map[string]string) (int
 func (session *Session) upsertMap(doUpdate bool, columns []string, args []interface{}) (int64, error) {
 	tableName := session.statement.TableName()
 	if len(tableName) == 0 {
+		return 0, ErrTableNotFound
+	}
+	if session.statement.RefTable == nil {
 		return 0, ErrTableNotFound
 	}
 

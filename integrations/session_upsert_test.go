@@ -461,7 +461,7 @@ func TestUpsert(t *testing.T) {
 		assert.Equal(t, int64(1), n)
 
 		// Update default
-		n, err = testEngine.Upsert(&NoAutoIncrementPrimaryKey{NotUnique: "notunique"})
+		n, err = testEngine.Upsert([]*NoAutoIncrementPrimaryKey{{NotUnique: "notunique"}})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), n)
 
@@ -471,7 +471,7 @@ func TestUpsert(t *testing.T) {
 		assert.Equal(t, int64(1), n)
 
 		// Insert with 2
-		n, err = testEngine.Upsert(&NoAutoIncrementPrimaryKey{Name: "two", Number: 2})
+		n, err = testEngine.Upsert([]*NoAutoIncrementPrimaryKey{{Name: "two", Number: 2}})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), n)
 
@@ -479,5 +479,154 @@ func TestUpsert(t *testing.T) {
 		n, err = testEngine.Upsert(&NoAutoIncrementPrimaryKey{Name: "one", Number: 1, NotUnique: "updated"})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), n)
+
+		// Upsert multiple with 2
+		n, err = testEngine.Upsert([]*NoAutoIncrementPrimaryKey{{Name: "one", Number: 1, NotUnique: "updatedagain"}, {Name: "three", Number: 3}})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2), n)
 	})
+}
+
+func TestInsertOnConflictDoNothingMap(t *testing.T) {
+	type MultiUniqueMap struct {
+		ID        int64 `xorm:"pk autoincr"`
+		NotUnique string
+		Data1     string `xorm:"UNIQUE(s) NOT NULL"`
+		Data2     string `xorm:"UNIQUE(s) NOT NULL"`
+	}
+
+	assert.NoError(t, testEngine.Sync2(&MultiUniqueMap{}))
+	_, _ = testEngine.Exec("DELETE FROM multi_unique_map")
+
+	n, err := testEngine.Table(&MultiUniqueMap{}).InsertOnConflictDoNothing(map[string]interface{}{
+		"not_unique": "",
+		"data1":      "",
+		"data2":      "",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), n)
+
+	n, err = testEngine.Table(&MultiUniqueMap{}).InsertOnConflictDoNothing(map[string]interface{}{
+		"not_unique": "",
+		"data1":      "second",
+		"data2":      "",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), n)
+
+	n, err = testEngine.Table(&MultiUniqueMap{}).InsertOnConflictDoNothing(map[string]interface{}{
+		"not_unique": "",
+		"data1":      "",
+		"data2":      "",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), n)
+
+	n, err = testEngine.Table(&MultiUniqueMap{}).InsertOnConflictDoNothing(map[string]interface{}{
+		"not_unique": "",
+		"data1":      "",
+		"data2":      "third",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), n)
+
+	n, err = testEngine.Table(&MultiUniqueMap{}).InsertOnConflictDoNothing(map[string]interface{}{
+		"not_unique": "",
+		"data1":      "",
+		"data2":      "third",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), n)
+}
+
+func TestUpsertMap(t *testing.T) {
+	type MultiUniqueMap struct {
+		ID        int64 `xorm:"pk autoincr"`
+		NotUnique string
+		Data1     string `xorm:"UNIQUE(s) NOT NULL"`
+		Data2     string `xorm:"UNIQUE(s) NOT NULL"`
+	}
+
+	assert.NoError(t, testEngine.Sync2(&MultiUniqueMap{}))
+	_, _ = testEngine.Exec("DELETE FROM multi_unique_map")
+
+	n, err := testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+		"not_unique": "",
+		"data1":      "",
+		"data2":      "",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), n)
+
+	testCase := &MultiUniqueMap{}
+	has, err := testEngine.Get(testCase)
+	assert.NoError(t, err)
+	assert.True(t, has)
+
+	n, err = testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+		"not_unique": "",
+		"data1":      "second",
+		"data2":      "",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), n)
+	testCase = &MultiUniqueMap{
+		Data1: "second",
+	}
+	has, err = testEngine.Get(testCase)
+	assert.NoError(t, err)
+	assert.True(t, has)
+
+	n, err = testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+		"not_unique": "updated",
+		"data1":      "",
+		"data2":      "",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), n)
+	testCase = &MultiUniqueMap{
+		Data1: "",
+	}
+	has, err = testEngine.Get(testCase)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, "updated", testCase.NotUnique)
+
+	n, err = testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+		"not_unique": "",
+		"data1":      "",
+		"data2":      "third",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), n)
+	testCase = &MultiUniqueMap{
+		Data2: "third",
+	}
+	has, err = testEngine.Get(testCase)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, "", testCase.NotUnique)
+
+	n, err = testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+		"not_unique": "updated",
+		"data1":      "",
+		"data2":      "third",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), n)
+	testCase = &MultiUniqueMap{
+		Data2: "third",
+	}
+	has, err = testEngine.Get(testCase)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, "updated", testCase.NotUnique)
+
+	testCase = &MultiUniqueMap{
+		Data1: "second",
+	}
+	has, err = testEngine.Get(testCase)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, "", testCase.NotUnique)
 }
