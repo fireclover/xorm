@@ -540,17 +540,17 @@ func TestInsertOnConflictDoNothingMap(t *testing.T) {
 }
 
 func TestUpsertMap(t *testing.T) {
-	type MultiUniqueMap struct {
+	type MultiUniqueMapUpsert struct {
 		ID        int64 `xorm:"pk autoincr"`
 		NotUnique string
 		Data1     string `xorm:"UNIQUE(s) NOT NULL"`
 		Data2     string `xorm:"UNIQUE(s) NOT NULL"`
 	}
 
-	assert.NoError(t, testEngine.Sync2(&MultiUniqueMap{}))
-	_, _ = testEngine.Exec("DELETE FROM multi_unique_map")
+	assert.NoError(t, testEngine.Sync2(&MultiUniqueMapUpsert{}))
+	_, _ = testEngine.Exec("DELETE FROM multi_unique_map_upsert")
 
-	n, err := testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+	n, err := testEngine.Table(&MultiUniqueMapUpsert{}).Upsert(map[string]interface{}{
 		"not_unique": "",
 		"data1":      "",
 		"data2":      "",
@@ -558,33 +558,33 @@ func TestUpsertMap(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), n)
 
-	testCase := &MultiUniqueMap{}
+	testCase := &MultiUniqueMapUpsert{}
 	has, err := testEngine.Get(testCase)
 	assert.NoError(t, err)
 	assert.True(t, has)
 
-	n, err = testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+	n, err = testEngine.Table(&MultiUniqueMapUpsert{}).Upsert(map[string]interface{}{
 		"not_unique": "",
 		"data1":      "second",
 		"data2":      "",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), n)
-	testCase = &MultiUniqueMap{
+	testCase = &MultiUniqueMapUpsert{
 		Data1: "second",
 	}
 	has, err = testEngine.Get(testCase)
 	assert.NoError(t, err)
 	assert.True(t, has)
 
-	n, err = testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+	n, err = testEngine.Table(&MultiUniqueMapUpsert{}).Upsert(map[string]interface{}{
 		"not_unique": "updated",
 		"data1":      "",
 		"data2":      "",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), n)
-	testCase = &MultiUniqueMap{
+	testCase = &MultiUniqueMapUpsert{
 		Data1: "",
 	}
 	has, err = testEngine.Get(testCase)
@@ -592,14 +592,14 @@ func TestUpsertMap(t *testing.T) {
 	assert.True(t, has)
 	assert.Equal(t, "updated", testCase.NotUnique)
 
-	n, err = testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+	n, err = testEngine.Table(&MultiUniqueMapUpsert{}).Upsert(map[string]interface{}{
 		"not_unique": "",
 		"data1":      "",
 		"data2":      "third",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), n)
-	testCase = &MultiUniqueMap{
+	testCase = &MultiUniqueMapUpsert{
 		Data2: "third",
 	}
 	has, err = testEngine.Get(testCase)
@@ -607,14 +607,14 @@ func TestUpsertMap(t *testing.T) {
 	assert.True(t, has)
 	assert.Equal(t, "", testCase.NotUnique)
 
-	n, err = testEngine.Table(&MultiUniqueMap{}).Upsert(map[string]interface{}{
+	n, err = testEngine.Table(&MultiUniqueMapUpsert{}).Upsert(map[string]interface{}{
 		"not_unique": "updated",
 		"data1":      "",
 		"data2":      "third",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), n)
-	testCase = &MultiUniqueMap{
+	testCase = &MultiUniqueMapUpsert{
 		Data2: "third",
 	}
 	has, err = testEngine.Get(testCase)
@@ -622,7 +622,7 @@ func TestUpsertMap(t *testing.T) {
 	assert.True(t, has)
 	assert.Equal(t, "updated", testCase.NotUnique)
 
-	testCase = &MultiUniqueMap{
+	testCase = &MultiUniqueMapUpsert{
 		Data1: "second",
 	}
 	has, err = testEngine.Get(testCase)
