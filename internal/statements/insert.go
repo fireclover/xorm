@@ -59,16 +59,16 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 }
 
 func (statement *Statement) includeAutoIncrement(colNames []string) bool {
-	includesAutoIncrement := len(statement.RefTable.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.ORACLE || statement.dialect.URI().DBType == schemas.DAMENG)
-	if includesAutoIncrement {
+	needToIncludeAutoIncrement := len(statement.RefTable.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.ORACLE || statement.dialect.URI().DBType == schemas.DAMENG)
+	if needToIncludeAutoIncrement {
 		for _, col := range colNames {
 			if strings.EqualFold(col, statement.RefTable.AutoIncrement) {
-				includesAutoIncrement = false
+				needToIncludeAutoIncrement = false
 				break
 			}
 		}
 	}
-	return includesAutoIncrement
+	return needToIncludeAutoIncrement
 }
 
 func (statement *Statement) genInsertValues(buf *builder.BytesWriter, colNames []string, args []interface{}) error {

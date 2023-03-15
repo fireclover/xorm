@@ -117,15 +117,12 @@ func (session *Session) upsertMap(doUpdate bool, columns []string, args []interf
 		return 0, ErrTableNotFound
 	}
 
-	uniqueColValMap, numberOfUniqueConstraints, err := session.getUniqueColumns(columns, args)
+	uniqueColValMap, uniqueConstraints, err := session.getUniqueColumns(doUpdate, columns, args)
 	if err != nil {
 		return 0, err
 	}
-	if doUpdate && numberOfUniqueConstraints > 1 {
-		return 0, fmt.Errorf("cannot upsert if there is more than one unique constraint")
-	}
 
-	sql, args, err := session.statement.GenUpsertMapSQL(doUpdate, columns, args, uniqueColValMap)
+	sql, args, err := session.statement.GenUpsertSQL(doUpdate, false, columns, args, uniqueColValMap, uniqueConstraints)
 	if err != nil {
 		return 0, err
 	}
@@ -172,15 +169,12 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 		return 0, err
 	}
 
-	uniqueColValMap, numberOfUniqueConstraints, err := session.getUniqueColumns(colNames, args)
+	uniqueColValMap, uniqueConstraints, err := session.getUniqueColumns(doUpdate, colNames, args)
 	if err != nil {
 		return 0, err
 	}
-	if doUpdate && numberOfUniqueConstraints > 1 {
-		return 0, fmt.Errorf("cannot upsert if there is more than one unique constraint")
-	}
 
-	sqlStr, args, err := session.statement.GenUpsertSQL(doUpdate, colNames, args, uniqueColValMap)
+	sqlStr, args, err := session.statement.GenUpsertSQL(doUpdate, true, colNames, args, uniqueColValMap, uniqueConstraints)
 	if err != nil {
 		return 0, err
 	}
@@ -247,30 +241,60 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 	return n, err
 }
 
-func (session *Session) getUniqueColumns(argColumns []string, args []interface{}) (uniqueColValMap map[string]interface{}, numberOfUniqueConstraints int, err error) {
+var (
+	ErrNoUniqueConstraints       = fmt.Errorf("provided bean has no unique constraints")
+	ErrMultipleUniqueConstraints = fmt.Errorf("cannot upsert if there is more than one unique constraint tested")
+)
+
+func (session *Session) getUniqueColumns(doUpdate bool, argColumns []string, args []interface{}) (uniqueColValMap map[string]interface{}, constraints [][]string, err error) {
+	// We need to collect the constraints that are being "tested" by argColumns as compared to the table
+	//
+	// There are two cases:
+	//
+	// 1. Insert on conflict do nothing
+	// 2. Upsert
+	//
+	// If we are an "Insert on conflict do nothing" then more than one "constraint" can be tested.
+	// If we are an "Upsert" only one "constraint" can be tested.
+	//
+	// In Xorm the only constraints we know of are "Unique Indices" and "Primary Keys".
+	//
+	// For unique indices - every column in the unique index is being tested.
+	//
+	// If the primary key is a single column and it is autoincrement then an empty PK column is not testing an unique constraint
+	// otherwise it does count.
+
 	uniqueColValMap = make(map[string]interface{})
 	table := session.statement.RefTable
-	if len(table.Indexes) == 0 && (len(table.PrimaryKeys) == 0 || (len(table.PrimaryKeys) == 1 && table.AutoIncrement == table.PrimaryKeys[0])) {
-		return nil, 0, fmt.Errorf("provided bean has no unique constraints")
+	// Shortcut when there are no indices and no primary keys
+	if len(table.Indexes) == 0 && len(table.PrimaryKeys) == 0 {
+		return nil, nil, ErrNoUniqueConstraints
 	}
 
-	// Check the primary key
-	primaryColumnIncluded := false
-primaryCol:
-	for _, primaryKeyColumn := range table.PrimaryKeys {
-		for i, column := range argColumns {
-			if column == primaryKeyColumn {
-				uniqueColValMap[column] = args[i]
-				primaryColumnIncluded = true
-				continue primaryCol
-			}
+	numberOfUniqueConstraints := 0
+
+	// Check the primary key:
+	switch len(table.PrimaryKeys) {
+	case 0:
+		// No primary keys - nothing to do
+	case 1:
+		// check if the pkColumn is included
+		value := session.getUniqueColumnValue(table.PrimaryKeys[0], argColumns, args)
+		if value != nil {
+			numberOfUniqueConstraints++
+			uniqueColValMap[table.PrimaryKeys[0]] = value
+			constraints = append(constraints, table.PrimaryKeys)
 		}
-		if primaryKeyColumn != table.AutoIncrement {
-			primaryColumnIncluded = true
-		}
-	}
-	if primaryColumnIncluded {
+	default:
 		numberOfUniqueConstraints++
+		constraints = append(constraints, table.PrimaryKeys)
+		for _, column := range table.PrimaryKeys {
+			value := session.getUniqueColumnValue(column, argColumns, args)
+			if value == nil {
+				value = "" // default to empty
+			}
+			uniqueColValMap[column] = value
+		}
 	}
 
 	// Iterate across the indexes in the provided table
@@ -279,64 +303,84 @@ primaryCol:
 			continue
 		}
 		numberOfUniqueConstraints++
+		constraints = append(constraints, index.Cols)
+
 		// index is a Unique constraint
-	indexCol:
-		for _, indexColumnName := range index.Cols {
-			if _, has := uniqueColValMap[indexColumnName]; has {
-				// column is already included in uniqueCols so we don't need to add it again
-				continue indexCol
+		for _, column := range index.Cols {
+			if _, has := uniqueColValMap[column]; has {
+				continue
 			}
 
-			// Now iterate across colNames and add to the uniqueCols
-			for i, col := range argColumns {
-				if col == indexColumnName {
-					uniqueColValMap[col] = args[i]
-					continue indexCol
-				}
+			value := session.getUniqueColumnValue(column, argColumns, args)
+			if value == nil {
+				value = "" // default to empty
 			}
-
-			indexColumn := table.GetColumn(indexColumnName)
-			if !indexColumn.DefaultIsEmpty {
-				uniqueColValMap[indexColumnName] = indexColumn.Default
-			}
-
-			if indexColumn.MapType == schemas.ONLYFROMDB || indexColumn.IsAutoIncrement {
-				continue indexCol
-			}
-			// FIXME: what do we do here?!
-			if session.statement.OmitColumnMap.Contain(indexColumn.Name) {
-				continue indexCol
-			}
-			// FIXME: what do we do here?!
-			if len(session.statement.ColumnMap) > 0 && !session.statement.ColumnMap.Contain(indexColumn.Name) {
-				continue indexCol
-			}
-			// FIXME: what do we do here?!
-			if session.statement.IncrColumns.IsColExist(indexColumn.Name) {
-				for _, exprCol := range session.statement.IncrColumns {
-					if exprCol.ColName == indexColumn.Name {
-						uniqueColValMap[indexColumnName] = exprCol.Arg
-					}
-				}
-				continue indexCol
-			} else if session.statement.DecrColumns.IsColExist(indexColumn.Name) {
-				for _, exprCol := range session.statement.DecrColumns {
-					if exprCol.ColName == indexColumn.Name {
-						uniqueColValMap[indexColumnName] = exprCol.Arg
-					}
-				}
-				continue indexCol
-			} else if session.statement.ExprColumns.IsColExist(indexColumn.Name) {
-				for _, exprCol := range session.statement.ExprColumns {
-					if exprCol.ColName == indexColumn.Name {
-						uniqueColValMap[indexColumnName] = exprCol.Arg
-					}
-				}
-			}
-
-			// FIXME: not sure if there's anything else we can do
-			return nil, 0, fmt.Errorf("provided bean does not provide a value for unique constraint %s field %s which has no default", index.Name, indexColumnName)
+			uniqueColValMap[column] = value
 		}
 	}
-	return uniqueColValMap, numberOfUniqueConstraints, nil
+	if doUpdate && numberOfUniqueConstraints > 1 {
+		return nil, nil, ErrMultipleUniqueConstraints
+	}
+	if len(constraints) == 0 {
+		return nil, nil, ErrNoUniqueConstraints
+	}
+
+	return uniqueColValMap, constraints, nil
+}
+
+func (session *Session) getUniqueColumnValue(indexColumnName string, argColumns []string, args []interface{}) (value interface{}) {
+	table := session.statement.RefTable
+
+	// Now iterate across colNames and add to the uniqueCols
+	for i, col := range argColumns {
+		if col == indexColumnName {
+			return args[i]
+		}
+	}
+
+	indexColumn := table.GetColumn(indexColumnName)
+	if indexColumn.IsAutoIncrement {
+		return nil
+	}
+
+	if !indexColumn.DefaultIsEmpty {
+		value = indexColumn.Default
+	}
+
+	if indexColumn.MapType == schemas.ONLYFROMDB {
+		return value
+	}
+	// FIXME: what do we do here?!
+	if session.statement.OmitColumnMap.Contain(indexColumn.Name) {
+		return value
+	}
+	// FIXME: what do we do here?!
+	if len(session.statement.ColumnMap) > 0 && !session.statement.ColumnMap.Contain(indexColumn.Name) {
+		return value
+	}
+	// FIXME: what do we do here?!
+	if session.statement.IncrColumns.IsColExist(indexColumn.Name) {
+		for _, exprCol := range session.statement.IncrColumns {
+			if exprCol.ColName == indexColumn.Name {
+				return exprCol.Arg
+			}
+		}
+		return value
+	} else if session.statement.DecrColumns.IsColExist(indexColumn.Name) {
+		for _, exprCol := range session.statement.DecrColumns {
+			if exprCol.ColName == indexColumn.Name {
+				return exprCol.Arg
+			}
+		}
+		return value
+	} else if session.statement.ExprColumns.IsColExist(indexColumn.Name) {
+		for _, exprCol := range session.statement.ExprColumns {
+			if exprCol.ColName == indexColumn.Name {
+				return exprCol.Arg
+			}
+		}
+	}
+
+	// FIXME: not sure if there's anything else we can do
+	return value
 }
