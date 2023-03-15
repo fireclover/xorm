@@ -160,6 +160,10 @@ func (session *Session) upsertStruct(doUpdate bool, bean interface{}) (int64, er
 	if len(session.statement.TableName()) == 0 {
 		return 0, ErrTableNotFound
 	}
+	// For the moment we're going to disable Conds for upsert as I'm not certain how best to implement those
+	if doUpdate && (len(session.statement.ExprColumns) > 0 || session.statement.Conds().IsValid()) {
+		return 0, ErrConditionType
+	}
 
 	// handle BeforeInsertProcessor
 	for _, closure := range session.beforeClosures {
