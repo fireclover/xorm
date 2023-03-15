@@ -145,6 +145,11 @@ func (session *Session) upsertMap(doUpdate bool, columns []string, args []interf
 	if err != nil {
 		return 0, err
 	}
+	if doUpdate && session.engine.dialect.URI().DBType == schemas.MYSQL && affected == 2 {
+		// for MYSQL if INSERT ... ON CONFLICT RowsAffected == 2 means UPDATE
+		affected = 1
+	}
+
 	return affected, nil
 }
 
