@@ -619,3 +619,51 @@ func TestTimestamp(t *testing.T) {
 		assert.EqualValues(t, formatTime(d3.InsertTime, 6), formatTime(d4.InsertTime, 6))
 	}*/
 }
+
+type DATETIME time.Time
+
+func (dt *DATETIME) FromDB(v []byte) (err error) {
+	var xt time.Time
+	if err = xt.UnmarshalText(v); err != nil {
+		xt, err = time.ParseInLocation("2006-01-02 15:04:05", string(v), time.Local)
+		*dt = DATETIME(xt)
+		return err
+	}
+	*dt = DATETIME(xt)
+	return
+}
+
+func (dt *DATETIME) ToDB() ([]byte, error) {
+	if dt == nil {
+		return nil, nil
+	}
+	b := make([]byte, 0, len("2006-01-02 15:04:05"))
+	b = time.Time(*dt).AppendFormat(b, "2006-01-02 15:04:05")
+	return b, nil
+}
+
+func TestTimeTypedef(t *testing.T) {
+	{
+		assert.NoError(t, PrepareEngine())
+
+		type TypedefTimeStruct struct {
+			Id        int64
+			CreatedAt DATETIME `xorm:"DATETIME(6)"`
+		}
+
+		assertSync(t, new(TypedefTimeStruct))
+
+		var d1 = TypedefTimeStruct{
+			CreatedAt: DATETIME(time.Now()),
+		}
+		cnt, err := testEngine.Insert(&d1)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt)
+
+		var d2 TypedefTimeStruct
+		has, err := testEngine.ID(d1.Id).Get(&d2)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, formatTime(time.Time(d1.CreatedAt), 6), formatTime(time.Time(d2.CreatedAt), 6))
+	}
+}
