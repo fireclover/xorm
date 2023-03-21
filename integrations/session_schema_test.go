@@ -6,10 +6,12 @@ package integrations
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"xorm.io/xorm/schemas"
 )
 
 func TestStoreEngine(t *testing.T) {
@@ -36,6 +38,82 @@ func TestCreateTable(t *testing.T) {
 	}
 
 	assert.NoError(t, testEngine.Table("user_user").CreateTable(&UserinfoCreateTable{}))
+}
+
+func TestCreateTable2(t *testing.T) {
+	type BaseModelLogicalDel struct {
+		Id        string     `xorm:"varchar(46) pk"`
+		CreatedAt time.Time  `xorm:"created"`
+		UpdatedAt time.Time  `xorm:"updated"`
+		DeletedAt *time.Time `xorm:"deleted"`
+	}
+	type TestPerson struct {
+		BaseModelLogicalDel `xorm:"extends"`
+		UserId              string `xorm:"varchar(46) notnull"`
+		PersonId            string `xorm:"varchar(46) notnull"`
+		Star                bool
+		SortNo              int
+		DispName            string `xorm:"varchar(100)"`
+		FirstName           string
+		LastName            string
+		FirstNameKana       string
+		LastNameKana        string
+		BirthYear           *int
+		BirthMonth          *int
+		BirthDay            *int
+		ImageId             string `xorm:"varchar(46)"`
+		ImageDefaultId      string `xorm:"varchar(46)"`
+		UserText            string `xorm:"varchar(2000)"`
+		GenderId            *int
+		At1                 string `xorm:"varchar(10)"`
+		At1Rate             int
+		At2                 string `xorm:"varchar(10)"`
+		At2Rate             int
+		At3                 string `xorm:"varchar(10)"`
+		At3Rate             int
+		At4                 string `xorm:"varchar(10)"`
+		At4Rate             int
+		At5                 string `xorm:"varchar(10)"`
+		At5Rate             int
+		At6                 string `xorm:"varchar(10)"`
+		At6Rate             int
+	}
+
+	assert.NoError(t, PrepareEngine())
+
+	tb1, err := testEngine.TableInfo(TestPerson{})
+	assert.NoError(t, err)
+	tb2, err := testEngine.TableInfo(new(TestPerson))
+	assert.NoError(t, err)
+	cols1, cols2 := tb1.ColumnsSeq(), tb2.ColumnsSeq()
+	assert.EqualValues(t, len(cols1), len(cols2))
+	for i, col := range cols1 {
+		assert.EqualValues(t, col, cols2[i])
+	}
+
+	result, err := testEngine.IsTableExist(new(TestPerson))
+	assert.NoError(t, err)
+	if result {
+		assert.NoError(t, testEngine.DropTables(new(TestPerson)))
+	}
+
+	assert.NoError(t, testEngine.CreateTables(new(TestPerson)))
+	tables1, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	assert.Len(t, tables1, 1)
+	assert.EqualValues(t, len(cols1), len(tables1[0].Columns()))
+
+	result, err = testEngine.IsTableExist(new(TestPerson))
+	assert.NoError(t, err)
+	if result {
+		assert.NoError(t, testEngine.DropTables(new(TestPerson)))
+	}
+
+	assert.NoError(t, testEngine.CreateTables(TestPerson{}))
+	tables2, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	assert.Len(t, tables2, 1)
+	assert.EqualValues(t, len(cols1), len(tables2[0].Columns()))
 }
 
 func TestCreateMultiTables(t *testing.T) {
@@ -96,7 +174,7 @@ func (s *SyncTable3) TableName() string {
 func TestSyncTable(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	assert.NoError(t, testEngine.Sync2(new(SyncTable1)))
+	assert.NoError(t, testEngine.Sync(new(SyncTable1)))
 
 	tables, err := testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -106,7 +184,7 @@ func TestSyncTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 
-	assert.NoError(t, testEngine.Sync2(new(SyncTable2)))
+	assert.NoError(t, testEngine.Sync(new(SyncTable2)))
 
 	tables, err = testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -116,7 +194,7 @@ func TestSyncTable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
 
-	assert.NoError(t, testEngine.Sync2(new(SyncTable3)))
+	assert.NoError(t, testEngine.Sync(new(SyncTable3)))
 
 	tables, err = testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -130,7 +208,7 @@ func TestSyncTable(t *testing.T) {
 func TestSyncTable2(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	assert.NoError(t, testEngine.Table("sync_tablex").Sync2(new(SyncTable1)))
+	assert.NoError(t, testEngine.Table("sync_tablex").Sync(new(SyncTable1)))
 
 	tables, err := testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -143,7 +221,7 @@ func TestSyncTable2(t *testing.T) {
 		NewCol     string
 	}
 
-	assert.NoError(t, testEngine.Table("sync_tablex").Sync2(new(SyncTable4)))
+	assert.NoError(t, testEngine.Table("sync_tablex").Sync(new(SyncTable4)))
 	tables, err = testEngine.DBMetas()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tables))
@@ -164,14 +242,16 @@ func TestSyncTable3(t *testing.T) {
 
 	assert.NoError(t, PrepareEngine())
 
-	assert.NoError(t, testEngine.Sync2(new(SyncTable5)))
+	assert.NoError(t, testEngine.Sync(new(SyncTable5)))
 
 	tables, err := testEngine.DBMetas()
 	assert.NoError(t, err)
 	tableInfo, err := testEngine.TableInfo(new(SyncTable5))
 	assert.NoError(t, err)
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("name")), testEngine.Dialect().SQLType(tables[0].GetColumn("name")))
-	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("text")), testEngine.Dialect().SQLType(tables[0].GetColumn("text")))
+	/* Engine.DBMetas() returns the size of the column from the database but Engine.TableInfo() might not be able to guess the column size.
+	For example using MySQL/MariaDB: when utf-8 charset is used, "`xorm:"TEXT(21846)`" creates a MEDIUMTEXT column not a TEXT column. */
+	assert.True(t, testEngine.Dialect().SQLType(tables[0].GetColumn("text")) == testEngine.Dialect().SQLType(tableInfo.GetColumn("text")) || strings.HasPrefix(testEngine.Dialect().SQLType(tables[0].GetColumn("text")), testEngine.Dialect().SQLType(tableInfo.GetColumn("text"))+"("))
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("char")), testEngine.Dialect().SQLType(tables[0].GetColumn("char")))
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")))
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_var_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_var_char")))
@@ -195,7 +275,7 @@ func TestSyncTable3(t *testing.T) {
 		}()
 		assert.NoError(t, PrepareEngine())
 
-		assert.NoError(t, testEngine.Sync2(new(SyncTable5)))
+		assert.NoError(t, testEngine.Sync(new(SyncTable5)))
 
 		tables, err := testEngine.DBMetas()
 		assert.NoError(t, err)
@@ -207,6 +287,19 @@ func TestSyncTable3(t *testing.T) {
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_char")))
 		assert.EqualValues(t, testEngine.Dialect().SQLType(tableInfo.GetColumn("ten_var_char")), testEngine.Dialect().SQLType(tables[0].GetColumn("ten_var_char")))
 	}
+}
+
+func TestSyncTable4(t *testing.T) {
+	type SyncTable6 struct {
+		Id  int64
+		Qty float64 `xorm:"numeric(36,2)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+
+	assert.NoError(t, testEngine.Sync(new(SyncTable6)))
+
+	assert.NoError(t, testEngine.Sync(new(SyncTable6)))
 }
 
 func TestIsTableExist(t *testing.T) {
@@ -238,14 +331,14 @@ func TestIsTableEmpty(t *testing.T) {
 		Created     time.Time `xorm:"created"`
 		ILike       int
 		PageView    int
-		From_url    string
+		From_url    string // nolint
 		Pre_url     string `xorm:"unique"` //pre view image's url
 		Uid         int64
 	}
 
 	assert.NoError(t, testEngine.DropTables(&PictureEmpty{}, &NumericEmpty{}))
 
-	assert.NoError(t, testEngine.Sync2(new(PictureEmpty), new(NumericEmpty)))
+	assert.NoError(t, testEngine.Sync(new(PictureEmpty), new(NumericEmpty)))
 
 	isEmpty, err := testEngine.IsTableEmpty(&PictureEmpty{})
 	assert.NoError(t, err)
@@ -303,7 +396,7 @@ func TestIndexAndUnique(t *testing.T) {
 
 func TestMetaInfo(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	assert.NoError(t, testEngine.Sync2(new(CustomTableName), new(IndexOrUnique)))
+	assert.NoError(t, testEngine.Sync(new(CustomTableName), new(IndexOrUnique)))
 
 	tables, err := testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -333,8 +426,8 @@ func TestSync2_1(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
 	assert.NoError(t, testEngine.DropTables("wx_test"))
-	assert.NoError(t, testEngine.Sync2(new(WxTest)))
-	assert.NoError(t, testEngine.Sync2(new(WxTest)))
+	assert.NoError(t, testEngine.Sync(new(WxTest)))
+	assert.NoError(t, testEngine.Sync(new(WxTest)))
 }
 
 func TestUnique_1(t *testing.T) {
@@ -350,7 +443,7 @@ func TestUnique_1(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
 	assert.NoError(t, testEngine.DropTables("user_unique"))
-	assert.NoError(t, testEngine.Sync2(new(UserUnique)))
+	assert.NoError(t, testEngine.Sync(new(UserUnique)))
 
 	assert.NoError(t, testEngine.DropTables("user_unique"))
 	assert.NoError(t, testEngine.CreateTables(new(UserUnique)))
@@ -369,7 +462,7 @@ func TestSync2_2(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		tableName := fmt.Sprintf("test_sync2_index_%d", i)
 		tableNames[tableName] = true
-		assert.NoError(t, testEngine.Table(tableName).Sync2(new(TestSync2Index)))
+		assert.NoError(t, testEngine.Table(tableName).Sync(new(TestSync2Index)))
 
 		exist, err := testEngine.IsTableExist(tableName)
 		assert.NoError(t, err)
@@ -394,5 +487,52 @@ func TestSync2_Default(t *testing.T) {
 
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(TestSync2Default))
-	assert.NoError(t, testEngine.Sync2(new(TestSync2Default)))
+	assert.NoError(t, testEngine.Sync(new(TestSync2Default)))
+}
+
+func TestSync2_Default2(t *testing.T) {
+	type TestSync2Default2 struct {
+		Id       int64
+		UserId   int64  `xorm:"default(1)"`
+		IsMember bool   `xorm:"default(true)"`
+		Name     string `xorm:"default('')"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestSync2Default2))
+	assert.NoError(t, testEngine.Sync(new(TestSync2Default2)))
+	assert.NoError(t, testEngine.Sync(new(TestSync2Default2)))
+	assert.NoError(t, testEngine.Sync(new(TestSync2Default2)))
+
+	assert.NoError(t, testEngine.Sync(new(TestSync2Default2)))
+	assert.NoError(t, testEngine.Sync(new(TestSync2Default2)))
+	assert.NoError(t, testEngine.Sync(new(TestSync2Default2)))
+}
+
+func TestModifyColum(t *testing.T) {
+	// Since SQLITE don't support modify column SQL, currrently just ignore
+	if testEngine.Dialect().URI().DBType == schemas.SQLITE {
+		return
+	}
+	type TestModifyColumn struct {
+		Id       int64
+		UserId   int64  `xorm:"default(1)"`
+		IsMember bool   `xorm:"default(true)"`
+		Name     string `xorm:"char(10)"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestModifyColumn))
+
+	alterSQL := testEngine.Dialect().ModifyColumnSQL("test_modify_column", &schemas.Column{
+		Name: "name",
+		SQLType: schemas.SQLType{
+			Name: "VARCHAR",
+		},
+		Length:         16,
+		Nullable:       false,
+		DefaultIsEmpty: true,
+	})
+	_, err := testEngine.Exec(alterSQL)
+	assert.NoError(t, err)
 }

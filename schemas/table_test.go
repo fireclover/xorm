@@ -27,7 +27,6 @@ var testsGetColumn = []struct {
 var table *Table
 
 func init() {
-
 	table = NewEmptyTable()
 
 	var name string
@@ -41,7 +40,6 @@ func init() {
 }
 
 func TestGetColumn(t *testing.T) {
-
 	for _, test := range testsGetColumn {
 		if table.GetColumn(test.name) == nil {
 			t.Error("Column not found!")
@@ -50,7 +48,6 @@ func TestGetColumn(t *testing.T) {
 }
 
 func TestGetColumnIdx(t *testing.T) {
-
 	for _, test := range testsGetColumn {
 		if table.GetColumnIdx(test.name, test.idx) == nil {
 			t.Errorf("Column %s with idx %d not found!", test.name, test.idx)
@@ -59,10 +56,8 @@ func TestGetColumnIdx(t *testing.T) {
 }
 
 func BenchmarkGetColumnWithToLower(b *testing.B) {
-
 	for i := 0; i < b.N; i++ {
 		for _, test := range testsGetColumn {
-
 			if _, ok := table.columnsMap[strings.ToLower(test.name)]; !ok {
 				b.Errorf("Column not found:%s", test.name)
 			}
@@ -71,10 +66,8 @@ func BenchmarkGetColumnWithToLower(b *testing.B) {
 }
 
 func BenchmarkGetColumnIdxWithToLower(b *testing.B) {
-
 	for i := 0; i < b.N; i++ {
 		for _, test := range testsGetColumn {
-
 			if c, ok := table.columnsMap[strings.ToLower(test.name)]; ok {
 				if test.idx < len(c) {
 					continue
@@ -89,7 +82,6 @@ func BenchmarkGetColumnIdxWithToLower(b *testing.B) {
 }
 
 func BenchmarkGetColumn(b *testing.B) {
-
 	for i := 0; i < b.N; i++ {
 		for _, test := range testsGetColumn {
 			if table.GetColumn(test.name) == nil {
@@ -100,7 +92,6 @@ func BenchmarkGetColumn(b *testing.B) {
 }
 
 func BenchmarkGetColumnIdx(b *testing.B) {
-
 	for i := 0; i < b.N; i++ {
 		for _, test := range testsGetColumn {
 			if table.GetColumnIdx(test.name, test.idx) == nil {

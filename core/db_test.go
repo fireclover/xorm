@@ -15,25 +15,26 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var (
 	dbtype         = flag.String("dbtype", "sqlite3", "database type")
 	dbConn         = flag.String("dbConn", "./db_test.db", "database connect string")
-	createTableSql string
+	createTableSQL string
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 
 	switch *dbtype {
-	case "sqlite3":
-		createTableSql = "CREATE TABLE IF NOT EXISTS `user` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NULL, " +
+	case "sqlite3", "sqlite":
+		createTableSQL = "CREATE TABLE IF NOT EXISTS `user` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NULL, " +
 			"`title` TEXT NULL, `age` FLOAT NULL, `alias` TEXT NULL, `nick_name` TEXT NULL, `created` datetime);"
 	case "mysql":
 		fallthrough
 	default:
-		createTableSql = "CREATE TABLE IF NOT EXISTS `user` (`id` INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL, `name` TEXT NULL, " +
+		createTableSQL = "CREATE TABLE IF NOT EXISTS `user` (`id` INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL, `name` TEXT NULL, " +
 			"`title` TEXT NULL, `age` FLOAT NULL, `alias` TEXT NULL, `nick_name` TEXT NULL, `created` datetime);"
 	}
 
@@ -45,8 +46,11 @@ func TestMain(m *testing.M) {
 func testOpen() (*DB, error) {
 	switch *dbtype {
 	case "sqlite3":
-		os.Remove("./test.db")
+		os.Remove("./test_sqlite3.db")
 		return Open("sqlite3", "./test.db")
+	case "sqlite":
+		os.Remove("./test_sqlite.db")
+		return Open("sqlite", "./test.db")
 	case "mysql":
 		return Open("mysql", *dbConn)
 	default:
@@ -62,7 +66,7 @@ func BenchmarkOriQuery(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -92,7 +96,7 @@ func BenchmarkOriQuery(b *testing.B) {
 			if err != nil {
 				b.Error(err)
 			}
-			//fmt.Println(Id, Name, Title, Age, Alias, NickName)
+			// fmt.Println(Id, Name, Title, Age, Alias, NickName)
 		}
 		rows.Close()
 	}
@@ -117,7 +121,7 @@ func BenchmarkStructQuery(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -162,7 +166,7 @@ func BenchmarkStruct2Query(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -208,7 +212,7 @@ func BenchmarkSliceInterfaceQuery(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -241,13 +245,13 @@ func BenchmarkSliceInterfaceQuery(b *testing.B) {
 				b.Error(err)
 			}
 			b.Log(slice)
-			switch slice[1].(type) {
+			switch st := slice[1].(type) {
 			case *string:
-				if *slice[1].(*string) != "xlw" {
+				if *st != "xlw" {
 					b.Error(errors.New("name should be xlw"))
 				}
 			case []byte:
-				if string(slice[1].([]byte)) != "xlw" {
+				if string(st) != "xlw" {
 					b.Error(errors.New("name should be xlw"))
 				}
 			}
@@ -266,7 +270,7 @@ func BenchmarkSliceInterfaceQuery(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -317,7 +321,7 @@ func BenchmarkSliceStringQuery(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -368,7 +372,7 @@ func BenchmarkMapInterfaceQuery(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -395,14 +399,14 @@ func BenchmarkMapInterfaceQuery(b *testing.B) {
 			if err != nil {
 				b.Error(err)
 			}
-			switch m["name"].(type) {
+			switch t := m["name"].(type) {
 			case string:
-				if m["name"].(string) != "xlw" {
+				if t != "xlw" {
 					b.Log(m)
 					b.Error(errors.New("name should be xlw"))
 				}
 			case []byte:
-				if string(m["name"].([]byte)) != "xlw" {
+				if string(t) != "xlw" {
 					b.Log(m)
 					b.Error(errors.New("name should be xlw"))
 				}
@@ -422,7 +426,7 @@ func BenchmarkMapInterfaceQuery(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -469,7 +473,7 @@ func BenchmarkMapStringQuery(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -515,7 +519,7 @@ func BenchmarkExec(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -540,7 +544,7 @@ func BenchmarkExecMap(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}
@@ -573,7 +577,7 @@ func TestExecMap(t *testing.T) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		t.Error(err)
 	}
@@ -616,7 +620,7 @@ func TestExecStruct(t *testing.T) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		t.Error(err)
 	}
@@ -659,7 +663,7 @@ func BenchmarkExecStruct(b *testing.B) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(createTableSql)
+	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		b.Error(err)
 	}

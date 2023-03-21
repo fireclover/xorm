@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -50,7 +51,7 @@ func createEngine(dbType, connStr string) error {
 		if !*cluster {
 			switch schemas.DBType(strings.ToLower(dbType)) {
 			case schemas.MSSQL:
-				db, err := sql.Open(dbType, strings.Replace(connStr, "xorm_test", "master", -1))
+				db, err := sql.Open(dbType, strings.ReplaceAll(connStr, "xorm_test", "master"))
 				if err != nil {
 					return err
 				}
@@ -60,7 +61,7 @@ func createEngine(dbType, connStr string) error {
 				db.Close()
 				*ignoreSelectUpdate = true
 			case schemas.POSTGRES:
-				db, err := sql.Open(dbType, strings.Replace(connStr, "xorm_test", "postgres", -1))
+				db, err := sql.Open(dbType, strings.ReplaceAll(connStr, "xorm_test", "postgres"))
 				if err != nil {
 					return err
 				}
@@ -89,7 +90,7 @@ func createEngine(dbType, connStr string) error {
 				db.Close()
 				*ignoreSelectUpdate = true
 			case schemas.MYSQL:
-				db, err := sql.Open(dbType, strings.Replace(connStr, "xorm_test", "mysql", -1))
+				db, err := sql.Open(dbType, strings.ReplaceAll(connStr, "xorm_test", "mysql"))
 				if err != nil {
 					return err
 				}
@@ -97,6 +98,13 @@ func createEngine(dbType, connStr string) error {
 					return fmt.Errorf("db.Exec: %v", err)
 				}
 				db.Close()
+			case schemas.SQLITE, "sqlite":
+				u, err := url.Parse(connStr)
+				if err != nil {
+					return err
+				}
+				connStr = u.Path
+				*ignoreSelectUpdate = true
 			default:
 				*ignoreSelectUpdate = true
 			}
@@ -158,23 +166,28 @@ func createEngine(dbType, connStr string) error {
 	for _, table := range tables {
 		tableNames = append(tableNames, table.Name)
 	}
-	if err = testEngine.DropTables(tableNames...); err != nil {
-		return err
-	}
-	return nil
+	return testEngine.DropTables(tableNames...)
 }
 
+// PrepareEngine prepare tests ORM engine
 func PrepareEngine() error {
 	return createEngine(dbType, connString)
 }
 
+// MainTest the tests entrance
 func MainTest(m *testing.M) {
 	flag.Parse()
 
 	dbType = *db
 	if *db == "sqlite3" {
 		if ptrConnStr == nil {
-			connString = "./test.db?cache=shared&mode=rwc"
+			connString = "./test_sqlite3.db?cache=shared&mode=rwc"
+		} else {
+			connString = *ptrConnStr
+		}
+	} else if *db == "sqlite" {
+		if ptrConnStr == nil {
+			connString = "./test_sqlite.db?cache=shared&mode=rwc"
 		} else {
 			connString = *ptrConnStr
 		}

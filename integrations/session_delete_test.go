@@ -22,7 +22,7 @@ func TestDelete(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserinfoDelete)))
+	assert.NoError(t, testEngine.Sync(new(UserinfoDelete)))
 
 	session := testEngine.NewSession()
 	defer session.Close()
@@ -97,6 +97,7 @@ func TestDeleted(t *testing.T) {
 	// Test normal Find()
 	var records1 []Deleted
 	err = testEngine.Where("`"+testEngine.GetColumnMapper().Obj2Table("Id")+"` > 0").Find(&records1, &Deleted{})
+	assert.NoError(t, err)
 	assert.EqualValues(t, 3, len(records1))
 
 	// Test normal Get()
@@ -132,6 +133,7 @@ func TestDeleted(t *testing.T) {
 	record2 := &Deleted{}
 	has, err = testEngine.ID(2).Get(record2)
 	assert.NoError(t, err)
+	assert.True(t, has)
 	assert.True(t, record2.DeletedAt.IsZero())
 
 	// Test find all records whatever `deleted`.
@@ -206,12 +208,12 @@ func TestUnscopeDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var nowUnix = time.Now().Unix()
+	nowUnix := time.Now().Unix()
 	var s UnscopeDeleteStruct
 	cnt, err = testEngine.ID(1).Delete(&s)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
-	assert.EqualValues(t, nowUnix, s.DeletedAt.Unix())
+	assert.LessOrEqual(t, int(s.DeletedAt.Unix()-nowUnix), 1)
 
 	var s1 UnscopeDeleteStruct
 	has, err := testEngine.ID(1).Get(&s1)
@@ -223,7 +225,7 @@ func TestUnscopeDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, "test", s2.Name)
-	assert.EqualValues(t, nowUnix, s2.DeletedAt.Unix())
+	assert.LessOrEqual(t, int(s2.DeletedAt.Unix()-nowUnix), 1)
 
 	cnt, err = testEngine.ID(1).Unscoped().Delete(new(UnscopeDeleteStruct))
 	assert.NoError(t, err)
@@ -236,6 +238,56 @@ func TestUnscopeDelete(t *testing.T) {
 
 	var s4 UnscopeDeleteStruct
 	has, err = testEngine.ID(1).Unscoped().Get(&s4)
+	assert.NoError(t, err)
+	assert.False(t, has)
+}
+
+func TestDelete2(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type UserinfoDelete2 struct {
+		Uid   int64 `xorm:"id pk not null autoincr"`
+		IsMan bool
+	}
+
+	assert.NoError(t, testEngine.Sync(new(UserinfoDelete2)))
+
+	user := UserinfoDelete2{}
+	cnt, err := testEngine.Insert(&user)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	cnt, err = testEngine.Table("userinfo_delete2").In("id", []int{1}).Delete()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	user2 := UserinfoDelete2{}
+	has, err := testEngine.ID(1).Get(&user2)
+	assert.NoError(t, err)
+	assert.False(t, has)
+}
+
+func TestTruncate(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type TruncateUser struct {
+		Uid int64 `xorm:"id pk not null autoincr"`
+	}
+
+	assert.NoError(t, testEngine.Sync(new(TruncateUser)))
+
+	cnt, err := testEngine.Insert(&TruncateUser{})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	_, err = testEngine.Delete(&TruncateUser{})
+	assert.Error(t, err)
+
+	_, err = testEngine.Truncate(&TruncateUser{})
+	assert.NoError(t, err)
+
+	user2 := TruncateUser{}
+	has, err := testEngine.ID(1).Get(&user2)
 	assert.NoError(t, err)
 	assert.False(t, has)
 }

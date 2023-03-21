@@ -6,12 +6,14 @@ package xorm
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
+	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
@@ -40,13 +42,28 @@ func (session *Session) createTable(bean interface{}) error {
 		return err
 	}
 
-	sqlStrs := session.statement.GenCreateTableSQL()
-	for _, s := range sqlStrs {
-		_, err := session.exec(s)
+	session.statement.RefTable.StoreEngine = session.statement.StoreEngine
+	session.statement.RefTable.Charset = session.statement.Charset
+	tableName := session.statement.TableName()
+	refTable := session.statement.RefTable
+	if refTable.AutoIncrement != "" && session.engine.dialect.Features().AutoincrMode == dialects.SequenceAutoincrMode {
+		sqlStr, err := session.engine.dialect.CreateSequenceSQL(context.Background(), session.engine.db, utils.SeqName(tableName))
 		if err != nil {
 			return err
 		}
+		if _, err := session.exec(sqlStr); err != nil {
+			return err
+		}
 	}
+
+	sqlStr, _, err := session.engine.dialect.CreateTableSQL(context.Background(), session.engine.db, refTable, tableName)
+	if err != nil {
+		return err
+	}
+	if _, err := session.exec(sqlStr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -141,11 +158,32 @@ func (session *Session) dropTable(beanOrTableName interface{}) error {
 		checkIfExist = exist
 	}
 
-	if checkIfExist {
-		_, err := session.exec(sqlStr)
+	if !checkIfExist {
+		return nil
+	}
+	if _, err := session.exec(sqlStr); err != nil {
 		return err
 	}
-	return nil
+
+	if session.engine.dialect.Features().AutoincrMode == dialects.IncrAutoincrMode {
+		return nil
+	}
+
+	var seqName = utils.SeqName(tableName)
+	exist, err := session.engine.dialect.IsSequenceExist(session.ctx, session.getQueryer(), seqName)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		return nil
+	}
+
+	sqlStr, err = session.engine.dialect.DropSequenceSQL(seqName)
+	if err != nil {
+		return err
+	}
+	_, err = session.exec(sqlStr)
+	return err
 }
 
 // IsTableExist if a table is exist
@@ -185,24 +223,6 @@ func (session *Session) isTableEmpty(tableName string) (bool, error) {
 	return total == 0, nil
 }
 
-// find if index is exist according cols
-func (session *Session) isIndexExist2(tableName string, cols []string, unique bool) (bool, error) {
-	indexes, err := session.engine.dialect.GetIndexes(session.getQueryer(), session.ctx, tableName)
-	if err != nil {
-		return false, err
-	}
-
-	for _, index := range indexes {
-		if utils.SliceEq(index.Cols, cols) {
-			if unique {
-				return index.Type == schemas.UniqueType, nil
-			}
-			return index.Type == schemas.IndexType, nil
-		}
-	}
-	return false, nil
-}
-
 func (session *Session) addColumn(colName string) error {
 	col := session.statement.RefTable.GetColumn(colName)
 	sql := session.engine.dialect.AddColumnSQL(session.statement.TableName(), col)
@@ -225,7 +245,13 @@ func (session *Session) addUnique(tableName, uqeName string) error {
 }
 
 // Sync2 synchronize structs to database tables
+// Depricated
 func (session *Session) Sync2(beans ...interface{}) error {
+	return session.Sync(beans...)
+}
+
+// Sync synchronize structs to database tables
+func (session *Session) Sync(beans ...interface{}) error {
 	engine := session.engine
 
 	if session.isAutoClose {
@@ -336,8 +362,10 @@ func (session *Session) Sync2(beans ...interface{}) error {
 					}
 				} else {
 					if !(strings.HasPrefix(curType, expectedType) && curType[len(expectedType)] == '(') {
-						engine.logger.Warnf("Table %s column %s db type is %s, struct type is %s",
-							tbNameWithSchema, col.Name, curType, expectedType)
+						if !strings.EqualFold(schemas.SQLTypeName(curType), engine.dialect.Alias(schemas.SQLTypeName(expectedType))) {
+							engine.logger.Warnf("Table %s column %s db type is %s, struct type is %s",
+								tbNameWithSchema, col.Name, curType, expectedType)
+						}
 					}
 				}
 			} else if expectedType == schemas.Varchar {
@@ -348,6 +376,8 @@ func (session *Session) Sync2(beans ...interface{}) error {
 						_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
 					}
 				}
+			} else if col.Comment != oriCol.Comment {
+				_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
 			}
 
 			if col.Default != oriCol.Default {
@@ -448,27 +478,43 @@ func (session *Session) ImportFile(ddlPath string) ([]sql.Result, error) {
 
 // Import SQL DDL from io.Reader
 func (session *Session) Import(r io.Reader) ([]sql.Result, error) {
-	var results []sql.Result
-	var lastError error
-	scanner := bufio.NewScanner(r)
+	var (
+		results       []sql.Result
+		lastError     error
+		inSingleQuote bool
+		startComment  bool
+	)
 
-	var inSingleQuote bool
+	scanner := bufio.NewScanner(r)
 	semiColSpliter := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if atEOF && len(data) == 0 {
 			return 0, nil, nil
 		}
+		var oriInSingleQuote = inSingleQuote
 		for i, b := range data {
-			if b == '\'' {
-				inSingleQuote = !inSingleQuote
-			}
-			if !inSingleQuote && b == ';' {
-				return i + 1, data[0:i], nil
+			if startComment {
+				if b == '\n' {
+					startComment = false
+				}
+			} else {
+				if !inSingleQuote && i > 0 && data[i-1] == '-' && data[i] == '-' {
+					startComment = true
+					continue
+				}
+
+				if b == '\'' {
+					inSingleQuote = !inSingleQuote
+				}
+				if !inSingleQuote && b == ';' {
+					return i + 1, data[0:i], nil
+				}
 			}
 		}
 		// If we're at EOF, we have a final, non-terminated line. Return it.
 		if atEOF {
 			return len(data), data, nil
 		}
+		inSingleQuote = oriInSingleQuote
 		// Request more data.
 		return 0, nil, nil
 	}
@@ -479,10 +525,10 @@ func (session *Session) Import(r io.Reader) ([]sql.Result, error) {
 		query := strings.Trim(scanner.Text(), " \t\n\r")
 		if len(query) > 0 {
 			result, err := session.Exec(query)
-			results = append(results, result)
 			if err != nil {
 				return nil, err
 			}
+			results = append(results, result)
 		}
 	}
 

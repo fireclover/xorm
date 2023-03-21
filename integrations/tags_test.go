@@ -165,7 +165,7 @@ func TestExtends(t *testing.T) {
 	assert.True(t, info2.Userinfo.Uid > 0, "all of the id should has value")
 	assert.True(t, info2.Userdetail.Id > 0, "all of the id should has value")
 
-	var infos2 = make([]UserAndDetail, 0)
+	infos2 := make([]UserAndDetail, 0)
 	err = testEngine.Table(&Userinfo{}).
 		Join("LEFT", qt(ud), qt(ui)+"."+qt("detail_id")+" = "+qt(ud)+"."+qt(uiid)).
 		NoCascade().
@@ -219,9 +219,9 @@ func TestExtends2(t *testing.T) {
 	err = testEngine.CreateTables(&Message{}, &MessageUser{}, &MessageType{})
 	assert.NoError(t, err)
 
-	var sender = MessageUser{Name: "sender"}
-	var receiver = MessageUser{Name: "receiver"}
-	var msgtype = MessageType{Name: "type"}
+	sender := MessageUser{Name: "sender"}
+	receiver := MessageUser{Name: "receiver"}
+	msgtype := MessageType{Name: "type"}
 	_, err = testEngine.Insert(&sender, &receiver, &msgtype)
 	assert.NoError(t, err)
 
@@ -254,8 +254,8 @@ func TestExtends2(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	var mapper = testEngine.GetTableMapper().Obj2Table
-	var quote = testEngine.Quote
+	mapper := testEngine.GetTableMapper().Obj2Table
+	quote := testEngine.Quote
 	userTableName := quote(testEngine.TableName(mapper("MessageUser"), true))
 	typeTableName := quote(testEngine.TableName(mapper("MessageType"), true))
 	msgTableName := quote(testEngine.TableName(mapper("Message"), true))
@@ -280,9 +280,9 @@ func TestExtends3(t *testing.T) {
 	err = testEngine.CreateTables(&Message{}, &MessageUser{}, &MessageType{})
 	assert.NoError(t, err)
 
-	var sender = MessageUser{Name: "sender"}
-	var receiver = MessageUser{Name: "receiver"}
-	var msgtype = MessageType{Name: "type"}
+	sender := MessageUser{Name: "sender"}
+	receiver := MessageUser{Name: "receiver"}
+	msgtype := MessageType{Name: "type"}
 	_, err = testEngine.Insert(&sender, &receiver, &msgtype)
 	assert.NoError(t, err)
 
@@ -314,8 +314,8 @@ func TestExtends3(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	var mapper = testEngine.GetTableMapper().Obj2Table
-	var quote = testEngine.Quote
+	mapper := testEngine.GetTableMapper().Obj2Table
+	quote := testEngine.Quote
 	userTableName := quote(testEngine.TableName(mapper("MessageUser"), true))
 	typeTableName := quote(testEngine.TableName(mapper("MessageType"), true))
 	msgTableName := quote(testEngine.TableName(mapper("Message"), true))
@@ -345,8 +345,8 @@ func TestExtends4(t *testing.T) {
 	err = testEngine.CreateTables(&Message{}, &MessageUser{}, &MessageType{})
 	assert.NoError(t, err)
 
-	var sender = MessageUser{Name: "sender"}
-	var msgtype = MessageType{Name: "type"}
+	sender := MessageUser{Name: "sender"}
+	msgtype := MessageType{Name: "type"}
 	_, err = testEngine.Insert(&sender, &msgtype)
 	assert.NoError(t, err)
 
@@ -377,8 +377,8 @@ func TestExtends4(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	var mapper = testEngine.GetTableMapper().Obj2Table
-	var quote = testEngine.Quote
+	mapper := testEngine.GetTableMapper().Obj2Table
+	quote := testEngine.Quote
 	userTableName := quote(testEngine.TableName(mapper("MessageUser"), true))
 	typeTableName := quote(testEngine.TableName(mapper("MessageType"), true))
 	msgTableName := quote(testEngine.TableName(mapper("Message"), true))
@@ -417,29 +417,29 @@ func TestExtends5(t *testing.T) {
 	err = testEngine.CreateTables(&Size{}, &Book{})
 	assert.NoError(t, err)
 
-	var sc = Size{Width: 0.2, Height: 0.4}
-	var so = Size{Width: 0.2, Height: 0.8}
-	var s = Size{Width: 0.15, Height: 1.5}
-	var bk1 = Book{
+	sc := Size{Width: 0.2, Height: 0.4}
+	so := Size{Width: 0.2, Height: 0.8}
+	s := Size{Width: 0.15, Height: 1.5}
+	bk1 := Book{
 		SizeOpen:   &so,
 		SizeClosed: &sc,
 		Size:       &s,
 	}
-	var bk2 = Book{
+	bk2 := Book{
 		SizeOpen: &so,
 	}
-	var bk3 = Book{
+	bk3 := Book{
 		SizeClosed: &sc,
 		Size:       &s,
 	}
-	var bk4 = Book{}
-	var bk5 = Book{Size: &s}
+	bk4 := Book{}
+	bk5 := Book{Size: &s}
 	_, err = testEngine.Insert(&sc, &so, &s, &bk1, &bk2, &bk3, &bk4, &bk5)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var books = map[int64]Book{
+	books := map[int64]Book{
 		bk1.ID: bk1,
 		bk2.ID: bk2,
 		bk3.ID: bk3,
@@ -450,15 +450,15 @@ func TestExtends5(t *testing.T) {
 	session := testEngine.NewSession()
 	defer session.Close()
 
-	var mapper = testEngine.GetTableMapper().Obj2Table
-	var quote = testEngine.Quote
+	mapper := testEngine.GetTableMapper().Obj2Table
+	quote := testEngine.Quote
 	bookTableName := quote(testEngine.TableName(mapper("Book"), true))
 	sizeTableName := quote(testEngine.TableName(mapper("Size"), true))
 
 	list := make([]Book, 0)
 	err = session.
 		Select(fmt.Sprintf(
-			"%s.%s, sc.%s AS %s, sc.%s AS %s, s.%s, s.%s",
+			"%s.%s, `sc`.%s AS %s, `sc`.%s AS %s, `s`.%s, `s`.%s",
 			quote(bookTableName),
 			quote("id"),
 			quote("Width"),
@@ -472,12 +472,12 @@ func TestExtends5(t *testing.T) {
 		Join(
 			"LEFT",
 			sizeTableName+" AS `sc`",
-			bookTableName+".`SizeClosed`=sc.`id`",
+			bookTableName+".`SizeClosed`=`sc`.`id`",
 		).
 		Join(
 			"LEFT",
 			sizeTableName+" AS `s`",
-			bookTableName+".`Size`=s.`id`",
+			bookTableName+".`Size`=`s`.`id`",
 		).
 		Find(&list)
 	assert.NoError(t, err)
@@ -673,7 +673,7 @@ func TestCreatedUpdated(t *testing.T) {
 		Updated  time.Time `xorm:"updated"`
 	}
 
-	err := testEngine.Sync2(&CreatedUpdated{})
+	err := testEngine.Sync(&CreatedUpdated{})
 	assert.NoError(t, err)
 
 	c := &CreatedUpdated{Name: "test"}
@@ -728,9 +728,9 @@ type Lowercase struct {
 func TestLowerCase(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	err := testEngine.Sync2(&Lowercase{})
+	err := testEngine.Sync(&Lowercase{})
 	assert.NoError(t, err)
-	_, err = testEngine.Where("id > 0").Delete(&Lowercase{})
+	_, err = testEngine.Where("`id` > 0").Delete(&Lowercase{})
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&Lowercase{ended: 1})
@@ -757,6 +757,8 @@ func TestAutoIncrTag(t *testing.T) {
 	assert.True(t, cols[0].IsAutoIncrement)
 	assert.True(t, cols[0].IsPrimaryKey)
 	assert.Equal(t, "id", cols[0].Name)
+	assert.True(t, cols[0].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[0].Default)
 
 	type TestAutoIncr2 struct {
 		Id int64 `xorm:"id"`
@@ -770,6 +772,8 @@ func TestAutoIncrTag(t *testing.T) {
 	assert.False(t, cols[0].IsAutoIncrement)
 	assert.False(t, cols[0].IsPrimaryKey)
 	assert.Equal(t, "id", cols[0].Name)
+	assert.True(t, cols[0].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[0].Default)
 
 	type TestAutoIncr3 struct {
 		Id int64 `xorm:"'ID'"`
@@ -783,6 +787,8 @@ func TestAutoIncrTag(t *testing.T) {
 	assert.False(t, cols[0].IsAutoIncrement)
 	assert.False(t, cols[0].IsPrimaryKey)
 	assert.Equal(t, "ID", cols[0].Name)
+	assert.True(t, cols[0].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[0].Default)
 
 	type TestAutoIncr4 struct {
 		Id int64 `xorm:"pk"`
@@ -796,6 +802,8 @@ func TestAutoIncrTag(t *testing.T) {
 	assert.False(t, cols[0].IsAutoIncrement)
 	assert.True(t, cols[0].IsPrimaryKey)
 	assert.Equal(t, "id", cols[0].Name)
+	assert.True(t, cols[0].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[0].Default)
 }
 
 func TestTagComment(t *testing.T) {
@@ -809,7 +817,17 @@ func TestTagComment(t *testing.T) {
 		Id int64 `xorm:"comment(主键)"`
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(TestComment1)))
+	tb, err := testEngine.TableInfo(new(TestComment1))
+	assert.NoError(t, err)
+	cols := tb.Columns()
+	assert.EqualValues(t, 1, len(cols))
+	assert.False(t, cols[0].IsAutoIncrement)
+	assert.False(t, cols[0].IsPrimaryKey)
+	assert.Equal(t, "id", cols[0].Name)
+	assert.True(t, cols[0].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[0].Default)
+
+	assert.NoError(t, testEngine.Sync(new(TestComment1)))
 
 	tables, err := testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -823,7 +841,17 @@ func TestTagComment(t *testing.T) {
 		Id int64 `xorm:"comment('主键')"`
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(TestComment2)))
+	tb, err = testEngine.TableInfo(new(TestComment2))
+	assert.NoError(t, err)
+	cols = tb.Columns()
+	assert.EqualValues(t, 1, len(cols))
+	assert.False(t, cols[0].IsAutoIncrement)
+	assert.False(t, cols[0].IsPrimaryKey)
+	assert.Equal(t, "id", cols[0].Name)
+	assert.True(t, cols[0].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[0].Default)
+
+	assert.NoError(t, testEngine.Sync(new(TestComment2)))
 
 	tables, err = testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -840,6 +868,28 @@ func TestTagDefault(t *testing.T) {
 		Name string
 		Age  int `xorm:"default(10)"`
 	}
+
+	tb, err := testEngine.TableInfo(new(DefaultStruct))
+	assert.NoError(t, err)
+	cols := tb.Columns()
+	assert.EqualValues(t, 3, len(cols))
+	assert.True(t, cols[0].IsAutoIncrement)
+	assert.True(t, cols[0].IsPrimaryKey)
+	assert.Equal(t, "id", cols[0].Name)
+	assert.True(t, cols[0].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[0].Default)
+
+	assert.False(t, cols[1].IsAutoIncrement)
+	assert.False(t, cols[1].IsPrimaryKey)
+	assert.Equal(t, "name", cols[1].Name)
+	assert.True(t, cols[1].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[1].Default)
+
+	assert.False(t, cols[2].IsAutoIncrement)
+	assert.False(t, cols[2].IsPrimaryKey)
+	assert.Equal(t, "age", cols[2].Name)
+	assert.False(t, cols[2].DefaultIsEmpty)
+	assert.EqualValues(t, "10", cols[2].Default)
 
 	assertSync(t, new(DefaultStruct))
 
@@ -880,9 +930,32 @@ func TestTagDefault2(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
 	type DefaultStruct2 struct {
-		Id   int64
-		Name string
+		Id          int64
+		Name        string
+		NullDefault string `xorm:"default('NULL')"`
 	}
+
+	tb, err := testEngine.TableInfo(new(DefaultStruct2))
+	assert.NoError(t, err)
+	cols := tb.Columns()
+	assert.EqualValues(t, 3, len(cols))
+	assert.True(t, cols[0].IsAutoIncrement)
+	assert.True(t, cols[0].IsPrimaryKey)
+	assert.Equal(t, "id", cols[0].Name)
+	assert.True(t, cols[0].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[0].Default)
+
+	assert.False(t, cols[1].IsAutoIncrement)
+	assert.False(t, cols[1].IsPrimaryKey)
+	assert.Equal(t, "name", cols[1].Name)
+	assert.True(t, cols[1].DefaultIsEmpty)
+	assert.EqualValues(t, "", cols[1].Default)
+
+	assert.False(t, cols[2].IsAutoIncrement)
+	assert.False(t, cols[2].IsPrimaryKey)
+	assert.Equal(t, "null_default", cols[2].Name)
+	assert.False(t, cols[2].DefaultIsEmpty)
+	assert.EqualValues(t, "'NULL'", cols[2].Default)
 
 	assertSync(t, new(DefaultStruct2))
 
@@ -1129,7 +1202,7 @@ func TestTagTime(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, s.Created.UTC().Format("2006-01-02 15:04:05"),
-		strings.Replace(strings.Replace(tm, "T", " ", -1), "Z", "", -1))
+		strings.ReplaceAll(strings.ReplaceAll(tm, "T", " "), "Z", ""))
 }
 
 func TestTagAutoIncr(t *testing.T) {
@@ -1214,7 +1287,7 @@ func TestVersion1(t *testing.T) {
 	assert.EqualValues(t, newVer.Ver, 2)
 
 	newVer = new(VersionS)
-	has, err = testEngine.ID(ver.Id).Get(newVer)
+	_, err = testEngine.ID(ver.Id).Get(newVer)
 	assert.NoError(t, err)
 	assert.EqualValues(t, newVer.Ver, 2)
 }
@@ -1228,7 +1301,7 @@ func TestVersion2(t *testing.T) {
 	err = testEngine.CreateTables(new(VersionS))
 	assert.NoError(t, err)
 
-	var vers = []VersionS{
+	vers := []VersionS{
 		{Name: "sfsfdsfds"},
 		{Name: "xxxxx"},
 	}
@@ -1272,7 +1345,7 @@ func TestVersion3(t *testing.T) {
 	assert.EqualValues(t, newVer.Ver, 2)
 
 	newVer = new(VersionUintS)
-	has, err = testEngine.ID(ver.Id).Get(newVer)
+	_, err = testEngine.ID(ver.Id).Get(newVer)
 	assert.NoError(t, err)
 	assert.EqualValues(t, newVer.Ver, 2)
 }
@@ -1286,7 +1359,7 @@ func TestVersion4(t *testing.T) {
 	err = testEngine.CreateTables(new(VersionUintS))
 	assert.NoError(t, err)
 
-	var vers = []VersionUintS{
+	vers := []VersionUintS{
 		{Name: "sfsfdsfds"},
 		{Name: "xxxxx"},
 	}
@@ -1326,4 +1399,56 @@ func TestIndexes(t *testing.T) {
 	sort.Strings(slice2)
 	assert.EqualValues(t, slice1, slice2)
 	assert.EqualValues(t, 3, len(tables[0].Indexes))
+}
+
+type TestTableIndicesStruct struct {
+	Id    int64
+	Name  string `xorm:"index index(f_one_f_two) unique(s)"` // we're going to override the index f_one_f_two in TableIndices and remove it from this column
+	Email string `xorm:"index unique(s)"`
+	FTwo  string `xorm:"index(f_two_f_one) index(f_one_f_two) f_two"`
+	FOne  string `xorm:"index(f_two_f_one) f_one"`
+}
+
+func (t *TestTableIndicesStruct) TableIndices() []*schemas.Index {
+	newIndex := schemas.NewIndex("f_one_f_two", schemas.IndexType)
+	newIndex.AddColumn("f_one", "f_two")
+
+	return []*schemas.Index{newIndex}
+}
+
+func TestTableIndices(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	assertSync(t, new(TestTableIndicesStruct))
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(tables))
+	assert.EqualValues(t, 5, len(tables[0].Columns()))
+	slice1 := []string{
+		testEngine.GetColumnMapper().Obj2Table("Id"),
+		testEngine.GetColumnMapper().Obj2Table("Name"),
+		testEngine.GetColumnMapper().Obj2Table("Email"),
+		testEngine.GetColumnMapper().Obj2Table("FTwo"),
+		testEngine.GetColumnMapper().Obj2Table("FOne"),
+	}
+	slice2 := []string{
+		tables[0].Columns()[0].Name,
+		tables[0].Columns()[1].Name,
+		tables[0].Columns()[2].Name,
+		tables[0].Columns()[3].Name,
+		tables[0].Columns()[4].Name,
+	}
+	sort.Strings(slice1)
+	sort.Strings(slice2)
+	assert.EqualValues(t, slice1, slice2)
+	assert.EqualValues(t, 5, len(tables[0].Indexes))
+	index, ok := tables[0].Indexes["f_one_f_two"]
+	if assert.True(t, ok) {
+		assert.EqualValues(t, []string{"f_one", "f_two"}, index.Cols)
+	}
+	index, ok = tables[0].Indexes["f_two_f_one"]
+	if assert.True(t, ok) {
+		assert.EqualValues(t, []string{"f_two", "f_one"}, index.Cols)
+	}
 }

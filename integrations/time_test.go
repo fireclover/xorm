@@ -15,8 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func formatTime(t time.Time) string {
-	return t.Format("2006-01-02 15:04:05")
+func formatTime(t time.Time, scales ...int) string {
+	var layout = "2006-01-02 15:04:05"
+	if len(scales) > 0 && scales[0] > 0 {
+		layout += "." + strings.Repeat("0", scales[0])
+	}
+	return t.Format(layout)
 }
 
 func TestTimeUserTime(t *testing.T) {
@@ -53,9 +57,18 @@ func TestTimeUserTimeDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type TimeUser2 struct {
@@ -118,9 +131,18 @@ func TestTimeUserCreatedDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type UserCreated2 struct {
@@ -204,9 +226,18 @@ func TestTimeUserUpdatedDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type UserUpdated2 struct {
@@ -293,7 +324,7 @@ func TestTimeUserDeleted(t *testing.T) {
 	fmt.Println("user2 str", user2.CreatedAtStr, user2.UpdatedAtStr)
 
 	var user3 UserDeleted
-	cnt, err = testEngine.Where("id = ?", "lunny").Delete(&user3)
+	cnt, err = testEngine.Where("`id` = ?", "lunny").Delete(&user3)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 	assert.True(t, !utils.IsTimeZero(user3.DeletedAt))
@@ -311,9 +342,18 @@ func TestTimeUserDeletedDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type UserDeleted2 struct {
@@ -346,7 +386,7 @@ func TestTimeUserDeletedDiffLoc(t *testing.T) {
 	fmt.Println("user2", user2.CreatedAt, user2.UpdatedAt, user2.DeletedAt)
 
 	var user3 UserDeleted2
-	cnt, err = testEngine.Where("id = ?", "lunny").Delete(&user3)
+	cnt, err = testEngine.Where("`id` = ?", "lunny").Delete(&user3)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 	assert.True(t, !utils.IsTimeZero(user3.DeletedAt))
@@ -417,7 +457,7 @@ func TestCustomTimeUserDeleted(t *testing.T) {
 	fmt.Println("user2", user2.CreatedAt, user2.UpdatedAt, user2.DeletedAt)
 
 	var user3 UserDeleted3
-	cnt, err = testEngine.Where("id = ?", "lunny").Delete(&user3)
+	cnt, err = testEngine.Where("`id` = ?", "lunny").Delete(&user3)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 	assert.True(t, !utils.IsTimeZero(time.Time(user3.DeletedAt)))
@@ -435,9 +475,18 @@ func TestCustomTimeUserDeletedDiffLoc(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
+	oldTZLoc := testEngine.GetTZLocation()
+	defer func() {
+		testEngine.SetTZLocation(oldTZLoc)
+	}()
 	testEngine.SetTZLocation(loc)
+
 	dbLoc, err := time.LoadLocation("America/New_York")
 	assert.NoError(t, err)
+	oldDBLoc := testEngine.GetTZDatabase()
+	defer func() {
+		testEngine.SetTZDatabase(oldDBLoc)
+	}()
 	testEngine.SetTZDatabase(dbLoc)
 
 	type UserDeleted4 struct {
@@ -470,7 +519,7 @@ func TestCustomTimeUserDeletedDiffLoc(t *testing.T) {
 	fmt.Println("user2", user2.CreatedAt, user2.UpdatedAt, user2.DeletedAt)
 
 	var user3 UserDeleted4
-	cnt, err = testEngine.Where("id = ?", "lunny").Delete(&user3)
+	cnt, err = testEngine.Where("`id` = ?", "lunny").Delete(&user3)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 	assert.True(t, !utils.IsTimeZero(time.Time(user3.DeletedAt)))
@@ -519,4 +568,54 @@ func TestDeletedInt64(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, d1, d4)
+}
+
+func TestTimestamp(t *testing.T) {
+	{
+		assert.NoError(t, PrepareEngine())
+
+		type TimestampStruct struct {
+			Id         int64
+			InsertTime time.Time `xorm:"DATETIME(6)"`
+		}
+
+		assertSync(t, new(TimestampStruct))
+
+		var d1 = TimestampStruct{
+			InsertTime: time.Now(),
+		}
+		cnt, err := testEngine.Insert(&d1)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt)
+
+		var d2 TimestampStruct
+		has, err := testEngine.ID(d1.Id).Get(&d2)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, formatTime(d1.InsertTime, 6), formatTime(d2.InsertTime, 6))
+	}
+
+	/*{
+		assert.NoError(t, PrepareEngine())
+
+		type TimestampzStruct struct {
+			Id         int64
+			InsertTime time.Time `xorm:"TIMESTAMPZ"`
+		}
+
+		assertSync(t, new(TimestampzStruct))
+
+		var d3 = TimestampzStruct{
+			InsertTime: time.Now(),
+		}
+		cnt, err := testEngine.Insert(&d3)
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, cnt)
+
+		var d4 TimestampzStruct
+		has, err := testEngine.ID(d3.Id).Get(&d4)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.EqualValues(t, formatTime(d3.InsertTime, 6), formatTime(d4.InsertTime, 6))
+	}*/
 }
