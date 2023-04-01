@@ -62,7 +62,7 @@ insert into employee_indication values (1,2), (1,3), (2,3), (2,4), (2,5), (3,5),
 	var employee Employee
 	_, err = engine.Preloads(
 		engine.Preload("Indications.Buddy").Cols("name"),
-		engine.Preload("Indications").NoPrune(),
+		engine.Preload("Indications").Cols("id"),
 	).Cols("name").Where(builder.Eq{"id": 2}).Get(&employee)
 	require.NoError(t, err)
 

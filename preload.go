@@ -10,10 +10,9 @@ import (
 
 // Preload is the representation of an association preload
 type Preload struct {
-	path    []string
-	cols    []string
-	cond    builder.Cond
-	noPrune bool
+	path []string
+	cols []string
+	cond builder.Cond
 }
 
 // NewPreload creates a new preload with the specified path
@@ -33,12 +32,6 @@ func (p *Preload) Cols(cols ...string) *Preload {
 // Where sets the where condition for this preload
 func (p *Preload) Where(cond builder.Cond) *Preload {
 	p.cond = p.cond.And(cond)
-	return p
-}
-
-// NoPrune sets a flag to avoid pruning empty associations
-func (p *Preload) NoPrune() *Preload {
-	p.noPrune = true
 	return p
 }
 
@@ -150,7 +143,7 @@ func (node *PreloadTreeNode) compute(session *Session, ownMap, pruneMap reflect.
 	}
 
 	var refPruneMap reflect.Value
-	if len(node.children) > 0 && !(node.preload != nil && (len(node.preload.cols) > 0 || node.preload.noPrune)) {
+	if len(node.children) > 0 && !(node.preload != nil && len(node.preload.cols) > 0) {
 		refPruneMap = reflect.MakeMap(reflect.MapOf(refMap.Type().Key(), reflect.TypeOf(true)))
 		refIter := refMap.MapRange()
 		for refIter.Next() {
