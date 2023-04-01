@@ -91,6 +91,12 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 
 	sliceElementType := sliceValue.Type().Elem()
 
+	if session.preloadNode != nil {
+		if sliceElementType.Kind() != reflect.Ptr || sliceElementType.Elem().Kind() != reflect.Struct {
+			return errors.New("preloading requires a pointer to a slice or a map of struct pointer")
+		}
+	}
+
 	tp := tpStruct
 	if session.statement.RefTable == nil {
 		if sliceElementType.Kind() == reflect.Ptr {
@@ -141,6 +147,18 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 		}
 	}
 
+	if session.preloadNode != nil {
+		if err := session.preloadNode.Validate(table); err != nil {
+			return err
+		}
+		// we need the columns required for the preloads
+		if !session.statement.ColumnMap.IsEmpty() {
+			for _, k := range session.preloadNode.ExtraCols {
+				session.statement.ColumnMap.Add(k)
+			}
+		}
+	}
+
 	sqlStr, args, err := session.statement.GenFindSQL(autoCond)
 	if err != nil {
 		return err
@@ -158,7 +176,26 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 		}
 	}
 
-	return session.noCacheFind(table, sliceValue, sqlStr, args...)
+	err = session.noCacheFind(table, sliceValue, sqlStr, args...)
+	if err != nil {
+		return err
+	}
+
+	if session.preloadNode != nil {
+		if isSlice {
+			// convert to a map before preloading
+			originalSliceValue := sliceValue
+			pkColumn := table.PKColumns()[0]
+			sliceValue = reflect.MakeMap(reflect.MapOf(pkColumn.FieldType, sliceElementType))
+			for i := 0; i < originalSliceValue.Len(); i++ {
+				element := originalSliceValue.Index(i)
+				pkValue, _ := pkColumn.ValueOfV(&element)
+				sliceValue.SetMapIndex(*pkValue, element)
+			}
+		}
+		return session.preloadNode.Compute(session, sliceValue)
+	}
+	return nil
 }
 
 func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect.Value, sqlStr string, args ...interface{}) error {

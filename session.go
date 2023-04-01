@@ -87,6 +87,7 @@ type Session struct {
 
 	ctx         context.Context
 	sessionType sessionType
+	preloadNode *PreloadNode
 }
 
 func newSessionID() string {
@@ -798,5 +799,19 @@ func (session *Session) PingContext(ctx context.Context) error {
 // disable version check
 func (session *Session) NoVersionCheck() *Session {
 	session.statement.CheckVersion = false
+	return session
+}
+
+// Preloads adds preloads
+func (session *Session) Preloads(preloads ...*Preload) *Session {
+	if session.preloadNode == nil {
+		session.preloadNode = NewPreloadNode()
+	}
+	for _, preload := range preloads {
+		if err := session.preloadNode.Add(preload); err != nil {
+			session.statement.LastError = err
+			break
+		}
+	}
 	return session
 }
