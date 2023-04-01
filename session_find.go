@@ -153,7 +153,7 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 		}
 		// we need the columns required for the preloads
 		if !session.statement.ColumnMap.IsEmpty() {
-			for _, k := range session.preloadNode.ExtraCols {
+			for _, k := range session.preloadNode.extraCols {
 				session.statement.ColumnMap.Add(k)
 			}
 		}

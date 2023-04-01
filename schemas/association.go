@@ -6,6 +6,7 @@ import (
 	"xorm.io/builder"
 )
 
+// Association is the representation of an association
 type Association struct {
 	OwnTable  *Table
 	OwnColumn *Column
@@ -17,18 +18,22 @@ type Association struct {
 	TargetCol string // has_one, has_many, many_to_many
 }
 
-func (a *Association) MakeJoinSlice() reflect.Value {
+// NewJoinSlice creates a slice to hold the intermediate result of a many-to-many association query
+func (a *Association) NewJoinSlice() reflect.Value {
 	return reflect.New(reflect.SliceOf(a.JoinTable.Type))
 }
 
+// MakeJoinMap creates a map to hold the intermediate result of a many-to-many association
 func (a *Association) MakeJoinMap() reflect.Value {
 	return reflect.MakeMap(reflect.MapOf(a.RefPkType, reflect.SliceOf(a.OwnPkType)))
 }
 
+// MakeRefMap creates a map to hold the result of an association query
 func (a *Association) MakeRefMap() reflect.Value {
 	return reflect.MakeMap(reflect.MapOf(a.RefPkType, reflect.PointerTo(a.RefTable.Type)))
 }
 
+// ValidateOwnMap validates the type of the owner map (parent of an association)
 func (a *Association) ValidateOwnMap(ownMap reflect.Value) error {
 	if ownMap.Type() != reflect.MapOf(a.OwnPkType, reflect.PointerTo(a.OwnTable.Type)) {
 		return fmt.Errorf("wrong map type: %v", ownMap.Type())
@@ -36,6 +41,7 @@ func (a *Association) ValidateOwnMap(ownMap reflect.Value) error {
 	return nil
 }
 
+// GetCond gets a where condition to use in an association query
 func (a *Association) GetCond(ownMap reflect.Value) builder.Cond {
 	if a.JoinTable != nil {
 		return a.condManyToMany(ownMap)
@@ -46,6 +52,7 @@ func (a *Association) GetCond(ownMap reflect.Value) builder.Cond {
 	return a.condHasOneOrMany(ownMap)
 }
 
+// condBelongsTo gets a where condition to use in a belongs-to association query
 func (a *Association) condBelongsTo(ownMap reflect.Value) builder.Cond {
 	pkMap := make(map[interface{}]bool)
 	fkCol := a.OwnTable.GetColumn(a.SourceCol)
@@ -69,6 +76,7 @@ func (a *Association) condBelongsTo(ownMap reflect.Value) builder.Cond {
 	return builder.In(a.RefTable.PrimaryKeys[0], pks)
 }
 
+// condHasOneOrMany gets a where condition to use in a has-one or has-many association query
 func (a *Association) condHasOneOrMany(ownMap reflect.Value) builder.Cond {
 	var pks []interface{}
 	iter := ownMap.MapRange()
@@ -78,6 +86,7 @@ func (a *Association) condHasOneOrMany(ownMap reflect.Value) builder.Cond {
 	return builder.In(a.TargetCol, pks)
 }
 
+// condHasOneOrMany gets a where condition to use in a many-to-many association query
 func (a *Association) condManyToMany(ownMap reflect.Value) builder.Cond {
 	var pks []interface{}
 	iter := ownMap.MapRange()
@@ -87,6 +96,7 @@ func (a *Association) condManyToMany(ownMap reflect.Value) builder.Cond {
 	return builder.In(a.SourceCol, pks)
 }
 
+// Link links the owner (parent) values with the referenced association values
 func (a *Association) Link(ownMap, refMap, pruneMap, joinMap reflect.Value) {
 	if a.JoinTable != nil {
 		a.linkManyToMany(ownMap, refMap, pruneMap, joinMap)
@@ -97,6 +107,7 @@ func (a *Association) Link(ownMap, refMap, pruneMap, joinMap reflect.Value) {
 	}
 }
 
+// linkBelongsTo links the owner (parent) values with the referenced belongs-to association values
 func (a *Association) linkBelongsTo(ownMap, refMap, pruneMap reflect.Value) {
 	fkCol := a.OwnTable.GetColumn(a.SourceCol)
 	iter := ownMap.MapRange()
@@ -121,6 +132,7 @@ func (a *Association) linkBelongsTo(ownMap, refMap, pruneMap reflect.Value) {
 	}
 }
 
+// linkBelongsTo links the owner (parent) values with the referenced has-one or has-many association values
 func (a *Association) linkHasOneOrMany(ownMap, refMap, pruneMap reflect.Value) {
 	hasMany := a.OwnColumn.FieldType.Kind() == reflect.Slice
 	fkCol := a.RefTable.GetColumn(a.TargetCol)
@@ -148,6 +160,7 @@ func (a *Association) linkHasOneOrMany(ownMap, refMap, pruneMap reflect.Value) {
 	}
 }
 
+// linkManyToMany links the owner (parent) values with the referenced many-to-many association values
 func (a *Association) linkManyToMany(ownMap, refMap, pruneMap, joinMap reflect.Value) {
 	iter := refMap.MapRange()
 	for iter.Next() {

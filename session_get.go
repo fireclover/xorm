@@ -87,7 +87,7 @@ func (session *Session) get(beans ...interface{}) (bool, error) {
 		}
 		// we need the columns required for the preloads
 		if !session.statement.ColumnMap.IsEmpty() {
-			for _, k := range session.preloadNode.ExtraCols {
+			for _, k := range session.preloadNode.extraCols {
 				session.statement.ColumnMap.Add(k)
 			}
 		}

@@ -87,7 +87,7 @@ type Session struct {
 
 	ctx         context.Context
 	sessionType sessionType
-	preloadNode *PreloadNode
+	preloadNode *PreloadTreeNode
 }
 
 func newSessionID() string {
@@ -805,7 +805,7 @@ func (session *Session) NoVersionCheck() *Session {
 // Preloads adds preloads
 func (session *Session) Preloads(preloads ...*Preload) *Session {
 	if session.preloadNode == nil {
-		session.preloadNode = NewPreloadNode()
+		session.preloadNode = NewPreloadTeeeNode()
 	}
 	for _, preload := range preloads {
 		if err := session.preloadNode.Add(preload); err != nil {
