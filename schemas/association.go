@@ -30,12 +30,12 @@ func (a *Association) MakeJoinMap() reflect.Value {
 
 // MakeRefMap creates a map to hold the result of an association query
 func (a *Association) MakeRefMap() reflect.Value {
-	return reflect.MakeMap(reflect.MapOf(a.RefPkType, reflect.PointerTo(a.RefTable.Type)))
+	return reflect.MakeMap(reflect.MapOf(a.RefPkType, reflect.PtrTo(a.RefTable.Type)))
 }
 
 // ValidateOwnMap validates the type of the owner map (parent of an association)
 func (a *Association) ValidateOwnMap(ownMap reflect.Value) error {
-	if ownMap.Type() != reflect.MapOf(a.OwnPkType, reflect.PointerTo(a.OwnTable.Type)) {
+	if ownMap.Type() != reflect.MapOf(a.OwnPkType, reflect.PtrTo(a.OwnTable.Type)) {
 		return fmt.Errorf("wrong map type: %v", ownMap.Type())
 	}
 	return nil
@@ -60,7 +60,7 @@ func (a *Association) condBelongsTo(ownMap reflect.Value) builder.Cond {
 	for iter.Next() {
 		structPtr := iter.Value()
 		fk, _ := fkCol.ValueOfV(&structPtr)
-		if fk.Type().Kind() == reflect.Pointer {
+		if fk.Type().Kind() == reflect.Ptr {
 			if fk.IsNil() {
 				continue
 			}
@@ -114,7 +114,7 @@ func (a *Association) linkBelongsTo(ownMap, refMap, pruneMap reflect.Value) {
 	for iter.Next() {
 		structPtr := iter.Value()
 		fk, _ := fkCol.ValueOfV(&structPtr)
-		if fk.Type().Kind() == reflect.Pointer {
+		if fk.Type().Kind() == reflect.Ptr {
 			if fk.IsNil() {
 				continue
 			}
@@ -140,7 +140,7 @@ func (a *Association) linkHasOneOrMany(ownMap, refMap, pruneMap reflect.Value) {
 	for iter.Next() {
 		refStructPtr := iter.Value()
 		fk, _ := fkCol.ValueOfV(&refStructPtr)
-		if fk.Type().Kind() == reflect.Pointer {
+		if fk.Type().Kind() == reflect.Ptr {
 			if fk.IsNil() {
 				continue
 			}
