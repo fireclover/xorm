@@ -710,20 +710,9 @@ func (session *Session) slice2Bean(scanResults []interface{}, allColum *AllColum
 
 	buildAfterProcessors(session, bean)
 
-	tempMap := make(map[string]int)
 	var pk schemas.PK
 	for i, field := range allColum.Fields {
-		var idx int
-		var ok bool
-
-		if idx, ok = tempMap[field.LowerFieldName]; !ok {
-			idx = 0
-		} else {
-			idx++
-		}
-		tempMap[field.LowerFieldName] = idx
-
-		col, fieldValue, err := getField(dataStruct, table, field.FieldName, idx)
+		col, fieldValue, err := getField(dataStruct, table, field.FieldName, field.TempIndex)
 		if _, ok := err.(ErrFieldIsNotExist); ok {
 			continue
 		} else if err != nil {

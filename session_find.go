@@ -167,6 +167,7 @@ type QueryedField struct {
 	FieldName      string
 	LowerFieldName string
 	ColumnType     *sql.ColumnType
+	TempIndex      int
 }
 
 type AllColumn struct {
@@ -190,6 +191,22 @@ func ParseQueryRows(fieldNames []string, types []*sql.ColumnType) *AllColumn {
 	}
 
 	allColumn.Fields = fields
+
+	tempMap := make(map[string]int)
+	for _, field := range fields {
+		var idx int
+		var ok bool
+
+		if idx, ok = tempMap[field.LowerFieldName]; !ok {
+			idx = 0
+		} else {
+			idx++
+		}
+
+		tempMap[field.LowerFieldName] = idx
+		field.TempIndex = idx
+	}
+
 	return &allColumn
 }
 
