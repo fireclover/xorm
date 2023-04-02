@@ -800,3 +800,7 @@ func (session *Session) NoVersionCheck() *Session {
 	session.statement.CheckVersion = false
 	return session
 }
+
+func SetDefaultJSONHandler(jsonHandler json.Interface) {
+	json.DefaultJSONHandler = jsonHandler
+}
