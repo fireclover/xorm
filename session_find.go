@@ -5,8 +5,10 @@
 package xorm
 
 import (
+	"database/sql"
 	"errors"
 	"reflect"
+	"strings"
 
 	"xorm.io/builder"
 	"xorm.io/xorm/caches"
@@ -161,6 +163,36 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 	return session.noCacheFind(table, sliceValue, sqlStr, args...)
 }
 
+type QueryedField struct {
+	FieldName      string
+	LowerFieldName string
+	ColumnType     *sql.ColumnType
+}
+
+type AllColumn struct {
+	Fields     []*QueryedField
+	FieldNames []string
+	Types      []*sql.ColumnType
+}
+
+func ParseQueryRows(fieldNames []string, types []*sql.ColumnType) *AllColumn {
+	var allColumn AllColumn
+
+	fields := make([]*QueryedField, 0, len(fieldNames))
+
+	for i, fieldName := range fieldNames {
+		field := &QueryedField{
+			FieldName:      fieldName,
+			LowerFieldName: strings.ToLower(fieldName),
+			ColumnType:     types[i],
+		}
+		fields = append(fields, field)
+	}
+
+	allColumn.Fields = fields
+	return &allColumn
+}
+
 func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect.Value, sqlStr string, args ...interface{}) error {
 	elemType := containerValue.Type().Elem()
 	var isPointer bool
@@ -187,6 +219,8 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 	if err != nil {
 		return err
 	}
+
+	allColumn := ParseQueryRows(fields, types)
 
 	newElemFunc := func(fields []string) reflect.Value {
 		return utils.New(elemType, len(fields), len(fields))
@@ -238,7 +272,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 		if err != nil {
 			return err
 		}
-		err = session.rows2Beans(rows, fields, types, tb, newElemFunc, containerValueSetFunc)
+		err = session.rows2Beans(rows, allColumn, fields, types, tb, newElemFunc, containerValueSetFunc)
 		rows.Close()
 		if err != nil {
 			return err

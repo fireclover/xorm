@@ -16,8 +16,6 @@ import (
 	"io"
 	"reflect"
 	"strconv"
-	"strings"
-
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
@@ -418,7 +416,7 @@ func getField(dataStruct *reflect.Value, table *schemas.Table, colName string, i
 // Cell cell is a result of one column field
 type Cell *interface{}
 
-func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sql.ColumnType,
+func (session *Session) rows2Beans(rows *core.Rows, allColumn *AllColumn, fields []string, types []*sql.ColumnType,
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
 	sliceValueSetFunc func(*reflect.Value, schemas.PK) error,
 ) error {
@@ -428,11 +426,11 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sq
 		dataStruct := newValue.Elem()
 
 		// handle beforeClosures
-		scanResults, err := session.row2Slice(rows, fields, types, bean)
+		scanResults, err := session.row2Slice(rows, allColumn, fields, types, bean)
 		if err != nil {
 			return err
 		}
-		pk, err := session.slice2Bean(scanResults, fields, bean, &dataStruct, table)
+		pk, err := session.slice2Bean(scanResults, allColumn, fields, bean, &dataStruct, table)
 		if err != nil {
 			return err
 		}
@@ -447,7 +445,7 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sq
 	return rows.Err()
 }
 
-func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql.ColumnType, bean interface{}) ([]interface{}, error) {
+func (session *Session) row2Slice(rows *core.Rows, allColumn *AllColumn, fields []string, types []*sql.ColumnType, bean interface{}) ([]interface{}, error) {
 	for _, closure := range session.beforeClosures {
 		closure(bean)
 	}
@@ -705,7 +703,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	return convert.AssignValue(fieldValue.Addr(), scanResult)
 }
 
-func (session *Session) slice2Bean(scanResults []interface{}, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
+func (session *Session) slice2Bean(scanResults []interface{}, allColum *AllColumn, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
 	defer func() {
 		executeAfterSet(bean, fields, scanResults)
 	}()
@@ -714,19 +712,18 @@ func (session *Session) slice2Bean(scanResults []interface{}, fields []string, b
 
 	tempMap := make(map[string]int)
 	var pk schemas.PK
-	for i, colName := range fields {
+	for i, field := range allColum.Fields {
 		var idx int
-		lKey := strings.ToLower(colName)
 		var ok bool
 
-		if idx, ok = tempMap[lKey]; !ok {
+		if idx, ok = tempMap[field.LowerFieldName]; !ok {
 			idx = 0
 		} else {
 			idx++
 		}
-		tempMap[lKey] = idx
+		tempMap[field.LowerFieldName] = idx
 
-		col, fieldValue, err := getField(dataStruct, table, colName, idx)
+		col, fieldValue, err := getField(dataStruct, table, field.FieldName, idx)
 		if _, ok := err.(ErrFieldIsNotExist); ok {
 			continue
 		} else if err != nil {
