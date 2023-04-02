@@ -168,12 +168,26 @@ type QueryedField struct {
 	LowerFieldName string
 	ColumnType     *sql.ColumnType
 	TempIndex      int
+	ColumnSchema   *schemas.Column
 }
 
 type AllColumn struct {
 	Fields     []*QueryedField
 	FieldNames []string
 	Types      []*sql.ColumnType
+}
+
+func (allColumn *AllColumn) ParseTableSchema(table *schemas.Table) error {
+	for _, field := range allColumn.Fields {
+		col := table.GetColumnIdx(field.FieldName, field.TempIndex)
+		if col == nil {
+			return ErrFieldIsNotExist{FieldName: field.FieldName, TableName: table.Name}
+		}
+
+		field.ColumnSchema = col
+	}
+
+	return nil
 }
 
 func ParseQueryRows(fieldNames []string, types []*sql.ColumnType) *AllColumn {
@@ -289,6 +303,12 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 		if err != nil {
 			return err
 		}
+
+		parseTableSchemaError := allColumn.ParseTableSchema(tb)
+		if parseTableSchemaError != nil {
+			return parseTableSchemaError
+		}
+
 		err = session.rows2Beans(rows, allColumn, fields, types, tb, newElemFunc, containerValueSetFunc)
 		rows.Close()
 		if err != nil {

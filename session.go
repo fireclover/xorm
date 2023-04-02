@@ -393,10 +393,10 @@ func (session *Session) doPrepareTx(sqlStr string) (stmt *core.Stmt, err error) 
 	return
 }
 
-func getField(dataStruct *reflect.Value, table *schemas.Table, colName string, idx int) (*schemas.Column, *reflect.Value, error) {
-	col := table.GetColumnIdx(colName, idx)
+func getField(dataStruct *reflect.Value, table *schemas.Table, field *QueryedField) (*schemas.Column, *reflect.Value, error) {
+	col := field.ColumnSchema
 	if col == nil {
-		return nil, nil, ErrFieldIsNotExist{colName, table.Name}
+		return nil, nil, ErrFieldIsNotExist{field.FieldName, table.Name}
 	}
 
 	fieldValue, err := col.ValueOfV(dataStruct)
@@ -404,10 +404,10 @@ func getField(dataStruct *reflect.Value, table *schemas.Table, colName string, i
 		return nil, nil, err
 	}
 	if fieldValue == nil {
-		return nil, nil, ErrFieldIsNotValid{colName, table.Name}
+		return nil, nil, ErrFieldIsNotValid{field.FieldName, table.Name}
 	}
 	if !fieldValue.IsValid() || !fieldValue.CanSet() {
-		return nil, nil, ErrFieldIsNotValid{colName, table.Name}
+		return nil, nil, ErrFieldIsNotValid{field.FieldName, table.Name}
 	}
 
 	return col, fieldValue, nil
@@ -712,7 +712,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, allColum *AllColum
 
 	var pk schemas.PK
 	for i, field := range allColum.Fields {
-		col, fieldValue, err := getField(dataStruct, table, field.FieldName, field.TempIndex)
+		col, fieldValue, err := getField(dataStruct, table, field)
 		if _, ok := err.(ErrFieldIsNotExist); ok {
 			continue
 		} else if err != nil {
