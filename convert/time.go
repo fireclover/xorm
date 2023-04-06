@@ -40,13 +40,6 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		}
 		dt = dt.In(convertedLocation)
 		return &dt, nil
-	} else if len(s) >= 21 && s[10] == 'T' && s[19] == '.' && s[len(s)-3] == ':' {
-		dt, err := time.Parse(time.RFC3339, s)
-		if err != nil {
-			return nil, err
-		}
-		dt = dt.In(convertedLocation)
-		return &dt, nil
 	} else if len(s) >= 21 && s[10] == 'T' && s[19] == '.' {
 		dt, err := time.Parse(time.RFC3339, s)
 		if err != nil {
