@@ -124,10 +124,12 @@ insert into employee_indication values (1,2), (1,3), (2,3), (2,4), (2,5), (3,5),
 			Subordinates: []*Employee{
 				{
 					Id:        3,
+					Name:      "Alice",
 					ManagerId: &[]int64{1}[0],
 					IndicatedBy: []*Employee{
 						{
-							Id: 1,
+							Id:   1,
+							Name: "John",
 							Indications: []*Employee{
 								{
 									Id:   2,

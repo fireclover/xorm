@@ -134,9 +134,14 @@ func (node *PreloadTreeNode) compute(session *Session, ownMap, pruneMap reflect.
 	}
 
 	refMap := node.association.MakeRefMap()
-	preloadSession := session.Engine().Cols(node.extraCols...).Where(cond)
+	preloadSession := session.Engine().Where(cond)
 	if node.preload != nil {
-		preloadSession.Cols(node.preload.cols...).Where(node.preload.cond)
+		if len(node.preload.cols) > 0 {
+			preloadSession.Cols(node.extraCols...).Cols(node.preload.cols...)
+		}
+		preloadSession.Where(node.preload.cond)
+	} else {
+		preloadSession.Cols(node.extraCols...)
 	}
 	if err := preloadSession.Find(refMap.Interface()); err != nil {
 		return err
