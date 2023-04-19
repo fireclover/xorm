@@ -16,8 +16,6 @@ import (
 	"io"
 	"reflect"
 	"strconv"
-	"strings"
-
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
@@ -395,10 +393,10 @@ func (session *Session) doPrepareTx(sqlStr string) (stmt *core.Stmt, err error) 
 	return
 }
 
-func getField(dataStruct *reflect.Value, table *schemas.Table, colName string, idx int) (*schemas.Column, *reflect.Value, error) {
-	col := table.GetColumnIdx(colName, idx)
+func getField(dataStruct *reflect.Value, table *schemas.Table, field *QueryedField) (*schemas.Column, *reflect.Value, error) {
+	col := field.ColumnSchema
 	if col == nil {
-		return nil, nil, ErrFieldIsNotExist{colName, table.Name}
+		return nil, nil, ErrFieldIsNotExist{field.FieldName, table.Name}
 	}
 
 	fieldValue, err := col.ValueOfV(dataStruct)
@@ -406,10 +404,10 @@ func getField(dataStruct *reflect.Value, table *schemas.Table, colName string, i
 		return nil, nil, err
 	}
 	if fieldValue == nil {
-		return nil, nil, ErrFieldIsNotValid{colName, table.Name}
+		return nil, nil, ErrFieldIsNotValid{field.FieldName, table.Name}
 	}
 	if !fieldValue.IsValid() || !fieldValue.CanSet() {
-		return nil, nil, ErrFieldIsNotValid{colName, table.Name}
+		return nil, nil, ErrFieldIsNotValid{field.FieldName, table.Name}
 	}
 
 	return col, fieldValue, nil
@@ -418,7 +416,7 @@ func getField(dataStruct *reflect.Value, table *schemas.Table, colName string, i
 // Cell cell is a result of one column field
 type Cell *interface{}
 
-func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sql.ColumnType,
+func (session *Session) rows2Beans(rows *core.Rows, columnsSchema *ColumnsSchema, fields []string, types []*sql.ColumnType,
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
 	sliceValueSetFunc func(*reflect.Value, schemas.PK) error,
 ) error {
@@ -432,7 +430,7 @@ func (session *Session) rows2Beans(rows *core.Rows, fields []string, types []*sq
 		if err != nil {
 			return err
 		}
-		pk, err := session.slice2Bean(scanResults, fields, bean, &dataStruct, table)
+		pk, err := session.slice2Bean(scanResults, columnsSchema, fields, bean, &dataStruct, table)
 		if err != nil {
 			return err
 		}
@@ -705,28 +703,16 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	return convert.AssignValue(fieldValue.Addr(), scanResult)
 }
 
-func (session *Session) slice2Bean(scanResults []interface{}, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
+func (session *Session) slice2Bean(scanResults []interface{}, columnsSchema *ColumnsSchema, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
 	defer func() {
 		executeAfterSet(bean, fields, scanResults)
 	}()
 
 	buildAfterProcessors(session, bean)
 
-	tempMap := make(map[string]int)
 	var pk schemas.PK
-	for i, colName := range fields {
-		var idx int
-		lKey := strings.ToLower(colName)
-		var ok bool
-
-		if idx, ok = tempMap[lKey]; !ok {
-			idx = 0
-		} else {
-			idx++
-		}
-		tempMap[lKey] = idx
-
-		col, fieldValue, err := getField(dataStruct, table, colName, idx)
+	for i, field := range columnsSchema.Fields {
+		col, fieldValue, err := getField(dataStruct, table, field)
 		if _, ok := err.(ErrFieldIsNotExist); ok {
 			continue
 		} else if err != nil {
@@ -799,4 +785,8 @@ func (session *Session) PingContext(ctx context.Context) error {
 func (session *Session) NoVersionCheck() *Session {
 	session.statement.CheckVersion = false
 	return session
+}
+
+func SetDefaultJSONHandler(jsonHandler json.Interface) {
+	json.DefaultJSONHandler = jsonHandler
 }
