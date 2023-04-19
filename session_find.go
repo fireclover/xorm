@@ -221,9 +221,11 @@ func ParseColumnsSchema(fieldNames []string, types []*sql.ColumnType, table *sch
 		field.TempIndex = idx
 	}
 
-	err := columnsSchema.ParseTableSchema(table)
-	if err != nil {
-		return nil, err
+	if table != nil {
+		err := columnsSchema.ParseTableSchema(table)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &columnsSchema, nil
