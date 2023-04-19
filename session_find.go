@@ -177,17 +177,10 @@ type ColumnsSchema struct {
 	Types      []*sql.ColumnType
 }
 
-func (columnsSchema *ColumnsSchema) ParseTableSchema(table *schemas.Table) error {
+func (columnsSchema *ColumnsSchema) ParseTableSchema(table *schemas.Table) {
 	for _, field := range columnsSchema.Fields {
-		col := table.GetColumnIdx(field.FieldName, field.TempIndex)
-		if col == nil {
-			return ErrFieldIsNotExist{FieldName: field.FieldName, TableName: table.Name}
-		}
-
-		field.ColumnSchema = col
+		field.ColumnSchema = table.GetColumnIdx(field.FieldName, field.TempIndex)
 	}
-
-	return nil
 }
 
 func ParseColumnsSchema(fieldNames []string, types []*sql.ColumnType, table *schemas.Table) (*ColumnsSchema, error) {
@@ -222,10 +215,7 @@ func ParseColumnsSchema(fieldNames []string, types []*sql.ColumnType, table *sch
 	}
 
 	if table != nil {
-		err := columnsSchema.ParseTableSchema(table)
-		if err != nil {
-			return nil, err
-		}
+		columnsSchema.ParseTableSchema(table)
 	}
 
 	return &columnsSchema, nil
