@@ -5,8 +5,10 @@
 package xorm
 
 import (
+	"database/sql"
 	"errors"
 	"reflect"
+	"strings"
 
 	"xorm.io/builder"
 	"xorm.io/xorm/caches"
@@ -161,6 +163,72 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 	return session.noCacheFind(table, sliceValue, sqlStr, args...)
 }
 
+type QueryedField struct {
+	FieldName      string
+	LowerFieldName string
+	ColumnType     *sql.ColumnType
+	TempIndex      int
+	ColumnSchema   *schemas.Column
+}
+
+type ColumnsSchema struct {
+	Fields     []*QueryedField
+	FieldNames []string
+	Types      []*sql.ColumnType
+}
+
+func (columnsSchema *ColumnsSchema) ParseTableSchema(table *schemas.Table) error {
+	for _, field := range columnsSchema.Fields {
+		col := table.GetColumnIdx(field.FieldName, field.TempIndex)
+		if col == nil {
+			return ErrFieldIsNotExist{FieldName: field.FieldName, TableName: table.Name}
+		}
+
+		field.ColumnSchema = col
+	}
+
+	return nil
+}
+
+func ParseColumnsSchema(fieldNames []string, types []*sql.ColumnType, table *schemas.Table) (*ColumnsSchema, error) {
+	var columnsSchema ColumnsSchema
+
+	fields := make([]*QueryedField, 0, len(fieldNames))
+
+	for i, fieldName := range fieldNames {
+		field := &QueryedField{
+			FieldName:      fieldName,
+			LowerFieldName: strings.ToLower(fieldName),
+			ColumnType:     types[i],
+		}
+		fields = append(fields, field)
+	}
+
+	columnsSchema.Fields = fields
+
+	tempMap := make(map[string]int)
+	for _, field := range fields {
+		var idx int
+		var ok bool
+
+		if idx, ok = tempMap[field.LowerFieldName]; !ok {
+			idx = 0
+		} else {
+			idx++
+		}
+
+		tempMap[field.LowerFieldName] = idx
+		field.TempIndex = idx
+	}
+
+	err := columnsSchema.ParseTableSchema(table)
+	if err != nil {
+		return nil, err
+	}
+
+	return &columnsSchema, nil
+}
+
 func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect.Value, sqlStr string, args ...interface{}) error {
 	elemType := containerValue.Type().Elem()
 	var isPointer bool
@@ -238,7 +306,13 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 		if err != nil {
 			return err
 		}
-		err = session.rows2Beans(rows, fields, types, tb, newElemFunc, containerValueSetFunc)
+
+		columnsSchema, parseError := ParseColumnsSchema(fields, types, tb)
+		if parseError != nil {
+			return parseError
+		}
+
+		err = session.rows2Beans(rows, columnsSchema, fields, types, tb, newElemFunc, containerValueSetFunc)
 		rows.Close()
 		if err != nil {
 			return err
