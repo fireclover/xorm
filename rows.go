@@ -129,9 +129,12 @@ func (rows *Rows) Scan(beans ...interface{}) error {
 		return err
 	}
 
-	allColumn := ParseQueryRows(fields, types)
+	columnsSchema, parseError := ParseColumnsSchema(fields, types, rows.session.statement.RefTable)
+	if parseError != nil {
+		return parseError
+	}
 
-	if err := rows.session.scan(rows.rows, rows.session.statement.RefTable, beanKind, beans, allColumn, types, fields); err != nil {
+	if err := rows.session.scan(rows.rows, rows.session.statement.RefTable, beanKind, beans, columnsSchema, types, fields); err != nil {
 		return err
 	}
 

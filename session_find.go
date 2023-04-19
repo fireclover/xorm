@@ -171,14 +171,14 @@ type QueryedField struct {
 	ColumnSchema   *schemas.Column
 }
 
-type AllColumn struct {
+type ColumnsSchema struct {
 	Fields     []*QueryedField
 	FieldNames []string
 	Types      []*sql.ColumnType
 }
 
-func (allColumn *AllColumn) ParseTableSchema(table *schemas.Table) error {
-	for _, field := range allColumn.Fields {
+func (columnsSchema *ColumnsSchema) ParseTableSchema(table *schemas.Table) error {
+	for _, field := range columnsSchema.Fields {
 		col := table.GetColumnIdx(field.FieldName, field.TempIndex)
 		if col == nil {
 			return ErrFieldIsNotExist{FieldName: field.FieldName, TableName: table.Name}
@@ -190,8 +190,8 @@ func (allColumn *AllColumn) ParseTableSchema(table *schemas.Table) error {
 	return nil
 }
 
-func ParseQueryRows(fieldNames []string, types []*sql.ColumnType) *AllColumn {
-	var allColumn AllColumn
+func ParseColumnsSchema(fieldNames []string, types []*sql.ColumnType, table *schemas.Table) (*ColumnsSchema, error) {
+	var columnsSchema ColumnsSchema
 
 	fields := make([]*QueryedField, 0, len(fieldNames))
 
@@ -204,7 +204,7 @@ func ParseQueryRows(fieldNames []string, types []*sql.ColumnType) *AllColumn {
 		fields = append(fields, field)
 	}
 
-	allColumn.Fields = fields
+	columnsSchema.Fields = fields
 
 	tempMap := make(map[string]int)
 	for _, field := range fields {
@@ -221,7 +221,12 @@ func ParseQueryRows(fieldNames []string, types []*sql.ColumnType) *AllColumn {
 		field.TempIndex = idx
 	}
 
-	return &allColumn
+	err := columnsSchema.ParseTableSchema(table)
+	if err != nil {
+		return nil, err
+	}
+
+	return &columnsSchema, nil
 }
 
 func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect.Value, sqlStr string, args ...interface{}) error {
@@ -250,8 +255,6 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 	if err != nil {
 		return err
 	}
-
-	allColumn := ParseQueryRows(fields, types)
 
 	newElemFunc := func(fields []string) reflect.Value {
 		return utils.New(elemType, len(fields), len(fields))
@@ -304,12 +307,12 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 			return err
 		}
 
-		parseTableSchemaError := allColumn.ParseTableSchema(tb)
-		if parseTableSchemaError != nil {
-			return parseTableSchemaError
+		columnsSchema, parseError := ParseColumnsSchema(fields, types, tb)
+		if parseError != nil {
+			return parseError
 		}
 
-		err = session.rows2Beans(rows, allColumn, fields, types, tb, newElemFunc, containerValueSetFunc)
+		err = session.rows2Beans(rows, columnsSchema, fields, types, tb, newElemFunc, containerValueSetFunc)
 		rows.Close()
 		if err != nil {
 			return err

@@ -416,7 +416,7 @@ func getField(dataStruct *reflect.Value, table *schemas.Table, field *QueryedFie
 // Cell cell is a result of one column field
 type Cell *interface{}
 
-func (session *Session) rows2Beans(rows *core.Rows, allColumn *AllColumn, fields []string, types []*sql.ColumnType,
+func (session *Session) rows2Beans(rows *core.Rows, columnsSchema *ColumnsSchema, fields []string, types []*sql.ColumnType,
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
 	sliceValueSetFunc func(*reflect.Value, schemas.PK) error,
 ) error {
@@ -426,11 +426,11 @@ func (session *Session) rows2Beans(rows *core.Rows, allColumn *AllColumn, fields
 		dataStruct := newValue.Elem()
 
 		// handle beforeClosures
-		scanResults, err := session.row2Slice(rows, allColumn, fields, types, bean)
+		scanResults, err := session.row2Slice(rows, fields, types, bean)
 		if err != nil {
 			return err
 		}
-		pk, err := session.slice2Bean(scanResults, allColumn, fields, bean, &dataStruct, table)
+		pk, err := session.slice2Bean(scanResults, columnsSchema, fields, bean, &dataStruct, table)
 		if err != nil {
 			return err
 		}
@@ -445,7 +445,7 @@ func (session *Session) rows2Beans(rows *core.Rows, allColumn *AllColumn, fields
 	return rows.Err()
 }
 
-func (session *Session) row2Slice(rows *core.Rows, allColumn *AllColumn, fields []string, types []*sql.ColumnType, bean interface{}) ([]interface{}, error) {
+func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql.ColumnType, bean interface{}) ([]interface{}, error) {
 	for _, closure := range session.beforeClosures {
 		closure(bean)
 	}
@@ -703,7 +703,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	return convert.AssignValue(fieldValue.Addr(), scanResult)
 }
 
-func (session *Session) slice2Bean(scanResults []interface{}, allColum *AllColumn, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
+func (session *Session) slice2Bean(scanResults []interface{}, columnsSchema *ColumnsSchema, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
 	defer func() {
 		executeAfterSet(bean, fields, scanResults)
 	}()
@@ -711,7 +711,7 @@ func (session *Session) slice2Bean(scanResults []interface{}, allColum *AllColum
 	buildAfterProcessors(session, bean)
 
 	var pk schemas.PK
-	for i, field := range allColum.Fields {
+	for i, field := range columnsSchema.Fields {
 		col, fieldValue, err := getField(dataStruct, table, field)
 		if _, ok := err.(ErrFieldIsNotExist); ok {
 			continue
