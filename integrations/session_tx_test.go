@@ -185,3 +185,36 @@ func TestMultipleTransaction(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, len(ms))
 }
+
+func TestInsertMulti2InterfaceTransaction(t *testing.T) {
+
+	type User struct {
+		ID         uint64 `xorm:"id pk autoincr"`
+		Name       string
+		Alias      string
+		CreateTime time.Time `xorm:"created"`
+		UpdateTime time.Time `xorm:"updated"`
+	}
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(User))
+	session := testEngine.NewSession()
+	defer session.Close()
+	err := session.Begin()
+	assert.NoError(t, err)
+
+	users := []interface{}{
+		&User{Name: "a", Alias: "A"},
+		&User{Name: "b", Alias: "B"},
+		&User{Name: "c", Alias: "C"},
+		&User{Name: "d", Alias: "D"},
+	}
+	cnt, err := session.Insert(&users)
+
+	assert.NoError(t, err)
+	assert.EqualValues(t, len(users), cnt)
+
+	assert.NotPanics(t, func() {
+		err = session.Commit()
+		assert.NoError(t, err)
+	})
+}

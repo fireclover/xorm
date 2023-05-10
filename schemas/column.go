@@ -89,6 +89,8 @@ func (col *Column) ValueOfV(dataStruct *reflect.Value) (*reflect.Value, error) {
 				v.Set(reflect.New(v.Type().Elem()))
 			}
 			v = v.Elem()
+		} else if v.Kind() == reflect.Interface {
+			v = reflect.Indirect(v.Elem())
 		}
 		v = v.FieldByIndex([]int{i})
 	}
