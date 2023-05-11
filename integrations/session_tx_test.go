@@ -188,7 +188,7 @@ func TestMultipleTransaction(t *testing.T) {
 
 func TestInsertMulti2InterfaceTransaction(t *testing.T) {
 
-	type User struct {
+	type Multi2InterfaceTransaction struct {
 		ID         uint64 `xorm:"id pk autoincr"`
 		Name       string
 		Alias      string
@@ -196,17 +196,17 @@ func TestInsertMulti2InterfaceTransaction(t *testing.T) {
 		UpdateTime time.Time `xorm:"updated"`
 	}
 	assert.NoError(t, PrepareEngine())
-	assertSync(t, new(User))
+	assertSync(t, new(Multi2InterfaceTransaction))
 	session := testEngine.NewSession()
 	defer session.Close()
 	err := session.Begin()
 	assert.NoError(t, err)
 
 	users := []interface{}{
-		&User{Name: "a", Alias: "A"},
-		&User{Name: "b", Alias: "B"},
-		&User{Name: "c", Alias: "C"},
-		&User{Name: "d", Alias: "D"},
+		&Multi2InterfaceTransaction{Name: "a", Alias: "A"},
+		&Multi2InterfaceTransaction{Name: "b", Alias: "B"},
+		&Multi2InterfaceTransaction{Name: "c", Alias: "C"},
+		&Multi2InterfaceTransaction{Name: "d", Alias: "D"},
 	}
 	cnt, err := session.Insert(&users)
 
