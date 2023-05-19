@@ -377,6 +377,7 @@ func (session *Session) Sync(beans ...interface{}) error {
 					}
 				}
 			} else if col.Comment != oriCol.Comment {
+				// only postgres dialect implement update comment now.
 				if engine.dialect.URI().DBType == schemas.POSTGRES {
 					_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
 				}
