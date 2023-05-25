@@ -48,6 +48,8 @@ jobs:
     services:
       cockroach:
         image: cockroachdb/cockroach:v19.2.4
+        ports:
+          - 26257:26257
         cmd:
           - '/cockroach/cockroach'
           - 'start'
