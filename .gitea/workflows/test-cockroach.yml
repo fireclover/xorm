@@ -50,5 +50,3 @@ jobs:
         image: cockroachdb/cockroach:v19.2.4
         cmd:
           - /cockroach/cockroach start --insecure
-        ports:
-          - 3306:3306
