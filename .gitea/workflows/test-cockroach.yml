@@ -51,6 +51,5 @@ jobs:
         ports:
           - 26257:26257
         cmd:
-          - '/cockroach/cockroach'
           - 'start'
           - '--insecure'
