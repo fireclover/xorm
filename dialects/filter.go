@@ -5,13 +5,14 @@
 package dialects
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
 
 // Filter is an interface to filter SQL
 type Filter interface {
-	Do(sql string) string
+	Do(ctx context.Context, sql string) string
 }
 
 // SeqFilter filter SQL replace ?, ? ... to $1, $2 ...
@@ -71,6 +72,6 @@ func convertQuestionMark(sql, prefix string, start int) string {
 }
 
 // Do implements Filter
-func (s *SeqFilter) Do(sql string) string {
+func (s *SeqFilter) Do(ctx context.Context, sql string) string {
 	return convertQuestionMark(sql, s.Prefix, s.Start)
 }
