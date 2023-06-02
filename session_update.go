@@ -34,7 +34,7 @@ func (session *Session) cacheUpdate(table *schemas.Table, tableName, sqlStr stri
 		return ErrCacheFailed
 	}
 	for _, filter := range session.engine.dialect.Filters() {
-		newsql = filter.Do(newsql)
+		newsql = filter.Do(session.ctx, newsql)
 	}
 	session.engine.logger.Debugf("[cache] new sql: %v, %v", oldhead, newsql)
 

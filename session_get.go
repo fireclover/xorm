@@ -278,7 +278,7 @@ func (session *Session) cacheGet(bean interface{}, sqlStr string, args ...interf
 	}
 
 	for _, filter := range session.engine.dialect.Filters() {
-		sqlStr = filter.Do(sqlStr)
+		sqlStr = filter.Do(session.ctx, sqlStr)
 	}
 	newsql := session.statement.ConvertIDSQL(sqlStr)
 	if newsql == "" {
