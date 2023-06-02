@@ -709,7 +709,13 @@ func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 				return "", false, err
 			}
 		}
-		if _, err := b.WriteString(fmt.Sprintf("CONSTRAINT PK_%s PRIMARY KEY (", tableName)); err != nil {
+		if _, err := b.WriteString("CONSTRAINT PK_"); err != nil {
+			return "", false, err
+		}
+		if _, err := b.WriteString(tableName); err != nil {
+			return "", false, err
+		}
+		if _, err := b.WriteString(" PRIMARY KEY ("); err != nil {
 			return "", false, err
 		}
 		if err := quoter.JoinWrite(&b, pkList, ","); err != nil {
@@ -837,7 +843,11 @@ func addSingleQuote(name string) string {
 	if name[0] == '\'' && name[len(name)-1] == '\'' {
 		return name
 	}
-	return fmt.Sprintf("'%s'", name)
+	var b strings.Builder
+	b.WriteRune('\'')
+	b.WriteString(name)
+	b.WriteRune('\'')
+	return b.String()
 }
 
 func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {

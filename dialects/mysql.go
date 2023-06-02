@@ -381,11 +381,17 @@ func (db *mysql) IsTableExist(queryer core.Queryer, ctx context.Context, tableNa
 func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
 	quoter := db.dialect.Quoter()
 	s, _ := ColumnString(db, col, true)
-	sql := fmt.Sprintf("ALTER TABLE %v ADD %v", quoter.Quote(tableName), s)
+	var b strings.Builder
+	b.WriteString("ALTER TABLE ")
+	quoter.QuoteTo(&b, tableName)
+	b.WriteString(" ADD ")
+	b.WriteString(s)
 	if len(col.Comment) > 0 {
-		sql += " COMMENT '" + col.Comment + "'"
+		b.WriteString(" COMMENT '")
+		b.WriteString(col.Comment)
+		b.WriteString("'")
 	}
-	return sql
+	return b.String()
 }
 
 func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
