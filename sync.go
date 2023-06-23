@@ -48,7 +48,7 @@ func (session *Session) Sync2(beans ...interface{}) error {
 // Sync synchronize structs to database tables
 func (session *Session) Sync(beans ...interface{}) error {
 	_, err := session.SyncWithOptions(SyncOptions{
-		WarnIfDatabaseColumnMissed: true,
+		WarnIfDatabaseColumnMissed: false,
 	}, beans...)
 	return err
 }
