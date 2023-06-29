@@ -38,6 +38,7 @@ var (
 		"CALL":              true,
 		"CASCADE":           true,
 		"CASE":              true,
+		"CHAIN":             true,
 		"CHANGE":            true,
 		"CHAR":              true,
 		"CHARACTER":         true,
