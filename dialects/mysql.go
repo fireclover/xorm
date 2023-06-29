@@ -129,6 +129,7 @@ var (
 		"OUT": true, "OUTER": true, "OUTFILE": true,
 		"PRECISION": true, "PRIMARY": true, "PROCEDURE": true,
 		"PURGE": true, "RAID0": true, "RANGE": true,
+		"RANK": true,
 		"READ": true, "READS": true, "REAL": true,
 		"REFERENCES": true, "REGEXP": true, "RELEASE": true,
 		"RENAME": true, "REPEAT": true, "REPLACE": true,
