@@ -1120,21 +1120,6 @@ func (engine *Engine) UnMapType(t reflect.Type) {
 	engine.tagParser.ClearCacheTable(t)
 }
 
-// Sync the new struct changes to database, this method will automatically add
-// table, column, index, unique. but will not delete or change anything.
-// If you change some field, you should change the database manually.
-func (engine *Engine) Sync(beans ...interface{}) error {
-	session := engine.NewSession()
-	defer session.Close()
-	return session.Sync(beans...)
-}
-
-// Sync2 synchronize structs to database tables
-// Depricated
-func (engine *Engine) Sync2(beans ...interface{}) error {
-	return engine.Sync(beans...)
-}
-
 // CreateTables create tabls according bean
 func (engine *Engine) CreateTables(beans ...interface{}) error {
 	session := engine.NewSession()
