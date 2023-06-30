@@ -410,7 +410,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		"SUBSTRING_INDEX(SUBSTRING(VERSION(), 6), '-', 1) >= 7)))))"
 	s := "SELECT `COLUMN_NAME`, `IS_NULLABLE`, `COLUMN_DEFAULT`, `COLUMN_TYPE`," +
 		" `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT`, `CHARACTER_MAXIMUM_LENGTH`, " +
-		alreadyQuoted + " AS NEEDS_QUOTE " +
+		alreadyQuoted + " AS NEEDS_QUOTE, `COLLATION_NAME` " +
 		"FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ?" +
 		" ORDER BY `COLUMNS`.ORDINAL_POSITION ASC"
 
@@ -426,10 +426,10 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
-		var columnName, nullableStr, colType, colKey, extra, comment string
+		var columnName, nullableStr, colType, colKey, extra, comment, collation string
 		var alreadyQuoted, isUnsigned bool
 		var colDefault, maxLength *string
-		err = rows.Scan(&columnName, &nullableStr, &colDefault, &colType, &colKey, &extra, &comment, &maxLength, &alreadyQuoted)
+		err = rows.Scan(&columnName, &nullableStr, &colDefault, &colType, &colKey, &extra, &comment, &maxLength, &alreadyQuoted, &collation)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -445,6 +445,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		} else {
 			col.DefaultIsEmpty = true
 		}
+		col.Collation = collation
 
 		fields := strings.Fields(colType)
 		if len(fields) == 2 && fields[1] == "unsigned" {
@@ -537,7 +538,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 
 func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
 	args := []interface{}{db.uri.DBName}
-	s := "SELECT `TABLE_NAME`, `ENGINE`, `AUTO_INCREMENT`, `TABLE_COMMENT` from " +
+	s := "SELECT `TABLE_NAME`, `ENGINE`, `AUTO_INCREMENT`, `TABLE_COMMENT`, `TABLE_COLLATION` from " +
 		"`INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? AND (`ENGINE`='MyISAM' OR `ENGINE` = 'InnoDB' OR `ENGINE` = 'TokuDB')"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -549,9 +550,9 @@ func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
 		table := schemas.NewEmptyTable()
-		var name, engine string
+		var name, engine, collation string
 		var autoIncr, comment *string
-		err = rows.Scan(&name, &engine, &autoIncr, &comment)
+		err = rows.Scan(&name, &engine, &autoIncr, &comment, &collation)
 		if err != nil {
 			return nil, err
 		}
@@ -561,6 +562,7 @@ func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 			table.Comment = *comment
 		}
 		table.StoreEngine = engine
+		table.Collation = collation
 		tables = append(tables, table)
 	}
 	if rows.Err() != nil {

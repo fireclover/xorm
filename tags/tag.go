@@ -285,9 +285,9 @@ func CommentTagHandler(ctx *Context) error {
 
 func CollateTagHandler(ctx *Context) error {
 	if len(ctx.params) > 0 {
-		ctx.col.Collate = ctx.params[0]
+		ctx.col.Collation = ctx.params[0]
 	} else {
-		ctx.col.Collate = ctx.nextTag
+		ctx.col.Collation = ctx.nextTag
 		ctx.ignoreNext = true
 	}
 	return nil

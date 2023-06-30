@@ -537,15 +537,37 @@ func TestModifyColum(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestCollate(t *testing.T) {
-	type TestCollateColumn struct {
-		Id     int64
-		UserId int64  `xorm:"unique(s)"`
-		Name   string `xorm:"varchar(20) unique(s) collate utf8mb4_general_ci"`
-	}
+type TestCollateColumn struct {
+	Id     int64
+	UserId int64  `xorm:"unique(s)"`
+	Name   string `xorm:"varchar(20) unique(s)"`
+	dbtype string `xorm:"-"`
+}
 
+func (t TestCollateColumn) TableCollations() []*schemas.Collation {
+	if t.dbtype == string(schemas.MYSQL) {
+		return []*schemas.Collation{
+			{
+				Name:   "utf8mb4_general_ci",
+				Column: "name",
+			},
+		}
+	} else if t.dbtype == string(schemas.MSSQL) {
+		return []*schemas.Collation{
+			{
+				Name:   "SQL_Latin1_General_CP1_CI",
+				Column: "name",
+			},
+		}
+	}
+	return nil
+}
+
+func TestCollate(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	assertSync(t, new(TestCollateColumn))
+	assertSync(t, &TestCollateColumn{
+		dbtype: string(testEngine.Dialect().URI().DBType),
+	})
 
 	_, err := testEngine.Insert(&TestCollateColumn{
 		UserId: 1,
@@ -556,14 +578,23 @@ func TestCollate(t *testing.T) {
 		UserId: 1,
 		Name:   "Test",
 	})
-	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL || testEngine.Dialect().URI().DBType == schemas.MSSQL {
 		assert.Error(t, err)
 	} else {
 		assert.NoError(t, err)
 	}
 
 	// Since SQLITE don't support modify column SQL, currrently just ignore
-	if testEngine.Dialect().URI().DBType == schemas.SQLITE {
+	if testEngine.Dialect().URI().DBType != schemas.MYSQL && testEngine.Dialect().URI().DBType != schemas.MSSQL {
+		return
+	}
+
+	var newCollation string
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		newCollation = "utf8mb4_bin"
+	} else if testEngine.Dialect().URI().DBType != schemas.MSSQL {
+		newCollation = "SQL_Latin1_General_CP1_CS"
+	} else {
 		return
 	}
 
@@ -575,7 +606,7 @@ func TestCollate(t *testing.T) {
 		Length:         20,
 		Nullable:       true,
 		DefaultIsEmpty: true,
-		Collate:        "utf8mb4_bin",
+		Collation:      newCollation,
 	})
 	_, err = testEngine.Exec(alterSQL)
 	assert.NoError(t, err)

@@ -320,11 +320,11 @@ func ColumnString(dialect Dialect, col *schemas.Column, includePrimaryKey, suppo
 		return "", err
 	}
 
-	if supportCollation && col.Collate != "" {
+	if supportCollation && col.Collation != "" {
 		if _, err := bd.WriteString(" COLLATE "); err != nil {
 			return "", err
 		}
-		if _, err := bd.WriteString(col.Collate); err != nil {
+		if _, err := bd.WriteString(col.Collation); err != nil {
 			return "", err
 		}
 	}
