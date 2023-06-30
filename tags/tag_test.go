@@ -83,8 +83,10 @@ func TestSplitTag(t *testing.T) {
 		{
 			"collate utf8mb4_bin", []tag{
 				{
-					name:   "collate",
-					params: []string{"utf8mb4_bin"},
+					name: "collate",
+				},
+				{
+					name: "utf8mb4_bin",
 				},
 			},
 		},
@@ -96,7 +98,7 @@ func TestSplitTag(t *testing.T) {
 			assert.NoError(t, err)
 			assert.EqualValues(t, len(tags), len(kase.tags))
 			for i := 0; i < len(tags); i++ {
-				assert.Equal(t, tags[i], kase.tags[i])
+				assert.Equal(t, kase.tags[i], tags[i])
 			}
 		})
 	}
