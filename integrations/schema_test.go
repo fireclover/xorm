@@ -579,7 +579,20 @@ func TestCollate(t *testing.T) {
 		Name:   "Test",
 	})
 	if testEngine.Dialect().URI().DBType == schemas.MYSQL || testEngine.Dialect().URI().DBType == schemas.MSSQL {
-		assert.Error(t, err)
+		ver, err := testEngine.DBVersion()
+		assert.NoError(t, err)
+		fmt.Println("====", ver.Edition)
+		tables, err1 := testEngine.DBMetas()
+		assert.NoError(t, err1)
+		for _, table := range tables {
+			if table.Name == "test_collate_column" {
+				if table.Collation == "utf8mb4_general_ci" {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+				}
+			}
+		}
 	} else {
 		assert.NoError(t, err)
 	}
