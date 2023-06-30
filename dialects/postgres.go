@@ -992,7 +992,7 @@ func (db *postgres) IsTableExist(queryer core.Queryer, ctx context.Context, tabl
 }
 
 func (db *postgres) AddColumnSQL(tableName string, col *schemas.Column) string {
-	s, _ := ColumnString(db.dialect, col, true)
+	s, _ := ColumnString(db.dialect, col, true, false)
 
 	quoter := db.dialect.Quoter()
 	addColumnSQL := ""

@@ -325,14 +325,14 @@ func TestIsTableEmpty(t *testing.T) {
 
 	type PictureEmpty struct {
 		Id          int64
-		Url         string `xorm:"unique"` //image's url
+		Url         string `xorm:"unique"` // image's url
 		Title       string
 		Description string
 		Created     time.Time `xorm:"created"`
 		ILike       int
 		PageView    int
 		From_url    string // nolint
-		Pre_url     string `xorm:"unique"` //pre view image's url
+		Pre_url     string `xorm:"unique"` // pre view image's url
 		Uid         int64
 	}
 
@@ -458,7 +458,7 @@ func TestSync2_2(t *testing.T) {
 
 	assert.NoError(t, PrepareEngine())
 
-	var tableNames = make(map[string]bool)
+	tableNames := make(map[string]bool)
 	for i := 0; i < 10; i++ {
 		tableName := fmt.Sprintf("test_sync2_index_%d", i)
 		tableNames[tableName] = true
@@ -534,5 +534,60 @@ func TestModifyColum(t *testing.T) {
 		DefaultIsEmpty: true,
 	})
 	_, err := testEngine.Exec(alterSQL)
+	assert.NoError(t, err)
+}
+
+func TestCollate(t *testing.T) {
+	type TestCollateColumn struct {
+		Id     int64
+		UserId int64  `xorm:"unique(s)"`
+		Name   string `xorm:"varchar(20) unique(s) collate utf8mb4_general_ci"`
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestCollateColumn))
+
+	_, err := testEngine.Insert(&TestCollateColumn{
+		UserId: 1,
+		Name:   "test",
+	})
+	assert.NoError(t, err)
+	_, err = testEngine.Insert(&TestCollateColumn{
+		UserId: 1,
+		Name:   "Test",
+	})
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		assert.Error(t, err)
+	} else {
+		assert.NoError(t, err)
+	}
+
+	// Since SQLITE don't support modify column SQL, currrently just ignore
+	if testEngine.Dialect().URI().DBType == schemas.SQLITE {
+		return
+	}
+
+	alterSQL := testEngine.Dialect().ModifyColumnSQL("test_collate_column", &schemas.Column{
+		Name: "name",
+		SQLType: schemas.SQLType{
+			Name: "VARCHAR",
+		},
+		Length:         20,
+		Nullable:       true,
+		DefaultIsEmpty: true,
+		Collate:        "utf8mb4_bin",
+	})
+	_, err = testEngine.Exec(alterSQL)
+	assert.NoError(t, err)
+
+	_, err = testEngine.Insert(&TestCollateColumn{
+		UserId: 1,
+		Name:   "test1",
+	})
+	assert.NoError(t, err)
+	_, err = testEngine.Insert(&TestCollateColumn{
+		UserId: 1,
+		Name:   "Test1",
+	})
 	assert.NoError(t, err)
 }

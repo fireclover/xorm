@@ -123,6 +123,7 @@ var defaultTagHandlers = map[string]Handler{
 	"COMMENT":  CommentTagHandler,
 	"EXTENDS":  ExtendsTagHandler,
 	"UNSIGNED": UnsignedTagHandler,
+	"COLLATE":  CollateTagHandler,
 }
 
 func init() {
@@ -278,6 +279,13 @@ func UnsignedTagHandler(ctx *Context) error {
 func CommentTagHandler(ctx *Context) error {
 	if len(ctx.params) > 0 {
 		ctx.col.Comment = strings.Trim(ctx.params[0], "' ")
+	}
+	return nil
+}
+
+func CollateTagHandler(ctx *Context) error {
+	if len(ctx.params) > 0 {
+		ctx.col.Collate = strings.Trim(ctx.params[0], "' ")
 	}
 	return nil
 }

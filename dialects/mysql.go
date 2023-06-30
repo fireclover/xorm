@@ -380,7 +380,7 @@ func (db *mysql) IsTableExist(queryer core.Queryer, ctx context.Context, tableNa
 
 func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
 	quoter := db.dialect.Quoter()
-	s, _ := ColumnString(db, col, true)
+	s, _ := ColumnString(db, col, true, true)
 	var b strings.Builder
 	b.WriteString("ALTER TABLE ")
 	quoter.QuoteTo(&b, tableName)
@@ -392,6 +392,12 @@ func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
 		b.WriteString("'")
 	}
 	return b.String()
+}
+
+// ModifyColumnSQL returns a SQL to modify SQL
+func (db *mysql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
+	s, _ := ColumnString(db.dialect, col, false, true)
+	return fmt.Sprintf("ALTER TABLE %s MODIFY COLUMN %s", db.quoter.Quote(tableName), s)
 }
 
 func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
@@ -646,7 +652,7 @@ func (db *mysql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table
 
 	for i, colName := range table.ColumnsSeq() {
 		col := table.GetColumn(colName)
-		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1)
+		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1, true)
 		b.WriteString(s)
 
 		if len(col.Comment) > 0 {

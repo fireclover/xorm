@@ -428,7 +428,7 @@ func (db *mssql) DropTableSQL(tableName string) (string, bool) {
 }
 
 func (db *mssql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
-	s, _ := ColumnString(db.dialect, col, false)
+	s, _ := ColumnString(db.dialect, col, false, false)
 	return fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s", db.quoter.Quote(tableName), s)
 }
 
@@ -646,7 +646,7 @@ func (db *mssql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table
 
 	for i, colName := range table.ColumnsSeq() {
 		col := table.GetColumn(colName)
-		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1)
+		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1, false)
 		b.WriteString(s)
 
 		if i != len(table.ColumnsSeq())-1 {
