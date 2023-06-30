@@ -579,8 +579,8 @@ func TestCollate(t *testing.T) {
 		Name:   "Test",
 	})
 	if testEngine.Dialect().URI().DBType == schemas.MYSQL || testEngine.Dialect().URI().DBType == schemas.MSSQL {
-		ver, err := testEngine.DBVersion()
-		assert.NoError(t, err)
+		ver, err1 := testEngine.DBVersion()
+		assert.NoError(t, err1)
 		fmt.Println("====", ver.Edition)
 		tables, err1 := testEngine.DBMetas()
 		assert.NoError(t, err1)
