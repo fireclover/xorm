@@ -35,7 +35,7 @@ type TableCollations interface {
 	TableCollations() []*schemas.Collation
 }
 
-var tpTableCollations = reflect.TypeOf((*TableIndices)(nil)).Elem()
+var tpTableCollations = reflect.TypeOf((*TableCollations)(nil)).Elem()
 
 // Parser represents a parser for xorm tag
 type Parser struct {
