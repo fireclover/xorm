@@ -555,7 +555,7 @@ func (t TestCollateColumn) TableCollations() []*schemas.Collation {
 	} else if t.dbtype == string(schemas.MSSQL) {
 		return []*schemas.Collation{
 			{
-				Name:   "SQL_Latin1_General_CP1_CI",
+				Name:   "Latin1_General_CI_AS",
 				Column: "name",
 			},
 		}
@@ -593,7 +593,7 @@ func TestCollate(t *testing.T) {
 	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
 		newCollation = "utf8mb4_bin"
 	} else if testEngine.Dialect().URI().DBType != schemas.MSSQL {
-		newCollation = "SQL_Latin1_General_CP1_CS"
+		newCollation = "Latin1_General_CS_AS"
 	} else {
 		return
 	}
