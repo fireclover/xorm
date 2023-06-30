@@ -426,9 +426,9 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
-		var columnName, nullableStr, colType, colKey, extra, comment, collation string
+		var columnName, nullableStr, colType, colKey, extra, comment string
 		var alreadyQuoted, isUnsigned bool
-		var colDefault, maxLength *string
+		var colDefault, maxLength, collation *string
 		err = rows.Scan(&columnName, &nullableStr, &colDefault, &colType, &colKey, &extra, &comment, &maxLength, &alreadyQuoted, &collation)
 		if err != nil {
 			return nil, nil, err
@@ -445,7 +445,9 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		} else {
 			col.DefaultIsEmpty = true
 		}
-		col.Collation = collation
+		if collation != nil {
+			col.Collation = *collation
+		}
 
 		fields := strings.Fields(colType)
 		if len(fields) == 2 && fields[1] == "unsigned" {

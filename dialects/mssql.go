@@ -474,7 +474,8 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	cols := make(map[string]*schemas.Column)
 	colSeq := make([]string, 0)
 	for rows.Next() {
-		var name, ctype, vdefault, collation string
+		var name, ctype, vdefault string
+		var collation *string
 		var maxLen, precision, scale int64
 		var nullable, isPK, defaultIsNull, isIncrement bool
 		err = rows.Scan(&name, &ctype, &maxLen, &precision, &scale, &nullable, &defaultIsNull, &vdefault, &isPK, &isIncrement, &collation)
@@ -499,7 +500,9 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		} else {
 			col.Length = maxLen
 		}
-		col.Collation = collation
+		if collation != nil {
+			col.Collation = *collation
+		}
 		switch ct {
 		case "DATETIMEOFFSET":
 			col.SQLType = schemas.SQLType{Name: schemas.TimeStampz, DefaultLength: 0, DefaultLength2: 0}
