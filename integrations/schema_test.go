@@ -5,6 +5,7 @@
 package integrations
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -587,11 +588,16 @@ func TestCollate(t *testing.T) {
 		for _, table := range tables {
 			if table.Name == "test_collate_column" {
 				fmt.Println("21222", table.Collation)
-				if table.Collation == "utf8mb4_general_ci" {
+				col := table.GetColumn("name")
+				if col == nil {
+					assert.Error(t, errors.New("not found column"))
+				}
+				if col.Collation == "utf8mb4_general_ci" {
 					assert.Error(t, err)
 				} else {
 					assert.NoError(t, err)
 				}
+				break
 			}
 		}
 	} else if testEngine.Dialect().URI().DBType == schemas.MSSQL {
