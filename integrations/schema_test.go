@@ -582,17 +582,18 @@ func TestCollate(t *testing.T) {
 	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
 		ver, err1 := testEngine.DBVersion()
 		assert.NoError(t, err1)
-		fmt.Println("====", ver.Edition)
+
 		tables, err1 := testEngine.DBMetas()
 		assert.NoError(t, err1)
 		for _, table := range tables {
 			if table.Name == "test_collate_column" {
-				fmt.Println("21222", table.Collation)
 				col := table.GetColumn("name")
 				if col == nil {
 					assert.Error(t, errors.New("not found column"))
+					return
 				}
-				if col.Collation == "utf8mb4_general_ci" {
+				// tidb doesn't follow utf8mb4_general_ci
+				if col.Collation == "utf8mb4_general_ci" && ver.Edition != "TiDB" {
 					assert.Error(t, err)
 				} else {
 					assert.NoError(t, err)
