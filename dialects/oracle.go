@@ -609,7 +609,7 @@ func (db *oracle) IsReserved(name string) bool {
 }
 
 func (db *oracle) DropTableSQL(tableName string) (string, bool) {
-	return fmt.Sprintf("DROP TABLE `%s`", tableName), false
+	return fmt.Sprintf("DROP TABLE \"%s\"", tableName), false
 }
 
 func (db *oracle) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
@@ -628,7 +628,7 @@ func (db *oracle) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 		/*if col.IsPrimaryKey && len(pkList) == 1 {
 			sql += col.String(b.dialect)
 		} else {*/
-		s, _ := ColumnString(db, col, false)
+		s, _ := ColumnString(db, col, false, false)
 		sql += s
 		// }
 		sql = strings.TrimSpace(sql)
@@ -643,6 +643,10 @@ func (db *oracle) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 
 	sql = sql[:len(sql)-2] + ")"
 	return sql, false, nil
+}
+
+func (db *oracle) IsSequenceExist(ctx context.Context, queryer core.Queryer, seqName string) (bool, error) {
+	return db.HasRecords(queryer, ctx, `SELECT sequence_name FROM user_sequences WHERE sequence_name = :1`, seqName)
 }
 
 func (db *oracle) SetQuotePolicy(quotePolicy QuotePolicy) {

@@ -135,7 +135,7 @@ func (db *Base) CreateTableSQL(ctx context.Context, queryer core.Queryer, table 
 
 	for i, colName := range table.ColumnsSeq() {
 		col := table.GetColumn(colName)
-		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1)
+		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1, false)
 		b.WriteString(s)
 
 		if i != len(table.ColumnsSeq())-1 {
@@ -209,7 +209,7 @@ func (db *Base) IsColumnExist(queryer core.Queryer, ctx context.Context, tableNa
 
 // AddColumnSQL returns a SQL to add a column
 func (db *Base) AddColumnSQL(tableName string, col *schemas.Column) string {
-	s, _ := ColumnString(db.dialect, col, true)
+	s, _ := ColumnString(db.dialect, col, true, false)
 	return fmt.Sprintf("ALTER TABLE %s ADD %s", db.dialect.Quoter().Quote(tableName), s)
 }
 
@@ -241,7 +241,7 @@ func (db *Base) DropIndexSQL(tableName string, index *schemas.Index) string {
 
 // ModifyColumnSQL returns a SQL to modify SQL
 func (db *Base) ModifyColumnSQL(tableName string, col *schemas.Column) string {
-	s, _ := ColumnString(db.dialect, col, false)
+	s, _ := ColumnString(db.dialect, col, false, false)
 	return fmt.Sprintf("ALTER TABLE %s MODIFY COLUMN %s", db.quoter.Quote(tableName), s)
 }
 
@@ -254,9 +254,7 @@ func (db *Base) ForUpdateSQL(query string) string {
 func (db *Base) SetParams(params map[string]string) {
 }
 
-var (
-	dialects = map[string]func() Dialect{}
-)
+var dialects = map[string]func() Dialect{}
 
 // RegisterDialect register database dialect
 func RegisterDialect(dbName schemas.DBType, dialectFunc func() Dialect) {
@@ -307,7 +305,7 @@ func init() {
 }
 
 // ColumnString generate column description string according dialect
-func ColumnString(dialect Dialect, col *schemas.Column, includePrimaryKey bool) (string, error) {
+func ColumnString(dialect Dialect, col *schemas.Column, includePrimaryKey, supportCollation bool) (string, error) {
 	bd := strings.Builder{}
 
 	if err := dialect.Quoter().QuoteTo(&bd, col.Name); err != nil {
@@ -320,6 +318,15 @@ func ColumnString(dialect Dialect, col *schemas.Column, includePrimaryKey bool) 
 
 	if _, err := bd.WriteString(dialect.SQLType(col)); err != nil {
 		return "", err
+	}
+
+	if supportCollation && col.Collation != "" {
+		if _, err := bd.WriteString(" COLLATE "); err != nil {
+			return "", err
+		}
+		if _, err := bd.WriteString(col.Collation); err != nil {
+			return "", err
+		}
 	}
 
 	if includePrimaryKey && col.IsPrimaryKey {
