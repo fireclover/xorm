@@ -45,6 +45,7 @@ type Column struct {
 	DisableTimeZone bool
 	TimeZone        *time.Location // column specified time zone
 	Comment         string
+	Collation       string
 }
 
 // NewColumn creates a new column

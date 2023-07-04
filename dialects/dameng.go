@@ -659,7 +659,7 @@ func (db *dameng) DropTableSQL(tableName string) (string, bool) {
 
 // ModifyColumnSQL returns a SQL to modify SQL
 func (db *dameng) ModifyColumnSQL(tableName string, col *schemas.Column) string {
-	s, _ := ColumnString(db.dialect, col, false)
+	s, _ := ColumnString(db.dialect, col, false, false)
 	return fmt.Sprintf("ALTER TABLE %s MODIFY %s", db.quoter.Quote(tableName), s)
 }
 
@@ -692,7 +692,7 @@ func (db *dameng) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 			}
 		}
 
-		s, _ := ColumnString(db, col, false)
+		s, _ := ColumnString(db, col, false, false)
 		if _, err := b.WriteString(s); err != nil {
 			return "", false, err
 		}
