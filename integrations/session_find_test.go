@@ -12,6 +12,7 @@ import (
 	"xorm.io/xorm"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/names"
+	"xorm.io/xorm/schemas"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -1217,7 +1218,19 @@ func TestBuilderDialect(t *testing.T) {
 	session := testEngine.NewSession()
 	defer session.Close()
 
-	inner := builder.Dialect(builder.POSTGRES).Select("*").From("test_builder_dialect_foo").Where(builder.Eq{"age": 20})
+	var dialect string
+	switch testEngine.Dialect().URI().DBType {
+	case schemas.MYSQL:
+		dialect = builder.MYSQL
+	case schemas.MSSQL:
+		dialect = builder.MSSQL
+	case schemas.POSTGRES:
+		dialect = builder.POSTGRES
+	case schemas.SQLITE:
+		dialect = builder.SQLITE
+	}
+
+	inner := builder.Dialect(dialect).Select("*").From("test_builder_dialect_foo").Where(builder.Eq{"age": 20})
 	result := make([]*TestBuilderDialect, 0, 10)
 	err := testEngine.Table("test_builder_dialect").Where(builder.Eq{"age2": 2}).Join("INNER", inner, "test_builder_dialect_foo.dialect_id = test_builder_dialect.id").Find(&result)
 	assert.NoError(t, err)
