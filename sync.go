@@ -181,7 +181,10 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 					}
 				}
 			} else if col.Comment != oriCol.Comment {
-				_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
+				// only postgres dialect implement update comment now.
+				if engine.dialect.URI().DBType == schemas.POSTGRES {
+					_, err = session.exec(engine.dialect.ModifyColumnSQL(tbNameWithSchema, col))
+				}
 			}
 
 			if col.Default != oriCol.Default {
