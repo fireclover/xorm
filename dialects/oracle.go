@@ -628,7 +628,7 @@ func (db *oracle) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 		/*if col.IsPrimaryKey && len(pkList) == 1 {
 			sql += col.String(b.dialect)
 		} else {*/
-		s, _ := ColumnString(db, col, false)
+		s, _ := ColumnString(db, col, false, false)
 		sql += s
 		// }
 		sql = strings.TrimSpace(sql)

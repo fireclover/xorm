@@ -6,7 +6,7 @@ package dialects
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -29,10 +29,11 @@ func convertQuestionMark(sql, prefix string, start int) string {
 	var isMaybeLineComment bool
 	var isMaybeComment bool
 	var isMaybeCommentEnd bool
-	var index = start
+	index := start
 	for _, c := range sql {
 		if !beginSingleQuote && !isLineComment && !isComment && c == '?' {
-			buf.WriteString(fmt.Sprintf("%s%v", prefix, index))
+			buf.WriteString(prefix)
+			buf.WriteString(strconv.Itoa(index))
 			index++
 		} else {
 			if isMaybeLineComment {
