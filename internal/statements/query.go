@@ -34,7 +34,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 	if len(statement.SelectStr) > 0 {
 		columnStr = statement.SelectStr
 	} else {
-		if statement.JoinStr == "" {
+		if len(statement.joins) == 0 {
 			if columnStr == "" {
 				if statement.GroupByStr != "" {
 					columnStr = statement.quoteColumnStr(statement.GroupByStr)
@@ -109,7 +109,7 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 		columnStr = statement.SelectStr
 	} else {
 		// TODO: always generate column names, not use * even if join
-		if len(statement.JoinStr) == 0 {
+		if len(statement.joins) == 0 {
 			if len(columnStr) == 0 {
 				if len(statement.GroupByStr) > 0 {
 					columnStr = statement.quoteColumnStr(statement.GroupByStr)
@@ -199,7 +199,7 @@ func (statement *Statement) writeFrom(w builder.Writer) error {
 	if err := statement.writeAlias(w); err != nil {
 		return err
 	}
-	return statement.writeJoin(w)
+	return statement.writeJoins(w)
 }
 
 func (statement *Statement) writeLimitOffset(w builder.Writer) error {
@@ -296,7 +296,7 @@ func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) err
 		} else {
 			column = statement.RefTable.PKColumns()[0].Name
 		}
-		if statement.needTableName() {
+		if statement.NeedTableName() {
 			if len(statement.TableAlias) > 0 {
 				column = fmt.Sprintf("%s.%s", statement.TableAlias, column)
 			} else {
@@ -442,7 +442,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 		if _, err := fmt.Fprintf(buf, "SELECT TOP 1 * FROM %s", tableName); err != nil {
 			return "", nil, err
 		}
-		if err := statement.writeJoin(buf); err != nil {
+		if err := statement.writeJoins(buf); err != nil {
 			return "", nil, err
 		}
 		if statement.Conds().IsValid() {
@@ -457,7 +457,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 		if _, err := fmt.Fprintf(buf, "SELECT * FROM %s", tableName); err != nil {
 			return "", nil, err
 		}
-		if err := statement.writeJoin(buf); err != nil {
+		if err := statement.writeJoins(buf); err != nil {
 			return "", nil, err
 		}
 		if _, err := fmt.Fprintf(buf, " WHERE "); err != nil {
@@ -478,7 +478,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 		if _, err := fmt.Fprintf(buf, "SELECT 1 FROM %s", tableName); err != nil {
 			return "", nil, err
 		}
-		if err := statement.writeJoin(buf); err != nil {
+		if err := statement.writeJoins(buf); err != nil {
 			return "", nil, err
 		}
 		if statement.Conds().IsValid() {
@@ -503,7 +503,7 @@ func (statement *Statement) genSelect() string {
 	}
 
 	columnStr := statement.ColumnStr()
-	if statement.JoinStr == "" {
+	if len(statement.joins) == 0 {
 		if columnStr == "" {
 			if statement.GroupByStr != "" {
 				columnStr = statement.quoteColumnStr(statement.GroupByStr)

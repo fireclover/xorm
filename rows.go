@@ -46,12 +46,11 @@ func newRows(session *Session, bean interface{}) (*Rows, error) {
 
 	if rows.session.statement.RawSQL == "" {
 		var autoCond builder.Cond
-		var addedTableName = (len(session.statement.JoinStr) > 0)
-		var table = rows.session.statement.RefTable
+		table := rows.session.statement.RefTable
 
 		if !session.statement.NoAutoCondition {
 			var err error
-			autoCond, err = session.statement.BuildConds(table, bean, true, true, false, true, addedTableName)
+			autoCond, err = session.statement.BuildConds(table, bean, true, true, false, true, session.statement.NeedTableName())
 			if err != nil {
 				return nil, err
 			}
@@ -103,12 +102,12 @@ func (rows *Rows) Scan(beans ...interface{}) error {
 		return rows.Err()
 	}
 
-	var bean = beans[0]
-	var tp = reflect.TypeOf(bean)
+	bean := beans[0]
+	tp := reflect.TypeOf(bean)
 	if tp.Kind() == reflect.Ptr {
 		tp = tp.Elem()
 	}
-	var beanKind = tp.Kind()
+	beanKind := tp.Kind()
 
 	if len(beans) == 1 {
 		if reflect.Indirect(reflect.ValueOf(bean)).Type() != rows.beanType {

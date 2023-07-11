@@ -113,9 +113,8 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 	}
 
 	var (
-		table          = session.statement.RefTable
-		addedTableName = (len(session.statement.JoinStr) > 0)
-		autoCond       builder.Cond
+		table    = session.statement.RefTable
+		autoCond builder.Cond
 	)
 	if tp == tpStruct {
 		if !session.statement.NoAutoCondition && len(condiBean) > 0 {
@@ -123,7 +122,7 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 			if err != nil {
 				return err
 			}
-			autoCond, err = session.statement.BuildConds(condTable, condiBean[0], true, true, false, true, addedTableName)
+			autoCond, err = session.statement.BuildConds(condTable, condiBean[0], true, true, false, true, session.statement.NeedTableName())
 			if err != nil {
 				return err
 			}

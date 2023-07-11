@@ -11,64 +11,46 @@ import (
 	"xorm.io/builder"
 	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
 )
 
 // Join The joinOP should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
-func (statement *Statement) Join(joinOP string, tablename interface{}, condition interface{}, args ...interface{}) *Statement {
-	var buf strings.Builder
-	if len(statement.JoinStr) > 0 {
-		fmt.Fprintf(&buf, "%v %v JOIN ", statement.JoinStr, joinOP)
-	} else {
-		fmt.Fprintf(&buf, "%v JOIN ", joinOP)
-	}
+func (statement *Statement) Join(joinOP string, joinTable interface{}, condition interface{}, args ...interface{}) *Statement {
+	statement.joins = append(statement.joins, join{
+		op:        joinOP,
+		table:     joinTable,
+		condition: condition,
+		args:      args,
+	})
+	return statement
+}
 
-	condStr := ""
-	condArgs := []interface{}{}
-	switch condTp := condition.(type) {
-	case string:
-		condStr = condTp
-	case builder.Cond:
-		var err error
-		condStr, condArgs, err = builder.ToSQL(condTp)
-		if err != nil {
-			statement.LastError = err
-			return statement
+func (statement *Statement) writeJoins(w builder.Writer) error {
+	for _, join := range statement.joins {
+		if err := statement.writeJoin(w, join); err != nil {
+			return err
 		}
-	default:
-		statement.LastError = fmt.Errorf("unsupported join condition type: %v", condTp)
-		return statement
+	}
+	return nil
+}
+
+func (statement *Statement) writeJoin(buf builder.Writer, join join) error {
+	// write join operator
+	if _, err := fmt.Fprintf(buf, " %v JOIN ", join.op); err != nil {
+		return err
 	}
 
-	switch tp := tablename.(type) {
+	// write table or sub query
+	switch tp := join.table.(type) {
 	case builder.Builder:
-		subSQL, subQueryArgs, err := tp.ToSQL()
-		if err != nil {
-			statement.LastError = err
-			return statement
+		if err := tp.WriteTo(buf); err != nil {
+			return err
 		}
-
-		fields := strings.Split(tp.TableName(), ".")
-		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
-		aliasName = schemas.CommonQuoter.Trim(aliasName)
-
-		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), statement.quote(aliasName), statement.ReplaceQuote(condStr))
-		statement.joinArgs = append(append(statement.joinArgs, subQueryArgs...), condArgs...)
 	case *builder.Builder:
-		subSQL, subQueryArgs, err := tp.ToSQL()
-		if err != nil {
-			statement.LastError = err
-			return statement
+		if err := tp.WriteTo(buf); err != nil {
+			return err
 		}
-
-		fields := strings.Split(tp.TableName(), ".")
-		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
-		aliasName = schemas.CommonQuoter.Trim(aliasName)
-
-		fmt.Fprintf(&buf, "(%s) %s ON %v", statement.ReplaceQuote(subSQL), statement.quote(aliasName), statement.ReplaceQuote(condStr))
-		statement.joinArgs = append(append(statement.joinArgs, subQueryArgs...), condArgs...)
 	default:
-		tbName := dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), tablename, true)
+		tbName := dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), join.table, true)
 		if !utils.IsSubQuery(tbName) {
 			var buf strings.Builder
 			_ = statement.dialect.Quoter().QuoteTo(&buf, tbName)
@@ -76,21 +58,37 @@ func (statement *Statement) Join(joinOP string, tablename interface{}, condition
 		} else {
 			tbName = statement.ReplaceQuote(tbName)
 		}
-		fmt.Fprintf(&buf, "%s ON %v", tbName, statement.ReplaceQuote(condStr))
-		statement.joinArgs = append(statement.joinArgs, condArgs...)
-	}
-
-	statement.JoinStr = buf.String()
-	statement.joinArgs = append(statement.joinArgs, args...)
-	return statement
-}
-
-func (statement *Statement) writeJoin(w builder.Writer) error {
-	if statement.JoinStr != "" {
-		if _, err := fmt.Fprint(w, " ", statement.JoinStr); err != nil {
+		if _, err := fmt.Fprint(buf, tbName); err != nil {
 			return err
 		}
-		w.Append(statement.joinArgs...)
 	}
+
+	// write alias FIXME
+	/*fields := strings.Split(tp.TableName(), ".")
+	aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
+	aliasName = schemas.CommonQuoter.Trim(aliasName)
+	if _, err := fmt.Fprint(buf, " ", statement.quote(aliasName)); err != nil {
+		return err
+	}*/
+
+	// write condition
+	if _, err := fmt.Fprint(buf, " ON "); err != nil {
+		return err
+	}
+
+	switch condTp := join.condition.(type) {
+	case string:
+		if _, err := fmt.Fprint(buf, condTp); err != nil {
+			return err
+		}
+		buf.Append(join.args...)
+	case builder.Cond:
+		if err := condTp.WriteTo(buf); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported join condition type: %v", condTp)
+	}
+
 	return nil
 }
