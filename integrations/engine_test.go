@@ -311,7 +311,7 @@ func TestColumnCommentUpdate(t *testing.T) {
 	assert.NoError(t, testEngine.Sync2(new(TestCommentUpdate2))) // modify table column comment
 
 	switch testEngine.Dialect().URI().DBType {
-	case schemas.POSTGRES: // only postgres dialect implement the feature of modify comment in postgres.ModifyColumnSQL
+	case schemas.POSTGRES, schemas.MYSQL: // only postgres / mysql dialect implement the feature of modify comment in postgres.ModifyColumnSQL
 	default:
 		t.Skip()
 		return
