@@ -114,7 +114,7 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 
 	var (
 		table          = session.statement.RefTable
-		addedTableName = (len(session.statement.JoinStr) > 0)
+		addedTableName = session.statement.NeedTableName()
 		autoCond       builder.Cond
 	)
 	if tp == tpStruct {
