@@ -36,14 +36,16 @@ func (statement *Statement) writeJoins(w builder.Writer) error {
 
 func (statement *Statement) writeJoin(buf builder.Writer, join join) error {
 	// write join operator
-	if _, err := fmt.Fprintf(buf, " %v JOIN ", join.op); err != nil {
+	if _, err := fmt.Fprintf(buf, " %v JOIN", join.op); err != nil {
 		return err
 	}
 
 	// write join table or subquery
 	switch tp := join.table.(type) {
 	case builder.Builder:
-		fmt.Fprintf(buf, "(")
+		if _, err := fmt.Fprintf(buf, " ("); err != nil {
+			return err
+		}
 		// statement.ReplaceQuote(subSQL),
 		if err := tp.WriteTo(buf); err != nil {
 			return err
@@ -53,9 +55,13 @@ func (statement *Statement) writeJoin(buf builder.Writer, join join) error {
 		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
 		aliasName = schemas.CommonQuoter.Trim(aliasName)
 
-		fmt.Fprintf(buf, ") %s", statement.quote(aliasName))
+		if _, err := fmt.Fprintf(buf, ") %s", statement.quote(aliasName)); err != nil {
+			return err
+		}
 	case *builder.Builder:
-		fmt.Fprintf(buf, "(")
+		if _, err := fmt.Fprintf(buf, " ("); err != nil {
+			return err
+		}
 		// statement.ReplaceQuote(subSQL),
 		if err := tp.WriteTo(buf); err != nil {
 			return err
@@ -65,17 +71,23 @@ func (statement *Statement) writeJoin(buf builder.Writer, join join) error {
 		aliasName := statement.dialect.Quoter().Trim(fields[len(fields)-1])
 		aliasName = schemas.CommonQuoter.Trim(aliasName)
 
-		fmt.Fprintf(buf, ") %s", statement.quote(aliasName))
+		if _, err := fmt.Fprintf(buf, ") %s", statement.quote(aliasName)); err != nil {
+			return err
+		}
 	default:
 		tbName := dialects.FullTableName(statement.dialect, statement.tagParser.GetTableMapper(), join.table, true)
 		if !utils.IsSubQuery(tbName) {
 			var sb strings.Builder
-			_ = statement.dialect.Quoter().QuoteTo(&sb, tbName)
+			if err := statement.dialect.Quoter().QuoteTo(&sb, tbName); err != nil {
+				return err
+			}
 			tbName = sb.String()
 		} else {
 			tbName = statement.ReplaceQuote(tbName)
 		}
-		fmt.Fprintf(buf, tbName)
+		if _, err := fmt.Fprint(buf, " ", tbName); err != nil {
+			return err
+		}
 	}
 
 	// write on condition
@@ -85,7 +97,9 @@ func (statement *Statement) writeJoin(buf builder.Writer, join join) error {
 
 	switch condTp := join.condition.(type) {
 	case string:
-		fmt.Fprint(buf, statement.ReplaceQuote(condTp))
+		if _, err := fmt.Fprint(buf, statement.ReplaceQuote(condTp)); err != nil {
+			return err
+		}
 	case builder.Cond:
 		if err := condTp.WriteTo(buf); err != nil {
 			return err
