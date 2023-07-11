@@ -290,7 +290,7 @@ func TestGetColumnsComment(t *testing.T) {
 }
 
 type TestCommentUpdate struct {
-	HasComment int `xorm:"comment('this is a comment before update')"`
+	HasComment int `xorm:"bigint comment('this is a comment before update')"`
 }
 
 func (m *TestCommentUpdate) TableName() string {
@@ -298,7 +298,7 @@ func (m *TestCommentUpdate) TableName() string {
 }
 
 type TestCommentUpdate2 struct {
-	HasComment int `xorm:"comment('this is a comment after update')"`
+	HasComment int `xorm:"bigint comment('this is a comment after update')"`
 }
 
 func (m *TestCommentUpdate2) TableName() string {
@@ -308,7 +308,7 @@ func (m *TestCommentUpdate2) TableName() string {
 func TestColumnCommentUpdate(t *testing.T) {
 	comment := "this is a comment after update"
 	assertSync(t, new(TestCommentUpdate))
-	assert.NoError(t, testEngine.Sync(new(TestCommentUpdate2))) // modify table column comment
+	assert.NoError(t, testEngine.Sync2(new(TestCommentUpdate2))) // modify table column comment
 
 	switch testEngine.Dialect().URI().DBType {
 	case schemas.POSTGRES: // only postgres dialect implement the feature of modify comment in postgres.ModifyColumnSQL
