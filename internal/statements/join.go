@@ -46,8 +46,7 @@ func (statement *Statement) writeJoin(buf *builder.BytesWriter, join join) error
 		if _, err := fmt.Fprintf(buf, " ("); err != nil {
 			return err
 		}
-		// statement.ReplaceQuote(subSQL),
-		if err := tp.WriteTo(buf); err != nil {
+		if err := tp.WriteTo(statement.QuoteReplacer(buf)); err != nil {
 			return err
 		}
 
@@ -62,8 +61,7 @@ func (statement *Statement) writeJoin(buf *builder.BytesWriter, join join) error
 		if _, err := fmt.Fprintf(buf, " ("); err != nil {
 			return err
 		}
-		// statement.ReplaceQuote(subSQL),
-		if err := tp.WriteTo(buf); err != nil {
+		if err := tp.WriteTo(statement.QuoteReplacer(buf)); err != nil {
 			return err
 		}
 
