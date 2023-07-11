@@ -295,7 +295,7 @@ func (statement *Statement) GroupBy(keys string) *Statement {
 	return statement
 }
 
-func (statement *Statement) WriteGroupBy(w builder.Writer) error {
+func (statement *Statement) writeGroupBy(w builder.Writer) error {
 	if statement.GroupByStr == "" {
 		return nil
 	}

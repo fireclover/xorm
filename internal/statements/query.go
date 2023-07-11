@@ -188,7 +188,7 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 	return sqlStr, condArgs, nil
 }
 
-func (statement *Statement) writeFrom(w builder.Writer) error {
+func (statement *Statement) writeFrom(w *builder.BytesWriter) error {
 	if _, err := fmt.Fprint(w, " FROM "); err != nil {
 		return err
 	}
@@ -291,7 +291,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 					return "", nil, err
 				}
 			}
-			if err := statement.WriteGroupBy(mssqlCondi); err != nil {
+			if err := statement.writeGroupBy(mssqlCondi); err != nil {
 				return "", nil, err
 			}
 			if _, err := fmt.Fprint(mssqlCondi, "))"); err != nil {
@@ -331,7 +331,7 @@ func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderB
 		}
 	}
 
-	if err := statement.WriteGroupBy(buf); err != nil {
+	if err := statement.writeGroupBy(buf); err != nil {
 		return "", nil, err
 	}
 	if err := statement.writeHaving(buf); err != nil {

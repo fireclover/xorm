@@ -25,7 +25,7 @@ func (statement *Statement) Join(joinOP string, joinTable interface{}, condition
 	return statement
 }
 
-func (statement *Statement) writeJoins(w builder.Writer) error {
+func (statement *Statement) writeJoins(w *builder.BytesWriter) error {
 	for _, join := range statement.joins {
 		if err := statement.writeJoin(w, join); err != nil {
 			return err
@@ -34,7 +34,7 @@ func (statement *Statement) writeJoins(w builder.Writer) error {
 	return nil
 }
 
-func (statement *Statement) writeJoin(buf builder.Writer, join join) error {
+func (statement *Statement) writeJoin(buf *builder.BytesWriter, join join) error {
 	// write join operator
 	if _, err := fmt.Fprintf(buf, " %v JOIN", join.op); err != nil {
 		return err
@@ -101,7 +101,7 @@ func (statement *Statement) writeJoin(buf builder.Writer, join join) error {
 			return err
 		}
 	case builder.Cond:
-		if err := condTp.WriteTo(buf); err != nil {
+		if err := condTp.WriteTo(statement.QuoteReplacer(buf)); err != nil {
 			return err
 		}
 	default:
