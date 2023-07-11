@@ -669,10 +669,6 @@ func (db *mssql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table
 	return b.String(), true, nil
 }
 
-func (db *mssql) ForUpdateSQL(query string) string {
-	return query
-}
-
 func (db *mssql) Filters() []Filter {
 	return []Filter{}
 }

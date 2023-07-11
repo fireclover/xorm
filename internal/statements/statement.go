@@ -300,7 +300,7 @@ func (statement *Statement) WriteGroupBy(w builder.Writer) error {
 
 // Having generate "Having conditions" statement
 func (statement *Statement) Having(conditions string) *Statement {
-	statement.HavingStr = fmt.Sprintf("HAVING %v", statement.ReplaceQuote(conditions))
+	statement.HavingStr = conditions
 	return statement
 }
 
@@ -308,7 +308,7 @@ func (statement *Statement) writeHaving(w builder.Writer) error {
 	if statement.HavingStr == "" {
 		return nil
 	}
-	_, err := fmt.Fprint(w, " ", statement.HavingStr)
+	_, err := fmt.Fprint(w, " HAVING ", statement.ReplaceQuote(statement.HavingStr))
 	return err
 }
 
