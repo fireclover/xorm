@@ -269,12 +269,12 @@ func (statement *Statement) writeForUpdate(w io.Writer) error {
 }
 
 func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) error {
-	if statement.RefTable == nil {
-		return errors.New("unsupported query limit without reference table")
-	}
-
 	if statement.dialect.URI().DBType != schemas.MSSQL || statement.Start <= 0 {
 		return nil
+	}
+
+	if statement.RefTable == nil {
+		return errors.New("unsupported query limit without reference table")
 	}
 
 	mssqlCondi := builder.NewWriter()
