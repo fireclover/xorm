@@ -310,8 +310,13 @@ func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) err
 	if err := statement.writeFrom(mssqlCondi); err != nil {
 		return err
 	}
-	if err := statement.writeWhere(mssqlCondi); err != nil {
-		return err
+	if statement.cond.IsValid() {
+		if _, err := fmt.Fprint(w, " WHERE "); err != nil {
+			return err
+		}
+		if err := statement.cond.WriteTo(statement.QuoteReplacer(w)); err != nil {
+			return err
+		}
 	}
 	if err := statement.WriteOrderBy(mssqlCondi); err != nil {
 		return err
