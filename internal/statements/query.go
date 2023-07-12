@@ -277,11 +277,6 @@ func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) err
 		return errors.New("unsupported query limit without reference table")
 	}
 
-	mssqlCondi := builder.NewWriter()
-	if err := statement.writeTop(mssqlCondi); err != nil {
-		return err
-	}
-
 	var column string
 	if len(statement.RefTable.PKColumns()) == 0 {
 		for _, index := range statement.RefTable.Indexes {
@@ -303,28 +298,30 @@ func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) err
 			column = fmt.Sprintf("%s.%s", statement.TableName(), column)
 		}
 	}
-	if _, err := fmt.Fprintf(mssqlCondi, "(%s NOT IN (SELECT TOP %d %s",
+
+	subWriter := builder.NewWriter()
+	if _, err := fmt.Fprintf(subWriter, "(%s NOT IN (SELECT TOP %d %s",
 		column, statement.Start, column); err != nil {
 		return err
 	}
-	if err := statement.writeFrom(mssqlCondi); err != nil {
+	if err := statement.writeFrom(subWriter); err != nil {
 		return err
 	}
 	if statement.cond.IsValid() {
-		if _, err := fmt.Fprint(w, " WHERE "); err != nil {
+		if _, err := fmt.Fprint(subWriter, " WHERE "); err != nil {
 			return err
 		}
-		if err := statement.cond.WriteTo(statement.QuoteReplacer(w)); err != nil {
+		if err := statement.cond.WriteTo(statement.QuoteReplacer(subWriter)); err != nil {
 			return err
 		}
 	}
-	if err := statement.WriteOrderBy(mssqlCondi); err != nil {
+	if err := statement.WriteOrderBy(subWriter); err != nil {
 		return err
 	}
-	if err := statement.writeGroupBy(mssqlCondi); err != nil {
+	if err := statement.writeGroupBy(subWriter); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprint(mssqlCondi, "))"); err != nil {
+	if _, err := fmt.Fprint(subWriter, "))"); err != nil {
 		return err
 	}
 
@@ -338,7 +335,7 @@ func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) err
 		}
 	}
 
-	return utils.WriteBuilder(w, mssqlCondi)
+	return utils.WriteBuilder(w, subWriter)
 }
 
 func (statement *Statement) writeOracleLimit(w *builder.BytesWriter, columnStr string) error {
