@@ -19,7 +19,8 @@ import (
 )
 
 func (statement *Statement) ifAddColUpdate(col *schemas.Column, includeVersion, includeUpdated, includeNil,
-	includeAutoIncr, update bool) (bool, error) {
+	includeAutoIncr, update bool,
+) (bool, error) {
 	columnMap := statement.ColumnMap
 	omitColumnMap := statement.OmitColumnMap
 	unscoped := statement.unscoped
@@ -64,15 +65,16 @@ func (statement *Statement) ifAddColUpdate(col *schemas.Column, includeVersion, 
 // BuildUpdates auto generating update columnes and values according a struct
 func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 	includeVersion, includeUpdated, includeNil,
-	includeAutoIncr, update bool) ([]string, []interface{}, error) {
+	includeAutoIncr, update bool,
+) ([]string, []interface{}, error) {
 	table := statement.RefTable
 	allUseBool := statement.allUseBool
 	useAllCols := statement.useAllCols
 	mustColumnMap := statement.MustColumnMap
 	nullableMap := statement.NullableMap
 
-	var colNames = make([]string, 0)
-	var args = make([]interface{}, 0)
+	colNames := make([]string, 0)
+	args := make([]interface{}, 0)
 
 	for _, col := range table.Columns() {
 		ok, err := statement.ifAddColUpdate(col, includeVersion, includeUpdated, includeNil,

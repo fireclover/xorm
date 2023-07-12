@@ -89,7 +89,7 @@ func TestCountWithOthers(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	total, err := testEngine.OrderBy("`id` desc").Limit(1).Count(new(CountWithOthers))
+	total, err := testEngine.OrderBy("count(`id`) desc").Limit(1).Count(new(CountWithOthers))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }
