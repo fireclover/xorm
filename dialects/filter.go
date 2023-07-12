@@ -5,13 +5,15 @@
 package dialects
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 // Filter is an interface to filter SQL
 type Filter interface {
-	Do(sql string) string
+	Do(ctx context.Context, sql string) string
 }
 
 // postgresSeqFilter filter SQL replace ?, ? ... to $1, $2 ...
@@ -76,7 +78,7 @@ func postgresSeqFilterConvertQuestionMark(sql, prefix string, start int) string 
 }
 
 // Do implements Filter
-func (s *postgresSeqFilter) Do(sql string) string {
+func (s *postgresSeqFilter) Do(ctx context.Context, sql string) string {
 	return postgresSeqFilterConvertQuestionMark(sql, s.Prefix, s.Start)
 }
 
@@ -97,7 +99,8 @@ func oracleSeqFilterConvertQuestionMark(sql, prefix string, start int) string {
 	index := start
 	for _, c := range sql {
 		if !beginSingleQuote && !isLineComment && !isComment && c == '?' {
-			buf.WriteString(fmt.Sprintf("%s%v", prefix, index))
+			buf.WriteString(prefix)
+			buf.WriteString(strconv.Itoa(index))
 			index++
 		} else {
 			if isMaybeLineComment {
@@ -137,6 +140,6 @@ func oracleSeqFilterConvertQuestionMark(sql, prefix string, start int) string {
 }
 
 // Do implements Filter
-func (s *oracleSeqFilter) Do(sql string) string {
+func (s *oracleSeqFilter) Do(ctx context.Context, sql string) string {
 	return oracleSeqFilterConvertQuestionMark(sql, s.Prefix, s.Start)
 }

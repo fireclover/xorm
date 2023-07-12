@@ -163,17 +163,18 @@ func (q Quoter) quoteWordTo(buf *strings.Builder, word string) error {
 }
 
 // QuoteTo quotes the table or column names. i.e. if the quotes are [ and ]
-//   name -> [name]
-//   `name` -> [name]
-//   [name] -> [name]
-//   schema.name -> [schema].[name]
-//   `schema`.`name` -> [schema].[name]
-//   `schema`.name -> [schema].[name]
-//   schema.`name` -> [schema].[name]
-//   [schema].name -> [schema].[name]
-//   schema.[name] -> [schema].[name]
-//   name AS a  ->  [name] AS a
-//   schema.name AS a  ->  [schema].[name] AS a
+//
+//	name -> [name]
+//	`name` -> [name]
+//	[name] -> [name]
+//	schema.name -> [schema].[name]
+//	`schema`.`name` -> [schema].[name]
+//	`schema`.name -> [schema].[name]
+//	schema.`name` -> [schema].[name]
+//	[schema].name -> [schema].[name]
+//	schema.[name] -> [schema].[name]
+//	name AS a  ->  [name] AS a
+//	schema.name AS a  ->  [schema].[name] AS a
 func (q Quoter) QuoteTo(buf *strings.Builder, value string) error {
 	var i int
 	for i < len(value) {
