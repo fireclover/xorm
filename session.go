@@ -354,7 +354,7 @@ func (session *Session) DB() *core.DB {
 
 func (session *Session) canCache() bool {
 	if session.statement.RefTable == nil ||
-		session.statement.JoinStr != "" ||
+		session.statement.NeedTableName() ||
 		session.statement.RawSQL != "" ||
 		!session.statement.UseCache ||
 		session.statement.IsForUpdate ||

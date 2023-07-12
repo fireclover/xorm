@@ -85,8 +85,6 @@ type Dialect interface {
 	AddColumnSQL(tableName string, col *schemas.Column) string
 	ModifyColumnSQL(tableName string, col *schemas.Column) string
 
-	ForUpdateSQL(query string) string
-
 	Filters() []Filter
 	SetParams(params map[string]string)
 }
@@ -243,11 +241,6 @@ func (db *Base) DropIndexSQL(tableName string, index *schemas.Index) string {
 func (db *Base) ModifyColumnSQL(tableName string, col *schemas.Column) string {
 	s, _ := ColumnString(db.dialect, col, false, false)
 	return fmt.Sprintf("ALTER TABLE %s MODIFY COLUMN %s", db.quoter.Quote(tableName), s)
-}
-
-// ForUpdateSQL returns for updateSQL
-func (db *Base) ForUpdateSQL(query string) string {
-	return query + " FOR UPDATE"
 }
 
 // SetParams set params
