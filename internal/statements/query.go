@@ -239,7 +239,7 @@ func (statement *Statement) writeSelectColumns(w *builder.BytesWriter, columnStr
 	if err := statement.writeTop(w); err != nil {
 		return err
 	}
-	_, err := fmt.Fprint(w, columnStr)
+	_, err := fmt.Fprint(w, " ", columnStr)
 	return err
 }
 
