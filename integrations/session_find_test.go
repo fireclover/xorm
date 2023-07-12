@@ -1230,7 +1230,9 @@ func TestBuilderDialect(t *testing.T) {
 		dialect = builder.SQLITE
 	}
 
-	inner := builder.Dialect(dialect).Select("*").From("test_builder_dialect_foo").Where(builder.Eq{"age": 20})
+	tbName := testEngine.TableName(new(TestBuilderDialectFoo), dialect == builder.POSTGRES)
+
+	inner := builder.Dialect(dialect).Select("*").From(tbName).Where(builder.Eq{"age": 20})
 	result := make([]*TestBuilderDialect, 0, 10)
 	err := testEngine.Table("test_builder_dialect").Where(builder.Eq{"age2": 2}).Join("INNER", inner, "test_builder_dialect_foo.dialect_id = test_builder_dialect.id").Find(&result)
 	assert.NoError(t, err)
