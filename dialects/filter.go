@@ -5,13 +5,14 @@
 package dialects
 
 import (
-	"fmt"
+	"context"
+	"strconv"
 	"strings"
 )
 
 // Filter is an interface to filter SQL
 type Filter interface {
-	Do(sql string) string
+	Do(ctx context.Context, sql string) string
 }
 
 // SeqFilter filter SQL replace ?, ? ... to $1, $2 ...
@@ -28,10 +29,11 @@ func convertQuestionMark(sql, prefix string, start int) string {
 	var isMaybeLineComment bool
 	var isMaybeComment bool
 	var isMaybeCommentEnd bool
-	var index = start
+	index := start
 	for _, c := range sql {
 		if !beginSingleQuote && !isLineComment && !isComment && c == '?' {
-			buf.WriteString(fmt.Sprintf("%s%v", prefix, index))
+			buf.WriteString(prefix)
+			buf.WriteString(strconv.Itoa(index))
 			index++
 		} else {
 			if isMaybeLineComment {
@@ -71,6 +73,6 @@ func convertQuestionMark(sql, prefix string, start int) string {
 }
 
 // Do implements Filter
-func (s *SeqFilter) Do(sql string) string {
+func (s *SeqFilter) Do(ctx context.Context, sql string) string {
 	return convertQuestionMark(sql, s.Prefix, s.Start)
 }

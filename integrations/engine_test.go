@@ -289,6 +289,48 @@ func TestGetColumnsComment(t *testing.T) {
 	assert.Zero(t, noComment)
 }
 
+type TestCommentUpdate struct {
+	HasComment int `xorm:"bigint comment('this is a comment before update')"`
+}
+
+func (m *TestCommentUpdate) TableName() string {
+	return "test_comment_struct"
+}
+
+type TestCommentUpdate2 struct {
+	HasComment int `xorm:"bigint comment('this is a comment after update')"`
+}
+
+func (m *TestCommentUpdate2) TableName() string {
+	return "test_comment_struct"
+}
+
+func TestColumnCommentUpdate(t *testing.T) {
+	comment := "this is a comment after update"
+	assertSync(t, new(TestCommentUpdate))
+	assert.NoError(t, testEngine.Sync2(new(TestCommentUpdate2))) // modify table column comment
+
+	switch testEngine.Dialect().URI().DBType {
+	case schemas.POSTGRES, schemas.MYSQL: // only postgres / mysql dialect implement the feature of modify comment in postgres.ModifyColumnSQL
+	default:
+		t.Skip()
+		return
+	}
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	tableName := "test_comment_struct"
+	var hasComment string
+	for _, table := range tables {
+		if table.Name == tableName {
+			col := table.GetColumn(testEngine.GetColumnMapper().Obj2Table("HasComment"))
+			assert.NotNil(t, col)
+			hasComment = col.Comment
+			break
+		}
+	}
+	assert.Equal(t, comment, hasComment)
+}
+
 func TestGetColumnsLength(t *testing.T) {
 	var max_length int64
 	switch testEngine.Dialect().URI().DBType {
