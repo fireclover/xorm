@@ -478,28 +478,26 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 }
 
 func (statement *Statement) genSelectColumnStr() string {
+	// manually select columns
 	if len(statement.SelectStr) > 0 {
 		return statement.SelectStr
 	}
 
 	columnStr := statement.ColumnStr()
-	if len(statement.joins) == 0 {
-		if columnStr == "" {
-			if statement.GroupByStr != "" {
-				columnStr = statement.quoteColumnStr(statement.GroupByStr)
-			} else {
-				columnStr = statement.genColumnStr()
-			}
-		}
-	} else {
-		if columnStr == "" {
-			if statement.GroupByStr != "" {
-				columnStr = statement.quoteColumnStr(statement.GroupByStr)
-			} else {
-				columnStr = "*"
-			}
-		}
+	if columnStr != "" {
+		return columnStr
 	}
+
+	// autodetect columns
+	if statement.GroupByStr != "" {
+		return statement.quoteColumnStr(statement.GroupByStr)
+	}
+
+	if len(statement.joins) != 0 {
+		return "*"
+	}
+
+	columnStr = statement.genColumnStr()
 	if columnStr == "" {
 		columnStr = "*"
 	}
