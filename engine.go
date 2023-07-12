@@ -254,6 +254,11 @@ func (engine *Engine) SetConnMaxLifetime(d time.Duration) {
 	engine.DB().SetConnMaxLifetime(d)
 }
 
+// SetConnMaxIdleTime sets the maximum amount of time a connection may be idle.
+func (engine *Engine) SetConnMaxIdleTime(d time.Duration) {
+	engine.DB().SetConnMaxIdleTime(d)
+}
+
 // SetMaxOpenConns is only available for go 1.2+
 func (engine *Engine) SetMaxOpenConns(conns int) {
 	engine.DB().SetMaxOpenConns(conns)
@@ -330,7 +335,7 @@ func (engine *Engine) Ping() error {
 // SQL method let's you manually write raw SQL and operate
 // For example:
 //
-//         engine.SQL("select * from user").Find(&users)
+//	engine.SQL("select * from user").Find(&users)
 //
 // This    code will execute "select * from user" and set the records to users
 func (engine *Engine) SQL(query interface{}, args ...interface{}) *Session {
@@ -815,6 +820,9 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 				return err
 			}
 		}
+		// !datbeohbbh! if no error, manually close
+		rows.Close()
+		sess.Close()
 	}
 	return nil
 }
@@ -996,9 +1004,8 @@ func (engine *Engine) Desc(colNames ...string) *Session {
 // Asc will generate "ORDER BY column1,column2 Asc"
 // This method can chainable use.
 //
-//        engine.Desc("name").Asc("age").Find(&users)
-//        // SELECT * FROM user ORDER BY name DESC, age ASC
-//
+//	engine.Desc("name").Asc("age").Find(&users)
+//	// SELECT * FROM user ORDER BY name DESC, age ASC
 func (engine *Engine) Asc(colNames ...string) *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true
@@ -1020,7 +1027,7 @@ func (engine *Engine) Prepare() *Session {
 }
 
 // Join the join_operator should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
-func (engine *Engine) Join(joinOperator string, tablename interface{}, condition string, args ...interface{}) *Session {
+func (engine *Engine) Join(joinOperator string, tablename interface{}, condition interface{}, args ...interface{}) *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true
 	return session.Join(joinOperator, tablename, condition, args...)
@@ -1111,21 +1118,6 @@ func (engine *Engine) ClearCache(beans ...interface{}) error {
 // UnMapType remove table from tables cache
 func (engine *Engine) UnMapType(t reflect.Type) {
 	engine.tagParser.ClearCacheTable(t)
-}
-
-// Sync the new struct changes to database, this method will automatically add
-// table, column, index, unique. but will not delete or change anything.
-// If you change some field, you should change the database manually.
-func (engine *Engine) Sync(beans ...interface{}) error {
-	session := engine.NewSession()
-	defer session.Close()
-	return session.Sync(beans...)
-}
-
-// Sync2 synchronize structs to database tables
-// Depricated
-func (engine *Engine) Sync2(beans ...interface{}) error {
-	return engine.Sync(beans...)
 }
 
 // CreateTables create tabls according bean
@@ -1220,9 +1212,10 @@ func (engine *Engine) InsertOne(bean interface{}) (int64, error) {
 // Update records, bean's non-empty fields are updated contents,
 // condiBean' non-empty filds are conditions
 // CAUTION:
-//        1.bool will defaultly be updated content nor conditions
-//         You should call UseBool if you have bool to use.
-//        2.float32 & float64 may be not inexact as conditions
+//
+//	1.bool will defaultly be updated content nor conditions
+//	 You should call UseBool if you have bool to use.
+//	2.float32 & float64 may be not inexact as conditions
 func (engine *Engine) Update(bean interface{}, condiBeans ...interface{}) (int64, error) {
 	session := engine.NewSession()
 	defer session.Close()
@@ -1230,10 +1223,19 @@ func (engine *Engine) Update(bean interface{}, condiBeans ...interface{}) (int64
 }
 
 // Delete records, bean's non-empty fields are conditions
+// At least one condition must be set.
 func (engine *Engine) Delete(beans ...interface{}) (int64, error) {
 	session := engine.NewSession()
 	defer session.Close()
 	return session.Delete(beans...)
+}
+
+// Truncate records, bean's non-empty fields are conditions
+// In contrast to Delete this method allows deletes without conditions.
+func (engine *Engine) Truncate(beans ...interface{}) (int64, error) {
+	session := engine.NewSession()
+	defer session.Close()
+	return session.Truncate(beans...)
 }
 
 // Get retrieve one record from table, bean's non-empty fields

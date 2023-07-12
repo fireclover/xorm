@@ -330,7 +330,7 @@ func (session *Session) NoCache() *Session {
 }
 
 // Join join_operator should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
-func (session *Session) Join(joinOperator string, tablename interface{}, condition string, args ...interface{}) *Session {
+func (session *Session) Join(joinOperator string, tablename interface{}, condition interface{}, args ...interface{}) *Session {
 	session.statement.Join(joinOperator, tablename, condition, args...)
 	return session
 }
@@ -354,7 +354,7 @@ func (session *Session) DB() *core.DB {
 
 func (session *Session) canCache() bool {
 	if session.statement.RefTable == nil ||
-		session.statement.JoinStr != "" ||
+		session.statement.NeedTableName() ||
 		session.statement.RawSQL != "" ||
 		!session.statement.UseCache ||
 		session.statement.IsForUpdate ||
@@ -793,4 +793,10 @@ func (session *Session) PingContext(ctx context.Context) error {
 
 	session.engine.logger.Infof("PING DATABASE %v", session.engine.DriverName())
 	return session.DB().PingContext(ctx)
+}
+
+// disable version check
+func (session *Session) NoVersionCheck() *Session {
+	session.statement.CheckVersion = false
+	return session
 }

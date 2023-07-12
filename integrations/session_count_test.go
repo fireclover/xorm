@@ -89,7 +89,7 @@ func TestCountWithOthers(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	total, err := testEngine.OrderBy("`id` desc").Limit(1).Count(new(CountWithOthers))
+	total, err := testEngine.OrderBy("count(`id`) desc").Limit(1).Count(new(CountWithOthers))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }
@@ -118,11 +118,11 @@ func TestWithTableName(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	total, err := testEngine.OrderBy("`id` desc").Count(new(CountWithTableName))
+	total, err := testEngine.OrderBy("count(`id`) desc").Count(new(CountWithTableName))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 
-	total, err = testEngine.OrderBy("`id` desc").Count(CountWithTableName{})
+	total, err = testEngine.OrderBy("count(`id`) desc").Count(CountWithTableName{})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }

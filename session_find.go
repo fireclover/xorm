@@ -114,7 +114,7 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 
 	var (
 		table          = session.statement.RefTable
-		addedTableName = (len(session.statement.JoinStr) > 0)
+		addedTableName = session.statement.NeedTableName()
 		autoCond       builder.Cond
 	)
 	if tp == tpStruct {
@@ -283,7 +283,7 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 	}
 
 	for _, filter := range session.engine.dialect.Filters() {
-		sqlStr = filter.Do(sqlStr)
+		sqlStr = filter.Do(session.ctx, sqlStr)
 	}
 
 	newsql := session.statement.ConvertIDSQL(sqlStr)

@@ -992,7 +992,7 @@ func (db *postgres) IsTableExist(queryer core.Queryer, ctx context.Context, tabl
 }
 
 func (db *postgres) AddColumnSQL(tableName string, col *schemas.Column) string {
-	s, _ := ColumnString(db.dialect, col, true)
+	s, _ := ColumnString(db.dialect, col, true, false)
 
 	quoter := db.dialect.Quoter()
 	addColumnSQL := ""
@@ -1078,7 +1078,7 @@ FROM pg_attribute f
     LEFT JOIN pg_constraint p ON p.conrelid = c.oid AND f.attnum = ANY (p.conkey)
     LEFT JOIN pg_class AS g ON p.confrelid = g.oid
     LEFT JOIN INFORMATION_SCHEMA.COLUMNS s ON s.column_name=f.attname AND c.relname=s.table_name
-WHERE n.nspname= s.table_schema AND c.relkind = 'r'::char AND c.relname = $1%s AND f.attnum > 0 ORDER BY f.attnum;`
+WHERE n.nspname= s.table_schema AND c.relkind = 'r' AND c.relname = $1%s AND f.attnum > 0 ORDER BY f.attnum;`
 
 	schema := db.getSchema()
 	if schema != "" {
@@ -1343,14 +1343,14 @@ func (db *postgres) CreateTableSQL(ctx context.Context, queryer core.Queryer, ta
 	commentSQL := "; "
 	if table.Comment != "" {
 		// support schema.table -> "schema"."table"
-		commentSQL += fmt.Sprintf("COMMENT ON TABLE %s IS '%s'", quoter.Quote(tableName), table.Comment)
+		commentSQL += fmt.Sprintf("COMMENT ON TABLE %s IS '%s'; ", quoter.Quote(tableName), table.Comment)
 	}
 
 	for _, colName := range table.ColumnsSeq() {
 		col := table.GetColumn(colName)
 
 		if len(col.Comment) > 0 {
-			commentSQL += fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s'", quoter.Quote(tableName), quoter.Quote(col.Name), col.Comment)
+			commentSQL += fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s'; ", quoter.Quote(tableName), quoter.Quote(col.Name), col.Comment)
 		}
 	}
 
