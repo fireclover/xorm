@@ -30,37 +30,15 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 		return "", nil, ErrTableNotFound
 	}
 
-	columnStr := statement.ColumnStr()
-	if len(statement.SelectStr) > 0 {
-		columnStr = statement.SelectStr
-	} else {
-		if len(statement.joins) == 0 {
-			if columnStr == "" {
-				if statement.GroupByStr != "" {
-					columnStr = statement.quoteColumnStr(statement.GroupByStr)
-				} else {
-					columnStr = statement.genColumnStr()
-				}
-			}
-		} else {
-			if columnStr == "" {
-				if statement.GroupByStr != "" {
-					columnStr = statement.quoteColumnStr(statement.GroupByStr)
-				} else {
-					columnStr = "*"
-				}
-			}
-		}
-		if columnStr == "" {
-			columnStr = "*"
-		}
-	}
-
 	if err := statement.ProcessIDParam(); err != nil {
 		return "", nil, err
 	}
 
-	return statement.genSelectSQL(columnStr, true, true)
+	buf := builder.NewWriter()
+	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true); err != nil {
+		return "", nil, err
+	}
+	return buf.String(), buf.Args(), nil
 }
 
 // GenSumSQL generates sum SQL
@@ -82,13 +60,16 @@ func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (stri
 		}
 		sumStrs = append(sumStrs, fmt.Sprintf("COALESCE(sum(%s),0)", colName))
 	}
-	sumSelect := strings.Join(sumStrs, ", ")
 
 	if err := statement.MergeConds(bean); err != nil {
 		return "", nil, err
 	}
 
-	return statement.genSelectSQL(sumSelect, true, true)
+	buf := builder.NewWriter()
+	if err := statement.writeSelect(buf, strings.Join(sumStrs, ", "), true); err != nil {
+		return "", nil, err
+	}
+	return buf.String(), buf.Args(), nil
 }
 
 // GenGetSQL generates Get SQL
@@ -140,7 +121,11 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 		}
 	}
 
-	return statement.genSelectSQL(columnStr, true, true)
+	buf := builder.NewWriter()
+	if err := statement.writeSelect(buf, columnStr, true); err != nil {
+		return "", nil, err
+	}
+	return buf.String(), buf.Args(), nil
 }
 
 // GenCountSQL generates the SQL for counting
@@ -149,8 +134,6 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
-	var condArgs []interface{}
-	var err error
 	if len(beans) > 0 {
 		if err := statement.SetRefBean(beans[0]); err != nil {
 			return "", nil, err
@@ -177,16 +160,24 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 		subQuerySelect = selectSQL
 	}
 
-	sqlStr, condArgs, err := statement.genSelectSQL(subQuerySelect, false, false)
-	if err != nil {
+	buf := builder.NewWriter()
+	if statement.GroupByStr != "" {
+		if _, err := fmt.Fprintf(buf, "SELECT %s FROM (", selectSQL); err != nil {
+			return "", nil, err
+		}
+	}
+
+	if err := statement.writeSelect(buf, subQuerySelect, false); err != nil {
 		return "", nil, err
 	}
 
 	if statement.GroupByStr != "" {
-		sqlStr = fmt.Sprintf("SELECT %s FROM (%s) sub", selectSQL, sqlStr)
+		if _, err := fmt.Fprintf(buf, ") sub"); err != nil {
+			return "", nil, err
+		}
 	}
 
-	return sqlStr, condArgs, nil
+	return buf.String(), buf.Args(), nil
 }
 
 func (statement *Statement) writeFrom(w *builder.BytesWriter) error {
@@ -238,7 +229,7 @@ func (statement *Statement) writeDistinct(w builder.Writer) error {
 	return nil
 }
 
-func (statement *Statement) writeSelect(w *builder.BytesWriter, columnStr string) error {
+func (statement *Statement) writeSelectColumns(w *builder.BytesWriter, columnStr string) error {
 	if _, err := fmt.Fprintf(w, "SELECT "); err != nil {
 		return err
 	}
@@ -360,45 +351,39 @@ func (statement *Statement) writeOracleLimit(w *builder.BytesWriter, columnStr s
 	return err
 }
 
-func (statement *Statement) genSelectSQL(columnStr string, needLimit, needOrderBy bool) (string, []interface{}, error) {
-	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, columnStr); err != nil {
-		return "", nil, err
+func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr string, needLimit bool) error {
+	if err := statement.writeSelectColumns(buf, columnStr); err != nil {
+		return err
 	}
 	if err := statement.writeFrom(buf); err != nil {
-		return "", nil, err
+		return err
 	}
 	if err := statement.writeWhere(buf); err != nil {
-		return "", nil, err
+		return err
 	}
 	if err := statement.writeGroupBy(buf); err != nil {
-		return "", nil, err
+		return err
 	}
 	if err := statement.writeHaving(buf); err != nil {
-		return "", nil, err
+		return err
 	}
 	if err := statement.WriteOrderBy(buf); err != nil {
-		return "", nil, err
+		return err
 	}
 
 	dialect := statement.dialect
 	if needLimit {
 		if dialect.URI().DBType == schemas.ORACLE {
 			if err := statement.writeOracleLimit(buf, columnStr); err != nil {
-				return "", nil, err
+				return err
 			}
 		} else if dialect.URI().DBType != schemas.MSSQL {
 			if err := statement.writeLimitOffset(buf); err != nil {
-				return "", nil, err
+				return err
 			}
 		}
 	}
-
-	if err := statement.writeForUpdate(buf); err != nil {
-		return "", nil, err
-	}
-
-	return buf.String(), buf.Args(), nil
+	return statement.writeForUpdate(buf)
 }
 
 // GenExistSQL generates Exist SQL
@@ -491,7 +476,7 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 	return buf.String(), buf.Args(), nil
 }
 
-func (statement *Statement) genSelect() string {
+func (statement *Statement) genSelectColumnStr() string {
 	if len(statement.SelectStr) > 0 {
 		return statement.SelectStr
 	}
@@ -532,5 +517,9 @@ func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interfa
 
 	statement.cond = statement.cond.And(autoCond)
 
-	return statement.genSelectSQL(statement.genSelect(), true, true)
+	buf := builder.NewWriter()
+	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true); err != nil {
+		return "", nil, err
+	}
+	return buf.String(), buf.Args(), nil
 }
