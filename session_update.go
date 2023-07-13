@@ -7,11 +7,8 @@ package xorm
 import (
 	"errors"
 	"reflect"
-	"strconv"
-	"strings"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/caches"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
@@ -20,126 +17,6 @@ import (
 var (
 	ErrNoColumnsTobeUpdated = errors.New("no columns found to be updated")
 )
-
-//revive:disable
-func (session *Session) cacheUpdate(table *schemas.Table, tableName, sqlStr string, args ...interface{}) error {
-	if table == nil ||
-		session.tx != nil {
-		return ErrCacheFailed
-	}
-
-	oldhead, newsql := session.statement.ConvertUpdateSQL(sqlStr)
-	if newsql == "" {
-		return ErrCacheFailed
-	}
-	for _, filter := range session.engine.dialect.Filters() {
-		newsql = filter.Do(session.ctx, newsql)
-	}
-	session.engine.logger.Debugf("[cache] new sql: %v, %v", oldhead, newsql)
-
-	var nStart int
-	if len(args) > 0 {
-		if strings.Contains(sqlStr, "?") {
-			nStart = strings.Count(oldhead, "?")
-		} else {
-			// only for pq, TODO: if any other databse?
-			nStart = strings.Count(oldhead, "$")
-		}
-	}
-
-	cacher := session.engine.GetCacher(tableName)
-	session.engine.logger.Debugf("[cache] get cache sql: %v, %v", newsql, args[nStart:])
-	ids, err := caches.GetCacheSql(cacher, tableName, newsql, args[nStart:])
-	if err != nil {
-		rows, err := session.NoCache().queryRows(newsql, args[nStart:]...)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		ids = make([]schemas.PK, 0)
-		for rows.Next() {
-			res := make([]string, len(table.PrimaryKeys))
-			err = rows.ScanSlice(&res)
-			if err != nil {
-				return err
-			}
-			var pk schemas.PK = make([]interface{}, len(table.PrimaryKeys))
-			for i, col := range table.PKColumns() {
-				if col.SQLType.IsNumeric() {
-					n, err := strconv.ParseInt(res[i], 10, 64)
-					if err != nil {
-						return err
-					}
-					pk[i] = n
-				} else if col.SQLType.IsText() {
-					pk[i] = res[i]
-				} else {
-					return errors.New("not supported")
-				}
-			}
-
-			ids = append(ids, pk)
-		}
-		if rows.Err() != nil {
-			return rows.Err()
-		}
-		session.engine.logger.Debugf("[cache] find updated id: %v", ids)
-	} /*else {
-	    session.engine.LogDebug("[xorm:cacheUpdate] del cached sql:", tableName, newsql, args)
-	    cacher.DelIds(tableName, genSqlKey(newsql, args))
-	}*/
-
-	for _, id := range ids {
-		sid, err := id.ToString()
-		if err != nil {
-			return err
-		}
-		if bean := cacher.GetBean(tableName, sid); bean != nil {
-			sqls := utils.SplitNNoCase(sqlStr, "where", 2)
-			if len(sqls) == 0 || len(sqls) > 2 {
-				return ErrCacheFailed
-			}
-
-			sqls = utils.SplitNNoCase(sqls[0], "set", 2)
-			if len(sqls) != 2 {
-				return ErrCacheFailed
-			}
-			kvs := strings.Split(strings.TrimSpace(sqls[1]), ",")
-
-			for idx, kv := range kvs {
-				sps := strings.SplitN(kv, "=", 2)
-				sps2 := strings.Split(sps[0], ".")
-				colName := sps2[len(sps2)-1]
-				colName = session.engine.dialect.Quoter().Trim(colName)
-				colName = schemas.CommonQuoter.Trim(colName)
-
-				if col := table.GetColumn(colName); col != nil {
-					fieldValue, err := col.ValueOf(bean)
-					if err != nil {
-						session.engine.logger.Errorf("%v", err)
-					} else {
-						session.engine.logger.Debugf("[cache] set bean field: %v, %v, %v", bean, colName, fieldValue.Interface())
-						if col.IsVersion && session.statement.CheckVersion {
-							session.incrVersionFieldValue(fieldValue)
-						} else {
-							fieldValue.Set(reflect.ValueOf(args[idx]))
-						}
-					}
-				} else {
-					session.engine.logger.Errorf("[cache] ERROR: column %v is not table %v's",
-						colName, table.Name)
-				}
-			}
-
-			session.engine.logger.Debugf("[cache] update cache: %v, %v, %v", tableName, id, bean)
-			cacher.PutBean(tableName, sid, bean)
-		}
-	}
-	session.engine.logger.Debugf("[cache] clear cached table sql: %v", tableName)
-	cacher.ClearIds(tableName)
-	return nil
-}
 
 func (session *Session) genAutoCond(condiBean interface{}) (builder.Cond, error) {
 	if session.statement.NoAutoCondition {
@@ -357,7 +234,6 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 
 	tableName := session.statement.TableName()
 	if cacher := session.engine.GetCacher(tableName); cacher != nil && session.statement.UseCache {
-		// session.cacheUpdate(table, tableName, sqlStr, args...)
 		session.engine.logger.Debugf("[cache] clear table: %v", tableName)
 		cacher.ClearIds(tableName)
 		cacher.ClearBeans(tableName)
