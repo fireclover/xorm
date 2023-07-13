@@ -1218,7 +1218,7 @@ func TestInsertNotDeleted(t *testing.T) {
 
 	type InsertDeletedStruct struct {
 		ID        uint64    `xorm:"'ID' pk autoincr"`
-		DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull"`
+		DeletedAt time.Time `xorm:"'DELETED_AT' deleted"`
 	}
 
 	assert.NoError(t, testEngine.Sync(new(InsertDeletedStruct)))
