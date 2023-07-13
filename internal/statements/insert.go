@@ -43,8 +43,8 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 		return "", nil, err
 	}
 
-	var hasInsertColumns = len(colNames) > 0
-	var needSeq = len(table.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.ORACLE || statement.dialect.URI().DBType == schemas.DAMENG)
+	hasInsertColumns := len(colNames) > 0
+	needSeq := len(table.AutoIncrement) > 0 && (statement.dialect.URI().DBType == schemas.ORACLE || statement.dialect.URI().DBType == schemas.DAMENG)
 	if needSeq {
 		for _, col := range colNames {
 			if strings.EqualFold(col, table.AutoIncrement) {
@@ -124,11 +124,7 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 				return "", nil, err
 			}
 
-			if _, err := buf.WriteString(" WHERE "); err != nil {
-				return "", nil, err
-			}
-
-			if err := statement.Conds().WriteTo(buf); err != nil {
+			if err := statement.writeWhere(buf); err != nil {
 				return "", nil, err
 			}
 		} else {

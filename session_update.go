@@ -6,7 +6,6 @@ package xorm
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -140,6 +139,43 @@ func (session *Session) cacheUpdate(table *schemas.Table, tableName, sqlStr stri
 	session.engine.logger.Debugf("[cache] clear cached table sql: %v", tableName)
 	cacher.ClearIds(tableName)
 	return nil
+}
+
+func (session *Session) genAutoCond(condiBean interface{}) (builder.Cond, error) {
+	if session.statement.NoAutoCondition {
+		return builder.NewCond(), nil
+	}
+
+	if c, ok := condiBean.(map[string]interface{}); ok {
+		eq := make(builder.Eq)
+		for k, v := range c {
+			eq[session.engine.Quote(k)] = v
+		}
+		autoCond := builder.Eq(eq)
+
+		if session.statement.RefTable != nil {
+			if col := session.statement.RefTable.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
+				return autoCond.And(session.statement.CondDeleted(col)), nil
+			}
+		}
+		return autoCond, nil
+	}
+
+	ct := reflect.TypeOf(condiBean)
+	k := ct.Kind()
+	if k == reflect.Ptr {
+		k = ct.Elem().Kind()
+	}
+	if k == reflect.Struct {
+		condTable, err := session.engine.TableInfo(condiBean)
+		if err != nil {
+			return nil, err
+		}
+
+		return session.statement.BuildConds(condTable, condiBean, true, true, false, true, false)
+	}
+
+	return nil, ErrConditionType
 }
 
 // Update records, bean's non-empty fields are updated contents,
@@ -276,53 +312,13 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		return 0, err
 	}
 
-	var autoCond builder.Cond
-	if !session.statement.NoAutoCondition {
-		condBeanIsStruct := false
-		if len(condiBean) > 0 {
-			if c, ok := condiBean[0].(map[string]interface{}); ok {
-				eq := make(builder.Eq)
-				for k, v := range c {
-					eq[session.engine.Quote(k)] = v
-				}
-				autoCond = builder.Eq(eq)
-			} else {
-				ct := reflect.TypeOf(condiBean[0])
-				k := ct.Kind()
-				if k == reflect.Ptr {
-					k = ct.Elem().Kind()
-				}
-				if k == reflect.Struct {
-					condTable, err := session.engine.TableInfo(condiBean[0])
-					if err != nil {
-						return 0, err
-					}
-
-					autoCond, err = session.statement.BuildConds(condTable, condiBean[0], true, true, false, true, false)
-					if err != nil {
-						return 0, err
-					}
-					condBeanIsStruct = true
-				} else {
-					return 0, ErrConditionType
-				}
-			}
-		}
-
-		if !condBeanIsStruct && table != nil {
-			if col := table.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
-				autoCond1 := session.statement.CondDeleted(col)
-
-				if autoCond == nil {
-					autoCond = autoCond1
-				} else {
-					autoCond = autoCond.And(autoCond1)
-				}
-			}
+	autoCond := builder.NewCond()
+	if len(condiBean) > 0 {
+		autoCond, err = session.genAutoCond(condiBean[0])
+		if err != nil {
+			return 0, err
 		}
 	}
-
-	st := session.statement
 
 	var (
 		cond     = session.statement.Conds().And(autoCond)
@@ -345,85 +341,8 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		return 0, ErrNoColumnsTobeUpdated
 	}
 
-	whereWriter := builder.NewWriter()
-	if cond.IsValid() {
-		fmt.Fprint(whereWriter, "WHERE ")
-	}
-	if err := cond.WriteTo(st.QuoteReplacer(whereWriter)); err != nil {
-		return 0, err
-	}
-	if err := st.WriteOrderBy(whereWriter); err != nil {
-		return 0, err
-	}
-
-	tableName := session.statement.TableName()
-	// TODO: Oracle support needed
-	var top string
-	if st.LimitN != nil {
-		limitValue := *st.LimitN
-		switch session.engine.dialect.URI().DBType {
-		case schemas.MYSQL:
-			fmt.Fprintf(whereWriter, " LIMIT %d", limitValue)
-		case schemas.SQLITE:
-			fmt.Fprintf(whereWriter, " LIMIT %d", limitValue)
-
-			cond = cond.And(builder.Expr(fmt.Sprintf("rowid IN (SELECT rowid FROM %v %v)",
-				session.engine.Quote(tableName), whereWriter.String()), whereWriter.Args()...))
-
-			whereWriter = builder.NewWriter()
-			fmt.Fprint(whereWriter, "WHERE ")
-			if err := cond.WriteTo(st.QuoteReplacer(whereWriter)); err != nil {
-				return 0, err
-			}
-		case schemas.POSTGRES:
-			fmt.Fprintf(whereWriter, " LIMIT %d", limitValue)
-
-			cond = cond.And(builder.Expr(fmt.Sprintf("CTID IN (SELECT CTID FROM %v %v)",
-				session.engine.Quote(tableName), whereWriter.String()), whereWriter.Args()...))
-
-			whereWriter = builder.NewWriter()
-			fmt.Fprint(whereWriter, "WHERE ")
-			if err := cond.WriteTo(st.QuoteReplacer(whereWriter)); err != nil {
-				return 0, err
-			}
-		case schemas.MSSQL:
-			if st.HasOrderBy() && table != nil && len(table.PrimaryKeys) == 1 {
-				cond = builder.Expr(fmt.Sprintf("%s IN (SELECT TOP (%d) %s FROM %v%v)",
-					table.PrimaryKeys[0], limitValue, table.PrimaryKeys[0],
-					session.engine.Quote(tableName), whereWriter.String()), whereWriter.Args()...)
-
-				whereWriter = builder.NewWriter()
-				fmt.Fprint(whereWriter, "WHERE ")
-				if err := cond.WriteTo(whereWriter); err != nil {
-					return 0, err
-				}
-			} else {
-				top = fmt.Sprintf("TOP (%d) ", limitValue)
-			}
-		}
-	}
-
-	tableAlias := session.engine.Quote(tableName)
-	var fromSQL string
-	if session.statement.TableAlias != "" {
-		switch session.engine.dialect.URI().DBType {
-		case schemas.MSSQL:
-			fromSQL = fmt.Sprintf("FROM %s %s ", tableAlias, session.statement.TableAlias)
-			tableAlias = session.statement.TableAlias
-		default:
-			tableAlias = fmt.Sprintf("%s AS %s", tableAlias, session.statement.TableAlias)
-		}
-	}
-
 	updateWriter := builder.NewWriter()
-	if _, err := fmt.Fprintf(updateWriter, "UPDATE %v%v SET %v %v",
-		top,
-		tableAlias,
-		strings.Join(colNames, ", "),
-		fromSQL); err != nil {
-		return 0, err
-	}
-	if err := utils.WriteBuilder(updateWriter, whereWriter); err != nil {
+	if err := session.statement.WriteUpdate(updateWriter, cond, colNames); err != nil {
 		return 0, err
 	}
 
@@ -436,6 +355,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		}
 	}
 
+	tableName := session.statement.TableName()
 	if cacher := session.engine.GetCacher(tableName); cacher != nil && session.statement.UseCache {
 		// session.cacheUpdate(table, tableName, sqlStr, args...)
 		session.engine.logger.Debugf("[cache] clear table: %v", tableName)

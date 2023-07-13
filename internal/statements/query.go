@@ -245,6 +245,16 @@ func (statement *Statement) writeSelectColumns(w *builder.BytesWriter, columnStr
 
 func (statement *Statement) writeWhere(w *builder.BytesWriter) error {
 	if !statement.cond.IsValid() {
+		return nil
+	}
+	if _, err := fmt.Fprint(w, " WHERE "); err != nil {
+		return err
+	}
+	return statement.cond.WriteTo(statement.QuoteReplacer(w))
+}
+
+func (statement *Statement) writeWhereWithMssqlPagination(w *builder.BytesWriter) error {
+	if !statement.cond.IsValid() {
 		return statement.writeMssqlPaginationCond(w)
 	}
 	if _, err := fmt.Fprint(w, " WHERE "); err != nil {
@@ -307,13 +317,8 @@ func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) err
 	if err := statement.writeFrom(subWriter); err != nil {
 		return err
 	}
-	if statement.cond.IsValid() {
-		if _, err := fmt.Fprint(subWriter, " WHERE "); err != nil {
-			return err
-		}
-		if err := statement.cond.WriteTo(statement.QuoteReplacer(subWriter)); err != nil {
-			return err
-		}
+	if err := statement.writeWhere(subWriter); err != nil {
+		return err
 	}
 	if err := statement.WriteOrderBy(subWriter); err != nil {
 		return err
@@ -361,7 +366,7 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 	if err := statement.writeFrom(buf); err != nil {
 		return err
 	}
-	if err := statement.writeWhere(buf); err != nil {
+	if err := statement.writeWhereWithMssqlPagination(buf); err != nil {
 		return err
 	}
 	if err := statement.writeGroupBy(buf); err != nil {
@@ -427,13 +432,8 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 		if err := statement.writeJoins(buf); err != nil {
 			return "", nil, err
 		}
-		if statement.Conds().IsValid() {
-			if _, err := fmt.Fprintf(buf, " WHERE "); err != nil {
-				return "", nil, err
-			}
-			if err := statement.Conds().WriteTo(statement.QuoteReplacer(buf)); err != nil {
-				return "", nil, err
-			}
+		if err := statement.writeWhere(buf); err != nil {
+			return "", nil, err
 		}
 	} else if statement.dialect.URI().DBType == schemas.ORACLE {
 		if _, err := fmt.Fprintf(buf, "SELECT * FROM %s", tableName); err != nil {
@@ -463,13 +463,8 @@ func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interfac
 		if err := statement.writeJoins(buf); err != nil {
 			return "", nil, err
 		}
-		if statement.Conds().IsValid() {
-			if _, err := fmt.Fprintf(buf, " WHERE "); err != nil {
-				return "", nil, err
-			}
-			if err := statement.Conds().WriteTo(statement.QuoteReplacer(buf)); err != nil {
-				return "", nil, err
-			}
+		if err := statement.writeWhere(buf); err != nil {
+			return "", nil, err
 		}
 		if _, err := fmt.Fprintf(buf, " LIMIT 1"); err != nil {
 			return "", nil, err
