@@ -193,7 +193,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		if err != nil {
 			return 0, err
 		}
-	} else {
+	} else if table != nil {
 		if col := table.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
 			autoCond1 := session.statement.CondDeleted(col)
 
