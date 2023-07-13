@@ -299,13 +299,13 @@ func (statement *Statement) writeGroupBy(w builder.Writer) error {
 	if statement.GroupByStr == "" {
 		return nil
 	}
-	_, err := fmt.Fprintf(w, " GROUP BY %s", statement.GroupByStr)
+	_, err := fmt.Fprint(w, " GROUP BY ", statement.GroupByStr)
 	return err
 }
 
 // Having generate "Having conditions" statement
 func (statement *Statement) Having(conditions string) *Statement {
-	statement.HavingStr = fmt.Sprintf("HAVING %v", statement.ReplaceQuote(conditions))
+	statement.HavingStr = conditions
 	return statement
 }
 
@@ -313,7 +313,7 @@ func (statement *Statement) writeHaving(w builder.Writer) error {
 	if statement.HavingStr == "" {
 		return nil
 	}
-	_, err := fmt.Fprint(w, " ", statement.HavingStr)
+	_, err := fmt.Fprint(w, " HAVING ", statement.ReplaceQuote(statement.HavingStr))
 	return err
 }
 
