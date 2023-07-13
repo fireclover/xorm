@@ -34,6 +34,13 @@ var (
 	ErrTableNotFound = errors.New("Table not found")
 )
 
+type join struct {
+	op        string
+	table     interface{}
+	condition interface{}
+	args      []interface{}
+}
+
 // Statement save all the sql info for executing SQL
 type Statement struct {
 	RefTable        *schemas.Table
@@ -45,8 +52,7 @@ type Statement struct {
 	idParam         schemas.PK
 	orderStr        string
 	orderArgs       []interface{}
-	JoinStr         string
-	joinArgs        []interface{}
+	joins           []join
 	GroupByStr      string
 	HavingStr       string
 	SelectStr       string
@@ -123,8 +129,7 @@ func (statement *Statement) Reset() {
 	statement.LimitN = nil
 	statement.ResetOrderBy()
 	statement.UseCascade = true
-	statement.JoinStr = ""
-	statement.joinArgs = make([]interface{}, 0)
+	statement.joins = nil
 	statement.GroupByStr = ""
 	statement.HavingStr = ""
 	statement.ColumnMap = columnMap{}
@@ -205,8 +210,8 @@ func (statement *Statement) SetRefBean(bean interface{}) error {
 	return nil
 }
 
-func (statement *Statement) needTableName() bool {
-	return len(statement.JoinStr) > 0
+func (statement *Statement) NeedTableName() bool {
+	return len(statement.joins) > 0
 }
 
 // Incr Generate  "Update ... Set column = column + arg" statement
@@ -290,7 +295,7 @@ func (statement *Statement) GroupBy(keys string) *Statement {
 	return statement
 }
 
-func (statement *Statement) WriteGroupBy(w builder.Writer) error {
+func (statement *Statement) writeGroupBy(w builder.Writer) error {
 	if statement.GroupByStr == "" {
 		return nil
 	}
@@ -605,7 +610,7 @@ func (statement *Statement) BuildConds(table *schemas.Table, bean interface{}, i
 // MergeConds merge conditions from bean and id
 func (statement *Statement) MergeConds(bean interface{}) error {
 	if !statement.NoAutoCondition && statement.RefTable != nil {
-		addedTableName := (len(statement.JoinStr) > 0)
+		addedTableName := (len(statement.joins) > 0)
 		autoCond, err := statement.BuildConds(statement.RefTable, bean, true, true, false, true, addedTableName)
 		if err != nil {
 			return err
@@ -673,7 +678,7 @@ func (statement *Statement) joinColumns(cols []*schemas.Column, includeTableName
 // CondDeleted returns the conditions whether a record is soft deleted.
 func (statement *Statement) CondDeleted(col *schemas.Column) builder.Cond {
 	colName := statement.quote(col.Name)
-	if statement.JoinStr != "" {
+	if len(statement.joins) > 0 {
 		var prefix string
 		if statement.TableAlias != "" {
 			prefix = statement.TableAlias

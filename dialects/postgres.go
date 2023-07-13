@@ -1358,7 +1358,7 @@ func (db *postgres) CreateTableSQL(ctx context.Context, queryer core.Queryer, ta
 }
 
 func (db *postgres) Filters() []Filter {
-	return []Filter{&SeqFilter{Prefix: "$", Start: 1}}
+	return []Filter{&postgresSeqFilter{Prefix: "$", Start: 1}}
 }
 
 type pqDriver struct {
