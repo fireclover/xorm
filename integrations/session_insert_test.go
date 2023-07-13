@@ -1205,7 +1205,6 @@ func TestInsertMultipleMap(t *testing.T) {
 
 func TestInsertNotDeleted(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	testEngine.SetTZLocation(testEngine.GetTZDatabase())
 	zeroTime := time.Date(1, 1, 1, 0, 0, 0, 0, testEngine.GetTZDatabase())
 
 	type InsertDeletedStructNotRight struct {
@@ -1231,7 +1230,7 @@ func TestInsertNotDeleted(t *testing.T) {
 	has, err := testEngine.Get(&v2)
 	assert.NoError(t, err)
 	assert.True(t, has)
-	assert.Equal(t, v2.DeletedAt.Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
+	assert.Equal(t, v2.DeletedAt.In(testEngine.GetTZDatabase()).Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
 
 	var v3 InsertDeletedStruct
 	_, err = testEngine.Insert(&v3)
@@ -1241,5 +1240,5 @@ func TestInsertNotDeleted(t *testing.T) {
 	has, err = testEngine.Get(&v4)
 	assert.NoError(t, err)
 	assert.True(t, has)
-	assert.Equal(t, v4.DeletedAt.Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
+	assert.Equal(t, v4.DeletedAt.In(testEngine.GetTZDatabase()).Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
 }
