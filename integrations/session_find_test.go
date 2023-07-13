@@ -12,6 +12,7 @@ import (
 	"xorm.io/xorm"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/names"
+	"xorm.io/xorm/schemas"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -1195,4 +1196,44 @@ func TestUpdateFindDate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(tufs))
 	assert.EqualValues(t, tuf.Tm.Format("2006-01-02"), tufs[0].Tm.Format("2006-01-02"))
+}
+
+func TestBuilderDialect(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type TestBuilderDialect struct {
+		Id   int64
+		Name string `xorm:"index"`
+		Age2 int
+	}
+
+	type TestBuilderDialectFoo struct {
+		Id        int64
+		DialectId int64 `xorm:"index"`
+		Age       int
+	}
+
+	assertSync(t, new(TestBuilderDialect), new(TestBuilderDialectFoo))
+
+	session := testEngine.NewSession()
+	defer session.Close()
+
+	var dialect string
+	switch testEngine.Dialect().URI().DBType {
+	case schemas.MYSQL:
+		dialect = builder.MYSQL
+	case schemas.MSSQL:
+		dialect = builder.MSSQL
+	case schemas.POSTGRES:
+		dialect = builder.POSTGRES
+	case schemas.SQLITE:
+		dialect = builder.SQLITE
+	}
+
+	tbName := testEngine.TableName(new(TestBuilderDialectFoo), dialect == builder.POSTGRES)
+
+	inner := builder.Dialect(dialect).Select("*").From(tbName).Where(builder.Eq{"age": 20})
+	result := make([]*TestBuilderDialect, 0, 10)
+	err := testEngine.Table("test_builder_dialect").Where(builder.Eq{"age2": 2}).Join("INNER", inner, "test_builder_dialect_foo.dialect_id = test_builder_dialect.id").Find(&result)
+	assert.NoError(t, err)
 }

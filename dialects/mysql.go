@@ -38,6 +38,7 @@ var (
 		"CALL":              true,
 		"CASCADE":           true,
 		"CASE":              true,
+		"CHAIN":             true,
 		"CHANGE":            true,
 		"CHAR":              true,
 		"CHARACTER":         true,
@@ -128,6 +129,7 @@ var (
 		"OUT": true, "OUTER": true, "OUTFILE": true,
 		"PRECISION": true, "PRIMARY": true, "PROCEDURE": true,
 		"PURGE": true, "RAID0": true, "RANGE": true,
+		"RANK": true,
 		"READ": true, "READS": true, "REAL": true,
 		"REFERENCES": true, "REGEXP": true, "RELEASE": true,
 		"RENAME": true, "REPEAT": true, "REPLACE": true,
@@ -397,6 +399,9 @@ func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
 // ModifyColumnSQL returns a SQL to modify SQL
 func (db *mysql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
 	s, _ := ColumnString(db.dialect, col, false, true)
+	if col.Comment != "" {
+		s += fmt.Sprintf(" COMMENT '%s'", col.Comment)
+	}
 	return fmt.Sprintf("ALTER TABLE %s MODIFY COLUMN %s", db.quoter.Quote(tableName), s)
 }
 

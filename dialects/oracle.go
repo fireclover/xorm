@@ -863,7 +863,7 @@ func (db *oracle) GetIndexes(queryer core.Queryer, ctx context.Context, tableNam
 
 func (db *oracle) Filters() []Filter {
 	return []Filter{
-		&SeqFilter{Prefix: ":", Start: 1},
+		&oracleSeqFilter{Prefix: ":", Start: 1},
 	}
 }
 
