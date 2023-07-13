@@ -28,14 +28,13 @@ func (session *Session) genAutoCond(condiBean interface{}) (builder.Cond, error)
 		for k, v := range c {
 			eq[session.engine.Quote(k)] = v
 		}
-		autoCond := builder.Eq(eq)
 
 		if session.statement.RefTable != nil {
 			if col := session.statement.RefTable.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
-				return autoCond.And(session.statement.CondDeleted(col)), nil
+				return eq.And(session.statement.CondDeleted(col)), nil
 			}
 		}
-		return autoCond, nil
+		return eq, nil
 	}
 
 	ct := reflect.TypeOf(condiBean)
@@ -43,16 +42,15 @@ func (session *Session) genAutoCond(condiBean interface{}) (builder.Cond, error)
 	if k == reflect.Ptr {
 		k = ct.Elem().Kind()
 	}
-	if k == reflect.Struct {
-		condTable, err := session.engine.TableInfo(condiBean)
-		if err != nil {
-			return nil, err
-		}
-
-		return session.statement.BuildConds(condTable, condiBean, true, true, false, true, false)
+	if k != reflect.Struct {
+		return nil, ErrConditionType
 	}
 
-	return nil, ErrConditionType
+	condTable, err := session.engine.TableInfo(condiBean)
+	if err != nil {
+		return nil, err
+	}
+	return session.statement.BuildConds(condTable, condiBean, true, true, false, true, false)
 }
 
 // Update records, bean's non-empty fields are updated contents,
@@ -189,11 +187,21 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		return 0, err
 	}
 
-	autoCond := builder.NewCond()
+	var autoCond builder.Cond
 	if len(condiBean) > 0 {
 		autoCond, err = session.genAutoCond(condiBean[0])
 		if err != nil {
 			return 0, err
+		}
+	} else {
+		if col := table.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
+			autoCond1 := session.statement.CondDeleted(col)
+
+			if autoCond == nil {
+				autoCond = autoCond1
+			} else {
+				autoCond = autoCond.And(autoCond1)
+			}
 		}
 	}
 
