@@ -27,6 +27,9 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		dt = dt.In(convertedLocation)
 		return &dt, nil
 	} else if len(s) == 20 && s[10] == 'T' && s[19] == 'Z' {
+		if strings.HasPrefix(s, "0000-00-00T00:00:00") || strings.HasPrefix(s, "0001-01-01T00:00:00") {
+			return &time.Time{}, nil
+		}
 		dt, err := time.ParseInLocation("2006-01-02T15:04:05", s[:19], originalLocation)
 		if err != nil {
 			return nil, err
@@ -34,6 +37,9 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		dt = dt.In(convertedLocation)
 		return &dt, nil
 	} else if len(s) == 25 && s[10] == 'T' && s[19] == '+' && s[22] == ':' {
+		if strings.HasPrefix(s, "0000-00-00T00:00:00") || strings.HasPrefix(s, "0001-01-01T00:00:00") {
+			return &time.Time{}, nil
+		}
 		dt, err := time.Parse(time.RFC3339, s)
 		if err != nil {
 			return nil, err
@@ -41,6 +47,10 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		dt = dt.In(convertedLocation)
 		return &dt, nil
 	} else if len(s) >= 21 && s[10] == 'T' && s[19] == '.' {
+		if strings.HasPrefix(s, "0000-00-00T00:00:00."+strings.Repeat("0", len(s)-20)) ||
+			strings.HasPrefix(s, "0001-01-01T00:00:00."+strings.Repeat("0", len(s)-20)) {
+			return &time.Time{}, nil
+		}
 		dt, err := time.Parse(time.RFC3339Nano, s)
 		if err != nil {
 			return nil, err
@@ -48,6 +58,10 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		dt = dt.In(convertedLocation)
 		return &dt, nil
 	} else if len(s) >= 21 && s[19] == '.' {
+		if strings.HasPrefix(s, "0000-00-00T00:00:00."+strings.Repeat("0", len(s)-20)) ||
+			strings.HasPrefix(s, "0001-01-01T00:00:00."+strings.Repeat("0", len(s)-20)) {
+			return &time.Time{}, nil
+		}
 		var layout = "2006-01-02 15:04:05." + strings.Repeat("0", len(s)-20)
 		dt, err := time.ParseInLocation(layout, s, originalLocation)
 		if err != nil {
@@ -68,6 +82,9 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 	} else {
 		i, err := strconv.ParseInt(s, 10, 64)
 		if err == nil {
+			if i == 0 {
+				return &time.Time{}, nil
+			}
 			tm := time.Unix(i, 0).In(convertedLocation)
 			return &tm, nil
 		}
