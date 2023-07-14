@@ -111,6 +111,9 @@ func AsTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.
 		if !t.Valid {
 			return nil, nil
 		}
+		if utils.IsTimeZero(t.Time) {
+			return &time.Time{}, nil
+		}
 		z, _ := t.Time.Zone()
 		if len(z) == 0 || t.Time.Year() == 0 || t.Time.Location().String() != dbLoc.String() {
 			tm := time.Date(t.Time.Year(), t.Time.Month(), t.Time.Day(), t.Time.Hour(),
@@ -120,6 +123,9 @@ func AsTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.
 		tm := t.Time.In(uiLoc)
 		return &tm, nil
 	case *time.Time:
+		if utils.IsTimeZero(*t) {
+			return &time.Time{}, nil
+		}
 		z, _ := t.Zone()
 		if len(z) == 0 || t.Year() == 0 || t.Location().String() != dbLoc.String() {
 			tm := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(),
@@ -129,6 +135,9 @@ func AsTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.
 		tm := t.In(uiLoc)
 		return &tm, nil
 	case time.Time:
+		if utils.IsTimeZero(t) {
+			return &time.Time{}, nil
+		}
 		z, _ := t.Zone()
 		if len(z) == 0 || t.Year() == 0 || t.Location().String() != dbLoc.String() {
 			tm := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(),
@@ -138,12 +147,21 @@ func AsTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.
 		tm := t.In(uiLoc)
 		return &tm, nil
 	case int:
+		if t == 0 {
+			return &time.Time{}, nil
+		}
 		tm := time.Unix(int64(t), 0).In(uiLoc)
 		return &tm, nil
 	case int64:
+		if t == 0 {
+			return &time.Time{}, nil
+		}
 		tm := time.Unix(t, 0).In(uiLoc)
 		return &tm, nil
 	case *sql.NullInt64:
+		if t.Int64 == 0 {
+			return &time.Time{}, nil
+		}
 		tm := time.Unix(t.Int64, 0).In(uiLoc)
 		return &tm, nil
 	}
