@@ -360,15 +360,15 @@ func (engine *Engine) NoAutoCondition(no ...bool) *Session {
 	return session.NoAutoCondition(no...)
 }
 
-func (engine *Engine) loadTableInfo(table *schemas.Table) error {
-	colSeq, cols, err := engine.dialect.GetColumns(engine.db, engine.defaultContext, table.Name)
+func (engine *Engine) loadTableInfo(ctx context.Context, table *schemas.Table) error {
+	colSeq, cols, err := engine.dialect.GetColumns(engine.db, ctx, table.Name)
 	if err != nil {
 		return err
 	}
 	for _, name := range colSeq {
 		table.AddColumn(cols[name])
 	}
-	indexes, err := engine.dialect.GetIndexes(engine.db, engine.defaultContext, table.Name)
+	indexes, err := engine.dialect.GetIndexes(engine.db, ctx, table.Name)
 	if err != nil {
 		return err
 	}
@@ -404,7 +404,7 @@ func (engine *Engine) DBMetas() ([]*schemas.Table, error) {
 	}
 
 	for _, table := range tables {
-		if err = engine.loadTableInfo(table); err != nil {
+		if err = engine.loadTableInfo(engine.defaultContext, table); err != nil {
 			return nil, err
 		}
 	}

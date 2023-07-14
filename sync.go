@@ -116,7 +116,7 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 		}
 
 		// this will modify an old table
-		if err = engine.loadTableInfo(oriTable); err != nil {
+		if err = engine.loadTableInfo(session.ctx, oriTable); err != nil {
 			return nil, err
 		}
 
