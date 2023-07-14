@@ -1202,3 +1202,43 @@ func TestInsertMultipleMap(t *testing.T) {
 		Name:   "xiaolunwen",
 	}, res[1])
 }
+
+func TestInsertNotDeleted(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	zeroTime := time.Date(1, 1, 1, 0, 0, 0, 0, testEngine.GetTZDatabase())
+
+	type InsertDeletedStructNotRight struct {
+		ID        uint64    `xorm:"'ID' pk autoincr"`
+		DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull"`
+	}
+	// notnull tag will be ignored
+	err := testEngine.Sync(new(InsertDeletedStructNotRight))
+	assert.NoError(t, err)
+
+	type InsertDeletedStruct struct {
+		ID        uint64    `xorm:"'ID' pk autoincr"`
+		DeletedAt time.Time `xorm:"'DELETED_AT' deleted"`
+	}
+
+	assert.NoError(t, testEngine.Sync(new(InsertDeletedStruct)))
+
+	var v1 InsertDeletedStructNotRight
+	_, err = testEngine.Insert(&v1)
+	assert.NoError(t, err)
+
+	var v2 InsertDeletedStructNotRight
+	has, err := testEngine.Get(&v2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, v2.DeletedAt.In(testEngine.GetTZDatabase()).Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
+
+	var v3 InsertDeletedStruct
+	_, err = testEngine.Insert(&v3)
+	assert.NoError(t, err)
+
+	var v4 InsertDeletedStruct
+	has, err = testEngine.Get(&v4)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, v4.DeletedAt.In(testEngine.GetTZDatabase()).Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
+}
