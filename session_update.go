@@ -231,6 +231,9 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		return 0, err
 	}
 
+	tableName := session.statement.TableName() // table name must been get before exec because statement will be reset
+	useCache := session.statement.UseCache
+
 	res, err := session.exec(updateWriter.String(), append(args, updateWriter.Args()...)...)
 	if err != nil {
 		return 0, err
@@ -240,8 +243,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		}
 	}
 
-	tableName := session.statement.TableName()
-	if cacher := session.engine.GetCacher(tableName); cacher != nil && session.statement.UseCache {
+	if cacher := session.engine.GetCacher(tableName); cacher != nil && useCache {
 		session.engine.logger.Debugf("[cache] clear table: %v", tableName)
 		cacher.ClearIds(tableName)
 		cacher.ClearBeans(tableName)
