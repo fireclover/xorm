@@ -353,14 +353,14 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 			if err != nil {
 				return 0, err
 			}
-			if needCommit {
-				if err := session.Commit(); err != nil {
-					return 0, err
-				}
+		}
+		if needCommit {
+			if err := session.Commit(); err != nil {
+				return 0, err
 			}
-			if id == 0 {
-				return 0, errors.New("insert successfully but not returned id")
-			}
+		}
+		if id == 0 {
+			return 0, errors.New("insert successfully but not returned id")
 		}
 
 		defer handleAfterInsertProcessorFunc(bean)

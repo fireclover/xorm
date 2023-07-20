@@ -255,22 +255,20 @@ func TestDBVersion(t *testing.T) {
 	fmt.Println(testEngine.Dialect().URI().DBType, "version is", version)
 }
 
-func TestGetColumns(t *testing.T) {
-	if testEngine.Dialect().URI().DBType != schemas.POSTGRES {
+func TestGetColumnsComment(t *testing.T) {
+	switch testEngine.Dialect().URI().DBType {
+	case schemas.POSTGRES, schemas.MYSQL:
+	default:
 		t.Skip()
 		return
 	}
+	comment := "this is a comment"
 	type TestCommentStruct struct {
-		HasComment int
+		HasComment int `xorm:"comment('this is a comment')"`
 		NoComment  int
 	}
 
 	assertSync(t, new(TestCommentStruct))
-
-	comment := "this is a comment"
-	sql := fmt.Sprintf("comment on column %s.%s is '%s'", testEngine.TableName(new(TestCommentStruct), true), "has_comment", comment)
-	_, err := testEngine.Exec(sql)
-	assert.NoError(t, err)
 
 	tables, err := testEngine.DBMetas()
 	assert.NoError(t, err)
@@ -278,10 +276,10 @@ func TestGetColumns(t *testing.T) {
 	var hasComment, noComment string
 	for _, table := range tables {
 		if table.Name == tableName {
-			col := table.GetColumn("has_comment")
+			col := table.GetColumn(testEngine.GetColumnMapper().Obj2Table("HasComment"))
 			assert.NotNil(t, col)
 			hasComment = col.Comment
-			col2 := table.GetColumn("no_comment")
+			col2 := table.GetColumn(testEngine.GetColumnMapper().Obj2Table("NoComment"))
 			assert.NotNil(t, col2)
 			noComment = col2.Comment
 			break
@@ -289,4 +287,77 @@ func TestGetColumns(t *testing.T) {
 	}
 	assert.Equal(t, comment, hasComment)
 	assert.Zero(t, noComment)
+}
+
+type TestCommentUpdate struct {
+	HasComment int `xorm:"bigint comment('this is a comment before update')"`
+}
+
+func (m *TestCommentUpdate) TableName() string {
+	return "test_comment_struct"
+}
+
+type TestCommentUpdate2 struct {
+	HasComment int `xorm:"bigint comment('this is a comment after update')"`
+}
+
+func (m *TestCommentUpdate2) TableName() string {
+	return "test_comment_struct"
+}
+
+func TestColumnCommentUpdate(t *testing.T) {
+	comment := "this is a comment after update"
+	assertSync(t, new(TestCommentUpdate))
+	assert.NoError(t, testEngine.Sync2(new(TestCommentUpdate2))) // modify table column comment
+
+	switch testEngine.Dialect().URI().DBType {
+	case schemas.POSTGRES, schemas.MYSQL: // only postgres / mysql dialect implement the feature of modify comment in postgres.ModifyColumnSQL
+	default:
+		t.Skip()
+		return
+	}
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	tableName := "test_comment_struct"
+	var hasComment string
+	for _, table := range tables {
+		if table.Name == tableName {
+			col := table.GetColumn(testEngine.GetColumnMapper().Obj2Table("HasComment"))
+			assert.NotNil(t, col)
+			hasComment = col.Comment
+			break
+		}
+	}
+	assert.Equal(t, comment, hasComment)
+}
+
+func TestGetColumnsLength(t *testing.T) {
+	var max_length int64
+	switch testEngine.Dialect().URI().DBType {
+	case schemas.POSTGRES:
+		max_length = 0
+	case schemas.MYSQL:
+		max_length = 65535
+	default:
+		t.Skip()
+		return
+	}
+
+	type TestLengthStringStruct struct {
+		Content string `xorm:"TEXT NOT NULL"`
+	}
+
+	assertSync(t, new(TestLengthStringStruct))
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	tableLengthStringName := testEngine.GetColumnMapper().Obj2Table("TestLengthStringStruct")
+	for _, table := range tables {
+		if table.Name == tableLengthStringName {
+			col := table.GetColumn("content")
+			assert.Equal(t, col.Length, max_length)
+			assert.Zero(t, col.Length2)
+			break
+		}
+	}
 }

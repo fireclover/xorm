@@ -229,7 +229,7 @@ func (db *mssql) Init(uri *URI) error {
 func (db *mssql) SetParams(params map[string]string) {
 	defaultVarchar, ok := params["DEFAULT_VARCHAR"]
 	if ok {
-		var t = strings.ToUpper(defaultVarchar)
+		t := strings.ToUpper(defaultVarchar)
 		switch t {
 		case "NVARCHAR", "VARCHAR":
 			db.defaultVarchar = t
@@ -242,7 +242,7 @@ func (db *mssql) SetParams(params map[string]string) {
 
 	defaultChar, ok := params["DEFAULT_CHAR"]
 	if ok {
-		var t = strings.ToUpper(defaultChar)
+		t := strings.ToUpper(defaultChar)
 		switch t {
 		case "NCHAR", "CHAR":
 			db.defaultChar = t
@@ -375,9 +375,9 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 	hasLen2 := (c.Length2 > 0)
 
 	if hasLen2 {
-		res += "(" + strconv.Itoa(c.Length) + "," + strconv.Itoa(c.Length2) + ")"
+		res += "(" + strconv.FormatInt(c.Length, 10) + "," + strconv.FormatInt(c.Length2, 10) + ")"
 	} else if hasLen1 {
-		res += "(" + strconv.Itoa(c.Length) + ")"
+		res += "(" + strconv.FormatInt(c.Length, 10) + ")"
 	}
 	return res
 }
@@ -403,11 +403,11 @@ func (db *mssql) IsReserved(name string) bool {
 func (db *mssql) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		var q = mssqlQuoter
+		q := mssqlQuoter
 		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
-		var q = mssqlQuoter
+		q := mssqlQuoter
 		q.IsReserved = db.IsReserved
 		db.quoter = q
 	case QuotePolicyAlways:
@@ -428,7 +428,7 @@ func (db *mssql) DropTableSQL(tableName string) (string, bool) {
 }
 
 func (db *mssql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
-	s, _ := ColumnString(db.dialect, col, false)
+	s, _ := ColumnString(db.dialect, col, false, true)
 	return fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s", db.quoter.Quote(tableName), s)
 }
 
@@ -454,7 +454,7 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	s := `select a.name as name, b.name as ctype,a.max_length,a.precision,a.scale,a.is_nullable as nullable,
 		  "default_is_null" = (CASE WHEN c.text is null THEN 1 ELSE 0 END),
 	      replace(replace(isnull(c.text,''),'(',''),')','') as vdefault,
-		  ISNULL(p.is_primary_key, 0), a.is_identity as is_identity
+		  ISNULL(p.is_primary_key, 0), a.is_identity as is_identity, a.collation_name
           from sys.columns a 
 		  left join sys.types b on a.user_type_id=b.user_type_id
           left join sys.syscomments c on a.default_object_id=c.id
@@ -475,9 +475,10 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	colSeq := make([]string, 0)
 	for rows.Next() {
 		var name, ctype, vdefault string
-		var maxLen, precision, scale int
+		var collation *string
+		var maxLen, precision, scale int64
 		var nullable, isPK, defaultIsNull, isIncrement bool
-		err = rows.Scan(&name, &ctype, &maxLen, &precision, &scale, &nullable, &defaultIsNull, &vdefault, &isPK, &isIncrement)
+		err = rows.Scan(&name, &ctype, &maxLen, &precision, &scale, &nullable, &defaultIsNull, &vdefault, &isPK, &isIncrement, &collation)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -498,6 +499,9 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 			col.Length2 = scale
 		} else {
 			col.Length = maxLen
+		}
+		if collation != nil {
+			col.Collation = *collation
 		}
 		switch ct {
 		case "DATETIMEOFFSET":
@@ -646,7 +650,7 @@ func (db *mssql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table
 
 	for i, colName := range table.ColumnsSeq() {
 		col := table.GetColumn(colName)
-		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1)
+		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1, true)
 		b.WriteString(s)
 
 		if i != len(table.ColumnsSeq())-1 {
@@ -663,10 +667,6 @@ func (db *mssql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table
 	b.WriteString(")")
 
 	return b.String(), true, nil
-}
-
-func (db *mssql) ForUpdateSQL(query string) string {
-	return query
 }
 
 func (db *mssql) Filters() []Filter {
