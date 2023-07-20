@@ -7,7 +7,7 @@ import (
 )
 
 func TestSeqFilter(t *testing.T) {
-	var kases = map[string]string{
+	kases := map[string]string{
 		"SELECT * FROM TABLE1 WHERE a=? AND b=?":                               "SELECT * FROM TABLE1 WHERE a=$1 AND b=$2",
 		"SELECT 1, '???', '2006-01-02 15:04:05' FROM TABLE1 WHERE a=? AND b=?": "SELECT 1, '???', '2006-01-02 15:04:05' FROM TABLE1 WHERE a=$1 AND b=$2",
 		"select '1''?' from issue":                                             "select '1''?' from issue",
@@ -16,12 +16,12 @@ func TestSeqFilter(t *testing.T) {
 		"select '1\\''?',? from issue":                                         "select '1\\''?',$1 from issue",
 	}
 	for sql, result := range kases {
-		assert.EqualValues(t, result, convertQuestionMark(sql, "$", 1))
+		assert.EqualValues(t, result, postgresSeqFilterConvertQuestionMark(sql, "$", 1))
 	}
 }
 
 func TestSeqFilterLineComment(t *testing.T) {
-	var kases = map[string]string{
+	kases := map[string]string{
 		`SELECT *
 		FROM TABLE1
 		WHERE foo='bar'
@@ -49,12 +49,12 @@ func TestSeqFilterLineComment(t *testing.T) {
 		AND b=$2`,
 	}
 	for sql, result := range kases {
-		assert.EqualValues(t, result, convertQuestionMark(sql, "$", 1))
+		assert.EqualValues(t, result, postgresSeqFilterConvertQuestionMark(sql, "$", 1))
 	}
 }
 
 func TestSeqFilterComment(t *testing.T) {
-	var kases = map[string]string{
+	kases := map[string]string{
 		`SELECT *
 		FROM TABLE1
 		WHERE a=? /* it's a comment */
@@ -73,6 +73,17 @@ func TestSeqFilterComment(t *testing.T) {
 		AND b=$2`,
 	}
 	for sql, result := range kases {
-		assert.EqualValues(t, result, convertQuestionMark(sql, "$", 1))
+		assert.EqualValues(t, result, postgresSeqFilterConvertQuestionMark(sql, "$", 1))
+	}
+}
+
+func TestSeqFilterPostgresQuestions(t *testing.T) {
+	kases := map[string]string{
+		`SELECT '{"a":1, "b":2}'::jsonb ? 'b'
+		FROM table1 WHERE c = ?`: `SELECT '{"a":1, "b":2}'::jsonb ? 'b'
+		FROM table1 WHERE c = $1`,
+	}
+	for sql, result := range kases {
+		assert.EqualValues(t, result, postgresSeqFilterConvertQuestionMark(sql, "$", 1))
 	}
 }

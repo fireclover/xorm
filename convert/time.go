@@ -40,9 +40,26 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		}
 		dt = dt.In(convertedLocation)
 		return &dt, nil
+	} else if len(s) >= 21 && s[10] == 'T' && s[19] == '.' {
+		dt, err := time.Parse(time.RFC3339Nano, s)
+		if err != nil {
+			return nil, err
+		}
+		dt = dt.In(convertedLocation)
+		return &dt, nil
 	} else if len(s) >= 21 && s[19] == '.' {
 		var layout = "2006-01-02 15:04:05." + strings.Repeat("0", len(s)-20)
 		dt, err := time.ParseInLocation(layout, s, originalLocation)
+		if err != nil {
+			return nil, err
+		}
+		dt = dt.In(convertedLocation)
+		return &dt, nil
+	} else if len(s) == 10 && s[4] == '-' {
+		if s == "0000-00-00" || s == "0001-01-01" {
+			return &time.Time{}, nil
+		}
+		dt, err := time.ParseInLocation("2006-01-02", s, originalLocation)
 		if err != nil {
 			return nil, err
 		}
