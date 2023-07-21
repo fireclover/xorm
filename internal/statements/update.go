@@ -319,7 +319,7 @@ func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond 
 	if err := cond.WriteTo(statement.QuoteReplacer(whereWriter)); err != nil {
 		return err
 	}
-	if err := statement.WriteOrderBy(whereWriter); err != nil {
+	if err := statement.writeOrderBys(whereWriter); err != nil {
 		return err
 	}
 

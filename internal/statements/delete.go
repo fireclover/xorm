@@ -15,7 +15,7 @@ import (
 )
 
 func (statement *Statement) writeDeleteOrder(w builder.Writer) error {
-	if err := statement.WriteOrderBy(w); err != nil {
+	if err := statement.writeOrderBys(w); err != nil {
 		return err
 	}
 

@@ -320,7 +320,7 @@ func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) err
 	if err := statement.writeWhere(subWriter); err != nil {
 		return err
 	}
-	if err := statement.WriteOrderBy(subWriter); err != nil {
+	if err := statement.writeOrderBys(subWriter); err != nil {
 		return err
 	}
 	if err := statement.writeGroupBy(subWriter); err != nil {
@@ -375,7 +375,7 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 	if err := statement.writeHaving(buf); err != nil {
 		return err
 	}
-	if err := statement.WriteOrderBy(buf); err != nil {
+	if err := statement.writeOrderBys(buf); err != nil {
 		return err
 	}
 
