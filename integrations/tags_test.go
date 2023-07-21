@@ -6,10 +6,11 @@ package integrations
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/names"
