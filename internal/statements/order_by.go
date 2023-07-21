@@ -24,7 +24,7 @@ func (statement *Statement) ResetOrderBy() {
 // WriteOrderBy write order by to writer
 func (statement *Statement) WriteOrderBy(w builder.Writer) error {
 	if len(statement.orderStr) > 0 {
-		if _, err := fmt.Fprintf(w, " ORDER BY %s", statement.orderStr); err != nil {
+		if _, err := fmt.Fprint(w, " ORDER BY ", statement.orderStr); err != nil {
 			return err
 		}
 		w.Append(statement.orderArgs...)

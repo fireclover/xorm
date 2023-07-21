@@ -32,33 +32,53 @@ func (statement *Statement) writeDeleteOrder(w builder.Writer) error {
 // ErrNotImplemented not implemented
 var ErrNotImplemented = errors.New("Not implemented")
 
-func (statement *Statement) writeOrderCond(orderCondWriter builder.Writer, orderSQLWriter *builder.BytesWriter, tableName string) error {
-	if orderSQLWriter.Len() > 0 {
-		switch statement.dialect.URI().DBType {
-		case schemas.POSTGRES:
-			if statement.cond.IsValid() {
-				fmt.Fprintf(orderCondWriter, " AND ")
-			} else {
-				fmt.Fprintf(orderCondWriter, " WHERE ")
-			}
-			fmt.Fprintf(orderCondWriter, "ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQLWriter.String())
-			orderCondWriter.Append(orderSQLWriter.Args()...)
-		case schemas.SQLITE:
-			if statement.cond.IsValid() {
-				fmt.Fprintf(orderCondWriter, " AND ")
-			} else {
-				fmt.Fprintf(orderCondWriter, " WHERE ")
-			}
-			fmt.Fprintf(orderCondWriter, "rowid IN (SELECT rowid FROM %s%s)", tableName, orderSQLWriter.String())
-			// TODO: how to handle delete limit on mssql?
-		case schemas.MSSQL:
-			return ErrNotImplemented
-		default:
-			fmt.Fprint(orderCondWriter, orderSQLWriter.String())
-			orderCondWriter.Append(orderSQLWriter.Args()...)
-		}
+func (statement *Statement) writeOrderCond(orderCondWriter *builder.BytesWriter, tableName string) error {
+	orderSQLWriter := builder.NewWriter()
+	if err := statement.writeDeleteOrder(orderSQLWriter); err != nil {
+		return err
 	}
-	return nil
+
+	if orderSQLWriter.Len() == 0 {
+		return nil
+	}
+
+	switch statement.dialect.URI().DBType {
+	case schemas.POSTGRES:
+		if statement.cond.IsValid() {
+			if _, err := fmt.Fprint(orderCondWriter, " AND "); err != nil {
+				return err
+			}
+		} else {
+			if _, err := fmt.Fprint(orderCondWriter, " WHERE "); err != nil {
+				return err
+			}
+		}
+		if _, err := fmt.Fprintf(orderCondWriter, "ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQLWriter.String()); err != nil {
+			return err
+		}
+		orderCondWriter.Append(orderSQLWriter.Args()...)
+		return nil
+	case schemas.SQLITE:
+		if statement.cond.IsValid() {
+			if _, err := fmt.Fprint(orderCondWriter, " AND "); err != nil {
+				return err
+			}
+		} else {
+			if _, err := fmt.Fprint(orderCondWriter, " WHERE "); err != nil {
+				return err
+			}
+		}
+		if _, err := fmt.Fprintf(orderCondWriter, "rowid IN (SELECT rowid FROM %s%s)", tableName, orderSQLWriter.String()); err != nil {
+			return err
+		}
+		orderCondWriter.Append(orderSQLWriter.Args()...)
+		return nil
+		// TODO: how to handle delete limit on mssql?
+	case schemas.MSSQL:
+		return ErrNotImplemented
+	default:
+		return utils.WriteBuilder(orderCondWriter, orderSQLWriter)
+	}
 }
 
 func (statement *Statement) WriteDelete(realSQLWriter, deleteSQLWriter *builder.BytesWriter, nowTime func(*schemas.Column) (interface{}, time.Time, error)) error {
@@ -72,13 +92,8 @@ func (statement *Statement) WriteDelete(realSQLWriter, deleteSQLWriter *builder.
 		return err
 	}
 
-	orderSQLWriter := builder.NewWriter()
-	if err := statement.writeDeleteOrder(orderSQLWriter); err != nil {
-		return err
-	}
-
 	orderCondWriter := builder.NewWriter()
-	if err := statement.writeOrderCond(orderCondWriter, orderSQLWriter, tableName); err != nil {
+	if err := statement.writeOrderCond(orderCondWriter, tableName); err != nil {
 		return err
 	}
 
