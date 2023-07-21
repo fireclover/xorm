@@ -32,11 +32,11 @@ func (statement *Statement) writeDeleteOrder(w builder.Writer) error {
 // ErrNotImplemented not implemented
 var ErrNotImplemented = errors.New("Not implemented")
 
-func (statement *Statement) writeOrderCond(orderCondWriter builder.Writer, condWriter, orderSQLWriter *builder.BytesWriter, tableName string) error {
+func (statement *Statement) writeOrderCond(orderCondWriter builder.Writer, orderSQLWriter *builder.BytesWriter, tableName string) error {
 	if orderSQLWriter.Len() > 0 {
 		switch statement.dialect.URI().DBType {
 		case schemas.POSTGRES:
-			if condWriter.Len() > 0 {
+			if statement.cond.IsValid() {
 				fmt.Fprintf(orderCondWriter, " AND ")
 			} else {
 				fmt.Fprintf(orderCondWriter, " WHERE ")
@@ -44,7 +44,7 @@ func (statement *Statement) writeOrderCond(orderCondWriter builder.Writer, condW
 			fmt.Fprintf(orderCondWriter, "ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQLWriter.String())
 			orderCondWriter.Append(orderSQLWriter.Args()...)
 		case schemas.SQLITE:
-			if condWriter.Len() > 0 {
+			if statement.cond.IsValid() {
 				fmt.Fprintf(orderCondWriter, " AND ")
 			} else {
 				fmt.Fprintf(orderCondWriter, " WHERE ")
@@ -62,22 +62,14 @@ func (statement *Statement) writeOrderCond(orderCondWriter builder.Writer, condW
 }
 
 func (statement *Statement) WriteDelete(realSQLWriter, deleteSQLWriter *builder.BytesWriter, nowTime func(*schemas.Column) (interface{}, time.Time, error)) error {
-	var (
-		condWriter = builder.NewWriter()
-		err        error
-	)
-
-	if err = statement.Conds().WriteTo(statement.QuoteReplacer(condWriter)); err != nil {
-		return err
-	}
-
 	tableNameNoQuote := statement.TableName()
 	tableName := statement.dialect.Quoter().Quote(tableNameNoQuote)
 	table := statement.RefTable
-	fmt.Fprintf(deleteSQLWriter, "DELETE FROM %v", tableName)
-	if condWriter.Len() > 0 {
-		fmt.Fprintf(deleteSQLWriter, " WHERE %v", condWriter.String())
-		deleteSQLWriter.Append(condWriter.Args()...)
+	if _, err := fmt.Fprint(deleteSQLWriter, "DELETE FROM ", tableName); err != nil {
+		return err
+	}
+	if err := statement.writeWhere(deleteSQLWriter); err != nil {
+		return err
 	}
 
 	orderSQLWriter := builder.NewWriter()
@@ -86,22 +78,18 @@ func (statement *Statement) WriteDelete(realSQLWriter, deleteSQLWriter *builder.
 	}
 
 	orderCondWriter := builder.NewWriter()
-	if err := statement.writeOrderCond(orderCondWriter, condWriter, orderSQLWriter, tableName); err != nil {
+	if err := statement.writeOrderCond(orderCondWriter, orderSQLWriter, tableName); err != nil {
 		return err
 	}
 
-	argsForCache := make([]interface{}, 0, len(deleteSQLWriter.Args())*2)
-	copy(argsForCache, deleteSQLWriter.Args())
-	argsForCache = append(deleteSQLWriter.Args(), argsForCache...)
 	if statement.GetUnscoped() || table == nil || table.DeletedColumn() == nil { // tag "deleted" is disabled
 		return utils.WriteBuilder(realSQLWriter, deleteSQLWriter, orderCondWriter)
 	}
 
 	deletedColumn := table.DeletedColumn()
-	if _, err := fmt.Fprintf(realSQLWriter, "UPDATE %v SET %v = ? WHERE %v",
+	if _, err := fmt.Fprintf(realSQLWriter, "UPDATE %v SET %v = ?",
 		statement.dialect.Quoter().Quote(statement.TableName()),
-		statement.dialect.Quoter().Quote(deletedColumn.Name),
-		condWriter.String()); err != nil {
+		statement.dialect.Quoter().Quote(deletedColumn.Name)); err != nil {
 		return err
 	}
 
@@ -110,7 +98,10 @@ func (statement *Statement) WriteDelete(realSQLWriter, deleteSQLWriter *builder.
 		return err
 	}
 	realSQLWriter.Append(val)
-	realSQLWriter.Append(condWriter.Args()...)
+
+	if err := statement.writeWhere(realSQLWriter); err != nil {
+		return err
+	}
 
 	return utils.WriteBuilder(realSQLWriter, orderCondWriter)
 }
