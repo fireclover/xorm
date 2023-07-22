@@ -41,11 +41,6 @@ type join struct {
 	args      []interface{}
 }
 
-type orderBy struct {
-	orderStr  interface{}
-	orderArgs []interface{}
-}
-
 // Statement save all the sql info for executing SQL
 type Statement struct {
 	RefTable        *schemas.Table

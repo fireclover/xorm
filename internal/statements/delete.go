@@ -14,7 +14,7 @@ import (
 	"xorm.io/xorm/schemas"
 )
 
-func (statement *Statement) writeDeleteOrder(w builder.Writer) error {
+func (statement *Statement) writeDeleteOrder(w *builder.BytesWriter) error {
 	if err := statement.writeOrderBys(w); err != nil {
 		return err
 	}
