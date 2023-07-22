@@ -230,7 +230,7 @@ func (statement *Statement) writeDistinct(w builder.Writer) error {
 }
 
 func (statement *Statement) writeSelectColumns(w *builder.BytesWriter, columnStr string) error {
-	if _, err := fmt.Fprintf(w, "SELECT "); err != nil {
+	if _, err := fmt.Fprintf(w, "SELECT"); err != nil {
 		return err
 	}
 	if err := statement.writeDistinct(w); err != nil {
