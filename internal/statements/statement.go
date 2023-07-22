@@ -167,15 +167,15 @@ func (statement *Statement) Reset() {
 
 // SQL adds raw sql statement
 func (statement *Statement) SQL(query interface{}, args ...interface{}) *Statement {
-	switch query.(type) {
+	switch t := query.(type) {
 	case (*builder.Builder):
 		var err error
-		statement.RawSQL, statement.RawParams, err = query.(*builder.Builder).ToSQL()
+		statement.RawSQL, statement.RawParams, err = t.ToSQL()
 		if err != nil {
 			statement.LastError = err
 		}
 	case string:
-		statement.RawSQL = query.(string)
+		statement.RawSQL = t
 		statement.RawParams = args
 	default:
 		statement.LastError = ErrUnSupportedSQLType

@@ -28,7 +28,7 @@ func (statement *Statement) writeOrderBy(w builder.Writer, orderBy orderBy) erro
 		w.Append(t.Args()...)
 		return nil
 	case string:
-		if _, err := fmt.Fprint(w, t); err != nil {
+		if _, err := fmt.Fprint(w, statement.ReplaceQuote(t)); err != nil {
 			return err
 		}
 		w.Append(orderBy.orderArgs...)
