@@ -5,11 +5,13 @@
 package integrations
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 	"time"
 
 	"xorm.io/builder"
+
 	"xorm.io/xorm/schemas"
 
 	"github.com/stretchr/testify/assert"
@@ -380,4 +382,69 @@ func TestQueryStringWithLimit(t *testing.T) {
 	data, err := testEngine.Table("query_with_limit").Limit(20, 20).QueryString()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, len(data))
+}
+
+func TestQueryBLOBInMySQL(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	var err error
+	type Avatar struct {
+		Id     int64  `xorm:"autoincr pk"`
+		Avatar []byte `xorm:"BLOB"`
+	}
+
+	assert.NoError(t, testEngine.Sync(new(Avatar)))
+	testEngine.Delete(Avatar{})
+
+	repeatBytes := func(n int, b byte) []byte {
+		return bytes.Repeat([]byte{b}, n)
+	}
+
+	const N = 10
+	var data = []Avatar{}
+	for i := 0; i < N; i++ {
+		// allocate a []byte that is as twice big as the last one
+		// so that the underlying buffer will need to reallocate when querying
+		bs := repeatBytes(1<<(i+2), 'A'+byte(i))
+		data = append(data, Avatar{
+			Avatar: bs,
+		})
+	}
+	_, err = testEngine.Insert(data)
+	assert.NoError(t, err)
+	defer func() {
+		testEngine.Delete(Avatar{})
+	}()
+
+	{
+		records, err := testEngine.QueryInterface("select avatar from " + testEngine.Quote(testEngine.TableName("avatar", true)))
+		assert.NoError(t, err)
+		for i, record := range records {
+			bs := record["avatar"].([]byte)
+			assert.EqualValues(t, repeatBytes(1<<(i+2), 'A'+byte(i))[:3], bs[:3])
+			t.Logf("%d => %p => %02x %02x %02x", i, bs, bs[0], bs[1], bs[2])
+		}
+	}
+
+	{
+		arr := make([][]interface{}, 0)
+		err = testEngine.Table(testEngine.Quote(testEngine.TableName("avatar", true))).Cols("avatar").Find(&arr)
+		assert.NoError(t, err)
+		for i, record := range arr {
+			bs := record[0].([]byte)
+			assert.EqualValues(t, repeatBytes(1<<(i+2), 'A'+byte(i))[:3], bs[:3])
+			t.Logf("%d => %p => %02x %02x %02x", i, bs, bs[0], bs[1], bs[2])
+		}
+	}
+
+	{
+		arr := make([]map[string]interface{}, 0)
+		err = testEngine.Table(testEngine.Quote(testEngine.TableName("avatar", true))).Cols("avatar").Find(&arr)
+		assert.NoError(t, err)
+		for i, record := range arr {
+			bs := record["avatar"].([]byte)
+			assert.EqualValues(t, repeatBytes(1<<(i+2), 'A'+byte(i))[:3], bs[:3])
+			t.Logf("%d => %p => %02x %02x %02x", i, bs, bs[0], bs[1], bs[2])
+		}
+	}
 }
