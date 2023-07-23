@@ -34,6 +34,13 @@ var (
 	ErrTableNotFound = errors.New("Table not found")
 )
 
+type join struct {
+	op        string
+	table     interface{}
+	condition interface{}
+	args      []interface{}
+}
+
 // Statement save all the sql info for executing SQL
 type Statement struct {
 	RefTable        *schemas.Table
@@ -43,10 +50,8 @@ type Statement struct {
 	Start           int
 	LimitN          *int
 	idParam         schemas.PK
-	orderStr        string
-	orderArgs       []interface{}
-	JoinStr         string
-	joinArgs        []interface{}
+	orderBy         []orderBy
+	joins           []join
 	GroupByStr      string
 	HavingStr       string
 	SelectStr       string
@@ -123,8 +128,7 @@ func (statement *Statement) Reset() {
 	statement.LimitN = nil
 	statement.ResetOrderBy()
 	statement.UseCascade = true
-	statement.JoinStr = ""
-	statement.joinArgs = make([]interface{}, 0)
+	statement.joins = nil
 	statement.GroupByStr = ""
 	statement.HavingStr = ""
 	statement.ColumnMap = columnMap{}
@@ -158,15 +162,15 @@ func (statement *Statement) Reset() {
 
 // SQL adds raw sql statement
 func (statement *Statement) SQL(query interface{}, args ...interface{}) *Statement {
-	switch query.(type) {
+	switch t := query.(type) {
 	case (*builder.Builder):
 		var err error
-		statement.RawSQL, statement.RawParams, err = query.(*builder.Builder).ToSQL()
+		statement.RawSQL, statement.RawParams, err = t.ToSQL()
 		if err != nil {
 			statement.LastError = err
 		}
 	case string:
-		statement.RawSQL = query.(string)
+		statement.RawSQL = t
 		statement.RawParams = args
 	default:
 		statement.LastError = ErrUnSupportedSQLType
@@ -205,8 +209,8 @@ func (statement *Statement) SetRefBean(bean interface{}) error {
 	return nil
 }
 
-func (statement *Statement) needTableName() bool {
-	return len(statement.JoinStr) > 0
+func (statement *Statement) NeedTableName() bool {
+	return len(statement.joins) > 0
 }
 
 // Incr Generate  "Update ... Set column = column + arg" statement
@@ -290,17 +294,17 @@ func (statement *Statement) GroupBy(keys string) *Statement {
 	return statement
 }
 
-func (statement *Statement) WriteGroupBy(w builder.Writer) error {
+func (statement *Statement) writeGroupBy(w builder.Writer) error {
 	if statement.GroupByStr == "" {
 		return nil
 	}
-	_, err := fmt.Fprintf(w, " GROUP BY %s", statement.GroupByStr)
+	_, err := fmt.Fprint(w, " GROUP BY ", statement.GroupByStr)
 	return err
 }
 
 // Having generate "Having conditions" statement
 func (statement *Statement) Having(conditions string) *Statement {
-	statement.HavingStr = fmt.Sprintf("HAVING %v", statement.ReplaceQuote(conditions))
+	statement.HavingStr = conditions
 	return statement
 }
 
@@ -308,7 +312,7 @@ func (statement *Statement) writeHaving(w builder.Writer) error {
 	if statement.HavingStr == "" {
 		return nil
 	}
-	_, err := fmt.Fprint(w, " ", statement.HavingStr)
+	_, err := fmt.Fprint(w, " HAVING ", statement.ReplaceQuote(statement.HavingStr))
 	return err
 }
 
@@ -605,7 +609,7 @@ func (statement *Statement) BuildConds(table *schemas.Table, bean interface{}, i
 // MergeConds merge conditions from bean and id
 func (statement *Statement) MergeConds(bean interface{}) error {
 	if !statement.NoAutoCondition && statement.RefTable != nil {
-		addedTableName := (len(statement.JoinStr) > 0)
+		addedTableName := (len(statement.joins) > 0)
 		autoCond, err := statement.BuildConds(statement.RefTable, bean, true, true, false, true, addedTableName)
 		if err != nil {
 			return err
@@ -673,7 +677,7 @@ func (statement *Statement) joinColumns(cols []*schemas.Column, includeTableName
 // CondDeleted returns the conditions whether a record is soft deleted.
 func (statement *Statement) CondDeleted(col *schemas.Column) builder.Cond {
 	colName := statement.quote(col.Name)
-	if statement.JoinStr != "" {
+	if len(statement.joins) > 0 {
 		var prefix string
 		if statement.TableAlias != "" {
 			prefix = statement.TableAlias

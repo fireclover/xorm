@@ -6,9 +6,11 @@ package integrations
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
+	"xorm.io/xorm/convert"
 
 	"xorm.io/xorm/internal/utils"
 
@@ -618,4 +620,60 @@ func TestTimestamp(t *testing.T) {
 		assert.True(t, has)
 		assert.EqualValues(t, formatTime(d3.InsertTime, 6), formatTime(d4.InsertTime, 6))
 	}*/
+}
+
+func TestString2Time(t *testing.T) {
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	assert.NoError(t, err)
+	var timeTmp1 = time.Date(2023, 7, 14, 11, 30, 0, 0, loc)
+	var timeTmp2 = time.Date(2023, 7, 14, 0, 0, 0, 0, loc)
+	var time1StampStr = strconv.FormatInt(timeTmp1.Unix(), 10)
+	var timeStr = "0000-00-00 00:00:00"
+	dt, err := convert.String2Time(timeStr, time.Local, time.Local)
+	assert.NoError(t, err)
+	assert.True(t, dt.Nanosecond() == 0)
+
+	timeStr = "0001-01-01 00:00:00"
+	dt, err = convert.String2Time(timeStr, time.Local, time.Local)
+	assert.NoError(t, err)
+	assert.True(t, dt.Nanosecond() == 0)
+
+	timeStr = "2023-07-14 11:30:00"
+	dt, err = convert.String2Time(timeStr, loc, time.UTC)
+	assert.NoError(t, err)
+	assert.True(t, timeTmp1.In(time.UTC).Equal(*dt))
+
+	timeStr = "2023-07-14T11:30:00Z"
+	dt, err = convert.String2Time(timeStr, loc, time.UTC)
+	assert.NoError(t, err)
+	assert.True(t, timeTmp1.In(time.UTC).Equal(*dt))
+
+	timeStr = "2023-07-14T11:30:00+08:00"
+	dt, err = convert.String2Time(timeStr, loc, time.UTC)
+	assert.NoError(t, err)
+	assert.True(t, timeTmp1.In(time.UTC).Equal(*dt))
+
+	timeStr = "2023-07-14T11:30:00.00000000+08:00"
+	dt, err = convert.String2Time(timeStr, loc, time.UTC)
+	assert.NoError(t, err)
+	assert.True(t, timeTmp1.In(time.UTC).Equal(*dt))
+
+	timeStr = "0000-00-00"
+	dt, err = convert.String2Time(timeStr, loc, time.UTC)
+	assert.NoError(t, err)
+	assert.True(t, dt.Nanosecond() == 0)
+
+	timeStr = "0001-01-01"
+	dt, err = convert.String2Time(timeStr, loc, time.UTC)
+	assert.NoError(t, err)
+	assert.True(t, dt.Nanosecond() == 0)
+
+	timeStr = "2023-07-14"
+	dt, err = convert.String2Time(timeStr, loc, time.UTC)
+	assert.NoError(t, err)
+	assert.True(t, timeTmp2.In(time.UTC).Equal(*dt))
+
+	dt, err = convert.String2Time(time1StampStr, loc, time.UTC)
+	assert.NoError(t, err)
+	assert.True(t, timeTmp1.In(time.UTC).Equal(*dt))
 }
