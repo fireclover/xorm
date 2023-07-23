@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"xorm.io/builder"
@@ -311,84 +310,177 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 	return colNames, args, nil
 }
 
-func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond builder.Cond, colNames []string) error {
-	whereWriter := builder.NewWriter()
-	if cond.IsValid() {
-		fmt.Fprint(whereWriter, "WHERE ")
+func (statement *Statement) writeUpdateTop(updateWriter *builder.BytesWriter) error {
+	if statement.dialect.URI().DBType != schemas.MSSQL || statement.LimitN == nil {
+		return nil
 	}
-	if err := cond.WriteTo(statement.QuoteReplacer(whereWriter)); err != nil {
+
+	table := statement.RefTable
+	if statement.HasOrderBy() && table != nil && len(table.PrimaryKeys) == 1 {
+		return nil
+	}
+
+	_, err := fmt.Fprintf(updateWriter, " TOP (%d)", *statement.LimitN)
+	return err
+}
+
+func (statement *Statement) writeUpdateTableName(updateWriter *builder.BytesWriter) error {
+	tableName := statement.quote(statement.TableName())
+	if statement.TableAlias == "" {
+		_, err := fmt.Fprint(updateWriter, " ", tableName)
 		return err
 	}
-	if err := statement.writeOrderBys(whereWriter); err != nil {
+
+	switch statement.dialect.URI().DBType {
+	case schemas.MSSQL:
+		_, err := fmt.Fprint(updateWriter, " ", statement.TableAlias)
 		return err
+	default:
+		_, err := fmt.Fprint(updateWriter, " ", tableName, " AS ", statement.TableAlias)
+		return err
+	}
+}
+
+func (statement *Statement) writeUpdateFrom(updateWriter *builder.BytesWriter) error {
+	if statement.dialect.URI().DBType != schemas.MSSQL || statement.TableAlias == "" {
+		return nil
+	}
+
+	_, err := fmt.Fprint(updateWriter, " FROM ", statement.quote(statement.TableName()), " ", statement.TableAlias)
+	return err
+}
+
+func (statement *Statement) writeUpdateLimit(updateWriter *builder.BytesWriter, cond builder.Cond) error {
+	if statement.LimitN == nil {
+		return nil
 	}
 
 	table := statement.RefTable
 	tableName := statement.TableName()
-	// TODO: Oracle support needed
-	var top string
-	if statement.LimitN != nil {
-		limitValue := *statement.LimitN
-		switch statement.dialect.URI().DBType {
-		case schemas.MYSQL:
-			fmt.Fprintf(whereWriter, " LIMIT %d", limitValue)
-		case schemas.SQLITE:
-			fmt.Fprintf(whereWriter, " LIMIT %d", limitValue)
 
-			cond = cond.And(builder.Expr(fmt.Sprintf("rowid IN (SELECT rowid FROM %v %v)",
-				statement.quote(tableName), whereWriter.String()), whereWriter.Args()...))
-
-			whereWriter = builder.NewWriter()
-			fmt.Fprint(whereWriter, "WHERE ")
-			if err := cond.WriteTo(statement.QuoteReplacer(whereWriter)); err != nil {
+	limitValue := *statement.LimitN
+	switch statement.dialect.URI().DBType {
+	case schemas.MYSQL:
+		_, err := fmt.Fprintf(updateWriter, " LIMIT %d", limitValue)
+		return err
+	case schemas.SQLITE:
+		if cond.IsValid() {
+			if _, err := fmt.Fprint(updateWriter, " AND "); err != nil {
 				return err
 			}
-		case schemas.POSTGRES:
-			fmt.Fprintf(whereWriter, " LIMIT %d", limitValue)
-
-			cond = cond.And(builder.Expr(fmt.Sprintf("CTID IN (SELECT CTID FROM %v %v)",
-				statement.quote(tableName), whereWriter.String()), whereWriter.Args()...))
-
-			whereWriter = builder.NewWriter()
-			fmt.Fprint(whereWriter, "WHERE ")
-			if err := cond.WriteTo(statement.QuoteReplacer(whereWriter)); err != nil {
+		} else {
+			if _, err := fmt.Fprint(updateWriter, " WHERE "); err != nil {
 				return err
 			}
-		case schemas.MSSQL:
-			if statement.HasOrderBy() && table != nil && len(table.PrimaryKeys) == 1 {
-				cond = builder.Expr(fmt.Sprintf("%s IN (SELECT TOP (%d) %s FROM %v%v)",
-					table.PrimaryKeys[0], limitValue, table.PrimaryKeys[0],
-					statement.quote(tableName), whereWriter.String()), whereWriter.Args()...)
-
-				whereWriter = builder.NewWriter()
-				fmt.Fprint(whereWriter, "WHERE ")
-				if err := cond.WriteTo(whereWriter); err != nil {
-					return err
-				}
-			} else {
-				top = fmt.Sprintf("TOP (%d) ", limitValue)
+		}
+		if _, err := fmt.Fprint(updateWriter, "rowid IN (SELECT rowid FROM ", statement.quote(tableName)); err != nil {
+			return err
+		}
+		if err := statement.writeWhereCond(updateWriter, cond); err != nil {
+			return err
+		}
+		if err := statement.writeOrderBys(updateWriter); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintf(updateWriter, " LIMIT %d)", limitValue)
+		return err
+	case schemas.POSTGRES:
+		if cond.IsValid() {
+			if _, err := fmt.Fprint(updateWriter, " AND "); err != nil {
+				return err
+			}
+		} else {
+			if _, err := fmt.Fprint(updateWriter, " WHERE "); err != nil {
+				return err
 			}
 		}
-	}
-
-	tableAlias := statement.quote(tableName)
-	var fromSQL string
-	if statement.TableAlias != "" {
-		switch statement.dialect.URI().DBType {
-		case schemas.MSSQL:
-			fromSQL = fmt.Sprintf("FROM %s %s ", tableAlias, statement.TableAlias)
-			tableAlias = statement.TableAlias
-		default:
-			tableAlias = fmt.Sprintf("%s AS %s", tableAlias, statement.TableAlias)
+		if _, err := fmt.Fprint(updateWriter, "CTID IN (SELECT CTID FROM ", statement.quote(tableName)); err != nil {
+			return err
 		}
+		if err := statement.writeWhereCond(updateWriter, cond); err != nil {
+			return err
+		}
+		if err := statement.writeOrderBys(updateWriter); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintf(updateWriter, " LIMIT %d)", limitValue)
+		return err
+	case schemas.MSSQL:
+		if statement.HasOrderBy() && table != nil && len(table.PrimaryKeys) == 1 {
+			if _, err := fmt.Fprintf(updateWriter, " WHERE %s IN (SELECT TOP (%d) %s FROM %v",
+				table.PrimaryKeys[0], limitValue, table.PrimaryKeys[0],
+				statement.quote(tableName)); err != nil {
+				return err
+			}
+			if err := statement.writeWhereCond(updateWriter, cond); err != nil {
+				return err
+			}
+			if err := statement.writeOrderBys(updateWriter); err != nil {
+				return err
+			}
+			_, err := fmt.Fprint(updateWriter, ")")
+			return err
+		}
+		return nil
+	default: // TODO: Oracle support needed
+		return fmt.Errorf("not implemented")
 	}
+}
 
-	if _, err := fmt.Fprintf(updateWriter, "UPDATE %v%v SET %v %v",
-		top,
-		tableAlias,
-		strings.Join(colNames, ", "),
-		fromSQL); err != nil {
+func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond builder.Cond, colNames []string) error {
+	if _, err := fmt.Fprintf(updateWriter, "UPDATE "); err != nil {
 		return err
 	}
-	return utils.WriteBuilder(updateWriter, whereWriter)
+
+	if err := statement.writeUpdateTop(updateWriter); err != nil {
+		return err
+	}
+
+	if err := statement.writeUpdateTableName(updateWriter); err != nil {
+		return err
+	}
+
+	// write set
+	if _, err := fmt.Fprint(updateWriter, " SET "); err != nil {
+		return err
+	}
+	for i, colName := range colNames {
+		if i > 0 {
+			if _, err := fmt.Fprint(updateWriter, ", "); err != nil {
+				return err
+			}
+		}
+		if _, err := fmt.Fprint(updateWriter, colName); err != nil {
+			return err
+		}
+	}
+
+	// write from
+	if err := statement.writeUpdateFrom(updateWriter); err != nil {
+		return err
+	}
+
+	if statement.dialect.URI().DBType == schemas.MSSQL {
+		table := statement.RefTable
+		if statement.HasOrderBy() && table != nil && len(table.PrimaryKeys) == 1 {
+		} else {
+			// write where
+			if err := statement.writeWhereCond(updateWriter, cond); err != nil {
+				return err
+			}
+		}
+	} else {
+		// write where
+		if err := statement.writeWhereCond(updateWriter, cond); err != nil {
+			return err
+		}
+	}
+
+	if statement.dialect.URI().DBType == schemas.MYSQL {
+		if err := statement.writeOrderBys(updateWriter); err != nil {
+			return err
+		}
+	}
+
+	return statement.writeUpdateLimit(updateWriter, cond)
 }

@@ -28,7 +28,7 @@ func TestUpdateMap(t *testing.T) {
 	}
 
 	assert.NoError(t, testEngine.Sync(new(UpdateTable)))
-	var tb = UpdateTable{
+	tb := UpdateTable{
 		Name: "test",
 		Age:  35,
 	}
@@ -79,7 +79,7 @@ func TestUpdateLimit(t *testing.T) {
 	}
 
 	assert.NoError(t, testEngine.Sync(new(UpdateTable2)))
-	var tb = UpdateTable2{
+	tb := UpdateTable2{
 		Name: "test1",
 		Age:  35,
 	}
@@ -400,7 +400,7 @@ func TestUpdate1(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var s = "test"
+	s := "test"
 
 	col1 := &UpdateAllCols{Ptr: &s}
 	err = testEngine.Sync(col1)
@@ -864,7 +864,7 @@ func TestCreatedUpdated2(t *testing.T) {
 
 	assertSync(t, new(CreatedUpdatedStruct))
 
-	var s = CreatedUpdatedStruct{
+	s := CreatedUpdatedStruct{
 		Name: "test",
 	}
 	cnt, err := testEngine.Insert(&s)
@@ -874,7 +874,7 @@ func TestCreatedUpdated2(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	var s1 = CreatedUpdatedStruct{
+	s1 := CreatedUpdatedStruct{
 		Name:     "test1",
 		CreateAt: s.CreateAt,
 		UpdateAt: s.UpdateAt,
@@ -907,7 +907,7 @@ func TestDeletedUpdate(t *testing.T) {
 
 	assertSync(t, new(DeletedUpdatedStruct))
 
-	var s = DeletedUpdatedStruct{
+	s := DeletedUpdatedStruct{
 		Name: "test",
 	}
 	cnt, err := testEngine.Insert(&s)
@@ -956,7 +956,7 @@ func TestUpdateMapCondition(t *testing.T) {
 
 	assertSync(t, new(UpdateMapCondition))
 
-	var c = UpdateMapCondition{
+	c := UpdateMapCondition{
 		String: "string",
 	}
 	_, err := testEngine.Insert(&c)
@@ -990,7 +990,7 @@ func TestUpdateMapContent(t *testing.T) {
 
 	assertSync(t, new(UpdateMapContent))
 
-	var c = UpdateMapContent{
+	c := UpdateMapContent{
 		Name:   "lunny",
 		IsMan:  true,
 		Gender: 1,
@@ -1126,7 +1126,7 @@ func TestUpdateDeleted(t *testing.T) {
 
 	assertSync(t, new(UpdateDeletedStruct))
 
-	var s = UpdateDeletedStruct{
+	s := UpdateDeletedStruct{
 		Name: "test",
 	}
 	cnt, err := testEngine.Insert(&s)
@@ -1232,7 +1232,7 @@ func TestUpdateExprs2(t *testing.T) {
 
 	assertSync(t, new(UpdateExprsRelease))
 
-	var uer = UpdateExprsRelease{
+	uer := UpdateExprsRelease{
 		RepoId:     1,
 		IsTag:      false,
 		IsDraft:    false,
@@ -1407,7 +1407,7 @@ func TestNilFromDB(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(TestTable1))
 
-	var tt0 = TestTable1{
+	tt0 := TestTable1{
 		Field1: &TestFieldType1{
 			cb: []byte("string"),
 		},
@@ -1437,7 +1437,7 @@ func TestNilFromDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var tt = TestTable1{
+	tt := TestTable1{
 		UpdateTime: time.Now(),
 		Field1: &TestFieldType1{
 			cb: nil,
@@ -1453,7 +1453,7 @@ func TestNilFromDB(t *testing.T) {
 	assert.True(t, has)
 	assert.Nil(t, tt2.Field1)
 
-	var tt3 = TestTable1{
+	tt3 := TestTable1{
 		UpdateTime: time.Now(),
 		Field1: &TestFieldType1{
 			cb: []byte{},
@@ -1470,3 +1470,34 @@ func TestNilFromDB(t *testing.T) {
 	assert.NotNil(t, tt4.Field1)
 	assert.NotNil(t, tt4.Field1.cb)
 }
+
+/*
+func TestUpdateWithJoin(t *testing.T) {
+	type TestUpdateWithJoin struct {
+		Id    int64
+		ExtId int64
+		Name  string
+	}
+
+	type TestUpdateWithJoin2 struct {
+		Id   int64
+		Name string
+	}
+
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(TestUpdateWithJoin), new(TestUpdateWithJoin2))
+
+	b := TestUpdateWithJoin2{Name: "test"}
+	_, err := testEngine.Insert(&b)
+	assert.NoError(t, err)
+
+	_, err = testEngine.Insert(&TestUpdateWithJoin{ExtId: b.Id, Name: "test"})
+	assert.NoError(t, err)
+
+	_, err = testEngine.Table("test_update_with_join").
+		Join("INNER", "test_update_with_join2", "test_update_with_join.ext_id = test_update_with_join2.id").
+		Where("test_update_with_join2.name = ?", "test").
+		Update(&TestUpdateWithJoin{Name: "test2"})
+	assert.NoError(t, err)
+}
+*/

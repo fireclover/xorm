@@ -243,14 +243,19 @@ func (statement *Statement) writeSelectColumns(w *builder.BytesWriter, columnStr
 	return err
 }
 
-func (statement *Statement) writeWhere(w *builder.BytesWriter) error {
+func (statement *Statement) writeWhereCond(w *builder.BytesWriter, cond builder.Cond) error {
 	if !statement.cond.IsValid() {
 		return nil
 	}
+
 	if _, err := fmt.Fprint(w, " WHERE "); err != nil {
 		return err
 	}
-	return statement.cond.WriteTo(statement.QuoteReplacer(w))
+	return cond.WriteTo(statement.QuoteReplacer(w))
+}
+
+func (statement *Statement) writeWhere(w *builder.BytesWriter) error {
+	return statement.writeWhereCond(w, statement.cond)
 }
 
 func (statement *Statement) writeWhereWithMssqlPagination(w *builder.BytesWriter) error {
