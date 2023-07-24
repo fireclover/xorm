@@ -244,7 +244,7 @@ func (statement *Statement) writeSelectColumns(w *builder.BytesWriter, columnStr
 }
 
 func (statement *Statement) writeWhereCond(w *builder.BytesWriter, cond builder.Cond) error {
-	if !statement.cond.IsValid() {
+	if !cond.IsValid() {
 		return nil
 	}
 

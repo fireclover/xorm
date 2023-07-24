@@ -227,14 +227,14 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	}
 
 	updateWriter := builder.NewWriter()
-	if err := session.statement.WriteUpdate(updateWriter, cond, colNames); err != nil {
+	if err := session.statement.WriteUpdate(updateWriter, cond, colNames, args); err != nil {
 		return 0, err
 	}
 
 	tableName := session.statement.TableName() // table name must been get before exec because statement will be reset
 	useCache := session.statement.UseCache
 
-	res, err := session.exec(updateWriter.String(), append(args, updateWriter.Args()...)...)
+	res, err := session.exec(updateWriter.String(), updateWriter.Args()...)
 	if err != nil {
 		return 0, err
 	} else if doIncVer {

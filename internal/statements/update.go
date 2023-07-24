@@ -427,8 +427,8 @@ func (statement *Statement) writeUpdateLimit(updateWriter *builder.BytesWriter, 
 	}
 }
 
-func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond builder.Cond, colNames []string) error {
-	if _, err := fmt.Fprintf(updateWriter, "UPDATE "); err != nil {
+func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond builder.Cond, colNames []string, args []interface{}) error {
+	if _, err := fmt.Fprintf(updateWriter, "UPDATE"); err != nil {
 		return err
 	}
 
@@ -454,6 +454,7 @@ func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond 
 			return err
 		}
 	}
+	updateWriter.Append(args...)
 
 	// write from
 	if err := statement.writeUpdateFrom(updateWriter); err != nil {
