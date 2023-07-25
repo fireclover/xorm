@@ -35,7 +35,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 	}
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true, true); err != nil {
+	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
@@ -66,7 +66,7 @@ func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (stri
 	}
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, strings.Join(sumStrs, ", "), true, true); err != nil {
+	if err := statement.writeSelect(buf, strings.Join(sumStrs, ", "), true); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
@@ -122,7 +122,7 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 	}
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, columnStr, true, true); err != nil {
+	if err := statement.writeSelect(buf, columnStr, true); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
@@ -153,6 +153,12 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 			selectSQL = "count(*)"
 		}
 	}
+	var subQuerySelect string
+	if statement.GroupByStr != "" {
+		subQuerySelect = statement.GroupByStr
+	} else {
+		subQuerySelect = selectSQL
+	}
 
 	buf := builder.NewWriter()
 	if statement.GroupByStr != "" {
@@ -161,14 +167,7 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 		}
 	}
 
-	var subQuerySelect string
-	if statement.GroupByStr != "" {
-		subQuerySelect = statement.GroupByStr
-	} else {
-		subQuerySelect = selectSQL
-	}
-
-	if err := statement.writeSelect(buf, subQuerySelect, false, false); err != nil {
+	if err := statement.writeSelect(buf, subQuerySelect, false); err != nil {
 		return "", nil, err
 	}
 
@@ -365,7 +364,7 @@ func (statement *Statement) writeOracleLimit(w *builder.BytesWriter, columnStr s
 	return err
 }
 
-func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr string, needLimit, needOrderBy bool) error {
+func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr string, needLimit bool) error {
 	if err := statement.writeSelectColumns(buf, columnStr); err != nil {
 		return err
 	}
@@ -381,10 +380,8 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 	if err := statement.writeHaving(buf); err != nil {
 		return err
 	}
-	if needOrderBy {
-		if err := statement.writeOrderBys(buf); err != nil {
-			return err
-		}
+	if err := statement.writeOrderBys(buf); err != nil {
+		return err
 	}
 
 	dialect := statement.dialect
@@ -522,7 +519,7 @@ func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interfa
 	statement.cond = statement.cond.And(autoCond)
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true, true); err != nil {
+	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
