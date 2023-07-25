@@ -446,7 +446,7 @@ func (statement *Statement) GenConditionsFromMap(m interface{}) ([]builder.Cond,
 	}
 }
 
-func (statement *Statement) writeVersionIncrSet(w builder.Writer, v reflect.Value) error {
+func (statement *Statement) writeVersionIncrSet(w builder.Writer, v reflect.Value, hasPreviousSet bool) error {
 	if v.Type().Kind() != reflect.Struct {
 		return nil
 	}
@@ -465,15 +465,21 @@ func (statement *Statement) writeVersionIncrSet(w builder.Writer, v reflect.Valu
 		return nil
 	}
 
+	if hasPreviousSet {
+		if _, err := fmt.Fprint(w, ", "); err != nil {
+			return err
+		}
+	}
+
 	if _, err := fmt.Fprint(w, statement.quote(table.Version), " = ", statement.quote(table.Version), " + 1"); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (statement *Statement) writeIncrSets(w builder.Writer) error {
+func (statement *Statement) writeIncrSets(w builder.Writer, hasPreviousSet bool) error {
 	for i, expr := range statement.IncrColumns {
-		if i > 0 {
+		if i > 0 || hasPreviousSet {
 			if _, err := fmt.Fprint(w, ", "); err != nil {
 				return err
 			}
@@ -486,10 +492,10 @@ func (statement *Statement) writeIncrSets(w builder.Writer) error {
 	return nil
 }
 
-func (statement *Statement) writeDecrSets(w builder.Writer) error {
+func (statement *Statement) writeDecrSets(w builder.Writer, hasPreviousSet bool) error {
 	// for update action to like "column = column - ?"
 	for i, expr := range statement.DecrColumns {
-		if i > 0 {
+		if i > 0 || hasPreviousSet {
 			if _, err := fmt.Fprint(w, ", "); err != nil {
 				return err
 			}
@@ -502,10 +508,10 @@ func (statement *Statement) writeDecrSets(w builder.Writer) error {
 	return nil
 }
 
-func (statement *Statement) writeExprSets(w *builder.BytesWriter) error {
+func (statement *Statement) writeExprSets(w *builder.BytesWriter, hasPreviousSet bool) error {
 	// for update action to like "column = expression"
 	for i, expr := range statement.ExprColumns {
-		if i > 0 {
+		if i > 0 || hasPreviousSet {
 			if _, err := fmt.Fprint(w, ", "); err != nil {
 				return err
 			}
@@ -538,14 +544,33 @@ func (statement *Statement) writeExprSets(w *builder.BytesWriter) error {
 	return nil
 }
 
-func (statement *Statement) writeUpdateSets(w *builder.BytesWriter) error {
-	if err := statement.writeIncrSets(w); err != nil {
+func (statement *Statement) writeUpdateSets(w *builder.BytesWriter, v reflect.Value, colNames []string, args []interface{}) error {
+	previousLen := w.Len()
+	for i, colName := range colNames {
+		if i > 0 {
+			if _, err := fmt.Fprint(w, ", "); err != nil {
+				return err
+			}
+		}
+		if _, err := fmt.Fprint(w, colName); err != nil {
+			return err
+		}
+	}
+	w.Append(args...)
+
+	if err := statement.writeIncrSets(w, w.Len() > previousLen); err != nil {
 		return err
 	}
-	if err := statement.writeDecrSets(w); err != nil {
+
+	if err := statement.writeDecrSets(w, w.Len() > previousLen); err != nil {
 		return err
 	}
-	if err := statement.writeExprSets(w); err != nil {
+
+	if err := statement.writeExprSets(w, w.Len() > previousLen); err != nil {
+		return err
+	}
+
+	if err := statement.writeVersionIncrSet(w, v, w.Len() > previousLen); err != nil {
 		return err
 	}
 	return nil
@@ -571,23 +596,8 @@ func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond 
 		return err
 	}
 	previousLen := updateWriter.Len()
-	for i, colName := range colNames {
-		if i > 0 {
-			if _, err := fmt.Fprint(updateWriter, ", "); err != nil {
-				return err
-			}
-		}
-		if _, err := fmt.Fprint(updateWriter, colName); err != nil {
-			return err
-		}
-	}
-	updateWriter.Append(args...)
 
-	if err := statement.writeUpdateSets(updateWriter); err != nil {
-		return err
-	}
-
-	if err := statement.writeVersionIncrSet(updateWriter, v); err != nil {
+	if err := statement.writeUpdateSets(updateWriter, v, colNames, args); err != nil {
 		return err
 	}
 
