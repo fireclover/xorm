@@ -144,6 +144,8 @@ func (rows *Rows) Close() error {
 		defer rows.session.Close()
 	}
 
+	defer rows.session.resetStatement()
+
 	if rows.rows != nil {
 		return rows.rows.Close()
 	}
