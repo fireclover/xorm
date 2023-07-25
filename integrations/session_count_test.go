@@ -125,6 +125,11 @@ func TestWithTableName(t *testing.T) {
 	total, err = testEngine.OrderBy("count(`id`) desc").Count(CountWithTableName{})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
+
+	// the orderby will be ignored by count because some databases will return errors if the orderby columns not in group by
+	total, err = testEngine.OrderBy("`name`").Count(CountWithTableName{})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, total)
 }
 
 func TestCountWithSelectCols(t *testing.T) {
