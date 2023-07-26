@@ -557,6 +557,29 @@ func TestParseWithJSON(t *testing.T) {
 	assert.True(t, table.Columns()[0].IsJSON)
 }
 
+func TestParseWithJSONB(t *testing.T) {
+	parser := NewParser(
+		"db",
+		dialects.QueryDialect("postgres"),
+		names.GonicMapper{
+			"JSONB": true,
+		},
+		names.SnakeMapper{},
+		caches.NewManager(),
+	)
+
+	type StructWithJSONB struct {
+		Default1 []string `db:"jsonb"`
+	}
+
+	table, err := parser.Parse(reflect.ValueOf(new(StructWithJSONB)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "struct_with_jsonb", table.Name)
+	assert.EqualValues(t, 1, len(table.Columns()))
+	assert.EqualValues(t, "default1", table.Columns()[0].Name)
+	assert.True(t, table.Columns()[0].IsJSON)
+}
+
 func TestParseWithSQLType(t *testing.T) {
 	parser := NewParser(
 		"db",

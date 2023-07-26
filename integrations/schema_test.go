@@ -5,6 +5,7 @@
 package integrations
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -325,14 +326,14 @@ func TestIsTableEmpty(t *testing.T) {
 
 	type PictureEmpty struct {
 		Id          int64
-		Url         string `xorm:"unique"` //image's url
+		Url         string `xorm:"unique"` // image's url
 		Title       string
 		Description string
 		Created     time.Time `xorm:"created"`
 		ILike       int
 		PageView    int
 		From_url    string // nolint
-		Pre_url     string `xorm:"unique"` //pre view image's url
+		Pre_url     string `xorm:"unique"` // pre view image's url
 		Uid         int64
 	}
 
@@ -458,7 +459,7 @@ func TestSync2_2(t *testing.T) {
 
 	assert.NoError(t, PrepareEngine())
 
-	var tableNames = make(map[string]bool)
+	tableNames := make(map[string]bool)
 	for i := 0; i < 10; i++ {
 		tableName := fmt.Sprintf("test_sync2_index_%d", i)
 		tableNames[tableName] = true
@@ -534,5 +535,113 @@ func TestModifyColum(t *testing.T) {
 		DefaultIsEmpty: true,
 	})
 	_, err := testEngine.Exec(alterSQL)
+	assert.NoError(t, err)
+}
+
+type TestCollateColumn struct {
+	Id     int64
+	UserId int64  `xorm:"unique(s)"`
+	Name   string `xorm:"varchar(20) unique(s)"`
+	dbtype string `xorm:"-"`
+}
+
+func (t TestCollateColumn) TableCollations() []*schemas.Collation {
+	if t.dbtype == string(schemas.MYSQL) {
+		return []*schemas.Collation{
+			{
+				Name:   "utf8mb4_general_ci",
+				Column: "name",
+			},
+		}
+	} else if t.dbtype == string(schemas.MSSQL) {
+		return []*schemas.Collation{
+			{
+				Name:   "Latin1_General_CI_AS",
+				Column: "name",
+			},
+		}
+	}
+	return nil
+}
+
+func TestCollate(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, &TestCollateColumn{
+		dbtype: string(testEngine.Dialect().URI().DBType),
+	})
+
+	_, err := testEngine.Insert(&TestCollateColumn{
+		UserId: 1,
+		Name:   "test",
+	})
+	assert.NoError(t, err)
+	_, err = testEngine.Insert(&TestCollateColumn{
+		UserId: 1,
+		Name:   "Test",
+	})
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		ver, err1 := testEngine.DBVersion()
+		assert.NoError(t, err1)
+
+		tables, err1 := testEngine.DBMetas()
+		assert.NoError(t, err1)
+		for _, table := range tables {
+			if table.Name == "test_collate_column" {
+				col := table.GetColumn("name")
+				if col == nil {
+					assert.Error(t, errors.New("not found column"))
+					return
+				}
+				// tidb doesn't follow utf8mb4_general_ci
+				if col.Collation == "utf8mb4_general_ci" && ver.Edition != "TiDB" {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+				}
+				break
+			}
+		}
+	} else if testEngine.Dialect().URI().DBType == schemas.MSSQL {
+		assert.Error(t, err)
+	} else {
+		assert.NoError(t, err)
+	}
+
+	// Since SQLITE don't support modify column SQL, currrently just ignore
+	if testEngine.Dialect().URI().DBType != schemas.MYSQL && testEngine.Dialect().URI().DBType != schemas.MSSQL {
+		return
+	}
+
+	var newCollation string
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		newCollation = "utf8mb4_bin"
+	} else if testEngine.Dialect().URI().DBType != schemas.MSSQL {
+		newCollation = "Latin1_General_CS_AS"
+	} else {
+		return
+	}
+
+	alterSQL := testEngine.Dialect().ModifyColumnSQL("test_collate_column", &schemas.Column{
+		Name: "name",
+		SQLType: schemas.SQLType{
+			Name: "VARCHAR",
+		},
+		Length:         20,
+		Nullable:       true,
+		DefaultIsEmpty: true,
+		Collation:      newCollation,
+	})
+	_, err = testEngine.Exec(alterSQL)
+	assert.NoError(t, err)
+
+	_, err = testEngine.Insert(&TestCollateColumn{
+		UserId: 1,
+		Name:   "test1",
+	})
+	assert.NoError(t, err)
+	_, err = testEngine.Insert(&TestCollateColumn{
+		UserId: 1,
+		Name:   "Test1",
+	})
 	assert.NoError(t, err)
 }
