@@ -53,17 +53,21 @@ type StringPK struct {
 	Name string
 }
 
-type ID int64
-type MyIntPK struct {
-	ID   ID `xorm:"pk autoincr"`
-	Name string
-}
+type (
+	ID      int64
+	MyIntPK struct {
+		ID   ID `xorm:"pk autoincr"`
+		Name string
+	}
+)
 
-type StrID string
-type MyStringPK struct {
-	ID   StrID `xorm:"pk notnull"`
-	Name string
-}
+type (
+	StrID      string
+	MyStringPK struct {
+		ID   StrID `xorm:"pk notnull"`
+		Name string
+	}
+)
 
 func TestIntId(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
@@ -187,7 +191,7 @@ func TestUintId(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var inserts = []UintId{
+	inserts := []UintId{
 		{Name: "test1"},
 		{Name: "test2"},
 	}
@@ -321,6 +325,48 @@ func TestUint64Id(t *testing.T) {
 	assert.EqualValues(t, 1, cnt)
 }
 
+func TestUnsignedfloat(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type UnsignedFloat struct {
+		Id            int64
+		UnsignedFloat float64 `xorm:"UNSIGNED FLOAT"`
+	}
+
+	err := testEngine.DropTables(&UnsignedFloat{})
+	assert.NoError(t, err)
+
+	err = testEngine.CreateTables(&UnsignedFloat{})
+	assert.NoError(t, err)
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+
+	assert.EqualValues(t, 1, len(tables))
+	cols := tables[0].Columns()
+	assert.EqualValues(t, 2, len(cols))
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		assert.EqualValues(t, "UNSIGNED FLOAT", cols[1].SQLType.Name)
+	}
+
+	idbean := &UnsignedFloat{UnsignedFloat: 12345678.90123456}
+	cnt, err := testEngine.Insert(idbean)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	bean := new(UnsignedFloat)
+	has, err := testEngine.Get(bean)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, bean.Id, idbean.Id)
+
+	beans := make([]UnsignedFloat, 0)
+	err = testEngine.Find(&beans)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(beans))
+	assert.EqualValues(t, *bean, beans[0])
+}
+
 func TestStringPK(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
@@ -390,7 +436,7 @@ func TestCompositeKey(t *testing.T) {
 	assert.True(t, has)
 	assert.EqualValues(t, compositeKeyVal, compositeKeyVal2)
 
-	var cps = make([]CompositeKey, 0)
+	cps := make([]CompositeKey, 0)
 	err = testEngine.Find(&cps)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(cps))
@@ -460,13 +506,15 @@ func TestCompositeKey2(t *testing.T) {
 	assert.EqualValues(t, 1, cnt)
 }
 
-type MyString string
-type UserPK2 struct {
-	UserId   MyString `xorm:"varchar(19) not null pk"`
-	NickName string   `xorm:"varchar(19) not null"`
-	GameId   uint32   `xorm:"integer pk"`
-	Score    int32    `xorm:"integer"`
-}
+type (
+	MyString string
+	UserPK2  struct {
+		UserId   MyString `xorm:"varchar(19) not null pk"`
+		NickName string   `xorm:"varchar(19) not null"`
+		GameId   uint32   `xorm:"integer pk"`
+		Score    int32    `xorm:"integer"`
+	}
+)
 
 func TestCompositeKey3(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
