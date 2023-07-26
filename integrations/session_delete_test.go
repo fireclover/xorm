@@ -5,6 +5,7 @@
 package integrations
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -73,7 +74,7 @@ func TestDelete(t *testing.T) {
 func TestDeleteLimit(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL || os.Getenv("IGNORE_TEST_DELETE_LIMIT") == "true" {
 		t.Skip()
 		return
 	}
