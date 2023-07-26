@@ -36,7 +36,7 @@ func (statement *Statement) writeJoins(w *builder.BytesWriter) error {
 
 func (statement *Statement) writeJoin(buf *builder.BytesWriter, join join) error {
 	// write join operator
-	if _, err := fmt.Fprintf(buf, " %v JOIN", join.op); err != nil {
+	if _, err := fmt.Fprint(buf, " ", join.op, " JOIN"); err != nil {
 		return err
 	}
 

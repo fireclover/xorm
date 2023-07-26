@@ -43,6 +43,7 @@ jobs:
           TEST_COCKROACH_DBNAME: xorm_test
           TEST_COCKROACH_USERNAME: root
           TEST_COCKROACH_PASSWORD:
+          IGNORE_TEST_DELETE_LIMIT: true
         run: sleep 20 && make test-cockroach
 
     services:

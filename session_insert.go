@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"xorm.io/builder"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/dialects"
 	"xorm.io/xorm/internal/utils"
@@ -156,14 +157,14 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 				}
 				args = append(args, val)
 
-				var colName = col.Name
+				colName := col.Name
 				session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 					col := table.GetColumn(colName)
 					setColumnTime(bean, col, t)
 				})
 			} else if col.IsVersion && session.statement.CheckVersion {
 				args = append(args, 1)
-				var colName = col.Name
+				colName := col.Name
 				session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 					col := table.GetColumn(colName)
 					setColumnInt(bean, col, 1)
@@ -186,24 +187,12 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 	}
 	cleanupProcessorsClosures(&session.beforeClosures)
 
-	quoter := session.engine.dialect.Quoter()
-	var sql string
-	colStr := quoter.Join(colNames, ",")
-	if session.engine.dialect.URI().DBType == schemas.ORACLE {
-		temp := fmt.Sprintf(") INTO %s (%v) VALUES (",
-			quoter.Quote(tableName),
-			colStr)
-		sql = fmt.Sprintf("INSERT ALL INTO %s (%v) VALUES (%v) SELECT 1 FROM DUAL",
-			quoter.Quote(tableName),
-			colStr,
-			strings.Join(colMultiPlaces, temp))
-	} else {
-		sql = fmt.Sprintf("INSERT INTO %s (%v) VALUES (%v)",
-			quoter.Quote(tableName),
-			colStr,
-			strings.Join(colMultiPlaces, "),("))
+	w := builder.NewWriter()
+	if err := session.statement.WriteInsertMultiple(w, tableName, colNames, colMultiPlaces); err != nil {
+		return 0, err
 	}
-	res, err := session.exec(sql, args...)
+
+	res, err := session.exec(w.String(), args...)
 	if err != nil {
 		return 0, err
 	}
@@ -276,7 +265,7 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 		processor.BeforeInsert()
 	}
 
-	var tableName = session.statement.TableName()
+	tableName := session.statement.TableName()
 	table := session.statement.RefTable
 
 	colNames, args, err := session.genInsertColumns(bean)
@@ -518,7 +507,7 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 			}
 			args = append(args, val)
 
-			var colName = col.Name
+			colName := col.Name
 			session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 				col := table.GetColumn(colName)
 				setColumnTime(bean, col, t)
@@ -548,7 +537,7 @@ func (session *Session) insertMapInterface(m map[string]interface{}) (int64, err
 		return 0, ErrTableNotFound
 	}
 
-	var columns = make([]string, 0, len(m))
+	columns := make([]string, 0, len(m))
 	exprs := session.statement.ExprColumns
 	for k := range m {
 		if !exprs.IsColExist(k) {
@@ -557,7 +546,7 @@ func (session *Session) insertMapInterface(m map[string]interface{}) (int64, err
 	}
 	sort.Strings(columns)
 
-	var args = make([]interface{}, 0, len(m))
+	args := make([]interface{}, 0, len(m))
 	for _, colName := range columns {
 		args = append(args, m[colName])
 	}
@@ -575,7 +564,7 @@ func (session *Session) insertMultipleMapInterface(maps []map[string]interface{}
 		return 0, ErrTableNotFound
 	}
 
-	var columns = make([]string, 0, len(maps[0]))
+	columns := make([]string, 0, len(maps[0]))
 	exprs := session.statement.ExprColumns
 	for k := range maps[0] {
 		if !exprs.IsColExist(k) {
@@ -584,9 +573,9 @@ func (session *Session) insertMultipleMapInterface(maps []map[string]interface{}
 	}
 	sort.Strings(columns)
 
-	var argss = make([][]interface{}, 0, len(maps))
+	argss := make([][]interface{}, 0, len(maps))
 	for _, m := range maps {
-		var args = make([]interface{}, 0, len(m))
+		args := make([]interface{}, 0, len(m))
 		for _, colName := range columns {
 			args = append(args, m[colName])
 		}
@@ -606,7 +595,7 @@ func (session *Session) insertMapString(m map[string]string) (int64, error) {
 		return 0, ErrTableNotFound
 	}
 
-	var columns = make([]string, 0, len(m))
+	columns := make([]string, 0, len(m))
 	exprs := session.statement.ExprColumns
 	for k := range m {
 		if !exprs.IsColExist(k) {
@@ -616,7 +605,7 @@ func (session *Session) insertMapString(m map[string]string) (int64, error) {
 
 	sort.Strings(columns)
 
-	var args = make([]interface{}, 0, len(m))
+	args := make([]interface{}, 0, len(m))
 	for _, colName := range columns {
 		args = append(args, m[colName])
 	}
@@ -634,7 +623,7 @@ func (session *Session) insertMultipleMapString(maps []map[string]string) (int64
 		return 0, ErrTableNotFound
 	}
 
-	var columns = make([]string, 0, len(maps[0]))
+	columns := make([]string, 0, len(maps[0]))
 	exprs := session.statement.ExprColumns
 	for k := range maps[0] {
 		if !exprs.IsColExist(k) {
@@ -643,9 +632,9 @@ func (session *Session) insertMultipleMapString(maps []map[string]string) (int64
 	}
 	sort.Strings(columns)
 
-	var argss = make([][]interface{}, 0, len(maps))
+	argss := make([][]interface{}, 0, len(maps))
 	for _, m := range maps {
-		var args = make([]interface{}, 0, len(m))
+		args := make([]interface{}, 0, len(m))
 		for _, colName := range columns {
 			args = append(args, m[colName])
 		}

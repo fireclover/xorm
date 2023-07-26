@@ -15,6 +15,7 @@ import (
 )
 
 // String2Time converts a string to time with original location
+// be aware for time strings (HH:mm:ss) returns zero year (LMT) for converted location
 func String2Time(s string, originalLocation *time.Location, convertedLocation *time.Location) (*time.Time, error) {
 	if len(s) == 19 {
 		if s == utils.ZeroTime0 || s == utils.ZeroTime1 {
@@ -62,7 +63,7 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 			strings.HasPrefix(s, "0001-01-01T00:00:00."+strings.Repeat("0", len(s)-20)) {
 			return &time.Time{}, nil
 		}
-		var layout = "2006-01-02 15:04:05." + strings.Repeat("0", len(s)-20)
+		layout := "2006-01-02 15:04:05." + strings.Repeat("0", len(s)-20)
 		dt, err := time.ParseInLocation(layout, s, originalLocation)
 		if err != nil {
 			return nil, err
@@ -78,6 +79,18 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 			return nil, err
 		}
 		dt = dt.In(convertedLocation)
+		return &dt, nil
+	} else if len(s) == 8 && s[2] == ':' && s[5] == ':' {
+		currentDate := time.Now()
+		dt, err := time.ParseInLocation("15:04:05", s, originalLocation)
+		if err != nil {
+			return nil, err
+		}
+		// add current date for correct time locations
+		dt = dt.AddDate(currentDate.Year(), int(currentDate.Month()), currentDate.Day())
+		dt = dt.In(convertedLocation)
+		// back to zero year
+		dt = dt.AddDate(-currentDate.Year(), int(-currentDate.Month()), -currentDate.Day())
 		return &dt, nil
 	} else {
 		i, err := strconv.ParseInt(s, 10, 64)
