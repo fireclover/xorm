@@ -45,6 +45,7 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		if err != nil {
 			return nil, err
 		}
+		dt.IsZero()
 		dt = dt.In(convertedLocation)
 		return &dt, nil
 	} else if len(s) >= 21 && s[10] == 'T' && s[19] == '.' {
@@ -81,16 +82,12 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		dt = dt.In(convertedLocation)
 		return &dt, nil
 	} else if len(s) == 8 && s[2] == ':' && s[5] == ':' {
-		currentDate := time.Now()
 		dt, err := time.ParseInLocation("15:04:05", s, originalLocation)
 		if err != nil {
 			return nil, err
 		}
-		// add current date for correct time locations
-		dt = dt.AddDate(currentDate.Year(), int(currentDate.Month()), currentDate.Day())
 		dt = dt.In(convertedLocation)
-		// back to zero year
-		dt = dt.AddDate(-currentDate.Year(), int(-currentDate.Month()), -currentDate.Day())
+		dt = time.Date(1, 1, 1, dt.Hour(), dt.Minute(), dt.Second(), 0, convertedLocation)
 		return &dt, nil
 	} else {
 		i, err := strconv.ParseInt(s, 10, 64)
