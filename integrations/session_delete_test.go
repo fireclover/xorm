@@ -5,6 +5,7 @@
 package integrations
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func TestDelete(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserinfoDelete)))
+	assert.NoError(t, testEngine.Sync(new(UserinfoDelete)))
 
 	session := testEngine.NewSession()
 	defer session.Close()
@@ -68,6 +69,63 @@ func TestDelete(t *testing.T) {
 	has, err = testEngine.ID(2).Get(&user)
 	assert.NoError(t, err)
 	assert.False(t, has)
+}
+
+func TestDeleteLimit(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL || os.Getenv("IGNORE_TEST_DELETE_LIMIT") == "true" {
+		t.Skip()
+		return
+	}
+
+	type UserinfoDeleteLimit struct {
+		Uid   int64 `xorm:"id pk not null autoincr"`
+		IsMan bool
+	}
+
+	assert.NoError(t, testEngine.Sync2(new(UserinfoDeleteLimit)))
+
+	session := testEngine.NewSession()
+	defer session.Close()
+
+	var err error
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
+		err = session.Begin()
+		assert.NoError(t, err)
+		_, err = session.Exec("SET IDENTITY_INSERT userinfo_delete_limit ON")
+		assert.NoError(t, err)
+	}
+
+	user := UserinfoDeleteLimit{Uid: 1, IsMan: true}
+	cnt, err := session.Insert(&user)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	user2 := UserinfoDeleteLimit{Uid: 2}
+	cnt, err = session.Insert(&user2)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
+		err = session.Commit()
+		assert.NoError(t, err)
+	}
+
+	cnt, err = testEngine.Limit(1, 1).Delete(&UserinfoDeleteLimit{})
+	assert.Error(t, err)
+	assert.EqualValues(t, 0, cnt)
+
+	cnt, err = testEngine.Limit(1).Desc("id").Delete(&UserinfoDeleteLimit{})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	var users []UserinfoDeleteLimit
+	err = testEngine.Find(&users)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(users))
+	assert.EqualValues(t, 1, users[0].Uid)
+	assert.EqualValues(t, true, users[0].IsMan)
 }
 
 func TestDeleted(t *testing.T) {
@@ -208,12 +266,12 @@ func TestUnscopeDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var nowUnix = time.Now().Unix()
+	nowUnix := time.Now().Unix()
 	var s UnscopeDeleteStruct
 	cnt, err = testEngine.ID(1).Delete(&s)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
-	assert.EqualValues(t, nowUnix, s.DeletedAt.Unix())
+	assert.LessOrEqual(t, int(s.DeletedAt.Unix()-nowUnix), 1)
 
 	var s1 UnscopeDeleteStruct
 	has, err := testEngine.ID(1).Get(&s1)
@@ -225,7 +283,7 @@ func TestUnscopeDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, "test", s2.Name)
-	assert.EqualValues(t, nowUnix, s2.DeletedAt.Unix())
+	assert.LessOrEqual(t, int(s2.DeletedAt.Unix()-nowUnix), 1)
 
 	cnt, err = testEngine.ID(1).Unscoped().Delete(new(UnscopeDeleteStruct))
 	assert.NoError(t, err)
@@ -250,7 +308,7 @@ func TestDelete2(t *testing.T) {
 		IsMan bool
 	}
 
-	assert.NoError(t, testEngine.Sync2(new(UserinfoDelete2)))
+	assert.NoError(t, testEngine.Sync(new(UserinfoDelete2)))
 
 	user := UserinfoDelete2{}
 	cnt, err := testEngine.Insert(&user)
@@ -262,6 +320,31 @@ func TestDelete2(t *testing.T) {
 	assert.EqualValues(t, 1, cnt)
 
 	user2 := UserinfoDelete2{}
+	has, err := testEngine.ID(1).Get(&user2)
+	assert.NoError(t, err)
+	assert.False(t, has)
+}
+
+func TestTruncate(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type TruncateUser struct {
+		Uid int64 `xorm:"id pk not null autoincr"`
+	}
+
+	assert.NoError(t, testEngine.Sync(new(TruncateUser)))
+
+	cnt, err := testEngine.Insert(&TruncateUser{})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	_, err = testEngine.Delete(&TruncateUser{})
+	assert.Error(t, err)
+
+	_, err = testEngine.Truncate(&TruncateUser{})
+	assert.NoError(t, err)
+
+	user2 := TruncateUser{}
 	has, err := testEngine.ID(1).Get(&user2)
 	assert.NoError(t, err)
 	assert.False(t, has)

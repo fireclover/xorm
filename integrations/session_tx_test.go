@@ -37,7 +37,7 @@ func TestTransaction(t *testing.T) {
 	assert.NoError(t, err)
 
 	user2 := Userinfo{Username: "yyy"}
-	_, err = session.Where("id = ?", 0).Update(&user2)
+	_, err = session.Where("`id` = ?", 0).Update(&user2)
 	assert.NoError(t, err)
 
 	_, err = session.Delete(&user2)
@@ -70,10 +70,10 @@ func TestCombineTransaction(t *testing.T) {
 	assert.NoError(t, err)
 
 	user2 := Userinfo{Username: "zzz"}
-	_, err = session.Where("id = ?", 0).Update(&user2)
+	_, err = session.Where("`id` = ?", 0).Update(&user2)
 	assert.NoError(t, err)
 
-	_, err = session.Exec("delete from "+testEngine.TableName("userinfo", true)+" where username = ?", user2.Username)
+	_, err = session.Exec("delete from "+testEngine.Quote(testEngine.TableName("userinfo", true))+" where `username` = ?", user2.Username)
 	assert.NoError(t, err)
 
 	err = session.Commit()
@@ -113,10 +113,10 @@ func TestCombineTransactionSameMapper(t *testing.T) {
 	assert.NoError(t, err)
 
 	user2 := Userinfo{Username: "zzz"}
-	_, err = session.Where("id = ?", 0).Update(&user2)
+	_, err = session.Where("`id` = ?", 0).Update(&user2)
 	assert.NoError(t, err)
 
-	_, err = session.Exec("delete from  "+testEngine.TableName("`Userinfo`", true)+" where `Username` = ?", user2.Username)
+	_, err = session.Exec("delete from  "+testEngine.Quote(testEngine.TableName("Userinfo", true))+" where `Username` = ?", user2.Username)
 	assert.NoError(t, err)
 
 	err = session.Commit()
@@ -144,7 +144,7 @@ func TestMultipleTransaction(t *testing.T) {
 	assert.NoError(t, err)
 
 	user2 := MultipleTransaction{Name: "zzz"}
-	_, err = session.Where("id = ?", 0).Update(&user2)
+	_, err = session.Where("`id` = ?", 0).Update(&user2)
 	assert.NoError(t, err)
 
 	err = session.Commit()
@@ -158,7 +158,7 @@ func TestMultipleTransaction(t *testing.T) {
 	err = session.Begin()
 	assert.NoError(t, err)
 
-	_, err = session.Where("id=?", m1.Id).Delete(new(MultipleTransaction))
+	_, err = session.Where("`id`=?", m1.Id).Delete(new(MultipleTransaction))
 	assert.NoError(t, err)
 
 	err = session.Commit()
@@ -184,4 +184,37 @@ func TestMultipleTransaction(t *testing.T) {
 	err = session.Find(&ms)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, len(ms))
+}
+
+func TestInsertMulti2InterfaceTransaction(t *testing.T) {
+
+	type Multi2InterfaceTransaction struct {
+		ID         uint64 `xorm:"id pk autoincr"`
+		Name       string
+		Alias      string
+		CreateTime time.Time `xorm:"created"`
+		UpdateTime time.Time `xorm:"updated"`
+	}
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(Multi2InterfaceTransaction))
+	session := testEngine.NewSession()
+	defer session.Close()
+	err := session.Begin()
+	assert.NoError(t, err)
+
+	users := []interface{}{
+		&Multi2InterfaceTransaction{Name: "a", Alias: "A"},
+		&Multi2InterfaceTransaction{Name: "b", Alias: "B"},
+		&Multi2InterfaceTransaction{Name: "c", Alias: "C"},
+		&Multi2InterfaceTransaction{Name: "d", Alias: "D"},
+	}
+	cnt, err := session.Insert(&users)
+
+	assert.NoError(t, err)
+	assert.EqualValues(t, len(users), cnt)
+
+	assert.NotPanics(t, func() {
+		err = session.Commit()
+		assert.NoError(t, err)
+	})
 }
