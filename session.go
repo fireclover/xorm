@@ -16,6 +16,7 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
@@ -85,6 +86,7 @@ type Session struct {
 
 	ctx         context.Context
 	sessionType sessionType
+	preloadNode *PreloadTreeNode
 }
 
 func newSessionID() string {
@@ -789,4 +791,18 @@ func (session *Session) NoVersionCheck() *Session {
 
 func SetDefaultJSONHandler(jsonHandler json.Interface) {
 	json.DefaultJSONHandler = jsonHandler
+}
+
+// Preloads adds preloads
+func (session *Session) Preloads(preloads ...*Preload) *Session {
+	if session.preloadNode == nil {
+		session.preloadNode = NewPreloadTeeeNode()
+	}
+	for _, preload := range preloads {
+		if err := session.preloadNode.Add(preload); err != nil {
+			session.statement.LastError = err
+			break
+		}
+	}
+	return session
 }

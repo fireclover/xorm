@@ -5,6 +5,7 @@
 package tags
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -101,29 +102,33 @@ type Handler func(ctx *Context) error
 
 // defaultTagHandlers enumerates all the default tag handler
 var defaultTagHandlers = map[string]Handler{
-	"-":        IgnoreHandler,
-	"<-":       OnlyFromDBTagHandler,
-	"->":       OnlyToDBTagHandler,
-	"PK":       PKTagHandler,
-	"NULL":     NULLTagHandler,
-	"NOT":      NotTagHandler,
-	"AUTOINCR": AutoIncrTagHandler,
-	"DEFAULT":  DefaultTagHandler,
-	"CREATED":  CreatedTagHandler,
-	"UPDATED":  UpdatedTagHandler,
-	"DELETED":  DeletedTagHandler,
-	"VERSION":  VersionTagHandler,
-	"UTC":      UTCTagHandler,
-	"LOCAL":    LocalTagHandler,
-	"NOTNULL":  NotNullTagHandler,
-	"INDEX":    IndexTagHandler,
-	"UNIQUE":   UniqueTagHandler,
-	"CACHE":    CacheTagHandler,
-	"NOCACHE":  NoCacheTagHandler,
-	"COMMENT":  CommentTagHandler,
-	"EXTENDS":  ExtendsTagHandler,
-	"UNSIGNED": UnsignedTagHandler,
-	"COLLATE":  CollateTagHandler,
+	"-":            IgnoreHandler,
+	"<-":           OnlyFromDBTagHandler,
+	"->":           OnlyToDBTagHandler,
+	"PK":           PKTagHandler,
+	"NULL":         NULLTagHandler,
+	"NOT":          NotTagHandler,
+	"AUTOINCR":     AutoIncrTagHandler,
+	"DEFAULT":      DefaultTagHandler,
+	"CREATED":      CreatedTagHandler,
+	"UPDATED":      UpdatedTagHandler,
+	"DELETED":      DeletedTagHandler,
+	"VERSION":      VersionTagHandler,
+	"UTC":          UTCTagHandler,
+	"LOCAL":        LocalTagHandler,
+	"NOTNULL":      NotNullTagHandler,
+	"INDEX":        IndexTagHandler,
+	"UNIQUE":       UniqueTagHandler,
+	"CACHE":        CacheTagHandler,
+	"NOCACHE":      NoCacheTagHandler,
+	"COMMENT":      CommentTagHandler,
+	"EXTENDS":      ExtendsTagHandler,
+	"UNSIGNED":     UnsignedTagHandler,
+	"COLLATE":      CollateTagHandler,
+	"BELONGS_TO":   BelongsToTagHandler,
+	"HAS_ONE":      HasOneTagHandler,
+	"HAS_MANY":     HasManyTagHandler,
+	"MANY_TO_MANY": ManyToManyTagHandler,
 }
 
 func init() {
@@ -405,5 +410,154 @@ func NoCacheTagHandler(ctx *Context) error {
 	if !ctx.hasNoCacheTag {
 		ctx.hasNoCacheTag = true
 	}
+	return nil
+}
+
+func isStructPtr(t reflect.Type) bool {
+	return t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Struct
+}
+
+func isStructPtrSlice(t reflect.Type) bool {
+	return t.Kind() == reflect.Slice && isStructPtr(t.Elem())
+}
+
+func getRefTableAndPks(ctx *Context, refType reflect.Type) ([]*schemas.Column, *schemas.Table, []*schemas.Column, error) {
+	pks := ctx.table.PKColumns()
+	if len(pks) != 1 {
+		return nil, nil, nil, errors.New("a single-column primary key must be declared before the association")
+	}
+
+	refTable := ctx.table // self-reference case
+	refPks := pks
+	if refTable.Type != refType {
+		var err error
+		refTable, err = ctx.parser.ParseWithCache(reflect.New(refType).Elem())
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		refPks = refTable.PKColumns()
+		if len(refPks) != 1 {
+			return nil, nil, nil, errors.New("only single-column primary key is supported in associations")
+		}
+	}
+	return pks, refTable, refPks, nil
+}
+
+// BelongsToTagHandler describes belongs_to tag handler
+func BelongsToTagHandler(ctx *Context) error {
+	if !isStructPtr(ctx.fieldValue.Type()) {
+		return errors.New("tag belongs_to can only be applied to struct pointer field")
+	}
+	if len(ctx.params) != 1 {
+		return errors.New("tag belongs_to requires one parameter")
+	}
+	pks, refTable, refPks, err := getRefTableAndPks(ctx, ctx.fieldValue.Type().Elem())
+	if err != nil {
+		return err
+	}
+
+	ctx.col.Association = &schemas.Association{
+		OwnTable:  ctx.table,
+		OwnColumn: ctx.col,
+		OwnPkType: pks[0].FieldType,
+		RefTable:  refTable,
+		RefPkType: refPks[0].FieldType,
+		SourceCol: ctx.params[0],
+	}
+	ctx.col.Name = ctx.col.FieldName
+	return nil
+}
+
+// HasOneTagHandler describes has_one tag handler
+func HasOneTagHandler(ctx *Context) error {
+	if !isStructPtr(ctx.fieldValue.Type()) {
+		return errors.New("tag has_one can only be applied to struct pointer field")
+	}
+	if len(ctx.params) != 1 {
+		return errors.New("tag has_one requires one parameter")
+	}
+	pks, refTable, refPks, err := getRefTableAndPks(ctx, ctx.fieldValue.Type().Elem())
+	if err != nil {
+		return err
+	}
+
+	ctx.col.Association = &schemas.Association{
+		OwnTable:  ctx.table,
+		OwnColumn: ctx.col,
+		OwnPkType: pks[0].FieldType,
+		RefTable:  refTable,
+		RefPkType: refPks[0].FieldType,
+		TargetCol: ctx.params[0],
+	}
+	ctx.col.Name = ctx.col.FieldName
+	return nil
+}
+
+// HasManyTagHandler describes has_many tag handler
+func HasManyTagHandler(ctx *Context) error {
+	if !isStructPtrSlice(ctx.fieldValue.Type()) {
+		return errors.New("tag has_many can only be applied to slice of struct pointer field")
+	}
+	if len(ctx.params) != 1 {
+		return errors.New("tag has_many requires one parameter")
+	}
+	pks, refTable, refPks, err := getRefTableAndPks(ctx, ctx.fieldValue.Type().Elem().Elem())
+	if err != nil {
+		return err
+	}
+
+	ctx.col.Association = &schemas.Association{
+		OwnTable:  ctx.table,
+		OwnColumn: ctx.col,
+		OwnPkType: pks[0].FieldType,
+		RefTable:  refTable,
+		RefPkType: refPks[0].FieldType,
+		TargetCol: ctx.params[0],
+	}
+	ctx.col.Name = ctx.col.FieldName
+	return nil
+}
+
+// ManyToManyTagHandler describes many_to_many tag handler
+func ManyToManyTagHandler(ctx *Context) error {
+	if !isStructPtrSlice(ctx.fieldValue.Type()) {
+		return errors.New("tag many_to_many can only be applied to slice of struct pointer field")
+	}
+	if len(ctx.params) != 3 {
+		return errors.New("tag many_to_many requires 3 parameters")
+	}
+	pks, refTable, refPks, err := getRefTableAndPks(ctx, ctx.fieldValue.Type().Elem().Elem())
+	if err != nil {
+		return err
+	}
+
+	joinType := reflect.StructOf([]reflect.StructField{
+		{
+			Name: ctx.parser.GetColumnMapper().Table2Obj(ctx.params[1]),
+			Type: pks[0].FieldType,
+		},
+		{
+			Name: ctx.parser.GetColumnMapper().Table2Obj(ctx.params[2]),
+			Type: refPks[0].FieldType,
+		},
+	})
+	joinTable, err := ctx.parser.ParseWithCache(reflect.New(joinType).Elem())
+	if err != nil {
+		return err
+	}
+	joinTable.Name = ctx.params[0]
+
+	ctx.col.Association = &schemas.Association{
+		OwnTable:  ctx.table,
+		OwnColumn: ctx.col,
+		OwnPkType: pks[0].FieldType,
+		RefTable:  refTable,
+		RefPkType: refPks[0].FieldType,
+		JoinTable: joinTable,
+		SourceCol: ctx.params[1],
+		TargetCol: ctx.params[2],
+	}
+	ctx.col.Name = ctx.col.FieldName
 	return nil
 }
