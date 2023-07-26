@@ -5,6 +5,7 @@
 package statements
 
 import (
+	"errors"
 	"fmt"
 
 	"xorm.io/builder"
@@ -16,6 +17,26 @@ type orderBy struct {
 	direction string // ASC, DESC or "", "" means raw orderStr
 }
 
+func (ob orderBy) CheckValid() error {
+	if ob.orderStr == nil {
+		return fmt.Errorf("order by string is nil")
+	}
+	switch t := ob.orderStr.(type) {
+	case string:
+		if t == "" {
+			return fmt.Errorf("order by string is empty")
+		}
+		return nil
+	case *builder.Expression:
+		if t.Content() == "" {
+			return fmt.Errorf("order by string is empty")
+		}
+		return nil
+	default:
+		return fmt.Errorf("order by string is not string or builder.Expression")
+	}
+}
+
 func (statement *Statement) HasOrderBy() bool {
 	return len(statement.orderBy) > 0
 }
@@ -24,6 +45,8 @@ func (statement *Statement) HasOrderBy() bool {
 func (statement *Statement) ResetOrderBy() {
 	statement.orderBy = []orderBy{}
 }
+
+var ErrNoColumnName = errors.New("no column name")
 
 func (statement *Statement) writeOrderBy(w *builder.BytesWriter, orderBy orderBy) error {
 	switch t := orderBy.orderStr.(type) {
@@ -75,22 +98,45 @@ func (statement *Statement) writeOrderBys(w *builder.BytesWriter) error {
 
 // OrderBy generate "Order By order" statement
 func (statement *Statement) OrderBy(order interface{}, args ...interface{}) *Statement {
-	statement.orderBy = append(statement.orderBy, orderBy{order, args, ""})
+	ob := orderBy{order, args, ""}
+	if err := ob.CheckValid(); err != nil {
+		statement.LastError = err
+		return statement
+	}
+	statement.orderBy = append(statement.orderBy, ob)
 	return statement
 }
 
 // Desc generate `ORDER BY xx DESC`
 func (statement *Statement) Desc(colNames ...string) *Statement {
+	if len(colNames) == 0 {
+		statement.LastError = ErrNoColumnName
+		return statement
+	}
 	for _, colName := range colNames {
-		statement.orderBy = append(statement.orderBy, orderBy{colName, nil, "DESC"})
+		ob := orderBy{colName, nil, "DESC"}
+		statement.orderBy = append(statement.orderBy, ob)
+		if err := ob.CheckValid(); err != nil {
+			statement.LastError = err
+			return statement
+		}
 	}
 	return statement
 }
 
 // Asc provide asc order by query condition, the input parameters are columns.
 func (statement *Statement) Asc(colNames ...string) *Statement {
+	if len(colNames) == 0 {
+		statement.LastError = ErrNoColumnName
+		return statement
+	}
 	for _, colName := range colNames {
-		statement.orderBy = append(statement.orderBy, orderBy{colName, nil, "ASC"})
+		ob := orderBy{colName, nil, "ASC"}
+		statement.orderBy = append(statement.orderBy, ob)
+		if err := ob.CheckValid(); err != nil {
+			statement.LastError = err
+			return statement
+		}
 	}
 	return statement
 }
