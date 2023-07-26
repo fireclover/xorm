@@ -165,7 +165,7 @@ func TestExtends(t *testing.T) {
 	assert.True(t, info2.Userinfo.Uid > 0, "all of the id should has value")
 	assert.True(t, info2.Userdetail.Id > 0, "all of the id should has value")
 
-	var infos2 = make([]UserAndDetail, 0)
+	infos2 := make([]UserAndDetail, 0)
 	err = testEngine.Table(&Userinfo{}).
 		Join("LEFT", qt(ud), qt(ui)+"."+qt("detail_id")+" = "+qt(ud)+"."+qt(uiid)).
 		NoCascade().
@@ -219,9 +219,9 @@ func TestExtends2(t *testing.T) {
 	err = testEngine.CreateTables(&Message{}, &MessageUser{}, &MessageType{})
 	assert.NoError(t, err)
 
-	var sender = MessageUser{Name: "sender"}
-	var receiver = MessageUser{Name: "receiver"}
-	var msgtype = MessageType{Name: "type"}
+	sender := MessageUser{Name: "sender"}
+	receiver := MessageUser{Name: "receiver"}
+	msgtype := MessageType{Name: "type"}
 	_, err = testEngine.Insert(&sender, &receiver, &msgtype)
 	assert.NoError(t, err)
 
@@ -254,8 +254,8 @@ func TestExtends2(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	var mapper = testEngine.GetTableMapper().Obj2Table
-	var quote = testEngine.Quote
+	mapper := testEngine.GetTableMapper().Obj2Table
+	quote := testEngine.Quote
 	userTableName := quote(testEngine.TableName(mapper("MessageUser"), true))
 	typeTableName := quote(testEngine.TableName(mapper("MessageType"), true))
 	msgTableName := quote(testEngine.TableName(mapper("Message"), true))
@@ -280,9 +280,9 @@ func TestExtends3(t *testing.T) {
 	err = testEngine.CreateTables(&Message{}, &MessageUser{}, &MessageType{})
 	assert.NoError(t, err)
 
-	var sender = MessageUser{Name: "sender"}
-	var receiver = MessageUser{Name: "receiver"}
-	var msgtype = MessageType{Name: "type"}
+	sender := MessageUser{Name: "sender"}
+	receiver := MessageUser{Name: "receiver"}
+	msgtype := MessageType{Name: "type"}
 	_, err = testEngine.Insert(&sender, &receiver, &msgtype)
 	assert.NoError(t, err)
 
@@ -314,8 +314,8 @@ func TestExtends3(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	var mapper = testEngine.GetTableMapper().Obj2Table
-	var quote = testEngine.Quote
+	mapper := testEngine.GetTableMapper().Obj2Table
+	quote := testEngine.Quote
 	userTableName := quote(testEngine.TableName(mapper("MessageUser"), true))
 	typeTableName := quote(testEngine.TableName(mapper("MessageType"), true))
 	msgTableName := quote(testEngine.TableName(mapper("Message"), true))
@@ -345,8 +345,8 @@ func TestExtends4(t *testing.T) {
 	err = testEngine.CreateTables(&Message{}, &MessageUser{}, &MessageType{})
 	assert.NoError(t, err)
 
-	var sender = MessageUser{Name: "sender"}
-	var msgtype = MessageType{Name: "type"}
+	sender := MessageUser{Name: "sender"}
+	msgtype := MessageType{Name: "type"}
 	_, err = testEngine.Insert(&sender, &msgtype)
 	assert.NoError(t, err)
 
@@ -377,8 +377,8 @@ func TestExtends4(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	var mapper = testEngine.GetTableMapper().Obj2Table
-	var quote = testEngine.Quote
+	mapper := testEngine.GetTableMapper().Obj2Table
+	quote := testEngine.Quote
 	userTableName := quote(testEngine.TableName(mapper("MessageUser"), true))
 	typeTableName := quote(testEngine.TableName(mapper("MessageType"), true))
 	msgTableName := quote(testEngine.TableName(mapper("Message"), true))
@@ -417,29 +417,29 @@ func TestExtends5(t *testing.T) {
 	err = testEngine.CreateTables(&Size{}, &Book{})
 	assert.NoError(t, err)
 
-	var sc = Size{Width: 0.2, Height: 0.4}
-	var so = Size{Width: 0.2, Height: 0.8}
-	var s = Size{Width: 0.15, Height: 1.5}
-	var bk1 = Book{
+	sc := Size{Width: 0.2, Height: 0.4}
+	so := Size{Width: 0.2, Height: 0.8}
+	s := Size{Width: 0.15, Height: 1.5}
+	bk1 := Book{
 		SizeOpen:   &so,
 		SizeClosed: &sc,
 		Size:       &s,
 	}
-	var bk2 = Book{
+	bk2 := Book{
 		SizeOpen: &so,
 	}
-	var bk3 = Book{
+	bk3 := Book{
 		SizeClosed: &sc,
 		Size:       &s,
 	}
-	var bk4 = Book{}
-	var bk5 = Book{Size: &s}
+	bk4 := Book{}
+	bk5 := Book{Size: &s}
 	_, err = testEngine.Insert(&sc, &so, &s, &bk1, &bk2, &bk3, &bk4, &bk5)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var books = map[int64]Book{
+	books := map[int64]Book{
 		bk1.ID: bk1,
 		bk2.ID: bk2,
 		bk3.ID: bk3,
@@ -450,8 +450,8 @@ func TestExtends5(t *testing.T) {
 	session := testEngine.NewSession()
 	defer session.Close()
 
-	var mapper = testEngine.GetTableMapper().Obj2Table
-	var quote = testEngine.Quote
+	mapper := testEngine.GetTableMapper().Obj2Table
+	quote := testEngine.Quote
 	bookTableName := quote(testEngine.TableName(mapper("Book"), true))
 	sizeTableName := quote(testEngine.TableName(mapper("Size"), true))
 
@@ -1301,7 +1301,7 @@ func TestVersion2(t *testing.T) {
 	err = testEngine.CreateTables(new(VersionS))
 	assert.NoError(t, err)
 
-	var vers = []VersionS{
+	vers := []VersionS{
 		{Name: "sfsfdsfds"},
 		{Name: "xxxxx"},
 	}
@@ -1359,7 +1359,7 @@ func TestVersion4(t *testing.T) {
 	err = testEngine.CreateTables(new(VersionUintS))
 	assert.NoError(t, err)
 
-	var vers = []VersionUintS{
+	vers := []VersionUintS{
 		{Name: "sfsfdsfds"},
 		{Name: "xxxxx"},
 	}
@@ -1399,4 +1399,56 @@ func TestIndexes(t *testing.T) {
 	sort.Strings(slice2)
 	assert.EqualValues(t, slice1, slice2)
 	assert.EqualValues(t, 3, len(tables[0].Indexes))
+}
+
+type TestTableIndicesStruct struct {
+	Id    int64
+	Name  string `xorm:"index index(f_one_f_two) unique(s)"` // we're going to override the index f_one_f_two in TableIndices and remove it from this column
+	Email string `xorm:"index unique(s)"`
+	FTwo  string `xorm:"index(f_two_f_one) index(f_one_f_two) f_two"`
+	FOne  string `xorm:"index(f_two_f_one) f_one"`
+}
+
+func (t *TestTableIndicesStruct) TableIndices() []*schemas.Index {
+	newIndex := schemas.NewIndex("f_one_f_two", schemas.IndexType)
+	newIndex.AddColumn("f_one", "f_two")
+
+	return []*schemas.Index{newIndex}
+}
+
+func TestTableIndices(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	assertSync(t, new(TestTableIndicesStruct))
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(tables))
+	assert.EqualValues(t, 5, len(tables[0].Columns()))
+	slice1 := []string{
+		testEngine.GetColumnMapper().Obj2Table("Id"),
+		testEngine.GetColumnMapper().Obj2Table("Name"),
+		testEngine.GetColumnMapper().Obj2Table("Email"),
+		testEngine.GetColumnMapper().Obj2Table("FTwo"),
+		testEngine.GetColumnMapper().Obj2Table("FOne"),
+	}
+	slice2 := []string{
+		tables[0].Columns()[0].Name,
+		tables[0].Columns()[1].Name,
+		tables[0].Columns()[2].Name,
+		tables[0].Columns()[3].Name,
+		tables[0].Columns()[4].Name,
+	}
+	sort.Strings(slice1)
+	sort.Strings(slice2)
+	assert.EqualValues(t, slice1, slice2)
+	assert.EqualValues(t, 5, len(tables[0].Indexes))
+	index, ok := tables[0].Indexes["f_one_f_two"]
+	if assert.True(t, ok) {
+		assert.EqualValues(t, []string{"f_one", "f_two"}, index.Cols)
+	}
+	index, ok = tables[0].Indexes["f_two_f_one"]
+	if assert.True(t, ok) {
+		assert.EqualValues(t, []string{"f_two", "f_one"}, index.Cols)
+	}
 }

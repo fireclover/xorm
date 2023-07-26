@@ -60,7 +60,7 @@ build: go-check $(GO_SOURCES)
 .PHONY: clean
 clean:
 	$(GO) clean -i ./...
-	rm -rf *.sql *.log test.db *coverage.out coverage.all integrations/*.sql
+	rm -rf *.sql *.log test.db cover.out cover.html *coverage.out coverage.all integrations/*.sql
 
 .PHONY: coverage
 coverage:
@@ -132,7 +132,8 @@ golangci-lint-check:
 
 .PHONY: test
 test: go-check
-	$(GO) test $(PACKAGES)
+	$(GO) test -cover -coverprofile=cover.out $(PACKAGES)
+	$(GO) tool cover -html=cover.out -o cover.html
 
 .PNONY: test-cockroach
 test-cockroach: go-check

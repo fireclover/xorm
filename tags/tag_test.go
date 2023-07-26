@@ -11,68 +11,84 @@ import (
 )
 
 func TestSplitTag(t *testing.T) {
-	var cases = []struct {
+	cases := []struct {
 		tag  string
 		tags []tag
 	}{
-		{"not null default '2000-01-01 00:00:00' TIMESTAMP", []tag{
-			{
-				name: "not",
-			},
-			{
-				name: "null",
-			},
-			{
-				name: "default",
-			},
-			{
-				name: "'2000-01-01 00:00:00'",
-			},
-			{
-				name: "TIMESTAMP",
-			},
-		},
-		},
-		{"TEXT", []tag{
-			{
-				name: "TEXT",
-			},
-		},
-		},
-		{"default('2000-01-01 00:00:00')", []tag{
-			{
-				name: "default",
-				params: []string{
-					"'2000-01-01 00:00:00'",
+		{
+			"not null default '2000-01-01 00:00:00' TIMESTAMP", []tag{
+				{
+					name: "not",
+				},
+				{
+					name: "null",
+				},
+				{
+					name: "default",
+				},
+				{
+					name: "'2000-01-01 00:00:00'",
+				},
+				{
+					name: "TIMESTAMP",
 				},
 			},
 		},
-		},
-		{"json  binary", []tag{
-			{
-				name: "json",
-			},
-			{
-				name: "binary",
+		{
+			"TEXT", []tag{
+				{
+					name: "TEXT",
+				},
 			},
 		},
-		},
-		{"numeric(10, 2)", []tag{
-			{
-				name:   "numeric",
-				params: []string{"10", "2"},
+		{
+			"default('2000-01-01 00:00:00')", []tag{
+				{
+					name: "default",
+					params: []string{
+						"'2000-01-01 00:00:00'",
+					},
+				},
 			},
 		},
-		},
-		{"numeric(10, 2) notnull", []tag{
-			{
-				name:   "numeric",
-				params: []string{"10", "2"},
+		{
+			"json  binary", []tag{
+				{
+					name: "json",
+				},
+				{
+					name: "binary",
+				},
 			},
-			{
-				name: "notnull",
+		},
+		{
+			"numeric(10, 2)", []tag{
+				{
+					name:   "numeric",
+					params: []string{"10", "2"},
+				},
 			},
 		},
+		{
+			"numeric(10, 2) notnull", []tag{
+				{
+					name:   "numeric",
+					params: []string{"10", "2"},
+				},
+				{
+					name: "notnull",
+				},
+			},
+		},
+		{
+			"collate utf8mb4_bin", []tag{
+				{
+					name: "collate",
+				},
+				{
+					name: "utf8mb4_bin",
+				},
+			},
 		},
 	}
 
@@ -82,7 +98,7 @@ func TestSplitTag(t *testing.T) {
 			assert.NoError(t, err)
 			assert.EqualValues(t, len(tags), len(kase.tags))
 			for i := 0; i < len(tags); i++ {
-				assert.Equal(t, tags[i], kase.tags[i])
+				assert.Equal(t, kase.tags[i], tags[i])
 			}
 		})
 	}
