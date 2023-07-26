@@ -17,7 +17,7 @@ func TestCount(t *testing.T) {
 	type UserinfoCount struct {
 		Departname string
 	}
-	assert.NoError(t, testEngine.Sync2(new(UserinfoCount)))
+	assert.NoError(t, testEngine.Sync(new(UserinfoCount)))
 
 	colName := testEngine.GetColumnMapper().Obj2Table("Departname")
 	var cond builder.Cond = builder.Eq{
@@ -63,7 +63,7 @@ func TestSQLCount(t *testing.T) {
 
 	assertSync(t, new(UserinfoCount2), new(UserinfoBooks))
 
-	total, err := testEngine.SQL("SELECT count(id) FROM " + testEngine.TableName("userinfo_count2", true)).
+	total, err := testEngine.SQL("SELECT count(`id`) FROM " + testEngine.Quote(testEngine.TableName("userinfo_count2", true))).
 		Count()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, total)
@@ -89,7 +89,7 @@ func TestCountWithOthers(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	total, err := testEngine.OrderBy("id desc").Limit(1).Count(new(CountWithOthers))
+	total, err := testEngine.OrderBy("count(`id`) desc").Limit(1).Count(new(CountWithOthers))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }
@@ -118,11 +118,16 @@ func TestWithTableName(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	total, err := testEngine.OrderBy("id desc").Count(new(CountWithTableName))
+	total, err := testEngine.OrderBy("count(`id`) desc").Count(new(CountWithTableName))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 
-	total, err = testEngine.OrderBy("id desc").Count(CountWithTableName{})
+	total, err = testEngine.OrderBy("count(`id`) desc").Count(CountWithTableName{})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, total)
+
+	// the orderby will be ignored by count because some databases will return errors if the orderby columns not in group by
+	total, err = testEngine.OrderBy("`name`").Count(CountWithTableName{})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }
@@ -146,7 +151,7 @@ func TestCountWithSelectCols(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 
-	total, err = testEngine.Select("count(id)").Count(CountWithTableName{})
+	total, err = testEngine.Select("count(`id`)").Count(CountWithTableName{})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }
@@ -166,7 +171,7 @@ func TestCountWithGroupBy(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	cnt, err := testEngine.GroupBy("name").Count(new(CountWithTableName))
+	cnt, err := testEngine.GroupBy("`name`").Count(new(CountWithTableName))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, cnt)
 }

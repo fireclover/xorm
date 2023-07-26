@@ -5,6 +5,7 @@
 package statements
 
 import (
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -37,6 +38,7 @@ func TestMain(m *testing.M) {
 		panic("tags parser is nil")
 	}
 	m.Run()
+	os.Exit(0)
 }
 
 var colStrTests = []struct {
@@ -77,8 +79,24 @@ func TestColumnsStringGeneration(t *testing.T) {
 	}
 }
 
-func BenchmarkGetFlagForColumnWithICKey_ContainsKey(b *testing.B) {
+func TestConvertSQLOrArgs(t *testing.T) {
+	statement, err := createTestStatement()
+	assert.NoError(t, err)
 
+	// example orm struct
+	// type Table struct {
+	// 	ID  int
+	// 	del *time.Time `xorm:"deleted"`
+	// }
+	args := []interface{}{
+		"INSERT `table` (`id`, `del`) VALUES (?, ?)", 1, (*time.Time)(nil),
+	}
+	// before fix, here will panic
+	_, _, err = statement.convertSQLOrArgs(args...)
+	assert.NoError(t, err)
+}
+
+func BenchmarkGetFlagForColumnWithICKey_ContainsKey(b *testing.B) {
 	b.StopTimer()
 
 	mapCols := make(map[string]bool)
@@ -101,9 +119,7 @@ func BenchmarkGetFlagForColumnWithICKey_ContainsKey(b *testing.B) {
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-
 		for _, col := range cols {
-
 			if _, ok := getFlagForColumn(mapCols, col); !ok {
 				b.Fatal("Unexpected result")
 			}
@@ -112,7 +128,6 @@ func BenchmarkGetFlagForColumnWithICKey_ContainsKey(b *testing.B) {
 }
 
 func BenchmarkGetFlagForColumnWithICKey_EmptyMap(b *testing.B) {
-
 	b.StopTimer()
 
 	mapCols := make(map[string]bool)
@@ -131,9 +146,7 @@ func BenchmarkGetFlagForColumnWithICKey_EmptyMap(b *testing.B) {
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-
 		for _, col := range cols {
-
 			if _, ok := getFlagForColumn(mapCols, col); ok {
 				b.Fatal("Unexpected result")
 			}

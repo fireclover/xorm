@@ -54,7 +54,7 @@ func (session *Session) Iterate(bean interface{}, fun IterFunc) error {
 		}
 		i++
 	}
-	return err
+	return rows.Err()
 }
 
 // BufferSize sets the buffersize for iterate
@@ -95,7 +95,7 @@ func (session *Session) bufferIterate(bean interface{}, fun IterFunc) error {
 			break
 		}
 
-		start = start + slice.Elem().Len()
+		start += slice.Elem().Len()
 		if pLimitN != nil && start+bufferSize > *pLimitN {
 			bufferSize = *pLimitN - start
 		}

@@ -6,7 +6,7 @@ package dialects
 
 import (
 	"context"
-	"crypto/tls"
+	"database/sql"
 	"errors"
 	"fmt"
 	"regexp"
@@ -38,6 +38,7 @@ var (
 		"CALL":              true,
 		"CASCADE":           true,
 		"CASE":              true,
+		"CHAIN":             true,
 		"CHANGE":            true,
 		"CHAR":              true,
 		"CHARACTER":         true,
@@ -128,6 +129,7 @@ var (
 		"OUT": true, "OUTER": true, "OUTFILE": true,
 		"PRECISION": true, "PRIMARY": true, "PROCEDURE": true,
 		"PURGE": true, "RAID0": true, "RANGE": true,
+		"RANK": true,
 		"READ": true, "READS": true, "REAL": true,
 		"REFERENCES": true, "REGEXP": true, "RELEASE": true,
 		"RENAME": true, "REPEAT": true, "REPLACE": true,
@@ -171,21 +173,25 @@ var (
 
 type mysql struct {
 	Base
-	net               string
-	addr              string
-	params            map[string]string
-	loc               *time.Location
-	timeout           time.Duration
-	tls               *tls.Config
-	allowAllFiles     bool
-	allowOldPasswords bool
-	clientFoundRows   bool
-	rowFormat         string
+	rowFormat string
 }
 
 func (db *mysql) Init(uri *URI) error {
 	db.quoter = mysqlQuoter
 	return db.Base.Init(db, uri)
+}
+
+var mysqlColAliases = map[string]string{
+	"numeric": "decimal",
+}
+
+// Alias returns a alias of column
+func (db *mysql) Alias(col string) string {
+	v, ok := mysqlColAliases[strings.ToLower(col)]
+	if ok {
+		return v
+	}
+	return col
 }
 
 func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error) {
@@ -197,7 +203,10 @@ func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Ve
 
 	var version string
 	if !rows.Next() {
-		return nil, errors.New("Unknow version")
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
+		return nil, errors.New("unknow version")
 	}
 
 	if err := rows.Scan(&version); err != nil {
@@ -225,10 +234,16 @@ func (db *mysql) Version(ctx context.Context, queryer core.Queryer) (*schemas.Ve
 	}, nil
 }
 
+func (db *mysql) Features() *DialectFeatures {
+	return &DialectFeatures{
+		AutoincrMode: IncrAutoincrMode,
+	}
+}
+
 func (db *mysql) SetParams(params map[string]string) {
 	rowFormat, ok := params["rowFormat"]
 	if ok {
-		var t = strings.ToUpper(rowFormat)
+		t := strings.ToUpper(rowFormat)
 		switch t {
 		case "COMPACT":
 			fallthrough
@@ -238,15 +253,13 @@ func (db *mysql) SetParams(params map[string]string) {
 			fallthrough
 		case "COMPRESSED":
 			db.rowFormat = t
-			break
-		default:
-			break
 		}
 	}
 }
 
 func (db *mysql) SQLType(c *schemas.Column) string {
 	var res string
+	var isUnsigned bool
 	switch t := c.SQLType.Name; t {
 	case schemas.Bool:
 		res = schemas.TinyInt
@@ -293,8 +306,19 @@ func (db *mysql) SQLType(c *schemas.Column) string {
 		res = schemas.Text
 	case schemas.UnsignedInt:
 		res = schemas.Int
+		isUnsigned = true
 	case schemas.UnsignedBigInt:
 		res = schemas.BigInt
+		isUnsigned = true
+	case schemas.UnsignedMediumInt:
+		res = schemas.MediumInt
+		isUnsigned = true
+	case schemas.UnsignedSmallInt:
+		res = schemas.SmallInt
+		isUnsigned = true
+	case schemas.UnsignedTinyInt:
+		res = schemas.TinyInt
+		isUnsigned = true
 	default:
 		res = t
 	}
@@ -308,16 +332,31 @@ func (db *mysql) SQLType(c *schemas.Column) string {
 	}
 
 	if hasLen2 {
-		res += "(" + strconv.Itoa(c.Length) + "," + strconv.Itoa(c.Length2) + ")"
+		res += "(" + strconv.FormatInt(c.Length, 10) + "," + strconv.FormatInt(c.Length2, 10) + ")"
 	} else if hasLen1 {
-		res += "(" + strconv.Itoa(c.Length) + ")"
+		res += "(" + strconv.FormatInt(c.Length, 10) + ")"
 	}
 
-	if c.SQLType.Name == schemas.UnsignedBigInt || c.SQLType.Name == schemas.UnsignedInt {
+	if isUnsigned {
 		res += " UNSIGNED"
 	}
 
 	return res
+}
+
+func (db *mysql) ColumnTypeKind(t string) int {
+	switch strings.ToUpper(t) {
+	case "DATETIME":
+		return schemas.TIME_TYPE
+	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
+		return schemas.TEXT_TYPE
+	case "BIGINT", "TINYINT", "SMALLINT", "MEDIUMINT", "INT", "FLOAT", "REAL", "DOUBLE PRECISION", "DECIMAL", "NUMERIC", "BIT":
+		return schemas.NUMERIC_TYPE
+	case "BINARY", "VARBINARY", "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB":
+		return schemas.BLOB_TYPE
+	default:
+		return schemas.UNKNOW_TYPE
+	}
 }
 
 func (db *mysql) IsReserved(name string) bool {
@@ -343,12 +382,27 @@ func (db *mysql) IsTableExist(queryer core.Queryer, ctx context.Context, tableNa
 
 func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
 	quoter := db.dialect.Quoter()
-	s, _ := ColumnString(db, col, true)
-	sql := fmt.Sprintf("ALTER TABLE %v ADD %v", quoter.Quote(tableName), s)
+	s, _ := ColumnString(db, col, true, true)
+	var b strings.Builder
+	b.WriteString("ALTER TABLE ")
+	quoter.QuoteTo(&b, tableName)
+	b.WriteString(" ADD ")
+	b.WriteString(s)
 	if len(col.Comment) > 0 {
-		sql += " COMMENT '" + col.Comment + "'"
+		b.WriteString(" COMMENT '")
+		b.WriteString(col.Comment)
+		b.WriteString("'")
 	}
-	return sql
+	return b.String()
+}
+
+// ModifyColumnSQL returns a SQL to modify SQL
+func (db *mysql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
+	s, _ := ColumnString(db.dialect, col, false, true)
+	if col.Comment != "" {
+		s += fmt.Sprintf(" COMMENT '%s'", col.Comment)
+	}
+	return fmt.Sprintf("ALTER TABLE %s MODIFY COLUMN %s", db.quoter.Quote(tableName), s)
 }
 
 func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
@@ -360,10 +414,10 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		"(SUBSTRING_INDEX(SUBSTRING(VERSION(), 4), '.', 1) = 2 && " +
 		"SUBSTRING_INDEX(SUBSTRING(VERSION(), 6), '-', 1) >= 7)))))"
 	s := "SELECT `COLUMN_NAME`, `IS_NULLABLE`, `COLUMN_DEFAULT`, `COLUMN_TYPE`," +
-		" `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT`, " +
-		alreadyQuoted + " AS NEEDS_QUOTE " +
+		" `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT`, `CHARACTER_MAXIMUM_LENGTH`, " +
+		alreadyQuoted + " AS NEEDS_QUOTE, `COLLATION_NAME` " +
 		"FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ?" +
-		" ORDER BY `COLUMNS`.ORDINAL_POSITION"
+		" ORDER BY `COLUMNS`.ORDINAL_POSITION ASC"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
@@ -379,8 +433,8 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 
 		var columnName, nullableStr, colType, colKey, extra, comment string
 		var alreadyQuoted, isUnsigned bool
-		var colDefault *string
-		err = rows.Scan(&columnName, &nullableStr, &colDefault, &colType, &colKey, &extra, &comment, &alreadyQuoted)
+		var colDefault, maxLength, collation *string
+		err = rows.Scan(&columnName, &nullableStr, &colDefault, &colType, &colKey, &extra, &comment, &maxLength, &alreadyQuoted, &collation)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -396,6 +450,9 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		} else {
 			col.DefaultIsEmpty = true
 		}
+		if collation != nil {
+			col.Collation = *collation
+		}
 
 		fields := strings.Fields(colType)
 		if len(fields) == 2 && fields[1] == "unsigned" {
@@ -407,7 +464,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		// Remove the /* mariadb-5.3 */ suffix from coltypes
 		colName = strings.TrimSuffix(colName, "/* mariadb-5.3 */")
 		colType = strings.ToUpper(colName)
-		var len1, len2 int
+		var len1, len2 int64
 		if len(cts) == 2 {
 			idx := strings.Index(cts[1], ")")
 			if colType == schemas.Enum && cts[1][0] == '\'' { // enum
@@ -428,15 +485,23 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 				}
 			} else {
 				lens := strings.Split(cts[1][0:idx], ",")
-				len1, err = strconv.Atoi(strings.TrimSpace(lens[0]))
+				len1, err = strconv.ParseInt(strings.TrimSpace(lens[0]), 10, 64)
 				if err != nil {
 					return nil, nil, err
 				}
 				if len(lens) == 2 {
-					len2, err = strconv.Atoi(lens[1])
+					len2, err = strconv.ParseInt(lens[1], 10, 64)
 					if err != nil {
 						return nil, nil, err
 					}
+				}
+			}
+		} else {
+			switch colType {
+			case "MEDIUMTEXT", "LONGTEXT", "TEXT":
+				len1, err = strconv.ParseInt(*maxLength, 10, 64)
+				if err != nil {
+					return nil, nil, err
 				}
 			}
 		}
@@ -448,15 +513,15 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		if _, ok := schemas.SqlTypes[colType]; ok {
 			col.SQLType = schemas.SQLType{Name: colType, DefaultLength: len1, DefaultLength2: len2}
 		} else {
-			return nil, nil, fmt.Errorf("Unknown colType %v", colType)
+			return nil, nil, fmt.Errorf("unknown colType %v", colType)
 		}
 
 		if colKey == "PRI" {
 			col.IsPrimaryKey = true
 		}
-		if colKey == "UNI" {
-			// col.is
-		}
+		// if colKey == "UNI" {
+		// col.is
+		// }
 
 		if extra == "auto_increment" {
 			col.IsAutoIncrement = true
@@ -472,12 +537,15 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 		cols[col.Name] = col
 		colSeq = append(colSeq, col.Name)
 	}
+	if rows.Err() != nil {
+		return nil, nil, rows.Err()
+	}
 	return colSeq, cols, nil
 }
 
 func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
 	args := []interface{}{db.uri.DBName}
-	s := "SELECT `TABLE_NAME`, `ENGINE`, `AUTO_INCREMENT`, `TABLE_COMMENT` from " +
+	s := "SELECT `TABLE_NAME`, `ENGINE`, `AUTO_INCREMENT`, `TABLE_COMMENT`, `TABLE_COLLATION` from " +
 		"`INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? AND (`ENGINE`='MyISAM' OR `ENGINE` = 'InnoDB' OR `ENGINE` = 'TokuDB')"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -489,9 +557,9 @@ func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 	tables := make([]*schemas.Table, 0)
 	for rows.Next() {
 		table := schemas.NewEmptyTable()
-		var name, engine string
+		var name, engine, collation string
 		var autoIncr, comment *string
-		err = rows.Scan(&name, &engine, &autoIncr, &comment)
+		err = rows.Scan(&name, &engine, &autoIncr, &comment, &collation)
 		if err != nil {
 			return nil, err
 		}
@@ -501,7 +569,11 @@ func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 			table.Comment = *comment
 		}
 		table.StoreEngine = engine
+		table.Collation = collation
 		tables = append(tables, table)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return tables, nil
 }
@@ -509,11 +581,11 @@ func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 func (db *mysql) SetQuotePolicy(quotePolicy QuotePolicy) {
 	switch quotePolicy {
 	case QuotePolicyNone:
-		var q = mysqlQuoter
+		q := mysqlQuoter
 		q.IsReserved = schemas.AlwaysNoReserve
 		db.quoter = q
 	case QuotePolicyReserved:
-		var q = mysqlQuoter
+		q := mysqlQuoter
 		q.IsReserved = db.IsReserved
 		db.quoter = q
 	case QuotePolicyAlways:
@@ -525,7 +597,7 @@ func (db *mysql) SetQuotePolicy(quotePolicy QuotePolicy) {
 
 func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
 	args := []interface{}{db.uri.DBName, tableName}
-	s := "SELECT `INDEX_NAME`, `NON_UNIQUE`, `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ?"
+	s := "SELECT `INDEX_NAME`, `NON_UNIQUE`, `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? ORDER BY `SEQ_IN_INDEX`"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
@@ -533,7 +605,7 @@ func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName
 	}
 	defer rows.Close()
 
-	indexes := make(map[string]*schemas.Index, 0)
+	indexes := make(map[string]*schemas.Index)
 	for rows.Next() {
 		var indexType int
 		var indexName, colName, nonUnique string
@@ -546,7 +618,7 @@ func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName
 			continue
 		}
 
-		if "YES" == nonUnique || nonUnique == "1" {
+		if nonUnique == "YES" || nonUnique == "1" {
 			indexType = schemas.IndexType
 		} else {
 			indexType = schemas.UniqueType
@@ -570,119 +642,87 @@ func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName
 		}
 		index.AddColumn(colName)
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	return indexes, nil
 }
 
-func (db *mysql) CreateTableSQL(table *schemas.Table, tableName string) ([]string, bool) {
-	var sql = "CREATE TABLE IF NOT EXISTS "
+func (db *mysql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
 	if tableName == "" {
 		tableName = table.Name
 	}
 
-	quoter := db.Quoter()
+	quoter := db.dialect.Quoter()
+	var b strings.Builder
+	b.WriteString("CREATE TABLE IF NOT EXISTS ")
+	quoter.QuoteTo(&b, tableName)
+	b.WriteString(" (")
 
-	sql += quoter.Quote(tableName)
-	sql += " ("
+	for i, colName := range table.ColumnsSeq() {
+		col := table.GetColumn(colName)
+		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1, true)
+		b.WriteString(s)
 
-	if len(table.ColumnsSeq()) > 0 {
-		pkList := table.PrimaryKeys
-
-		for _, colName := range table.ColumnsSeq() {
-			col := table.GetColumn(colName)
-			s, _ := ColumnString(db, col, col.IsPrimaryKey && len(pkList) == 1)
-			sql += s
-			sql = strings.TrimSpace(sql)
-			if len(col.Comment) > 0 {
-				sql += " COMMENT '" + col.Comment + "'"
-			}
-			sql += ", "
+		if len(col.Comment) > 0 {
+			b.WriteString(" COMMENT '")
+			b.WriteString(col.Comment)
+			b.WriteString("'")
 		}
 
-		if len(pkList) > 1 {
-			sql += "PRIMARY KEY ( "
-			sql += quoter.Join(pkList, ",")
-			sql += " ), "
+		if i != len(table.ColumnsSeq())-1 {
+			b.WriteString(", ")
 		}
-
-		sql = sql[:len(sql)-2]
 	}
-	sql += ")"
+
+	if len(table.PrimaryKeys) > 1 {
+		b.WriteString(", PRIMARY KEY (")
+		b.WriteString(quoter.Join(table.PrimaryKeys, ","))
+		b.WriteString(")")
+	}
+
+	b.WriteString(")")
 
 	if table.StoreEngine != "" {
-		sql += " ENGINE=" + table.StoreEngine
+		b.WriteString(" ENGINE=")
+		b.WriteString(table.StoreEngine)
 	}
 
-	var charset = table.Charset
+	charset := table.Charset
 	if len(charset) == 0 {
 		charset = db.URI().Charset
 	}
 	if len(charset) != 0 {
-		sql += " DEFAULT CHARSET " + charset
+		b.WriteString(" DEFAULT CHARSET ")
+		b.WriteString(charset)
 	}
 
 	if db.rowFormat != "" {
-		sql += " ROW_FORMAT=" + db.rowFormat
+		b.WriteString(" ROW_FORMAT=")
+		b.WriteString(db.rowFormat)
 	}
-	return []string{sql}, true
+
+	if table.Comment != "" {
+		b.WriteString(" COMMENT='")
+		b.WriteString(table.Comment)
+		b.WriteString("'")
+	}
+
+	return b.String(), true, nil
 }
 
 func (db *mysql) Filters() []Filter {
 	return []Filter{}
 }
 
-type mymysqlDriver struct {
-}
-
-func (p *mymysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
-	uri := &URI{DBType: schemas.MYSQL}
-
-	pd := strings.SplitN(dataSourceName, "*", 2)
-	if len(pd) == 2 {
-		// Parse protocol part of URI
-		p := strings.SplitN(pd[0], ":", 2)
-		if len(p) != 2 {
-			return nil, errors.New("Wrong protocol part of URI")
-		}
-		uri.Proto = p[0]
-		options := strings.Split(p[1], ",")
-		uri.Raddr = options[0]
-		for _, o := range options[1:] {
-			kv := strings.SplitN(o, "=", 2)
-			var k, v string
-			if len(kv) == 2 {
-				k, v = kv[0], kv[1]
-			} else {
-				k, v = o, "true"
-			}
-			switch k {
-			case "laddr":
-				uri.Laddr = v
-			case "timeout":
-				to, err := time.ParseDuration(v)
-				if err != nil {
-					return nil, err
-				}
-				uri.Timeout = to
-			default:
-				return nil, errors.New("Unknown option: " + k)
-			}
-		}
-		// Remove protocol part
-		pd = pd[1:]
-	}
-	// Parse database part of URI
-	dup := strings.SplitN(pd[0], "/", 3)
-	if len(dup) != 3 {
-		return nil, errors.New("Wrong database part of URI")
-	}
-	uri.DBName = dup[0]
-	uri.User = dup[1]
-	uri.Passwd = dup[2]
-
-	return uri, nil
-}
-
 type mysqlDriver struct {
+	baseDriver
+}
+
+func (p *mysqlDriver) Features() *DriverFeatures {
+	return &DriverFeatures{
+		SupportReturnInsertedID: true,
+	}
 }
 
 func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
@@ -707,15 +747,99 @@ func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 				for _, kv := range kvs {
 					splits := strings.Split(kv, "=")
 					if len(splits) == 2 {
-						switch splits[0] {
-						case "charset":
+						if splits[0] == "charset" {
 							uri.Charset = splits[1]
 						}
 					}
 				}
 			}
-
 		}
 	}
+	return uri, nil
+}
+
+func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
+	colType = strings.Replace(colType, "UNSIGNED ", "", -1)
+	switch colType {
+	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET", "JSON":
+		var s sql.NullString
+		return &s, nil
+	case "BIGINT":
+		var s sql.NullInt64
+		return &s, nil
+	case "TINYINT", "SMALLINT", "MEDIUMINT", "INT":
+		var s sql.NullInt32
+		return &s, nil
+	case "FLOAT", "REAL", "DOUBLE PRECISION", "DOUBLE":
+		var s sql.NullFloat64
+		return &s, nil
+	case "DECIMAL", "NUMERIC":
+		var s sql.NullString
+		return &s, nil
+	case "DATETIME", "TIMESTAMP":
+		var s sql.NullTime
+		return &s, nil
+	case "BIT":
+		var s sql.RawBytes
+		return &s, nil
+	case "BINARY", "VARBINARY", "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB":
+		var r sql.RawBytes
+		return &r, nil
+	default:
+		var r sql.RawBytes
+		return &r, nil
+	}
+}
+
+type mymysqlDriver struct {
+	mysqlDriver
+}
+
+func (p *mymysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
+	uri := &URI{DBType: schemas.MYSQL}
+
+	pd := strings.SplitN(dataSourceName, "*", 2)
+	if len(pd) == 2 {
+		// Parse protocol part of URI
+		p := strings.SplitN(pd[0], ":", 2)
+		if len(p) != 2 {
+			return nil, errors.New("wrong protocol part of URI")
+		}
+		uri.Proto = p[0]
+		options := strings.Split(p[1], ",")
+		uri.Raddr = options[0]
+		for _, o := range options[1:] {
+			kv := strings.SplitN(o, "=", 2)
+			var k, v string
+			if len(kv) == 2 {
+				k, v = kv[0], kv[1]
+			} else {
+				k, v = o, "true"
+			}
+			switch k {
+			case "laddr":
+				uri.Laddr = v
+			case "timeout":
+				to, err := time.ParseDuration(v)
+				if err != nil {
+					return nil, err
+				}
+				uri.Timeout = to
+			default:
+				return nil, errors.New("unknown option: " + k)
+			}
+		}
+		// Remove protocol part
+		pd = pd[1:]
+	}
+	// Parse database part of URI
+	dup := strings.SplitN(pd[0], "/", 3)
+	if len(dup) != 3 {
+		return nil, errors.New("Wrong database part of URI")
+	}
+	uri.DBName = dup[0]
+	uri.User = dup[1]
+	uri.Passwd = dup[2]
+
 	return uri, nil
 }
