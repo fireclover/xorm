@@ -45,7 +45,6 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		if err != nil {
 			return nil, err
 		}
-		dt.IsZero()
 		dt = dt.In(convertedLocation)
 		return &dt, nil
 	} else if len(s) >= 21 && s[10] == 'T' && s[19] == '.' {
