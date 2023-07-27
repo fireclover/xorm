@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"sort"
@@ -53,17 +53,21 @@ type StringPK struct {
 	Name string
 }
 
-type ID int64
-type MyIntPK struct {
-	ID   ID `xorm:"pk autoincr"`
-	Name string
-}
+type (
+	ID      int64
+	MyIntPK struct {
+		ID   ID `xorm:"pk autoincr"`
+		Name string
+	}
+)
 
-type StrID string
-type MyStringPK struct {
-	ID   StrID `xorm:"pk notnull"`
-	Name string
-}
+type (
+	StrID      string
+	MyStringPK struct {
+		ID   StrID `xorm:"pk notnull"`
+		Name string
+	}
+)
 
 func TestIntId(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
@@ -187,7 +191,7 @@ func TestUintId(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var inserts = []UintId{
+	inserts := []UintId{
 		{Name: "test1"},
 		{Name: "test2"},
 	}
@@ -390,7 +394,7 @@ func TestCompositeKey(t *testing.T) {
 	assert.True(t, has)
 	assert.EqualValues(t, compositeKeyVal, compositeKeyVal2)
 
-	var cps = make([]CompositeKey, 0)
+	cps := make([]CompositeKey, 0)
 	err = testEngine.Find(&cps)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, len(cps))
@@ -460,13 +464,15 @@ func TestCompositeKey2(t *testing.T) {
 	assert.EqualValues(t, 1, cnt)
 }
 
-type MyString string
-type UserPK2 struct {
-	UserId   MyString `xorm:"varchar(19) not null pk"`
-	NickName string   `xorm:"varchar(19) not null"`
-	GameId   uint32   `xorm:"integer pk"`
-	Score    int32    `xorm:"integer"`
-}
+type (
+	MyString string
+	UserPK2  struct {
+		UserId   MyString `xorm:"varchar(19) not null pk"`
+		NickName string   `xorm:"varchar(19) not null"`
+		GameId   uint32   `xorm:"integer pk"`
+		Score    int32    `xorm:"integer"`
+	}
+)
 
 func TestCompositeKey3(t *testing.T) {
 	assert.NoError(t, PrepareEngine())

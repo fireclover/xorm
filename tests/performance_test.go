@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ func BenchmarkGetVars(b *testing.B) {
 
 	assert.NoError(b, testEngine.Sync(new(BenchmarkGetVars)))
 
-	var v = BenchmarkGetVars{
+	v := BenchmarkGetVars{
 		Name: "myname",
 	}
 	_, err := testEngine.Insert(&v)
@@ -54,7 +54,7 @@ func BenchmarkGetStruct(b *testing.B) {
 
 	assert.NoError(b, testEngine.Sync(new(BenchmarkGetStruct)))
 
-	var v = BenchmarkGetStruct{
+	v := BenchmarkGetStruct{
 		Name: "myname",
 	}
 	_, err := testEngine.Insert(&v)
@@ -86,13 +86,13 @@ func BenchmarkFindStruct(b *testing.B) {
 
 	assert.NoError(b, testEngine.Sync(new(BenchmarkFindStruct)))
 
-	var v = BenchmarkFindStruct{
+	v := BenchmarkFindStruct{
 		Name: "myname",
 	}
 	_, err := testEngine.Insert(&v)
 	assert.NoError(b, err)
 
-	var mynames = make([]BenchmarkFindStruct, 0, 1)
+	mynames := make([]BenchmarkFindStruct, 0, 1)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		err := testEngine.Find(&mynames)

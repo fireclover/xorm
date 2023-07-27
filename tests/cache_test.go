@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"testing"
@@ -28,7 +28,7 @@ func TestCacheFind(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(MailBox)))
 
-	var inserts = []*MailBox{
+	inserts := []*MailBox{
 		{
 			Id:       0,
 			Username: "user1",
@@ -105,7 +105,7 @@ func TestCacheFind2(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(MailBox2)))
 
-	var inserts = []*MailBox2{
+	inserts := []*MailBox2{
 		{
 			Id:       0,
 			Username: "user1",
@@ -156,7 +156,7 @@ func TestCacheGet(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(MailBox3)))
 
-	var inserts = []*MailBox3{
+	inserts := []*MailBox3{
 		{
 			Username: "user1",
 			Password: "pass1",

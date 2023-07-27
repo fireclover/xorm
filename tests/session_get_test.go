@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"database/sql"
@@ -1012,4 +1012,12 @@ func TestGetBytesVars(t *testing.T) {
 	assert.True(t, has)
 	assert.EqualValues(t, []byte("bytes1-1"), gbv.Bytes1)
 	assert.EqualValues(t, []byte("bytes2-2"), gbv.Bytes2)
+
+	type MyID int64
+	var myID MyID
+
+	has, err = testEngine.Table("get_bytes_vars").Select("id").Desc("id").Get(&myID)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, gbv.Id, myID)
 }
