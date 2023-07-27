@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"fmt"
@@ -25,13 +25,11 @@ func TestSum(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assert.NoError(t, testEngine.Sync(new(SumStruct)))
 
-	var (
-		cases = []SumStruct{
-			{1, 6.2},
-			{2, 5.3},
-			{92, -0.2},
-		}
-	)
+	cases := []SumStruct{
+		{1, 6.2},
+		{2, 5.3},
+		{92, -0.2},
+	}
 
 	var i int
 	var f float32
@@ -84,13 +82,11 @@ func TestSumWithTableName(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assert.NoError(t, testEngine.Sync(new(SumStructWithTableName)))
 
-	var (
-		cases = []SumStructWithTableName{
-			{1, 6.2},
-			{2, 5.3},
-			{92, -0.2},
-		}
-	)
+	cases := []SumStructWithTableName{
+		{1, 6.2},
+		{2, 5.3},
+		{92, -0.2},
+	}
 
 	var i int
 	var f float32
@@ -138,13 +134,11 @@ func TestSumCustomColumn(t *testing.T) {
 		Float float32
 	}
 
-	var (
-		cases = []SumStruct2{
-			{1, 6.2},
-			{2, 5.3},
-			{92, -0.2},
-		}
-	)
+	cases := []SumStruct2{
+		{1, 6.2},
+		{2, 5.3},
+		{92, -0.2},
+	}
 
 	assert.NoError(t, testEngine.Sync(new(SumStruct2)))
 

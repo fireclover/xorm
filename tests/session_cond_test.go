@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"errors"
@@ -37,7 +37,7 @@ func TestBuilder(t *testing.T) {
 	assert.NoError(t, err)
 
 	var cond Condition
-	var q = testEngine.Quote
+	q := testEngine.Quote
 	has, err := testEngine.Where(builder.Eq{q("col_name"): "col1"}).Get(&cond)
 	assert.NoError(t, err)
 	assert.Equal(t, true, has, "records should exist")
@@ -90,7 +90,7 @@ func TestBuilder(t *testing.T) {
 	assert.EqualValues(t, 0, len(conds), "records should not exist")
 
 	// complex condtions
-	var where = builder.NewCond()
+	where := builder.NewCond()
 	if true {
 		where = where.And(builder.Eq{q("col_name"): "col1"})
 		where = where.Or(builder.And(builder.In(q("col_name"), "col1", "col2"), builder.Expr(q("col_name")+" = ?", "col1")))

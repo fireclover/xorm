@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"database/sql"
@@ -162,7 +162,7 @@ func createEngine(dbType, connStr string) error {
 	if err != nil {
 		return err
 	}
-	var tableNames = make([]interface{}, 0, len(tables))
+	tableNames := make([]interface{}, 0, len(tables))
 	for _, table := range tables {
 		tableNames = append(tableNames, table.Name)
 	}
