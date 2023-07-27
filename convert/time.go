@@ -87,7 +87,7 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 			return nil, err
 		}
 		dt = dt.In(convertedLocation)
-		dt = time.Date(1, 1, 1, dt.Hour(), dt.Minute(), dt.Second(), 0, convertedLocation)
+		dt = time.Date(0, 1, 1, dt.Hour(), dt.Minute(), dt.Second(), 0, convertedLocation)
 		return &dt, nil
 	} else {
 		i, err := strconv.ParseInt(s, 10, 64)
