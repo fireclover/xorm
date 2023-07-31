@@ -16,10 +16,10 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/core"
-	"xorm.io/xorm/internal/json"
 	"xorm.io/xorm/internal/statements"
 	"xorm.io/xorm/log"
 	"xorm.io/xorm/schemas"
@@ -479,13 +479,13 @@ func setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult inter
 	}
 
 	if fieldValue.CanAddr() {
-		err := json.DefaultJSONHandler.Unmarshal(bs, fieldValue.Addr().Interface())
+		err := DefaultJSONHandler.Unmarshal(bs, fieldValue.Addr().Interface())
 		if err != nil {
 			return err
 		}
 	} else {
 		x := reflect.New(fieldType)
-		err := json.DefaultJSONHandler.Unmarshal(bs, x.Interface())
+		err := DefaultJSONHandler.Unmarshal(bs, x.Interface())
 		if err != nil {
 			return err
 		}
@@ -603,7 +603,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		if ok && fieldType.Elem().Kind() == reflect.Uint8 {
 			if col.SQLType.IsText() {
 				x := reflect.New(fieldType)
-				err := json.DefaultJSONHandler.Unmarshal(bs, x.Interface())
+				err := DefaultJSONHandler.Unmarshal(bs, x.Interface())
 				if err != nil {
 					return err
 				}
@@ -618,7 +618,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 		if ok && fieldType.Elem().Kind() == reflect.Uint8 {
 			if col.SQLType.IsText() {
 				x := reflect.New(fieldType)
-				err := json.DefaultJSONHandler.Unmarshal(bs, x.Interface())
+				err := DefaultJSONHandler.Unmarshal(bs, x.Interface())
 				if err != nil {
 					return err
 				}
@@ -785,8 +785,4 @@ func (session *Session) PingContext(ctx context.Context) error {
 func (session *Session) NoVersionCheck() *Session {
 	session.statement.CheckVersion = false
 	return session
-}
-
-func SetDefaultJSONHandler(jsonHandler json.Interface) {
-	json.DefaultJSONHandler = jsonHandler
 }

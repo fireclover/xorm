@@ -5,7 +5,7 @@
 //go:build jsoniter
 // +build jsoniter
 
-package json
+package xorm
 
 import (
 	jsoniter "github.com/json-iterator/go"

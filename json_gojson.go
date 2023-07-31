@@ -5,7 +5,7 @@
 //go:build gojson
 // +build gojson
 
-package json
+package xorm
 
 import (
 	gojson "github.com/goccy/go-json"

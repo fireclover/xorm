@@ -12,9 +12,9 @@ import (
 	"reflect"
 	"time"
 
+	"xorm.io/xorm"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
 	"xorm.io/xorm/schemas"
 )
 
@@ -118,13 +118,13 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 		}
 
 		if col.SQLType.IsText() {
-			bytes, err := json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+			bytes, err := xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 			if err != nil {
 				return nil, err
 			}
 			return string(bytes), nil
 		} else if col.SQLType.IsBlob() {
-			bytes, err := json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+			bytes, err := xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 			if err != nil {
 				return nil, err
 			}
@@ -132,7 +132,7 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 		}
 		return nil, fmt.Errorf("Unsupported type %v", fieldValue.Type())
 	case reflect.Complex64, reflect.Complex128:
-		bytes, err := json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+		bytes, err := xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +143,7 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 		}
 
 		if col.SQLType.IsText() {
-			bytes, err := json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+			bytes, err := xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 			if err != nil {
 				return nil, err
 			}
@@ -155,7 +155,7 @@ func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue refl
 				(fieldValue.Type().Elem().Kind() == reflect.Uint8) {
 				bytes = fieldValue.Bytes()
 			} else {
-				bytes, err = json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+				bytes, err = xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 				if err != nil {
 					return nil, err
 				}

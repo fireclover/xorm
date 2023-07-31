@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"xorm.io/builder"
+	"xorm.io/xorm"
 	"xorm.io/xorm/contexts"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 	"xorm.io/xorm/tags"
@@ -434,7 +434,7 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 		} else {
 			if col.IsJSON {
 				if col.SQLType.IsText() {
-					bytes, err := json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+					bytes, err := xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 					if err != nil {
 						return nil, false, err
 					}
@@ -442,7 +442,7 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 				} else if col.SQLType.IsBlob() {
 					var bytes []byte
 					var err error
-					bytes, err = json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+					bytes, err = xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 					if err != nil {
 						return nil, false, err
 					}
@@ -477,7 +477,7 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 		}
 
 		if col.SQLType.IsText() {
-			bytes, err := json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+			bytes, err := xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 			if err != nil {
 				return nil, false, err
 			}
@@ -492,7 +492,7 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 				}
 				return nil, false, nil
 			}
-			bytes, err = json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+			bytes, err = xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 			if err != nil {
 				return nil, false, err
 			}

@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"xorm.io/builder"
+	"xorm.io/xorm"
 	"xorm.io/xorm/convert"
 	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
@@ -241,7 +241,7 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 				} else {
 					// Blank struct could not be as update data
 					if requiredField || !utils.IsStructZero(fieldValue) {
-						bytes, err := json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+						bytes, err := xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 						if err != nil {
 							return nil, nil, fmt.Errorf("mashal %v failed", fieldValue.Interface())
 						}
@@ -270,7 +270,7 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 			}
 
 			if col.SQLType.IsText() {
-				bytes, err := json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+				bytes, err := xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 				if err != nil {
 					return nil, nil, err
 				}
@@ -289,7 +289,7 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 					fieldType.Elem().Kind() == reflect.Uint8 {
 					val = fieldValue.Slice(0, 0).Interface()
 				} else {
-					bytes, err = json.DefaultJSONHandler.Marshal(fieldValue.Interface())
+					bytes, err = xorm.DefaultJSONHandler.Marshal(fieldValue.Interface())
 					if err != nil {
 						return nil, nil, err
 					}

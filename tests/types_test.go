@@ -12,12 +12,10 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"xorm.io/xorm"
 	"xorm.io/xorm/convert"
-	"xorm.io/xorm/internal/json"
 	"xorm.io/xorm/schemas"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestArrayField(t *testing.T) {
@@ -127,24 +125,24 @@ func (s *ConvConfig) FromDB(data []byte) error {
 		s = nil
 		return nil
 	}
-	return json.DefaultJSONHandler.Unmarshal(data, s)
+	return xorm.DefaultJSONHandler.Unmarshal(data, s)
 }
 
 func (s *ConvConfig) ToDB() ([]byte, error) {
 	if s == nil {
 		return nil, nil
 	}
-	return json.DefaultJSONHandler.Marshal(s)
+	return xorm.DefaultJSONHandler.Marshal(s)
 }
 
 type SliceType []*ConvConfig
 
 func (s *SliceType) FromDB(data []byte) error {
-	return json.DefaultJSONHandler.Unmarshal(data, s)
+	return xorm.DefaultJSONHandler.Unmarshal(data, s)
 }
 
 func (s *SliceType) ToDB() ([]byte, error) {
-	return json.DefaultJSONHandler.Marshal(s)
+	return xorm.DefaultJSONHandler.Marshal(s)
 }
 
 type Nullable struct {
