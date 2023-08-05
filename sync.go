@@ -240,7 +240,7 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 			}
 		}
 
-		// drop all indices that do not exist in new schema
+		// drop all indices that do not exist in new schema or have changed
 		for name2, index2 := range oriTable.Indexes {
 			if _, ok := foundIndexNames[name2]; !ok {
 				// ignore based on there type
