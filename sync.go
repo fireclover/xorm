@@ -259,8 +259,7 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 			}
 		}
 
-		// add new indices because either they did not exist before or
-		// where dropt first to update them
+		// Add new indices because either they did not exist before or were dropped to update them
 		for name, index := range addedNames {
 			if index.Type == schemas.UniqueType && !opts.IgnoreConstrains {
 				session.statement.RefTable = table
