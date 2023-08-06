@@ -121,6 +121,7 @@ type EngineInterface interface {
 	ShowSQL(show ...bool)
 	Sync(...interface{}) error
 	Sync2(...interface{}) error
+	SyncWithOptions(SyncOptions, ...interface{}) (*SyncResult, error)
 	StoreEngine(storeEngine string) *Session
 	TableInfo(bean interface{}) (*schemas.Table, error)
 	TableName(interface{}, ...bool) string
