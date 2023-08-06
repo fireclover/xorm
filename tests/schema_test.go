@@ -702,7 +702,7 @@ func TestSyncWithOptions(t *testing.T) {
 	result, err = testEngine.SyncWithOptions(xorm.SyncOptions{IgnoreConstrains: true}, &SyncWithOpts2{})
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	indices = getIndicesOfBeanFromDB(t, &SyncWithOpts1{})
+	indices := getIndicesOfBeanFromDB(t, &SyncWithOpts1{})
 	assert.Len(t, indices, 2)
 	assert.ElementsMatch(t, []string{"ttt", "index"}, getKeysFromMap(indices))
 
