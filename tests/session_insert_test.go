@@ -7,7 +7,6 @@ package tests
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -1212,13 +1211,6 @@ func TestInsertMultipleMap(t *testing.T) {
 }
 
 func TestInsertNotDeleted(t *testing.T) {
-	if schemas.DBType(strings.ToLower(dbType)) == schemas.MSSQL {
-		// TODO
-		// In MSSQL, Due to XORM default mapping of time.Time to DATETIME,
-		// but DATETIME does not support '0001-01-01 00:00:00:00', need use DATETIME2.
-		// So, Skip this unit test.
-		return
-	}
 	assert.NoError(t, PrepareEngine())
 	zeroTime := time.Date(1, 1, 1, 0, 0, 0, 0, testEngine.GetTZDatabase())
 	type TestInsertNotDeletedStructNotRight struct {
@@ -1255,4 +1247,42 @@ func TestInsertNotDeleted(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.Equal(t, v4.DeletedAt.In(testEngine.GetTZDatabase()).Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
+}
+
+type MyAutoTimeFields1 struct {
+	Id int64
+	Dt time.Time `xorm:"created DATETIME"`
+}
+
+func (MyAutoTimeFields1) TableName() string {
+	return "my_auto_time_fields"
+}
+
+type MyAutoTimeFields2 struct {
+	Id int64
+	Dt time.Time `xorm:"created"`
+}
+
+func (MyAutoTimeFields2) TableName() string {
+	return "my_auto_time_fields"
+}
+
+func TestAutoTimeFields(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	assertSync(t, new(MyAutoTimeFields1))
+
+	_, err := testEngine.Insert(&MyAutoTimeFields1{})
+	assert.NoError(t, err)
+
+	var res []MyAutoTimeFields2
+	assert.NoError(t, testEngine.Find(&res))
+	assert.EqualValues(t, 1, len(res))
+
+	_, err = testEngine.Insert(&MyAutoTimeFields2{})
+	assert.NoError(t, err)
+
+	res = []MyAutoTimeFields2{}
+	assert.NoError(t, testEngine.Find(&res))
+	assert.EqualValues(t, 2, len(res))
 }
