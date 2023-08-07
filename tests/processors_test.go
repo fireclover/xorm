@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"errors"
@@ -200,7 +200,7 @@ func TestProcessors(t *testing.T) {
 	// --
 
 	// test find map processors
-	var p2FindMap = make(map[int64]*ProcessorsStruct)
+	p2FindMap := make(map[int64]*ProcessorsStruct)
 	err = testEngine.Find(&p2FindMap)
 	assert.NoError(t, err)
 
@@ -848,13 +848,13 @@ func TestAfterLoadProcessor(t *testing.T) {
 
 	assertSync(t, new(AfterLoadStructA), new(AfterLoadStructB))
 
-	var a = AfterLoadStructA{
+	a := AfterLoadStructA{
 		Content: "testa",
 	}
 	_, err := testEngine.Insert(&a)
 	assert.NoError(t, err)
 
-	var b = AfterLoadStructB{
+	b := AfterLoadStructB{
 		Content: "testb",
 		AId:     a.Id,
 	}

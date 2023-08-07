@@ -5,7 +5,7 @@
 //go:build dm
 // +build dm
 
-package integrations
+package tests
 
 import "xorm.io/xorm/schemas"
 

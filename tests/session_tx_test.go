@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ func TestTransaction(t *testing.T) {
 	}
 
 	counter(t)
-	//defer counter()
+	// defer counter()
 
 	session := testEngine.NewSession()
 	defer session.Close()
@@ -58,7 +58,7 @@ func TestCombineTransaction(t *testing.T) {
 	}
 
 	counter()
-	//defer counter()
+	// defer counter()
 	session := testEngine.NewSession()
 	defer session.Close()
 
@@ -187,7 +187,6 @@ func TestMultipleTransaction(t *testing.T) {
 }
 
 func TestInsertMulti2InterfaceTransaction(t *testing.T) {
-
 	type Multi2InterfaceTransaction struct {
 		ID         uint64 `xorm:"id pk autoincr"`
 		Name       string

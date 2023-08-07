@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"testing"
@@ -22,7 +22,7 @@ func TestSetExpr(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(UserExprIssue)))
 
-	var issue = UserExprIssue{
+	issue := UserExprIssue{
 		Title: "my issue",
 	}
 	cnt, err := testEngine.Insert(&issue)
@@ -44,7 +44,7 @@ func TestSetExpr(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var not = "NOT"
+	not := "NOT"
 	if testEngine.Dialect().URI().DBType == schemas.MSSQL || testEngine.Dialect().URI().DBType == schemas.DAMENG {
 		not = "~"
 	}
@@ -118,7 +118,7 @@ func TestMustCol(t *testing.T) {
 
 	assertSync(t, new(CustomerUpdate))
 
-	var customer = CustomerUpdate{
+	customer := CustomerUpdate{
 		ParentId: 1,
 	}
 	cnt, err := testEngine.Insert(&customer)

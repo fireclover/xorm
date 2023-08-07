@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"testing"
@@ -59,7 +59,7 @@ func TestBufferIterate(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(UserBufferIterate)))
 
-	var size = 20
+	size := 20
 	for i := 0; i < size; i++ {
 		cnt, err := testEngine.Insert(&UserBufferIterate{
 			IsMan: true,
@@ -68,7 +68,7 @@ func TestBufferIterate(t *testing.T) {
 		assert.EqualValues(t, 1, cnt)
 	}
 
-	var cnt = 0
+	cnt := 0
 	err := testEngine.BufferSize(9).Iterate(new(UserBufferIterate), func(i int, bean interface{}) error {
 		user := bean.(*UserBufferIterate)
 		assert.EqualValues(t, cnt+1, user.Id)

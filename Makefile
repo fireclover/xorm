@@ -9,7 +9,7 @@ SED_INPLACE := sed -i
 GO_DIRS := caches contexts integrations core dialects internal log migrate names schemas tags
 GOFILES := $(wildcard *.go)
 GOFILES += $(shell find $(GO_DIRS) -name "*.go" -type f)
-INTEGRATION_PACKAGES := xorm.io/xorm/integrations
+INTEGRATION_PACKAGES := xorm.io/xorm/tests
 PACKAGES ?= $(filter-out $(INTEGRATION_PACKAGES),$(shell $(GO) list ./...))
 
 TEST_COCKROACH_HOST ?= cockroach:26257
