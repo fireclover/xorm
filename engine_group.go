@@ -206,6 +206,16 @@ func (eg *EngineGroup) SetQuotePolicy(quotePolicy dialects.QuotePolicy) {
 	}
 }
 
+// SetAutoIncrementIncrement set insert id auto increment increment
+func (eg *EngineGroup) SetAutoIncrementIncrement(increment int64) {
+	eg.autoIncrementIncrement = increment
+}
+
+// SetLastInsertIDReversed set insert id reversed
+func (eg *EngineGroup) SetLastInsertIDReversed(reversed bool) {
+	eg.lastInsertIDReversed = reversed
+}
+
 // SetTableMapper set the table name mapping rule
 func (eg *EngineGroup) SetTableMapper(mapper names.Mapper) {
 	eg.Engine.SetTableMapper(mapper)

@@ -210,33 +210,104 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 
 	_ = session.cacheInsert(tableName)
 
-	lenAfterClosures := len(session.afterClosures)
-	for i := 0; i < size; i++ {
-		elemValue := reflect.Indirect(sliceValue.Index(i)).Addr().Interface()
+	var id int64
+	if table.AutoIncrement != "" {
+		id, err = res.LastInsertId()
+		if err != nil || id <= 0 {
+			return res.RowsAffected()
+		}
+	}
 
-		// handle AfterInsertProcessor
-		if session.isAutoCommit {
-			// !nashtsai! does user expect it's same slice to passed closure when using Before()/After() when insert multi??
-			for _, closure := range session.afterClosures {
-				closure(elemValue)
-			}
-			if processor, ok := elemValue.(AfterInsertProcessor); ok {
-				processor.AfterInsert()
-			}
-		} else {
-			if lenAfterClosures > 0 {
-				if value, has := session.afterInsertBeans[elemValue]; has && value != nil {
-					*value = append(*value, session.afterClosures...)
-				} else {
-					afterClosures := make([]func(interface{}), lenAfterClosures)
-					copy(afterClosures, session.afterClosures)
-					session.afterInsertBeans[elemValue] = &afterClosures
+	lenAfterClosures := len(session.afterClosures)
+	if session.engine.lastInsertIDReversed {
+		for i := size - 1; i >= 0; i-- {
+			elemValue := reflect.Indirect(sliceValue.Index(i)).Addr().Interface()
+
+			// handle AfterInsertProcessor
+			if session.isAutoCommit {
+				// !nashtsai! does user expect it's same slice to passed closure when using Before()/After() when insert multi??
+				for _, closure := range session.afterClosures {
+					closure(elemValue)
+				}
+				if processor, ok := elemValue.(AfterInsertProcessor); ok {
+					processor.AfterInsert()
 				}
 			} else {
-				if _, ok := elemValue.(AfterInsertProcessor); ok {
-					session.afterInsertBeans[elemValue] = nil
+				if lenAfterClosures > 0 {
+					if value, has := session.afterInsertBeans[elemValue]; has && value != nil {
+						*value = append(*value, session.afterClosures...)
+					} else {
+						afterClosures := make([]func(interface{}), lenAfterClosures)
+						copy(afterClosures, session.afterClosures)
+						session.afterInsertBeans[elemValue] = &afterClosures
+					}
+				} else {
+					if _, ok := elemValue.(AfterInsertProcessor); ok {
+						session.afterInsertBeans[elemValue] = nil
+					}
 				}
 			}
+
+			// handle auto increment
+			aiValue, err := table.AutoIncrColumn().ValueOf(elemValue)
+			if err != nil {
+				session.engine.logger.Errorf("%v", err)
+			}
+
+			if aiValue == nil || !aiValue.IsValid() || !aiValue.CanSet() {
+				continue
+			}
+
+			if err := convert.AssignValue(*aiValue, id); err != nil {
+				return 0, err
+			}
+
+			id -= session.engine.autoIncrementIncrement
+		}
+	} else {
+		for i := 0; i < size; i++ {
+			elemValue := reflect.Indirect(sliceValue.Index(i)).Addr().Interface()
+
+			// handle AfterInsertProcessor
+			if session.isAutoCommit {
+				// !nashtsai! does user expect it's same slice to passed closure when using Before()/After() when insert multi??
+				for _, closure := range session.afterClosures {
+					closure(elemValue)
+				}
+				if processor, ok := elemValue.(AfterInsertProcessor); ok {
+					processor.AfterInsert()
+				}
+			} else {
+				if lenAfterClosures > 0 {
+					if value, has := session.afterInsertBeans[elemValue]; has && value != nil {
+						*value = append(*value, session.afterClosures...)
+					} else {
+						afterClosures := make([]func(interface{}), lenAfterClosures)
+						copy(afterClosures, session.afterClosures)
+						session.afterInsertBeans[elemValue] = &afterClosures
+					}
+				} else {
+					if _, ok := elemValue.(AfterInsertProcessor); ok {
+						session.afterInsertBeans[elemValue] = nil
+					}
+				}
+			}
+
+			// handle auto increment
+			aiValue, err := table.AutoIncrColumn().ValueOf(elemValue)
+			if err != nil {
+				session.engine.logger.Errorf("%v", err)
+			}
+
+			if aiValue == nil || !aiValue.IsValid() || !aiValue.CanSet() {
+				continue
+			}
+
+			if err := convert.AssignValue(*aiValue, id); err != nil {
+				return 0, err
+			}
+
+			id += session.engine.autoIncrementIncrement
 		}
 	}
 

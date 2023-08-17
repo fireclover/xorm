@@ -117,6 +117,8 @@ type EngineInterface interface {
 	SetTableMapper(names.Mapper)
 	SetTZDatabase(tz *time.Location)
 	SetTZLocation(tz *time.Location)
+	SetAutoIncrementIncrement(increment int64)
+	SetLastInsertIDReversed(reversed bool)
 	AddHook(hook contexts.Hook)
 	ShowSQL(show ...bool)
 	Sync(...interface{}) error
