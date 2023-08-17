@@ -47,6 +47,9 @@ type Engine struct {
 	DatabaseTZ *time.Location // The timezone of the database
 
 	logSessionID bool // create session id
+
+	autoIncrementIncrement int64 // auto increment increment default 1
+	lastInsertIDReversed   bool  // create id reversed
 }
 
 // NewEngine new a db manager according to the parameter. Currently support four
@@ -71,16 +74,18 @@ func newEngine(driverName, dataSourceName string, dialect dialects.Dialect, db *
 	tagParser := tags.NewParser("xorm", dialect, mapper, mapper, cacherMgr)
 
 	engine := &Engine{
-		dialect:        dialect,
-		driver:         dialects.QueryDriver(driverName),
-		TZLocation:     time.Local,
-		defaultContext: context.Background(),
-		cacherMgr:      cacherMgr,
-		tagParser:      tagParser,
-		driverName:     driverName,
-		dataSourceName: dataSourceName,
-		db:             db,
-		logSessionID:   false,
+		dialect:                dialect,
+		driver:                 dialects.QueryDriver(driverName),
+		TZLocation:             time.Local,
+		defaultContext:         context.Background(),
+		cacherMgr:              cacherMgr,
+		tagParser:              tagParser,
+		driverName:             driverName,
+		dataSourceName:         dataSourceName,
+		db:                     db,
+		logSessionID:           false,
+		autoIncrementIncrement: 1,
+		lastInsertIDReversed:   false,
 	}
 
 	if dialect.URI().DBType == schemas.SQLITE {
@@ -142,6 +147,16 @@ func (engine *Engine) GetCacher(tableName string) caches.Cacher {
 // SetQuotePolicy sets the special quote policy
 func (engine *Engine) SetQuotePolicy(quotePolicy dialects.QuotePolicy) {
 	engine.dialect.SetQuotePolicy(quotePolicy)
+}
+
+// SetAutoIncrementIncrement set insert id auto increment increment
+func (engine *Engine) SetAutoIncrementIncrement(increment int64) {
+	engine.autoIncrementIncrement = increment
+}
+
+// SetLastInsertIDReversed set insert id reversed
+func (engine *Engine) SetLastInsertIDReversed(reversed bool) {
+	engine.lastInsertIDReversed = reversed
 }
 
 // BufferSize sets buffer size for iterate
