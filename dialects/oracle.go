@@ -509,11 +509,23 @@ var (
 
 type oracle struct {
 	Base
+	useLegacy bool
 }
 
 func (db *oracle) Init(uri *URI) error {
 	db.quoter = oracleQuoter
 	return db.Base.Init(db, uri)
+}
+
+func (db *oracle) UseLegacyLimitOffset() bool { return db.useLegacy }
+
+func (db *oracle) SetParams(params map[string]string) {
+	useLegacy, ok := params["USE_LEGACY_LIMIT_OFFSET"]
+	if ok {
+		if b, _ := strconv.ParseBool(useLegacy); b {
+			db.useLegacy = true
+		}
+	}
 }
 
 func (db *oracle) Version(ctx context.Context, queryer core.Queryer) (*schemas.Version, error) {
