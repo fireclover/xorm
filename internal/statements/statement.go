@@ -644,6 +644,23 @@ func (statement *Statement) convertSQLOrArgs(sqlOrArgs ...interface{}) (string, 
 					newArgs = append(newArgs, v.In(statement.defaultTimeZone).Format("2006-01-02 15:04:05"))
 				} else if v, ok := arg.(*time.Time); ok && v != nil {
 					newArgs = append(newArgs, v.In(statement.defaultTimeZone).Format("2006-01-02 15:04:05"))
+				} else if v, ok := arg.(convert.ConversionTo); ok {
+					r, err := v.ToDB()
+					if err != nil {
+						return "", nil, err
+					}
+					if r != nil {
+						// for nvarchar column on mssql, bytes have to be converted as ucs-2 external of driver
+						// for binary column, a string will be converted as bytes directly. So we have to
+						// convert bytes as string
+						if statement.dialect.URI().DBType == schemas.MSSQL {
+							newArgs = append(newArgs, string(r))
+						} else {
+							newArgs = append(newArgs, r)
+						}
+					} else {
+						newArgs = append(newArgs, nil)
+					}
 				} else {
 					newArgs = append(newArgs, arg)
 				}
@@ -690,10 +707,7 @@ func (statement *Statement) CondDeleted(col *schemas.Column) builder.Cond {
 	if col.SQLType.IsNumeric() {
 		cond = builder.Eq{colName: 0}
 	} else {
-		// FIXME: mssql: The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value.
-		if statement.dialect.URI().DBType != schemas.MSSQL {
-			cond = builder.Eq{colName: utils.ZeroTime1}
-		}
+		cond = builder.Eq{colName: utils.ZeroTime1}
 	}
 
 	if col.Nullable {
