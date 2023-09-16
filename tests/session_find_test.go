@@ -1250,6 +1250,7 @@ func TestFindInMaxID(t *testing.T) {
 	assertSync(t, new(TestFindInMaxId))
 
 	var res []TestFindInMaxId
-	err := testEngine.In("id", builder.Select("max(id)").From("test_find_in_max_id")).Find(&res)
+	tableName := testEngine.TableName("test_find_in_max_id", true)
+	err := testEngine.In("id", builder.Select("max(id)").From(testEngine.Quote(tableName))).Find(&res)
 	assert.NoError(t, err)
 }
