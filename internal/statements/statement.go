@@ -637,37 +637,44 @@ func (statement *Statement) ConvertSQLOrArgs(sqlOrArgs ...interface{}) (string, 
 func (statement *Statement) convertSQLOrArgs(sqlOrArgs ...interface{}) (string, []interface{}, error) {
 	switch sqlOrArgs[0].(type) {
 	case string:
-		if len(sqlOrArgs) > 1 {
-			newArgs := make([]interface{}, 0, len(sqlOrArgs)-1)
-			for _, arg := range sqlOrArgs[1:] {
-				if v, ok := arg.(time.Time); ok {
-					newArgs = append(newArgs, v.In(statement.defaultTimeZone).Format("2006-01-02 15:04:05"))
-				} else if v, ok := arg.(*time.Time); ok && v != nil {
-					newArgs = append(newArgs, v.In(statement.defaultTimeZone).Format("2006-01-02 15:04:05"))
-				} else if v, ok := arg.(convert.ConversionTo); ok {
-					r, err := v.ToDB()
-					if err != nil {
-						return "", nil, err
-					}
-					if r != nil {
-						// for nvarchar column on mssql, bytes have to be converted as ucs-2 external of driver
-						// for binary column, a string will be converted as bytes directly. So we have to
-						// convert bytes as string
-						if statement.dialect.URI().DBType == schemas.MSSQL {
-							newArgs = append(newArgs, string(r))
-						} else {
-							newArgs = append(newArgs, r)
-						}
+		if len(sqlOrArgs) <= 1 {
+			return sqlOrArgs[0].(string), sqlOrArgs[1:], nil
+		}
+
+		newArgs := make([]interface{}, 0, len(sqlOrArgs)-1)
+		for _, arg := range sqlOrArgs[1:] {
+			if v, ok := arg.(time.Time); ok {
+				newArgs = append(newArgs, v.In(statement.defaultTimeZone).Format("2006-01-02 15:04:05"))
+			} else if v, ok := arg.(*time.Time); ok && v != nil {
+				newArgs = append(newArgs, v.In(statement.defaultTimeZone).Format("2006-01-02 15:04:05"))
+			} else if v, ok := arg.(convert.ConversionTo); ok {
+				r, err := v.ToDB()
+				if err != nil {
+					return "", nil, err
+				}
+				if r != nil {
+					// for nvarchar column on mssql, bytes have to be converted as ucs-2 external of driver
+					// for binary column, a string will be converted as bytes directly. So we have to
+					// convert bytes as string
+					if statement.dialect.URI().DBType == schemas.MSSQL {
+						newArgs = append(newArgs, string(r))
 					} else {
-						newArgs = append(newArgs, nil)
+						newArgs = append(newArgs, r)
 					}
 				} else {
-					newArgs = append(newArgs, arg)
+					newArgs = append(newArgs, nil)
 				}
+			} else if v, ok := arg.(driver.Valuer); ok {
+				vv, err := v.Value()
+				if err != nil {
+					return "", nil, err
+				}
+				newArgs = append(newArgs, vv)
+			} else {
+				newArgs = append(newArgs, arg)
 			}
-			return sqlOrArgs[0].(string), newArgs, nil
 		}
-		return sqlOrArgs[0].(string), sqlOrArgs[1:], nil
+		return sqlOrArgs[0].(string), newArgs, nil
 	case *builder.Builder:
 		return sqlOrArgs[0].(*builder.Builder).ToSQL()
 	case builder.Builder:
