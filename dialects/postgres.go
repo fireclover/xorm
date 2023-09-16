@@ -928,7 +928,7 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 		return schemas.Uuid
 	case schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob:
 		return schemas.Bytea
-	case schemas.Double:
+	case schemas.Double, schemas.UnsignedFloat:
 		return "DOUBLE PRECISION"
 	default:
 		if c.IsAutoIncrement {

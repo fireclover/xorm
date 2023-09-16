@@ -325,6 +325,48 @@ func TestUint64Id(t *testing.T) {
 	assert.EqualValues(t, 1, cnt)
 }
 
+func TestUnsignedfloat(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type UnsignedFloat struct {
+		Id            int64
+		UnsignedFloat float64 `xorm:"UNSIGNED FLOAT"`
+	}
+
+	err := testEngine.DropTables(&UnsignedFloat{})
+	assert.NoError(t, err)
+
+	err = testEngine.CreateTables(&UnsignedFloat{})
+	assert.NoError(t, err)
+
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+
+	assert.EqualValues(t, 1, len(tables))
+	cols := tables[0].Columns()
+	assert.EqualValues(t, 2, len(cols))
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		assert.EqualValues(t, "UNSIGNED FLOAT", cols[1].SQLType.Name)
+	}
+
+	idbean := &UnsignedFloat{UnsignedFloat: 12345678.90123456}
+	cnt, err := testEngine.Insert(idbean)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, cnt)
+
+	bean := new(UnsignedFloat)
+	has, err := testEngine.Get(bean)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.EqualValues(t, bean.Id, idbean.Id)
+
+	beans := make([]UnsignedFloat, 0)
+	err = testEngine.Find(&beans)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, len(beans))
+	assert.EqualValues(t, *bean, beans[0])
+}
+
 func TestStringPK(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
