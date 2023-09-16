@@ -235,15 +235,6 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 				}
 			}
 
-			if oriIndex != nil && oriIndex.Type != index.Type {
-				sql := engine.dialect.DropIndexSQL(tbNameWithSchema, oriIndex)
-				_, err = session.exec(sql)
-				if err != nil {
-					return nil, err
-				}
-				oriIndex = nil
-			}
-
 			if oriIndex == nil {
 				addedNames[name] = index
 			}
