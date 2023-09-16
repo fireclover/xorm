@@ -1237,3 +1237,20 @@ func TestBuilderDialect(t *testing.T) {
 	err := testEngine.Table("test_builder_dialect").Where(builder.Eq{"age2": 2}).Join("INNER", inner, "test_builder_dialect_foo.dialect_id = test_builder_dialect.id").Find(&result)
 	assert.NoError(t, err)
 }
+
+func TestFindInMaxID(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type TestFindInMaxId struct {
+		Id   int64
+		Name string `xorm:"index"`
+		Age2 int
+	}
+
+	assertSync(t, new(TestFindInMaxId))
+
+	var res []TestFindInMaxId
+	tableName := testEngine.TableName("test_find_in_max_id", true)
+	err := testEngine.In("id", builder.Select("max(id)").From(testEngine.Quote(tableName))).Find(&res)
+	assert.NoError(t, err)
+}
