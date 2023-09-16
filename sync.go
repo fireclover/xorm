@@ -13,6 +13,10 @@ import (
 
 type SyncOptions struct {
 	WarnIfDatabaseColumnMissed bool
+	// IgnoreConstrains will not add, delete or update unique constrains
+	IgnoreConstrains bool
+	// IgnoreIndices will not add or delete indices
+	IgnoreIndices bool
 }
 
 type SyncResult struct{}
@@ -49,6 +53,8 @@ func (session *Session) Sync2(beans ...interface{}) error {
 func (session *Session) Sync(beans ...interface{}) error {
 	_, err := session.SyncWithOptions(SyncOptions{
 		WarnIfDatabaseColumnMissed: false,
+		IgnoreConstrains:           false,
+		IgnoreIndices:              false,
 	}, beans...)
 	return err
 }
@@ -103,15 +109,20 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 				return nil, err
 			}
 
-			err = session.createUniques(bean)
-			if err != nil {
-				return nil, err
+			if !opts.IgnoreConstrains {
+				err = session.createUniques(bean)
+				if err != nil {
+					return nil, err
+				}
 			}
 
-			err = session.createIndexes(bean)
-			if err != nil {
-				return nil, err
+			if !opts.IgnoreIndices {
+				err = session.createIndexes(bean)
+				if err != nil {
+					return nil, err
+				}
 			}
+
 			continue
 		}
 
@@ -208,9 +219,12 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 			}
 		}
 
+		// indices found in orig table
 		foundIndexNames := make(map[string]bool)
+		// indices to be added
 		addedNames := make(map[string]*schemas.Index)
 
+		// drop indices that exist in orig and new table schema but are not equal
 		for name, index := range table.Indexes {
 			var oriIndex *schemas.Index
 			for name2, index2 := range oriTable.Indexes {
@@ -221,15 +235,13 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 				}
 			}
 
-			if oriIndex != nil {
-				if oriIndex.Type != index.Type {
-					sql := engine.dialect.DropIndexSQL(tbNameWithSchema, oriIndex)
-					_, err = session.exec(sql)
-					if err != nil {
-						return nil, err
-					}
-					oriIndex = nil
+			if oriIndex != nil && oriIndex.Type != index.Type {
+				sql := engine.dialect.DropIndexSQL(tbNameWithSchema, oriIndex)
+				_, err = session.exec(sql)
+				if err != nil {
+					return nil, err
 				}
+				oriIndex = nil
 			}
 
 			if oriIndex == nil {
@@ -237,8 +249,17 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 			}
 		}
 
+		// drop all indices that do not exist in new schema or have changed
 		for name2, index2 := range oriTable.Indexes {
 			if _, ok := foundIndexNames[name2]; !ok {
+				// ignore based on there type
+				if (index2.Type == schemas.IndexType && opts.IgnoreIndices) ||
+					(index2.Type == schemas.UniqueType && opts.IgnoreConstrains) {
+					// make sure we do not add a index with same name later
+					delete(addedNames, name2)
+					continue
+				}
+
 				sql := engine.dialect.DropIndexSQL(tbNameWithSchema, index2)
 				_, err = session.exec(sql)
 				if err != nil {
@@ -247,12 +268,13 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 			}
 		}
 
+		// Add new indices because either they did not exist before or were dropped to update them
 		for name, index := range addedNames {
-			if index.Type == schemas.UniqueType {
+			if index.Type == schemas.UniqueType && !opts.IgnoreConstrains {
 				session.statement.RefTable = table
 				session.statement.SetTableName(tbNameWithSchema)
 				err = session.addUnique(tbNameWithSchema, name)
-			} else if index.Type == schemas.IndexType {
+			} else if index.Type == schemas.IndexType && !opts.IgnoreIndices {
 				session.statement.RefTable = table
 				session.statement.SetTableName(tbNameWithSchema)
 				err = session.addIndex(tbNameWithSchema, name)
