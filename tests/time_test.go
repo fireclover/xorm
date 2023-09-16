@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+
 	"xorm.io/xorm/convert"
 
 	"xorm.io/xorm/internal/utils"
@@ -18,7 +19,7 @@ import (
 )
 
 func formatTime(t time.Time, scales ...int) string {
-	var layout = "2006-01-02 15:04:05"
+	layout := "2006-01-02 15:04:05"
 	if len(scales) > 0 && scales[0] > 0 {
 		layout += "." + strings.Repeat("0", scales[0])
 	}
@@ -35,7 +36,7 @@ func TestTimeUserTime(t *testing.T) {
 
 	assertSync(t, new(TimeUser))
 
-	var user = TimeUser{
+	user := TimeUser{
 		Id:       "lunny",
 		OperTime: time.Now(),
 	}
@@ -80,7 +81,7 @@ func TestTimeUserTimeDiffLoc(t *testing.T) {
 
 	assertSync(t, new(TimeUser2))
 
-	var user = TimeUser2{
+	user := TimeUser2{
 		Id:       "lunny",
 		OperTime: time.Now(),
 	}
@@ -110,7 +111,7 @@ func TestTimeUserCreated(t *testing.T) {
 
 	assertSync(t, new(UserCreated))
 
-	var user = UserCreated{
+	user := UserCreated{
 		Id: "lunny",
 	}
 
@@ -154,7 +155,7 @@ func TestTimeUserCreatedDiffLoc(t *testing.T) {
 
 	assertSync(t, new(UserCreated2))
 
-	var user = UserCreated2{
+	user := UserCreated2{
 		Id: "lunny",
 	}
 
@@ -184,7 +185,7 @@ func TestTimeUserUpdated(t *testing.T) {
 
 	assertSync(t, new(UserUpdated))
 
-	var user = UserUpdated{
+	user := UserUpdated{
 		Id: "lunny",
 	}
 
@@ -204,7 +205,7 @@ func TestTimeUserUpdated(t *testing.T) {
 	assert.EqualValues(t, formatTime(user.UpdatedAt), formatTime(user2.UpdatedAt))
 	fmt.Println("user2", user2.CreatedAt, user2.UpdatedAt)
 
-	var user3 = UserUpdated{
+	user3 := UserUpdated{
 		Id: "lunny2",
 	}
 
@@ -250,7 +251,7 @@ func TestTimeUserUpdatedDiffLoc(t *testing.T) {
 
 	assertSync(t, new(UserUpdated2))
 
-	var user = UserUpdated2{
+	user := UserUpdated2{
 		Id: "lunny",
 	}
 
@@ -270,7 +271,7 @@ func TestTimeUserUpdatedDiffLoc(t *testing.T) {
 	assert.EqualValues(t, formatTime(user.UpdatedAt), formatTime(user2.UpdatedAt))
 	fmt.Println("user2", user2.CreatedAt, user2.UpdatedAt)
 
-	var user3 = UserUpdated2{
+	user3 := UserUpdated2{
 		Id: "lunny2",
 	}
 
@@ -304,7 +305,7 @@ func TestTimeUserDeleted(t *testing.T) {
 
 	assertSync(t, new(UserDeleted))
 
-	var user = UserDeleted{
+	user := UserDeleted{
 		Id: "lunny",
 	}
 
@@ -367,7 +368,7 @@ func TestTimeUserDeletedDiffLoc(t *testing.T) {
 
 	assertSync(t, new(UserDeleted2))
 
-	var user = UserDeleted2{
+	user := UserDeleted2{
 		Id: "lunny",
 	}
 
@@ -412,7 +413,7 @@ func (j JSONDate) MarshalJSON() ([]byte, error) {
 }
 
 func (j *JSONDate) UnmarshalJSON(value []byte) error {
-	var v = strings.TrimSpace(strings.Trim(string(value), "\""))
+	v := strings.TrimSpace(strings.Trim(string(value), "\""))
 
 	t, err := time.ParseInLocation("2006-01-02 15:04:05", v, time.Local)
 	if err != nil {
@@ -438,7 +439,7 @@ func TestCustomTimeUserDeleted(t *testing.T) {
 
 	assertSync(t, new(UserDeleted3))
 
-	var user = UserDeleted3{
+	user := UserDeleted3{
 		Id: "lunny",
 	}
 
@@ -500,7 +501,7 @@ func TestCustomTimeUserDeletedDiffLoc(t *testing.T) {
 
 	assertSync(t, new(UserDeleted4))
 
-	var user = UserDeleted4{
+	user := UserDeleted4{
 		Id: "lunny",
 	}
 
@@ -583,7 +584,7 @@ func TestTimestamp(t *testing.T) {
 
 		assertSync(t, new(TimestampStruct))
 
-		var d1 = TimestampStruct{
+		d1 := TimestampStruct{
 			InsertTime: time.Now(),
 		}
 		cnt, err := testEngine.Insert(&d1)
@@ -625,10 +626,10 @@ func TestTimestamp(t *testing.T) {
 func TestString2Time(t *testing.T) {
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	assert.NoError(t, err)
-	var timeTmp1 = time.Date(2023, 7, 14, 11, 30, 0, 0, loc)
-	var timeTmp2 = time.Date(2023, 7, 14, 0, 0, 0, 0, loc)
-	var time1StampStr = strconv.FormatInt(timeTmp1.Unix(), 10)
-	var timeStr = "0000-00-00 00:00:00"
+	timeTmp1 := time.Date(2023, 7, 14, 11, 30, 0, 0, loc)
+	timeTmp2 := time.Date(2023, 7, 14, 0, 0, 0, 0, loc)
+	time1StampStr := strconv.FormatInt(timeTmp1.Unix(), 10)
+	timeStr := "0000-00-00 00:00:00"
 	dt, err := convert.String2Time(timeStr, time.Local, time.Local)
 	assert.NoError(t, err)
 	assert.True(t, dt.Nanosecond() == 0)

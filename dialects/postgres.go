@@ -821,6 +821,7 @@ func (db *postgres) Version(ctx context.Context, queryer core.Queryer) (*schemas
 	}
 
 	// Postgres: 9.5.22 on x86_64-pc-linux-gnu (Debian 9.5.22-1.pgdg90+1), compiled by gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516, 64-bit
+	// Postgres: PostgreSQL 15.3, compiled by Visual C++ build 1914, 64-bit
 	// CockroachDB CCL v19.2.4 (x86_64-unknown-linux-gnu, built
 	if strings.HasPrefix(version, "CockroachDB") {
 		versions := strings.Split(strings.TrimPrefix(version, "CockroachDB CCL "), " ")
@@ -829,12 +830,22 @@ func (db *postgres) Version(ctx context.Context, queryer core.Queryer) (*schemas
 			Edition: "CockroachDB",
 		}, nil
 	} else if strings.HasPrefix(version, "PostgreSQL") {
-		versions := strings.Split(strings.TrimPrefix(version, "PostgreSQL "), " on ")
-		return &schemas.Version{
-			Number:  versions[0],
-			Level:   versions[1],
-			Edition: "PostgreSQL",
-		}, nil
+		if strings.Contains(version, " on ") {
+			versions := strings.Split(strings.TrimPrefix(version, "PostgreSQL "), " on ")
+			return &schemas.Version{
+				Number:  versions[0],
+				Level:   versions[1],
+				Edition: "PostgreSQL",
+			}, nil
+		} else {
+			versions := strings.Split(strings.TrimPrefix(version, "PostgreSQL "), ",")
+			return &schemas.Version{
+				Number:  versions[0],
+				Level:   versions[1],
+				Edition: "PostgreSQL",
+			}, nil
+		}
+
 	}
 
 	return nil, errors.New("unknow database version")

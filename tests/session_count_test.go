@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"testing"
@@ -123,6 +123,11 @@ func TestWithTableName(t *testing.T) {
 	assert.EqualValues(t, 2, total)
 
 	total, err = testEngine.OrderBy("count(`id`) desc").Count(CountWithTableName{})
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, total)
+
+	// the orderby will be ignored by count because some databases will return errors if the orderby columns not in group by
+	total, err = testEngine.OrderBy("`name`").Count(CountWithTableName{})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }

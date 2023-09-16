@@ -1,6 +1,6 @@
 module xorm.io/xorm
 
-go 1.13
+go 1.16
 
 require (
 	gitee.com/travelliu/dm v1.8.11192

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"fmt"
@@ -142,8 +142,13 @@ func TestInsert(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(Userinfo))
 
-	user := Userinfo{0, "xiaolunwen", "dev", "lunny", time.Now(),
-		Userdetail{Id: 1}, 1.78, []byte{1, 2, 3}, true}
+	user := Userinfo{
+		0, "xiaolunwen", "dev", "lunny", time.Now(),
+		Userdetail{Id: 1},
+		1.78,
+		[]byte{1, 2, 3},
+		true,
+	}
 	cnt, err := testEngine.Insert(&user)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt, "insert not returned 1")
@@ -161,8 +166,10 @@ func TestInsertAutoIncr(t *testing.T) {
 	assertSync(t, new(Userinfo))
 
 	// auto increment insert
-	user := Userinfo{Username: "xiaolunwen2", Departname: "dev", Alias: "lunny", Created: time.Now(),
-		Detail: Userdetail{Id: 1}, Height: 1.78, Avatar: []byte{1, 2, 3}, IsMan: true}
+	user := Userinfo{
+		Username: "xiaolunwen2", Departname: "dev", Alias: "lunny", Created: time.Now(),
+		Detail: Userdetail{Id: 1}, Height: 1.78, Avatar: []byte{1, 2, 3}, IsMan: true,
+	}
 	cnt, err := testEngine.Insert(&user)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
@@ -184,7 +191,7 @@ func TestInsertDefault(t *testing.T) {
 	err := testEngine.Sync(di)
 	assert.NoError(t, err)
 
-	var di2 = DefaultInsert{Name: "test"}
+	di2 := DefaultInsert{Name: "test"}
 	_, err = testEngine.Omit(testEngine.GetColumnMapper().Obj2Table("Status")).Insert(&di2)
 	assert.NoError(t, err)
 
@@ -210,7 +217,7 @@ func TestInsertDefault2(t *testing.T) {
 	err := testEngine.Sync(di)
 	assert.NoError(t, err)
 
-	var di2 = DefaultInsert2{Name: "test"}
+	di2 := DefaultInsert2{Name: "test"}
 	_, err = testEngine.Omit(testEngine.GetColumnMapper().Obj2Table("CheckTime")).Insert(&di2)
 	assert.NoError(t, err)
 
@@ -438,7 +445,7 @@ func TestCreatedJsonTime(t *testing.T) {
 	assert.True(t, has)
 	assert.EqualValues(t, time.Time(ci5.Created).Unix(), time.Time(di5.Created).Unix())
 
-	var dis = make([]MyJSONTime, 0)
+	dis := make([]MyJSONTime, 0)
 	err = testEngine.Find(&dis)
 	assert.NoError(t, err)
 }
@@ -762,7 +769,7 @@ func TestInsertWhere(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(InsertWhere))
 
-	var i = InsertWhere{
+	i := InsertWhere{
 		RepoId: 1,
 		Width:  10,
 		Height: 20,
@@ -872,7 +879,7 @@ func TestInsertExpr2(t *testing.T) {
 
 	assertSync(t, new(InsertExprsRelease))
 
-	var ie = InsertExprsRelease{
+	ie := InsertExprsRelease{
 		RepoId: 1,
 		IsTag:  true,
 	}
@@ -1047,7 +1054,7 @@ func TestInsertIntSlice(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(InsertIntSlice)))
 
-	var v = InsertIntSlice{
+	v := InsertIntSlice{
 		NameIDs: []int{1, 2},
 	}
 	cnt, err := testEngine.Insert(&v)
@@ -1064,7 +1071,7 @@ func TestInsertIntSlice(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var v3 = InsertIntSlice{
+	v3 := InsertIntSlice{
 		NameIDs: nil,
 	}
 	cnt, err = testEngine.Insert(&v3)
@@ -1201,4 +1208,81 @@ func TestInsertMultipleMap(t *testing.T) {
 		Height: 20,
 		Name:   "xiaolunwen",
 	}, res[1])
+}
+
+func TestInsertNotDeleted(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	zeroTime := time.Date(1, 1, 1, 0, 0, 0, 0, testEngine.GetTZDatabase())
+	type TestInsertNotDeletedStructNotRight struct {
+		ID        uint64    `xorm:"'ID' pk autoincr"`
+		DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull"`
+	}
+	// notnull tag will be ignored
+	err := testEngine.Sync(new(TestInsertNotDeletedStructNotRight))
+	assert.NoError(t, err)
+
+	type TestInsertNotDeletedStruct struct {
+		ID        uint64    `xorm:"'ID' pk autoincr"`
+		DeletedAt time.Time `xorm:"'DELETED_AT' deleted"`
+	}
+
+	assert.NoError(t, testEngine.Sync(new(TestInsertNotDeletedStruct)))
+
+	var v1 TestInsertNotDeletedStructNotRight
+	_, err = testEngine.Insert(&v1)
+	assert.NoError(t, err)
+
+	var v2 TestInsertNotDeletedStructNotRight
+	has, err := testEngine.Get(&v2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, v2.DeletedAt.In(testEngine.GetTZDatabase()).Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
+
+	var v3 TestInsertNotDeletedStruct
+	_, err = testEngine.Insert(&v3)
+	assert.NoError(t, err)
+
+	var v4 TestInsertNotDeletedStruct
+	has, err = testEngine.Get(&v4)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, v4.DeletedAt.In(testEngine.GetTZDatabase()).Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
+}
+
+type MyAutoTimeFields1 struct {
+	Id int64
+	Dt time.Time `xorm:"created DATETIME"`
+}
+
+func (MyAutoTimeFields1) TableName() string {
+	return "my_auto_time_fields"
+}
+
+type MyAutoTimeFields2 struct {
+	Id int64
+	Dt time.Time `xorm:"created"`
+}
+
+func (MyAutoTimeFields2) TableName() string {
+	return "my_auto_time_fields"
+}
+
+func TestAutoTimeFields(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	assertSync(t, new(MyAutoTimeFields1))
+
+	_, err := testEngine.Insert(&MyAutoTimeFields1{})
+	assert.NoError(t, err)
+
+	var res []MyAutoTimeFields2
+	assert.NoError(t, testEngine.Find(&res))
+	assert.EqualValues(t, 1, len(res))
+
+	_, err = testEngine.Insert(&MyAutoTimeFields2{})
+	assert.NoError(t, err)
+
+	res = []MyAutoTimeFields2{}
+	assert.NoError(t, testEngine.Find(&res))
+	assert.EqualValues(t, 2, len(res))
 }

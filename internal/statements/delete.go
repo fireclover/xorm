@@ -20,6 +20,9 @@ func (statement *Statement) writeDeleteOrder(w *builder.BytesWriter) error {
 	}
 
 	if statement.LimitN != nil && *statement.LimitN > 0 {
+		if statement.Start > 0 {
+			return fmt.Errorf("Delete with Limit start is unsupported")
+		}
 		limitNValue := *statement.LimitN
 		if _, err := fmt.Fprintf(w, " LIMIT %d", limitNValue); err != nil {
 			return err

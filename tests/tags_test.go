@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"xorm.io/xorm/convert"
 	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/names"
 	"xorm.io/xorm/schemas"
@@ -1201,8 +1201,10 @@ func TestTagTime(t *testing.T) {
 	has, err = testEngine.Table("tag_u_t_c_struct").Cols("created").Get(&tm)
 	assert.NoError(t, err)
 	assert.True(t, has)
-	assert.EqualValues(t, s.Created.UTC().Format("2006-01-02 15:04:05"),
-		strings.ReplaceAll(strings.ReplaceAll(tm, "T", " "), "Z", ""))
+
+	tmTime, err := convert.String2Time(tm, time.UTC, time.UTC)
+	assert.NoError(t, err)
+	assert.EqualValues(t, s.Created.UTC().Format("2006-01-02 15:04:05"), tmTime.Format("2006-01-02 15:04:05"))
 }
 
 func TestTagAutoIncr(t *testing.T) {

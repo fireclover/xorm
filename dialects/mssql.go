@@ -320,11 +320,7 @@ func (db *mssql) SQLType(c *schemas.Column) string {
 			res += "(MAX)"
 		}
 	case schemas.TimeStamp, schemas.DateTime:
-		if c.Length > 3 {
-			res = "DATETIME2"
-		} else {
-			return schemas.DateTime
-		}
+		return "DATETIME2"
 	case schemas.TimeStampz:
 		res = "DATETIMEOFFSET"
 		c.Length = 7

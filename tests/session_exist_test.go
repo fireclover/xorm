@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"context"
@@ -106,14 +106,14 @@ func TestExistStructForJoin(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var orderlist = OrderList{
+	orderlist := OrderList{
 		Eid: ply.Id,
 	}
 	cnt, err = testEngine.Insert(&orderlist)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var um = Number{
+	um := Number{
 		Lid: orderlist.Id,
 	}
 	cnt, err = testEngine.Insert(&um)

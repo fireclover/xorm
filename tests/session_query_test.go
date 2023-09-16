@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package integrations
+package tests
 
 import (
 	"bytes"
@@ -30,7 +30,7 @@ func TestQueryString(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(GetVar2)))
 
-	var data = GetVar2{
+	data := GetVar2{
 		Msg:   "hi",
 		Age:   28,
 		Money: 1.5,
@@ -58,7 +58,7 @@ func TestQueryString2(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(GetVar3)))
 
-	var data = GetVar3{
+	data := GetVar3{
 		Msg: false,
 	}
 	_, err := testEngine.Insert(data)
@@ -95,7 +95,7 @@ func TestQueryInterface(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(GetVarInterface)))
 
-	var data = GetVarInterface{
+	data := GetVarInterface{
 		Msg:   "hi",
 		Age:   28,
 		Money: 1.5,
@@ -128,7 +128,7 @@ func TestQueryNoParams(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(QueryNoParams)))
 
-	var q = QueryNoParams{
+	q := QueryNoParams{
 		Msg:   "message",
 		Age:   20,
 		Money: 3000,
@@ -172,7 +172,7 @@ func TestQueryStringNoParam(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(GetVar4)))
 
-	var data = GetVar4{
+	data := GetVar4{
 		Msg: false,
 	}
 	_, err := testEngine.Insert(data)
@@ -209,7 +209,7 @@ func TestQuerySliceStringNoParam(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(GetVar6)))
 
-	var data = GetVar6{
+	data := GetVar6{
 		Msg: false,
 	}
 	_, err := testEngine.Insert(data)
@@ -246,7 +246,7 @@ func TestQueryInterfaceNoParam(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(GetVar5)))
 
-	var data = GetVar5{
+	data := GetVar5{
 		Msg: false,
 	}
 	_, err := testEngine.Insert(data)
@@ -280,7 +280,7 @@ func TestQueryWithBuilder(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(QueryWithBuilder)))
 
-	var q = QueryWithBuilder{
+	q := QueryWithBuilder{
 		Msg:   "message",
 		Age:   20,
 		Money: 3000,
@@ -329,14 +329,14 @@ func TestJoinWithSubQuery(t *testing.T) {
 
 	assert.NoError(t, testEngine.Sync(new(JoinWithSubQuery1), new(JoinWithSubQueryDepart)))
 
-	var depart = JoinWithSubQueryDepart{
+	depart := JoinWithSubQueryDepart{
 		Name: "depart1",
 	}
 	cnt, err := testEngine.Insert(&depart)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	var q = JoinWithSubQuery1{
+	q := JoinWithSubQuery1{
 		Msg:      "message",
 		DepartId: depart.Id,
 		Money:    3000,
@@ -401,7 +401,7 @@ func TestQueryBLOBInMySQL(t *testing.T) {
 	}
 
 	const N = 10
-	var data = []Avatar{}
+	data := []Avatar{}
 	for i := 0; i < N; i++ {
 		// allocate a []byte that is as twice big as the last one
 		// so that the underlying buffer will need to reallocate when querying
@@ -447,4 +447,55 @@ func TestQueryBLOBInMySQL(t *testing.T) {
 			t.Logf("%d => %p => %02x %02x %02x", i, bs, bs[0], bs[1], bs[2])
 		}
 	}
+}
+
+func TestRowsReset(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type RowsReset1 struct {
+		Id   int64
+		Name string
+	}
+
+	type RowsReset2 struct {
+		Id   int64
+		Name string
+	}
+
+	assert.NoError(t, testEngine.Sync(new(RowsReset1), new(RowsReset2)))
+
+	data := []RowsReset1{
+		{0, "1"},
+		{0, "2"},
+		{0, "3"},
+	}
+	_, err := testEngine.Insert(data)
+	assert.NoError(t, err)
+
+	data2 := []RowsReset2{
+		{0, "4"},
+		{0, "5"},
+		{0, "6"},
+	}
+	_, err = testEngine.Insert(data2)
+	assert.NoError(t, err)
+
+	sess := testEngine.NewSession()
+	defer sess.Close()
+
+	rows, err := sess.Rows(new(RowsReset1))
+	assert.NoError(t, err)
+	for rows.Next() {
+		var data1 RowsReset1
+		assert.NoError(t, rows.Scan(&data1))
+	}
+	rows.Close()
+
+	var rrs []RowsReset2
+	assert.NoError(t, sess.Find(&rrs))
+
+	assert.Len(t, rrs, 3)
+	assert.EqualValues(t, "4", rrs[0].Name)
+	assert.EqualValues(t, "5", rrs[1].Name)
+	assert.EqualValues(t, "6", rrs[2].Name)
 }
