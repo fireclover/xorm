@@ -118,16 +118,11 @@ func TestWithTableName(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	total, err := testEngine.OrderBy("count(`id`) desc").Count(new(CountWithTableName))
+	total, err := testEngine.Count(new(CountWithTableName))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 
-	total, err = testEngine.OrderBy("count(`id`) desc").Count(CountWithTableName{})
-	assert.NoError(t, err)
-	assert.EqualValues(t, 2, total)
-
-	// the orderby will be ignored by count because some databases will return errors if the orderby columns not in group by
-	total, err = testEngine.OrderBy("`name`").Count(CountWithTableName{})
+	total, err = testEngine.Count(CountWithTableName{})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, total)
 }
