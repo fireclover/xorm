@@ -365,11 +365,6 @@ func TestJoinWithSubQuery(t *testing.T) {
 func TestQueryStringWithLimit(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	if testEngine.Dialect().URI().DBType == schemas.MSSQL {
-		t.SkipNow()
-		return
-	}
-
 	type QueryWithLimit struct {
 		Id       int64  `xorm:"autoincr pk"`
 		Msg      string `xorm:"varchar(255)"`

@@ -217,6 +217,7 @@ type mssql struct {
 	Base
 	defaultVarchar string
 	defaultChar    string
+	useLegacy      bool
 }
 
 func (db *mssql) Init(uri *URI) error {
@@ -225,6 +226,8 @@ func (db *mssql) Init(uri *URI) error {
 	db.defaultVarchar = "VARCHAR"
 	return db.Base.Init(db, uri)
 }
+
+func (db *mssql) UseLegacyLimitOffset() bool { return db.useLegacy }
 
 func (db *mssql) SetParams(params map[string]string) {
 	defaultVarchar, ok := params["DEFAULT_VARCHAR"]
@@ -251,6 +254,13 @@ func (db *mssql) SetParams(params map[string]string) {
 		}
 	} else {
 		db.defaultChar = "CHAR"
+	}
+
+	useLegacy, ok := params["USE_LEGACY_LIMIT_OFFSET"]
+	if ok {
+		if b, _ := strconv.ParseBool(useLegacy); b {
+			db.useLegacy = true
+		}
 	}
 }
 
