@@ -167,7 +167,7 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 		subQuerySelect = selectSQL
 	}
 
-	if err := statement.writeSelect(buf, subQuerySelect, false); err != nil {
+	if err := statement.writeSelect(buf, subQuerySelect, true); err != nil {
 		return "", nil, err
 	}
 
