@@ -249,9 +249,9 @@ func (statement *Statement) writeDistinct(w *builder.BytesWriter) error {
 
 func (statement *Statement) writeSelectColumns(columnStr string) func(w *builder.BytesWriter) error {
 	return statement.groupWriteFns(
-		statement.writeString("SELECT"),
+		statement.writeStrings("SELECT"),
 		statement.writeDistinct,
-		statement.writeString(columnStr),
+		statement.writeStrings(" ", columnStr),
 	)
 }
 

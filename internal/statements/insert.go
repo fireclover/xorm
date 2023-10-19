@@ -89,7 +89,7 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 		}
 
 		if statement.Conds().IsValid() {
-			if err := statement.writeString(" SELECT ")(buf); err != nil {
+			if err := statement.writeStrings(" SELECT ")(buf); err != nil {
 				return "", nil, err
 			}
 

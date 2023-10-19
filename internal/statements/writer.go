@@ -10,17 +10,15 @@ import (
 	"xorm.io/builder"
 )
 
-func (statement *Statement) writeString(str string) func(w *builder.BytesWriter) error {
+func (statement *Statement) writeStrings(strs ...string) func(w *builder.BytesWriter) error {
 	return func(w *builder.BytesWriter) error {
-		if _, err := fmt.Fprint(w, str); err != nil {
-			return err
+		for _, str := range strs {
+			if _, err := fmt.Fprint(w, str); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
-}
-
-func (statement *Statement) writeSpace(w *builder.BytesWriter) error {
-	return statement.writeString(" ")(w)
 }
 
 func (statement *Statement) groupWriteFns(writeFuncs ...func(*builder.BytesWriter) error) func(*builder.BytesWriter) error {
