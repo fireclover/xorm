@@ -170,3 +170,23 @@ func TestCountWithGroupBy(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, cnt)
 }
+
+func TestCountWithLimit(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	assertSync(t, new(CountWithTableName))
+
+	_, err := testEngine.Insert(&CountWithTableName{
+		Name: "1",
+	})
+	assert.NoError(t, err)
+
+	_, err = testEngine.Insert(CountWithTableName{
+		Name: "2",
+	})
+	assert.NoError(t, err)
+
+	cnt, err := testEngine.Limit(100).Count(new(CountWithTableName))
+	assert.NoError(t, err)
+	assert.EqualValues(t, 2, cnt)
+}

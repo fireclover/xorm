@@ -7,12 +7,10 @@ package statements
 import (
 	"errors"
 	"fmt"
-	"io"
 	"reflect"
 	"strings"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -35,7 +33,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 	}
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true); err != nil {
+	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), false); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
@@ -122,7 +120,7 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 	}
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, columnStr, true); err != nil {
+	if err := statement.writeSelect(buf, columnStr, false); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
@@ -168,7 +166,7 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 		subQuerySelect = selectSQL
 	}
 
-	if err := statement.writeSelect(buf, subQuerySelect, false); err != nil {
+	if err := statement.writeSelect(buf, subQuerySelect, true); err != nil {
 		return "", nil, err
 	}
 
@@ -182,49 +180,16 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 }
 
 func (statement *Statement) writeFrom(w *builder.BytesWriter) error {
-	if _, err := fmt.Fprint(w, " FROM "); err != nil {
-		return err
-	}
-	if err := statement.writeTableName(w); err != nil {
-		return err
-	}
-	if err := statement.writeAlias(w); err != nil {
-		return err
-	}
-	return statement.writeJoins(w)
-}
-
-func (statement *Statement) writeLimitOffset(w builder.Writer) error {
-	if statement.Start > 0 {
-		if statement.LimitN != nil {
-			_, err := fmt.Fprintf(w, " LIMIT %v OFFSET %v", *statement.LimitN, statement.Start)
-			return err
-		}
-		_, err := fmt.Fprintf(w, " OFFSET %v", statement.Start)
-		return err
-	}
-	if statement.LimitN != nil {
-		_, err := fmt.Fprint(w, " LIMIT ", *statement.LimitN)
-		return err
-	}
-	// no limit statement
-	return nil
-}
-
-func (statement *Statement) writeOffsetFetch(w builder.Writer) error {
-	if statement.LimitN != nil {
-		_, err := fmt.Fprintf(w, " OFFSET %v ROWS FETCH NEXT %v ROWS ONLY", statement.Start, *statement.LimitN)
-		return err
-	}
-	if statement.Start > 0 {
-		_, err := fmt.Fprintf(w, " OFFSET %v ROWS", statement.Start)
-		return err
-	}
-	return nil
+	return statement.writeMultiple(w,
+		statement.writeStrings(" FROM "),
+		statement.writeTableName,
+		statement.writeAlias,
+		statement.writeJoins,
+	)
 }
 
 // write "TOP <n>" (mssql only)
-func (statement *Statement) writeTop(w builder.Writer) error {
+func (statement *Statement) writeTop(w *builder.BytesWriter) error {
 	if statement.LimitN == nil {
 		return nil
 	}
@@ -232,7 +197,7 @@ func (statement *Statement) writeTop(w builder.Writer) error {
 	return err
 }
 
-func (statement *Statement) writeDistinct(w builder.Writer) error {
+func (statement *Statement) writeDistinct(w *builder.BytesWriter) error {
 	if statement.IsDistinct && !strings.HasPrefix(statement.SelectStr, "count(") {
 		_, err := fmt.Fprint(w, " DISTINCT")
 		return err
@@ -240,15 +205,12 @@ func (statement *Statement) writeDistinct(w builder.Writer) error {
 	return nil
 }
 
-func (statement *Statement) writeSelectColumns(w *builder.BytesWriter, columnStr string) error {
-	if _, err := fmt.Fprintf(w, "SELECT"); err != nil {
-		return err
-	}
-	if err := statement.writeDistinct(w); err != nil {
-		return err
-	}
-	_, err := fmt.Fprint(w, " ", columnStr)
-	return err
+func (statement *Statement) writeSelectColumns(columnStr string) func(w *builder.BytesWriter) error {
+	return statement.groupWriteFns(
+		statement.writeStrings("SELECT"),
+		statement.writeDistinct,
+		statement.writeStrings(" ", columnStr),
+	)
 }
 
 func (statement *Statement) writeWhereCond(w *builder.BytesWriter, cond builder.Cond) error {
@@ -266,20 +228,7 @@ func (statement *Statement) writeWhere(w *builder.BytesWriter) error {
 	return statement.writeWhereCond(w, statement.cond)
 }
 
-func (statement *Statement) writeWhereWithMssqlPagination(w *builder.BytesWriter) error {
-	if !statement.cond.IsValid() {
-		return statement.writeMssqlPaginationCond(w)
-	}
-	if _, err := fmt.Fprint(w, " WHERE "); err != nil {
-		return err
-	}
-	if err := statement.cond.WriteTo(statement.QuoteReplacer(w)); err != nil {
-		return err
-	}
-	return statement.writeMssqlPaginationCond(w)
-}
-
-func (statement *Statement) writeForUpdate(w io.Writer) error {
+func (statement *Statement) writeForUpdate(w *builder.BytesWriter) error {
 	if !statement.IsForUpdate {
 		return nil
 	}
@@ -291,90 +240,7 @@ func (statement *Statement) writeForUpdate(w io.Writer) error {
 	return err
 }
 
-// write subquery to implement limit offset
-// (mssql legacy only)
-func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) error {
-	if statement.Start <= 0 {
-		return nil
-	}
-
-	if statement.RefTable == nil {
-		return errors.New("unsupported query limit without reference table")
-	}
-
-	var column string
-	if len(statement.RefTable.PKColumns()) == 0 {
-		for _, index := range statement.RefTable.Indexes {
-			if len(index.Cols) == 1 {
-				column = index.Cols[0]
-				break
-			}
-		}
-		if len(column) == 0 {
-			column = statement.RefTable.ColumnsSeq()[0]
-		}
-	} else {
-		column = statement.RefTable.PKColumns()[0].Name
-	}
-	if statement.NeedTableName() {
-		if len(statement.TableAlias) > 0 {
-			column = fmt.Sprintf("%s.%s", statement.TableAlias, column)
-		} else {
-			column = fmt.Sprintf("%s.%s", statement.TableName(), column)
-		}
-	}
-
-	subWriter := builder.NewWriter()
-	if _, err := fmt.Fprintf(subWriter, "(%s NOT IN (SELECT TOP %d %s",
-		column, statement.Start, column); err != nil {
-		return err
-	}
-	if err := statement.writeFrom(subWriter); err != nil {
-		return err
-	}
-	if err := statement.writeWhere(subWriter); err != nil {
-		return err
-	}
-	if err := statement.writeOrderBys(subWriter); err != nil {
-		return err
-	}
-	if err := statement.writeGroupBy(subWriter); err != nil {
-		return err
-	}
-	if _, err := fmt.Fprint(subWriter, "))"); err != nil {
-		return err
-	}
-
-	if statement.cond.IsValid() {
-		if _, err := fmt.Fprint(w, " AND "); err != nil {
-			return err
-		}
-	} else {
-		if _, err := fmt.Fprint(w, " WHERE "); err != nil {
-			return err
-		}
-	}
-
-	return utils.WriteBuilder(w, subWriter)
-}
-
-func (statement *Statement) writeOracleLimit(w *builder.BytesWriter, columnStr string) error {
-	if statement.LimitN == nil {
-		return nil
-	}
-
-	oldString := w.String()
-	w.Reset()
-	rawColStr := columnStr
-	if rawColStr == "*" {
-		rawColStr = "at.*"
-	}
-	_, err := fmt.Fprintf(w, "SELECT %v FROM (SELECT %v,ROWNUM RN FROM (%v) at WHERE ROWNUM <= %d) aat WHERE RN > %d",
-		columnStr, rawColStr, oldString, statement.Start+*statement.LimitN, statement.Start)
-	return err
-}
-
-func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr string, needLimit bool) error {
+func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr string, isCounting bool) error {
 	dbType := statement.dialect.URI().DBType
 	if statement.isUsingLegacyLimitOffset() {
 		if dbType == "mssql" {
@@ -384,21 +250,21 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 			return statement.writeOracleLegacySelect(buf, columnStr)
 		}
 	}
-	// TODO: modify all functions to func(w builder.Writer) error
-	writeFns := []func(*builder.BytesWriter) error{
-		func(bw *builder.BytesWriter) error { return statement.writeSelectColumns(bw, columnStr) },
+
+	return statement.writeMultiple(buf,
+		statement.writeSelectColumns(columnStr),
 		statement.writeFrom,
 		statement.writeWhere,
-		func(bw *builder.BytesWriter) error { return statement.writeGroupBy(bw) },
-		func(bw *builder.BytesWriter) error { return statement.writeHaving(bw) },
+		statement.writeGroupBy,
+		statement.writeHaving,
 		func(bw *builder.BytesWriter) (err error) {
-			if dbType == "mssql" && len(statement.orderBy) == 0 && needLimit {
+			if dbType == "mssql" && len(statement.orderBy) == 0 {
 				// ORDER BY is mandatory to use OFFSET and FETCH clause (only in sqlserver)
 				if statement.LimitN == nil && statement.Start == 0 {
 					// no need to add
 					return
 				}
-				if statement.IsDistinct || len(statement.GroupByStr) > 0 {
+				if statement.IsDistinct || len(statement.GroupByStr) > 0 || isCounting {
 					// the order-by column should be one of distincts or group-bys
 					// order by the first column
 					_, err = bw.WriteString(" ORDER BY 1 ASC")
@@ -414,15 +280,9 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 			}
 			return statement.writeOrderBys(bw)
 		},
-		func(bw *builder.BytesWriter) error {
-			if dbType == "mssql" || dbType == "oracle" {
-				return statement.writeOffsetFetch(bw)
-			}
-			return statement.writeLimitOffset(bw)
-		},
-		func(bw *builder.BytesWriter) error { return statement.writeForUpdate(bw) },
-	}
-	return statement.writeSelectWithFns(buf, writeFns...)
+		statement.writePagination,
+		statement.writeForUpdate,
+	)
 }
 
 // GenExistSQL generates Exist SQL
@@ -545,7 +405,7 @@ func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interfa
 	statement.cond = statement.cond.And(autoCond)
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true); err != nil {
+	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), false); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil

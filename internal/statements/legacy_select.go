@@ -5,8 +5,6 @@
 package statements
 
 import (
-	"fmt"
-
 	"xorm.io/builder"
 )
 
@@ -17,43 +15,29 @@ func (statement *Statement) isUsingLegacyLimitOffset() bool {
 	return ok && u.UseLegacyLimitOffset()
 }
 
-func (statement *Statement) writeSelectWithFns(buf *builder.BytesWriter, writeFuncs ...func(*builder.BytesWriter) error) (err error) {
-	for _, fn := range writeFuncs {
-		if err = fn(buf); err != nil {
-			return
-		}
-	}
-	return
-}
-
 // write mssql legacy query sql
 func (statement *Statement) writeMssqlLegacySelect(buf *builder.BytesWriter, columnStr string) error {
-	writeFns := []func(*builder.BytesWriter) error{
-		func(bw *builder.BytesWriter) (err error) {
-			_, err = fmt.Fprintf(bw, "SELECT")
-			return
-		},
-		func(bw *builder.BytesWriter) error { return statement.writeDistinct(bw) },
-		func(bw *builder.BytesWriter) error { return statement.writeTop(bw) },
+	return statement.writeMultiple(buf,
+		statement.writeStrings("SELECT"),
+		statement.writeDistinct,
+		statement.writeTop,
 		statement.writeFrom,
 		statement.writeWhereWithMssqlPagination,
-		func(bw *builder.BytesWriter) error { return statement.writeGroupBy(bw) },
-		func(bw *builder.BytesWriter) error { return statement.writeHaving(bw) },
-		func(bw *builder.BytesWriter) error { return statement.writeOrderBys(bw) },
-		func(bw *builder.BytesWriter) error { return statement.writeForUpdate(bw) },
-	}
-	return statement.writeSelectWithFns(buf, writeFns...)
+		statement.writeGroupBy,
+		statement.writeHaving,
+		statement.writeOrderBys,
+		statement.writeForUpdate,
+	)
 }
 
 func (statement *Statement) writeOracleLegacySelect(buf *builder.BytesWriter, columnStr string) error {
-	writeFns := []func(*builder.BytesWriter) error{
-		func(bw *builder.BytesWriter) error { return statement.writeSelectColumns(bw, columnStr) },
+	return statement.writeMultiple(buf,
+		statement.writeSelectColumns(columnStr),
 		statement.writeFrom,
-		func(bw *builder.BytesWriter) error { return statement.writeOracleLimit(bw, columnStr) },
-		func(bw *builder.BytesWriter) error { return statement.writeGroupBy(bw) },
-		func(bw *builder.BytesWriter) error { return statement.writeHaving(bw) },
-		func(bw *builder.BytesWriter) error { return statement.writeOrderBys(bw) },
-		func(bw *builder.BytesWriter) error { return statement.writeForUpdate(bw) },
-	}
-	return statement.writeSelectWithFns(buf, writeFns...)
+		statement.writeOracleLimit(columnStr),
+		statement.writeGroupBy,
+		statement.writeHaving,
+		statement.writeOrderBys,
+		statement.writeForUpdate,
+	)
 }
