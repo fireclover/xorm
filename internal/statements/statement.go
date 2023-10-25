@@ -294,7 +294,7 @@ func (statement *Statement) GroupBy(keys string) *Statement {
 	return statement
 }
 
-func (statement *Statement) writeGroupBy(w builder.Writer) error {
+func (statement *Statement) writeGroupBy(w *builder.BytesWriter) error {
 	if statement.GroupByStr == "" {
 		return nil
 	}
@@ -308,7 +308,7 @@ func (statement *Statement) Having(conditions string) *Statement {
 	return statement
 }
 
-func (statement *Statement) writeHaving(w builder.Writer) error {
+func (statement *Statement) writeHaving(w *builder.BytesWriter) error {
 	if statement.HavingStr == "" {
 		return nil
 	}
