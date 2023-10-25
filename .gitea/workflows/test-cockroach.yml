@@ -48,7 +48,7 @@ jobs:
 
     services:
       cockroach:
-        image: cockroachdb/cockroach:v19.2.4
+        image: cockroachdb/cockroach:v22.2.15
         ports:
           - 26257:26257
         cmd:
