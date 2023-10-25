@@ -88,7 +88,6 @@ func createEngine(dbType, connStr string) error {
 					}
 				}
 				db.Close()
-				*ignoreSelectUpdate = true
 			case schemas.MYSQL:
 				db, err := sql.Open(dbType, strings.ReplaceAll(connStr, "xorm_test", "mysql"))
 				if err != nil {
