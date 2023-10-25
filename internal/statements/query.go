@@ -33,7 +33,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 	}
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true); err != nil {
+	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), false); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
@@ -120,7 +120,7 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 	}
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, columnStr, true); err != nil {
+	if err := statement.writeSelect(buf, columnStr, false); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
@@ -240,7 +240,7 @@ func (statement *Statement) writeForUpdate(w *builder.BytesWriter) error {
 	return err
 }
 
-func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr string, needLimit bool) error {
+func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr string, isCounting bool) error {
 	dbType := statement.dialect.URI().DBType
 	if statement.isUsingLegacyLimitOffset() {
 		if dbType == "mssql" {
@@ -258,13 +258,13 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 		statement.writeGroupBy,
 		statement.writeHaving,
 		func(bw *builder.BytesWriter) (err error) {
-			if dbType == "mssql" && len(statement.orderBy) == 0 && needLimit {
+			if dbType == "mssql" && len(statement.orderBy) == 0 {
 				// ORDER BY is mandatory to use OFFSET and FETCH clause (only in sqlserver)
 				if statement.LimitN == nil && statement.Start == 0 {
 					// no need to add
 					return
 				}
-				if statement.IsDistinct || len(statement.GroupByStr) > 0 {
+				if statement.IsDistinct || len(statement.GroupByStr) > 0 || isCounting {
 					// the order-by column should be one of distincts or group-bys
 					// order by the first column
 					_, err = bw.WriteString(" ORDER BY 1 ASC")
@@ -405,7 +405,7 @@ func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interfa
 	statement.cond = statement.cond.And(autoCond)
 
 	buf := builder.NewWriter()
-	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), true); err != nil {
+	if err := statement.writeSelect(buf, statement.genSelectColumnStr(), false); err != nil {
 		return "", nil, err
 	}
 	return buf.String(), buf.Args(), nil
