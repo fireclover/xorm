@@ -52,5 +52,6 @@ jobs:
         ports:
           - 26257:26257
         cmd:
-          - 'start'
+          # - '/cockroach/cockroach.sh'
+          - 'start-single-node'
           - '--insecure'
