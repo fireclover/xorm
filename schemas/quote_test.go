@@ -131,7 +131,7 @@ func TestJoin(t *testing.T) {
 
 	assert.EqualValues(t, "[a].*,[b].[c]", quoter.Join([]string{"a.*", " b.c"}, ","))
 
-	assert.EqualValues(t, "[a] [c]", quoter.Join([]string{"a c"}, ","))
+	assert.EqualValues(t, "[b] [a]", quoter.Join([]string{"b a"}, ","))
 
 	assert.EqualValues(t, "[f1], [f2], [f3]", quoter.Join(cols, ", "))
 
