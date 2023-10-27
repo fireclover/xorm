@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"xorm.io/xorm/v2/convert"
-	"xorm.io/xorm/v2/core"
+	"xorm.io/xorm/v2/internal/core"
 	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/schemas"
 )

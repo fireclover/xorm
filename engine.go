@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"xorm.io/xorm/v2/contexts"
-	"xorm.io/xorm/v2/core"
 	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/core"
 	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/log"
 	"xorm.io/xorm/v2/names"
@@ -140,7 +140,7 @@ func (engine *Engine) BufferSize(size int) *Session {
 // ShowSQL show SQL statement or not on logger if log level is great than INFO
 func (engine *Engine) ShowSQL(show ...bool) {
 	engine.logger.ShowSQL(show...)
-	engine.DB().Logger = engine.logger
+	engine.db.Logger = engine.logger
 }
 
 // Logger return the logger interface
@@ -160,7 +160,7 @@ func (engine *Engine) SetLogger(logger interface{}) {
 		panic("logger should implement either log.ContextLogger or log.Logger")
 	}
 	engine.logger = realLogger
-	engine.DB().Logger = realLogger
+	engine.db.Logger = realLogger
 }
 
 // SetLogLevel sets the logger level
@@ -232,22 +232,22 @@ func (engine *Engine) SQLType(c *schemas.Column) string {
 
 // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 func (engine *Engine) SetConnMaxLifetime(d time.Duration) {
-	engine.DB().SetConnMaxLifetime(d)
+	engine.db.SetConnMaxLifetime(d)
 }
 
 // SetConnMaxIdleTime sets the maximum amount of time a connection may be idle.
 func (engine *Engine) SetConnMaxIdleTime(d time.Duration) {
-	engine.DB().SetConnMaxIdleTime(d)
+	engine.db.SetConnMaxIdleTime(d)
 }
 
 // SetMaxOpenConns is only available for go 1.2+
 func (engine *Engine) SetMaxOpenConns(conns int) {
-	engine.DB().SetMaxOpenConns(conns)
+	engine.db.SetMaxOpenConns(conns)
 }
 
 // SetMaxIdleConns set the max idle connections on pool, default is 2
 func (engine *Engine) SetMaxIdleConns(conns int) {
-	engine.DB().SetMaxIdleConns(conns)
+	engine.db.SetMaxIdleConns(conns)
 }
 
 // NoCascade If you do not want to auto cascade load object
@@ -255,16 +255,6 @@ func (engine *Engine) NoCascade() *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true
 	return session.NoCascade()
-}
-
-// NewDB provides an interface to operate database directly
-func (engine *Engine) NewDB() (*core.DB, error) {
-	return core.Open(engine.driverName, engine.dataSourceName)
-}
-
-// DB return the wrapper of sql.DB
-func (engine *Engine) DB() *core.DB {
-	return engine.db
 }
 
 // Dialect return database dialect
@@ -279,7 +269,7 @@ func (engine *Engine) NewSession() *Session {
 
 // Close the engine
 func (engine *Engine) Close() error {
-	return engine.DB().Close()
+	return engine.db.Close()
 }
 
 // Ping tests if database is alive
@@ -518,7 +508,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 		colNames := engine.dialect.Quoter().Join(cols, ", ")
 		destColNames := dstDialect.Quoter().Join(dstCols, ", ")
 
-		rows, err := engine.DB().QueryContext(engine.defaultContext, "SELECT "+colNames+" FROM "+engine.Quote(originalTableName))
+		rows, err := engine.db.QueryContext(engine.defaultContext, "SELECT "+colNames+" FROM "+engine.Quote(originalTableName))
 		if err != nil {
 			return err
 		}

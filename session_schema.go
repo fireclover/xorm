@@ -24,7 +24,7 @@ func (session *Session) Ping() error {
 	}
 
 	session.engine.logger.Infof("PING DATABASE %v", session.engine.DriverName())
-	return session.DB().PingContext(session.ctx)
+	return session.db().PingContext(session.ctx)
 }
 
 // CreateTable create a table according a bean

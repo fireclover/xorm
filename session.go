@@ -19,7 +19,7 @@ import (
 
 	"xorm.io/xorm/v2/contexts"
 	"xorm.io/xorm/v2/convert"
-	"xorm.io/xorm/v2/core"
+	"xorm.io/xorm/v2/internal/core"
 	"xorm.io/xorm/v2/internal/json"
 	"xorm.io/xorm/v2/internal/statements"
 	"xorm.io/xorm/v2/log"
@@ -337,11 +337,6 @@ func (session *Session) GroupBy(keys string) *Session {
 func (session *Session) Having(conditions string) *Session {
 	session.statement.Having(conditions)
 	return session
-}
-
-// DB db return the wrapper of sql.DB
-func (session *Session) DB() *core.DB {
-	return session.db()
 }
 
 func (session *Session) doPrepare(db *core.DB, sqlStr string) (stmt *core.Stmt, err error) {
@@ -759,7 +754,7 @@ func (session *Session) PingContext(ctx context.Context) error {
 	}
 
 	session.engine.logger.Infof("PING DATABASE %v", session.engine.DriverName())
-	return session.DB().PingContext(ctx)
+	return session.db().PingContext(ctx)
 }
 
 // disable version check

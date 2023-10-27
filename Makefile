@@ -6,7 +6,7 @@ GOFMT ?= gofmt -s
 TAGS ?=
 SED_INPLACE := sed -i
 
-GO_DIRS := contexts integrations core dialects internal log migrate names schemas tags
+GO_DIRS := contexts tests core dialects internal log migrate names schemas tags
 GOFILES := $(wildcard *.go)
 GOFILES += $(shell find $(GO_DIRS) -name "*.go" -type f)
 INTEGRATION_PACKAGES := xorm.io/xorm/v2/tests
@@ -59,7 +59,7 @@ build: go-check $(GO_SOURCES)
 .PHONY: clean
 clean:
 	$(GO) clean -i ./...
-	rm -rf *.sql *.log test.db cover.out cover.html *coverage.out coverage.all integrations/*.sql
+	rm -rf *.sql *.log test.db cover.out cover.html *coverage.out coverage.all tests/*.sql
 
 .PHONY: coverage
 coverage:
