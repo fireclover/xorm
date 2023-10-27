@@ -169,17 +169,17 @@ func (eg *EngineGroup) SetTagIdentifier(tagIdentifier string) {
 
 // SetMaxIdleConns set the max idle connections on pool, default is 2
 func (eg *EngineGroup) SetMaxIdleConns(conns int) {
-	eg.Engine.DB().SetMaxIdleConns(conns)
+	eg.Engine.db.SetMaxIdleConns(conns)
 	for i := 0; i < len(eg.slaves); i++ {
-		eg.slaves[i].DB().SetMaxIdleConns(conns)
+		eg.slaves[i].db.SetMaxIdleConns(conns)
 	}
 }
 
 // SetMaxOpenConns is only available for go 1.2+
 func (eg *EngineGroup) SetMaxOpenConns(conns int) {
-	eg.Engine.DB().SetMaxOpenConns(conns)
+	eg.Engine.db.SetMaxOpenConns(conns)
 	for i := 0; i < len(eg.slaves); i++ {
-		eg.slaves[i].DB().SetMaxOpenConns(conns)
+		eg.slaves[i].db.SetMaxOpenConns(conns)
 	}
 }
 

@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	"strings"
 
-	"xorm.io/xorm/v2/core"
+	"xorm.io/xorm/v2/internal/core"
 )
 
 func (session *Session) queryPreprocess(sqlStr *string, paramStr ...interface{}) {
@@ -34,9 +34,9 @@ func (session *Session) queryRows(sqlStr string, args ...interface{}) (*core.Row
 	if session.isAutoCommit {
 		var db *core.DB
 		if session.sessionType == groupSession && strings.EqualFold(strings.TrimSpace(sqlStr)[:6], "select") && !session.statement.IsForUpdate {
-			db = session.engine.engineGroup.Slave().DB()
+			db = session.engine.engineGroup.Slave().db
 		} else {
-			db = session.DB()
+			db = session.db()
 		}
 
 		if session.prepareStmt {
@@ -168,14 +168,14 @@ func (session *Session) exec(sqlStr string, args ...interface{}) (sql.Result, er
 	}
 
 	if session.prepareStmt {
-		stmt, err := session.doPrepare(session.DB(), sqlStr)
+		stmt, err := session.doPrepare(session.db(), sqlStr)
 		if err != nil {
 			return nil, err
 		}
 		return stmt.ExecContext(session.ctx, args...)
 	}
 
-	return session.DB().ExecContext(session.ctx, sqlStr, args...)
+	return session.db().ExecContext(session.ctx, sqlStr, args...)
 }
 
 // Exec raw sql
