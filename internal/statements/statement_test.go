@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/v2/caches"
+
 	"xorm.io/xorm/v2/dialects"
 	"xorm.io/xorm/v2/names"
 	"xorm.io/xorm/v2/schemas"
@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 		panic("unknow dialect")
 	}
 
-	tagParser = tags.NewParser("xorm", dialect, names.SnakeMapper{}, names.SnakeMapper{}, caches.NewManager())
+	tagParser = tags.NewParser("xorm", dialect, names.SnakeMapper{}, names.SnakeMapper{})
 	if tagParser == nil {
 		panic("tags parser is nil")
 	}

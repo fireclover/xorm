@@ -6,82 +6,12 @@ package xorm
 
 import (
 	"errors"
-	"strconv"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/v2/caches"
-	"xorm.io/xorm/v2/schemas"
 )
 
 // ErrNeedDeletedCond delete needs less one condition error
 var ErrNeedDeletedCond = errors.New("Delete action needs at least one condition")
-
-func (session *Session) cacheDelete(table *schemas.Table, tableName, sqlStr string, args ...interface{}) error {
-	if table == nil ||
-		session.tx != nil {
-		return ErrCacheFailed
-	}
-
-	for _, filter := range session.engine.dialect.Filters() {
-		sqlStr = filter.Do(session.ctx, sqlStr)
-	}
-
-	newsql := session.statement.ConvertIDSQL(sqlStr)
-	if newsql == "" {
-		return ErrCacheFailed
-	}
-
-	cacher := session.engine.cacherMgr.GetCacher(tableName)
-	pkColumns := table.PKColumns()
-	ids, err := caches.GetCacheSql(cacher, tableName, newsql, args)
-	if err != nil {
-		rows, err := session.queryRows(newsql, args...)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		resultsSlice, err := session.engine.ScanStringMaps(rows)
-		if err != nil {
-			return err
-		}
-		ids = make([]schemas.PK, 0)
-		if len(resultsSlice) > 0 {
-			for _, data := range resultsSlice {
-				var id int64
-				var pk schemas.PK = make([]interface{}, 0)
-				for _, col := range pkColumns {
-					if v, ok := data[col.Name]; !ok {
-						return errors.New("no id")
-					} else if col.SQLType.IsText() {
-						pk = append(pk, v)
-					} else if col.SQLType.IsNumeric() {
-						id, err = strconv.ParseInt(v, 10, 64)
-						if err != nil {
-							return err
-						}
-						pk = append(pk, id)
-					} else {
-						return errors.New("not supported primary key type")
-					}
-				}
-				ids = append(ids, pk)
-			}
-		}
-	}
-
-	for _, id := range ids {
-		session.engine.logger.Debugf("[cache] delete cache obj: %v, %v", tableName, id)
-		sid, err := id.ToString()
-		if err != nil {
-			return err
-		}
-		cacher.DelBean(tableName, sid)
-	}
-	session.engine.logger.Debugf("[cache] clear cache table: %v", tableName)
-	cacher.ClearIds(tableName)
-	return nil
-}
 
 // Delete records, bean's non-empty fields are conditions
 // At least one condition must be set.
@@ -130,7 +60,6 @@ func (session *Session) delete(beans []interface{}, mustHaveConditions bool) (in
 		return 0, ErrNeedDeletedCond
 	}
 
-	tableNameNoQuote := session.statement.TableName()
 	table := session.statement.RefTable
 
 	realSQLWriter := builder.NewWriter()
@@ -152,14 +81,6 @@ func (session *Session) delete(beans []interface{}, mustHaveConditions bool) (in
 			col := table.GetColumn(colName)
 			setColumnTime(bean, col, t)
 		})
-	}
-
-	argsForCache := make([]interface{}, 0, len(deleteSQLWriter.Args())*2)
-	copy(argsForCache, deleteSQLWriter.Args())
-	argsForCache = append(deleteSQLWriter.Args(), argsForCache...)
-
-	if cacher := session.engine.GetCacher(tableNameNoQuote); cacher != nil && session.statement.UseCache {
-		_ = session.cacheDelete(table, tableNameNoQuote, deleteSQLWriter.String(), argsForCache...)
 	}
 
 	session.statement.RefTable = table

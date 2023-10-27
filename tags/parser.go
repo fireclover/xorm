@@ -5,16 +5,13 @@
 package tags
 
 import (
-	"encoding/gob"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
-	"time"
 	"unicode"
 
-	"xorm.io/xorm/v2/caches"
 	"xorm.io/xorm/v2/convert"
 	"xorm.io/xorm/v2/dialects"
 	"xorm.io/xorm/v2/names"
@@ -44,19 +41,17 @@ type Parser struct {
 	columnMapper names.Mapper
 	tableMapper  names.Mapper
 	handlers     map[string]Handler
-	cacherMgr    *caches.Manager
 	tableCache   sync.Map // map[reflect.Type]*schemas.Table
 }
 
 // NewParser creates a tag parser
-func NewParser(identifier string, dialect dialects.Dialect, tableMapper, columnMapper names.Mapper, cacherMgr *caches.Manager) *Parser {
+func NewParser(identifier string, dialect dialects.Dialect, tableMapper, columnMapper names.Mapper) *Parser {
 	return &Parser{
 		identifier:   identifier,
 		dialect:      dialect,
 		tableMapper:  tableMapper,
 		columnMapper: columnMapper,
 		handlers:     defaultTagHandlers,
-		cacherMgr:    cacherMgr,
 	}
 }
 
@@ -102,14 +97,6 @@ func (parser *Parser) ParseWithCache(v reflect.Value) (*schemas.Table, error) {
 	}
 
 	parser.tableCache.Store(t, table)
-
-	if parser.cacherMgr.GetDefaultCacher() != nil {
-		if v.CanAddr() {
-			gob.Register(v.Addr().Interface())
-		} else {
-			gob.Register(v.Interface())
-		}
-	}
 
 	return table, nil
 }
@@ -235,17 +222,6 @@ func (parser *Parser) parseFieldWithTags(table *schemas.Table, fieldIndex int, f
 			} else {
 				col.Name = ctx.tag.name
 			}
-		}
-
-		if ctx.hasCacheTag {
-			if parser.cacherMgr.GetDefaultCacher() != nil {
-				parser.cacherMgr.SetCacher(table.Name, parser.cacherMgr.GetDefaultCacher())
-			} else {
-				parser.cacherMgr.SetCacher(table.Name, caches.NewLRUCacher2(caches.NewMemoryStore(), time.Hour, 10000))
-			}
-		}
-		if ctx.hasNoCacheTag {
-			parser.cacherMgr.SetCacher(table.Name, nil)
 		}
 	}
 

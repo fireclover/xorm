@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"time"
 
-	"xorm.io/xorm/v2/caches"
 	"xorm.io/xorm/v2/contexts"
 	"xorm.io/xorm/v2/dialects"
 	"xorm.io/xorm/v2/log"
@@ -81,7 +80,6 @@ type EngineInterface interface {
 
 	Before(func(interface{})) *Session
 	Charset(charset string) *Session
-	ClearCache(...interface{}) error
 	Context(context.Context) *Session
 	CreateTables(...interface{}) error
 	DBMetas() ([]*schemas.Table, error)
@@ -90,23 +88,18 @@ type EngineInterface interface {
 	DriverName() string
 	DropTables(...interface{}) error
 	DumpAllToFile(fp string, tp ...schemas.DBType) error
-	GetCacher(string) caches.Cacher
 	GetColumnMapper() names.Mapper
-	GetDefaultCacher() caches.Cacher
 	GetTableMapper() names.Mapper
 	GetTZDatabase() *time.Location
 	GetTZLocation() *time.Location
 	ImportFile(fp string) ([]sql.Result, error)
-	MapCacher(interface{}, caches.Cacher) error
 	NewSession() *Session
 	NoAutoTime() *Session
 	Prepare() *Session
 	Quote(string) string
-	SetCacher(string, caches.Cacher)
 	SetConnMaxLifetime(time.Duration)
 	SetColumnMapper(names.Mapper)
 	SetTagIdentifier(string)
-	SetDefaultCacher(caches.Cacher)
 	SetLogger(logger interface{})
 	SetLogLevel(log.LogLevel)
 	SetMapper(names.Mapper)

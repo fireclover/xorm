@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"xorm.io/xorm/v2"
-	"xorm.io/xorm/v2/caches"
+
 	"xorm.io/xorm/v2/dialects"
 	"xorm.io/xorm/v2/log"
 	"xorm.io/xorm/v2/names"
@@ -30,7 +30,6 @@ var (
 	showSQL            = flag.Bool("show_sql", true, "show generated SQLs")
 	ptrConnStr         = flag.String("conn_str", "./test.db?cache=shared&mode=rwc", "test database connection string")
 	mapType            = flag.String("map_type", "snake", "indicate the name mapping")
-	cacheFlag          = flag.Bool("cache", false, "if enable cache")
 	cluster            = flag.Bool("cluster", false, "if this is a cluster")
 	splitter           = flag.String("splitter", ";", "the splitter on connstr for cluster")
 	schema             = flag.String("schema", "", "specify the schema")
@@ -125,10 +124,6 @@ func createEngine(dbType, connStr string) error {
 		}
 		testEngine.ShowSQL(*showSQL)
 		testEngine.SetLogLevel(log.LOG_DEBUG)
-		if *cacheFlag {
-			cacher := caches.NewLRUCacher(caches.NewMemoryStore(), 100000)
-			testEngine.SetDefaultCacher(cacher)
-		}
 
 		if len(*mapType) > 0 {
 			switch *mapType {

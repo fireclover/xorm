@@ -10,10 +10,8 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
-	"strconv"
 	"time"
 
-	"xorm.io/xorm/v2/caches"
 	"xorm.io/xorm/v2/convert"
 	"xorm.io/xorm/v2/core"
 	"xorm.io/xorm/v2/internal/utils"
@@ -90,17 +88,6 @@ func (session *Session) get(beans ...interface{}) (bool, error) {
 	}
 
 	table := session.statement.RefTable
-
-	if session.statement.ColumnMap.IsEmpty() && session.canCache() && isStruct {
-		if cacher := session.engine.GetCacher(session.statement.TableName()); cacher != nil &&
-			!session.statement.GetUnscoped() {
-			has, err := session.cacheGet(beans[0], sqlStr, args...)
-			if err != ErrCacheFailed {
-				return has, err
-			}
-		}
-	}
-
 	context := session.statement.Context
 	if context != nil && isStruct {
 		res := context.Get(fmt.Sprintf("%v-%v", sqlStr, args))
@@ -269,98 +256,4 @@ func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields 
 	default:
 		return fmt.Errorf("unspoorted map type: %t", t)
 	}
-}
-
-func (session *Session) cacheGet(bean interface{}, sqlStr string, args ...interface{}) (has bool, err error) {
-	// if has no reftable, then don't use cache currently
-	if !session.canCache() {
-		return false, ErrCacheFailed
-	}
-
-	for _, filter := range session.engine.dialect.Filters() {
-		sqlStr = filter.Do(session.ctx, sqlStr)
-	}
-	newsql := session.statement.ConvertIDSQL(sqlStr)
-	if newsql == "" {
-		return false, ErrCacheFailed
-	}
-
-	tableName := session.statement.TableName()
-	cacher := session.engine.cacherMgr.GetCacher(tableName)
-
-	session.engine.logger.Debugf("[cache] Get SQL: %s, %v", newsql, args)
-	table := session.statement.RefTable
-	ids, err := caches.GetCacheSql(cacher, tableName, newsql, args)
-	if err != nil {
-		res := make([]string, len(table.PrimaryKeys))
-		rows, err := session.NoCache().queryRows(newsql, args...)
-		if err != nil {
-			return false, err
-		}
-		defer rows.Close()
-
-		if rows.Next() {
-			err = rows.ScanSlice(&res)
-			if err != nil {
-				return true, err
-			}
-		} else {
-			if rows.Err() != nil {
-				return false, rows.Err()
-			}
-			return false, ErrCacheFailed
-		}
-
-		var pk schemas.PK = make([]interface{}, len(table.PrimaryKeys))
-		for i, col := range table.PKColumns() {
-			if col.SQLType.IsText() {
-				pk[i] = res[i]
-			} else if col.SQLType.IsNumeric() {
-				n, err := strconv.ParseInt(res[i], 10, 64)
-				if err != nil {
-					return false, err
-				}
-				pk[i] = n
-			} else {
-				return false, errors.New("unsupported")
-			}
-		}
-
-		ids = []schemas.PK{pk}
-		session.engine.logger.Debugf("[cache] cache ids: %s, %v", newsql, ids)
-		err = caches.PutCacheSql(cacher, ids, tableName, newsql, args)
-		if err != nil {
-			return false, err
-		}
-	} else {
-		session.engine.logger.Debugf("[cache] cache hit: %s, %v", newsql, ids)
-	}
-
-	if len(ids) > 0 {
-		structValue := reflect.Indirect(reflect.ValueOf(bean))
-		id := ids[0]
-		session.engine.logger.Debugf("[cache] get bean: %s, %v", tableName, id)
-		sid, err := id.ToString()
-		if err != nil {
-			return false, err
-		}
-		cacheBean := cacher.GetBean(tableName, sid)
-		if cacheBean == nil {
-			cacheBean = bean
-			has, err = session.nocacheGet(reflect.Struct, table, []interface{}{cacheBean}, sqlStr, args...)
-			if err != nil || !has {
-				return has, err
-			}
-
-			session.engine.logger.Debugf("[cache] cache bean: %s, %v, %v", tableName, id, cacheBean)
-			cacher.PutBean(tableName, sid, cacheBean)
-		} else {
-			session.engine.logger.Debugf("[cache] cache hit: %s, %v, %v", tableName, id, cacheBean)
-			has = true
-		}
-		structValue.Set(reflect.Indirect(reflect.ValueOf(cacheBean)))
-
-		return has, nil
-	}
-	return false, nil
 }

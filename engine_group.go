@@ -8,7 +8,6 @@ import (
 	"context"
 	"time"
 
-	"xorm.io/xorm/v2/caches"
 	"xorm.io/xorm/v2/contexts"
 	"xorm.io/xorm/v2/dialects"
 	"xorm.io/xorm/v2/log"
@@ -125,14 +124,6 @@ func (eg *EngineGroup) SetConnMaxLifetime(d time.Duration) {
 	eg.Engine.SetConnMaxLifetime(d)
 	for i := 0; i < len(eg.slaves); i++ {
 		eg.slaves[i].SetConnMaxLifetime(d)
-	}
-}
-
-// SetDefaultCacher set the default cacher
-func (eg *EngineGroup) SetDefaultCacher(cacher caches.Cacher) {
-	eg.Engine.SetDefaultCacher(cacher)
-	for i := 0; i < len(eg.slaves); i++ {
-		eg.slaves[i].SetDefaultCacher(cacher)
 	}
 }
 

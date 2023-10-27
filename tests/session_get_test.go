@@ -509,7 +509,7 @@ func TestContextGet(t *testing.T) {
 	context := contexts.NewMemoryContextCache()
 
 	var c2 ContextGetStruct
-	has, err := sess.ID(1).NoCache().ContextCache(context).Get(&c2)
+	has, err := sess.ID(1).ContextCache(context).Get(&c2)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, c2.Id)
@@ -519,7 +519,7 @@ func TestContextGet(t *testing.T) {
 	assert.True(t, len(args) > 0)
 
 	var c3 ContextGetStruct
-	has, err = sess.ID(1).NoCache().ContextCache(context).Get(&c3)
+	has, err = sess.ID(1).ContextCache(context).Get(&c3)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, c3.Id)
@@ -544,14 +544,14 @@ func TestContextGet2(t *testing.T) {
 	context := contexts.NewMemoryContextCache()
 
 	var c2 ContextGetStruct2
-	has, err := testEngine.ID(1).NoCache().ContextCache(context).Get(&c2)
+	has, err := testEngine.ID(1).ContextCache(context).Get(&c2)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, c2.Id)
 	assert.EqualValues(t, "1", c2.Name)
 
 	var c3 ContextGetStruct2
-	has, err = testEngine.ID(1).NoCache().ContextCache(context).Get(&c3)
+	has, err = testEngine.ID(1).ContextCache(context).Get(&c3)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, c3.Id)

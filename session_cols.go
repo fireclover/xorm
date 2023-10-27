@@ -115,9 +115,7 @@ func (session *Session) UseBool(columns ...string) *Session {
 	return session
 }
 
-// Distinct use for distinct columns. Caution: when you are using cache,
-// distinct will not be cached because cache system need id,
-// but distinct will not provide id
+// Distinct use for distinct columns.
 func (session *Session) Distinct(columns ...string) *Session {
 	session.statement.Distinct(columns...)
 	return session
