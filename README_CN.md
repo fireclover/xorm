@@ -56,13 +56,13 @@ v1.0.0 相对于 v0.8.2 有以下不兼容的变更：
 
 ## 安装
 
-	go get xorm.io/xorm
+	go get xorm.io/xorm/v2
 
 ## 文档
 
 * [操作指南](http://xorm.io/docs)
 
-* [Godoc代码文档](http://pkg.go.dev/xorm.io/xorm)
+* [Godoc代码文档](http://pkg.go.dev/xorm.io/xorm/v2)
 
 # 快速开始
 
