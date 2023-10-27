@@ -5,6 +5,9 @@ on:
     tags:
       - '*'
 
+env:
+  RUNNER_TOOL_CACHE: /toolcache # specify with your cache path
+
 jobs:
   release:
     runs-on: ubuntu-latest
