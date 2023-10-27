@@ -10,11 +10,12 @@ import (
 
 	"xorm.io/builder"
 	"xorm.io/xorm/internal/utils"
+	"xorm.io/xorm/schemas"
 )
 
 func (statement *Statement) writePagination(bw *builder.BytesWriter) error {
 	dbType := statement.dialect.URI().DBType
-	if dbType == "mssql" || dbType == "oracle" {
+	if dbType == schemas.MSSQL || dbType == schemas.ORACLE {
 		return statement.writeOffsetFetch(bw)
 	}
 	return statement.writeLimitOffset(bw)
@@ -50,15 +51,15 @@ func (statement *Statement) writeOffsetFetch(w builder.Writer) error {
 }
 
 func (statement *Statement) writeWhereWithMssqlPagination(w *builder.BytesWriter) error {
-	if !statement.cond.IsValid() {
-		return statement.writeMssqlPaginationCond(w)
+	if statement.cond.IsValid() {
+		if _, err := fmt.Fprint(w, " WHERE "); err != nil {
+			return err
+		}
+		if err := statement.cond.WriteTo(statement.QuoteReplacer(w)); err != nil {
+			return err
+		}
 	}
-	if _, err := fmt.Fprint(w, " WHERE "); err != nil {
-		return err
-	}
-	if err := statement.cond.WriteTo(statement.QuoteReplacer(w)); err != nil {
-		return err
-	}
+
 	return statement.writeMssqlPaginationCond(w)
 }
 
@@ -115,15 +116,8 @@ func (statement *Statement) writeMssqlPaginationCond(w *builder.BytesWriter) err
 	if _, err := fmt.Fprint(subWriter, "))"); err != nil {
 		return err
 	}
-
-	if statement.cond.IsValid() {
-		if _, err := fmt.Fprint(w, " AND "); err != nil {
-			return err
-		}
-	} else {
-		if _, err := fmt.Fprint(w, " WHERE "); err != nil {
-			return err
-		}
+	if err := statement.writeWhereOrAnd(w, statement.cond.IsValid()); err != nil {
+		return err
 	}
 
 	return utils.WriteBuilder(w, subWriter)
