@@ -832,9 +832,7 @@ func (engine *Engine) StoreEngine(storeEngine string) *Session {
 	return session.StoreEngine(storeEngine)
 }
 
-// Distinct use for distinct columns. Caution: when you are using cache,
-// distinct will not be cached because cache system need id,
-// but distinct will not provide id
+// Distinct use for distinct columns.
 func (engine *Engine) Distinct(columns ...string) *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true

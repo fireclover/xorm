@@ -19,8 +19,6 @@ var (
 	ErrUnSupportedType = errors.New("Unsupported type error")
 	// ErrNotExist record does not exist error
 	ErrNotExist = errors.New("Record does not exist")
-	// ErrCacheFailed cache failed error
-	ErrCacheFailed = errors.New("Cache failed")
 	// ErrConditionType condition type unsupported
 	ErrConditionType = errors.New("Unsupported condition type")
 )

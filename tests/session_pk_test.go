@@ -430,7 +430,7 @@ func TestCompositeKey(t *testing.T) {
 	assert.True(t, has)
 
 	var compositeKeyVal2 CompositeKey
-	// test passing PK ptr, this test seem failed withCache
+	// test passing PK ptr
 	has, err = testEngine.ID(&schemas.PK{11, 22}).Get(&compositeKeyVal2)
 	assert.NoError(t, err)
 	assert.True(t, has)
@@ -491,7 +491,7 @@ func TestCompositeKey2(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 
-	// test passing PK ptr, this test seem failed withCache
+	// test passing PK ptr
 	has, err = testEngine.ID(&schemas.PK{"11", 22}).Get(&user)
 	assert.NoError(t, err)
 	assert.True(t, has)
@@ -539,7 +539,7 @@ func TestCompositeKey3(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, has)
 
-	// test passing PK ptr, this test seem failed withCache
+	// test passing PK ptr
 	has, err = testEngine.ID(&schemas.PK{"11", 22}).Get(&user)
 	assert.NoError(t, err)
 	assert.True(t, has)

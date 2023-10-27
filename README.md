@@ -21,7 +21,6 @@ v1.0.0 has some break changes from v0.8.2.
 * Transaction Support
 * Both ORM and raw SQL operation Support
 * Sync database schema Support
-* Query Cache speed up
 * Database Reverse support via [xorm.io/reverse](https://xorm.io/reverse)
 * Simple cascade loading support
 * Optimistic Locking support
