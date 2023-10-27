@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/schemas"
 )
 
 func TestLRUCache(t *testing.T) {
@@ -40,7 +40,7 @@ func TestLRUCache(t *testing.T) {
 		obj2 := cacher.GetBean(tableName, sid)
 		assert.Nil(t, obj2)
 
-		var obj = new(CacheObject1)
+		obj := new(CacheObject1)
 		cacher.PutBean(tableName, sid, obj)
 		obj3 := cacher.GetBean(tableName, sid)
 		assert.EqualValues(t, obj, obj3)

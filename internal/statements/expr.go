@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // ErrUnsupportedExprType represents an error with unsupported express type
@@ -59,7 +59,7 @@ func (expr *Expr) WriteArgs(w *builder.BytesWriter) error {
 type exprParams []Expr
 
 func (exprs exprParams) ColNames() []string {
-	var cols = make([]string, 0, len(exprs))
+	cols := make([]string, 0, len(exprs))
 	for _, expr := range exprs {
 		cols = append(cols, expr.ColName)
 	}

@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/caches"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // ErrNeedDeletedCond delete needs less one condition error

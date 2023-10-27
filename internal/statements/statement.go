@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
-	"xorm.io/xorm/tags"
+	"xorm.io/xorm/v2/contexts"
+	"xorm.io/xorm/v2/convert"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/json"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/schemas"
+	"xorm.io/xorm/v2/tags"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"xorm.io/xorm/internal/utils"
+	"xorm.io/xorm/v2/internal/utils"
 )
 
 // PK represents primary key values

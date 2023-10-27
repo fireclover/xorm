@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/schemas"
 )
 
 func (statement *Statement) writePagination(bw *builder.BytesWriter) error {

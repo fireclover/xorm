@@ -8,9 +8,9 @@ import (
 	"reflect"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/internal/statements"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/internal/statements"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // enumerated all errors

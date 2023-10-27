@@ -56,13 +56,13 @@ Drivers for Go's sql package which currently support database/sql includes:
 
 ## Installation
 
-	go get xorm.io/xorm
+	go get xorm.io/xorm/v2
 
 ## Documents
 
 * [Manual](http://xorm.io/docs)
 
-* [GoDoc](http://pkg.go.dev/xorm.io/xorm)
+* [GoDoc](http://pkg.go.dev/xorm.io/xorm/v2)
 
 ## Quick Start
 
@@ -489,19 +489,17 @@ You can find all the changelog [here](CHANGELOG.md)
 
 ## Cases
 
-* [studygolang](http://studygolang.com/) - [github.com/studygolang/studygolang](https://github.com/studygolang/studygolang)
-
-* [Gitea](http://gitea.io) - [github.com/go-gitea/gitea](http://github.com/go-gitea/gitea)
-
-* [Gogs](http://try.gogits.org) - [github.com/gogits/gogs](http://github.com/gogits/gogs)
+* [Gitea](http://about.gitea.com) - [github.com/go-gitea/gitea](http://github.com/go-gitea/gitea)
 
 * [grafana](https://grafana.com/) - [github.com/grafana/grafana](http://github.com/grafana/grafana)
+
+* [studygolang](http://studygolang.com/) - [github.com/studygolang/studygolang](https://github.com/studygolang/studygolang)
+
+* [Gogs](http://try.gogits.org) - [github.com/gogits/gogs](http://github.com/gogits/gogs)
 
 * [github.com/m3ng9i/qreader](https://github.com/m3ng9i/qreader)
 
 * [Wego](http://github.com/go-tango/wego)
-
-* [Docker.cn](https://docker.cn/)
 
 * [Xorm Adapter](https://github.com/casbin/xorm-adapter) for [Casbin](https://github.com/casbin/casbin) - [github.com/casbin/xorm-adapter](https://github.com/casbin/xorm-adapter)
 

@@ -7,9 +7,10 @@ package tests
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"xorm.io/builder"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/schemas"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSetExpr(t *testing.T) {
