@@ -21,7 +21,6 @@ import (
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-	_ "github.com/ziutek/mymysql/godrv"
 	_ "modernc.org/sqlite"
 )
 

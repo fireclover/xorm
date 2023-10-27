@@ -112,7 +112,7 @@ func createEngine(dbType, connStr string) error {
 			testEngine, err = xorm.NewEngine(dbType, connStr)
 		} else {
 			testEngine, err = xorm.NewEngineGroup(dbType, strings.Split(connStr, *splitter))
-			if dbType != "mysql" && dbType != "mymysql" {
+			if dbType != "mysql" {
 				*ignoreSelectUpdate = true
 			}
 		}
