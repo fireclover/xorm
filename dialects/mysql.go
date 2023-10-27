@@ -12,7 +12,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/schemas"
@@ -791,57 +790,4 @@ func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
 		var r sql.RawBytes
 		return &r, nil
 	}
-}
-
-type mymysqlDriver struct {
-	mysqlDriver
-}
-
-func (p *mymysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
-	uri := &URI{DBType: schemas.MYSQL}
-
-	pd := strings.SplitN(dataSourceName, "*", 2)
-	if len(pd) == 2 {
-		// Parse protocol part of URI
-		p := strings.SplitN(pd[0], ":", 2)
-		if len(p) != 2 {
-			return nil, errors.New("wrong protocol part of URI")
-		}
-		uri.Proto = p[0]
-		options := strings.Split(p[1], ",")
-		uri.Raddr = options[0]
-		for _, o := range options[1:] {
-			kv := strings.SplitN(o, "=", 2)
-			var k, v string
-			if len(kv) == 2 {
-				k, v = kv[0], kv[1]
-			} else {
-				k, v = o, "true"
-			}
-			switch k {
-			case "laddr":
-				uri.Laddr = v
-			case "timeout":
-				to, err := time.ParseDuration(v)
-				if err != nil {
-					return nil, err
-				}
-				uri.Timeout = to
-			default:
-				return nil, errors.New("unknown option: " + k)
-			}
-		}
-		// Remove protocol part
-		pd = pd[1:]
-	}
-	// Parse database part of URI
-	dup := strings.SplitN(pd[0], "/", 3)
-	if len(dup) != 3 {
-		return nil, errors.New("Wrong database part of URI")
-	}
-	uri.DBName = dup[0]
-	uri.User = dup[1]
-	uri.Passwd = dup[2]
-
-	return uri, nil
 }

@@ -36,7 +36,6 @@ v1.0.0 相对于 v0.8.2 有以下不兼容的变更：
 
 * [Mysql5.*](https://github.com/mysql/mysql-server/tree/5.7) / [Mysql8.*](https://github.com/mysql/mysql-server) / [Mariadb](https://github.com/MariaDB/server) / [Tidb](https://github.com/pingcap/tidb)
   - [github.com/go-sql-driver/mysql](https://github.com/go-sql-driver/mysql)
-  - [github.com/ziutek/mymysql/godrv](https://github.com/ziutek/mymysql/godrv)
 
 * [Postgres](https://github.com/postgres/postgres) / [Cockroach](https://github.com/cockroachdb/cockroach)
   - [github.com/lib/pq](https://github.com/lib/pq)
