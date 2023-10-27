@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"xorm.io/xorm/core"
+	"xorm.io/xorm/v2/core"
 )
 
 // ScanContext represents a context when Scan
@@ -31,9 +31,7 @@ type Driver interface {
 	Scan(*ScanContext, *core.Rows, []*sql.ColumnType, ...interface{}) error
 }
 
-var (
-	drivers = map[string]Driver{}
-)
+var drivers = map[string]Driver{}
 
 // RegisterDriver register a driver
 func RegisterDriver(driverName string, driver Driver) {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/core"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // URI represents an uri to visit database

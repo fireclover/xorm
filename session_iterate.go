@@ -7,7 +7,7 @@ package xorm
 import (
 	"reflect"
 
-	"xorm.io/xorm/internal/utils"
+	"xorm.io/xorm/v2/internal/utils"
 )
 
 // IterFunc only use by Iterate
@@ -64,15 +64,15 @@ func (session *Session) BufferSize(size int) *Session {
 }
 
 func (session *Session) bufferIterate(bean interface{}, fun IterFunc) error {
-	var bufferSize = session.statement.BufferSize
-	var pLimitN = session.statement.LimitN
+	bufferSize := session.statement.BufferSize
+	pLimitN := session.statement.LimitN
 	if pLimitN != nil && bufferSize > *pLimitN {
 		bufferSize = *pLimitN
 	}
-	var start = session.statement.Start
+	start := session.statement.Start
 	v := utils.ReflectValue(bean)
 	sliceType := reflect.SliceOf(v.Type())
-	var idx = 0
+	idx := 0
 	session.autoResetStatement = false
 	defer func() {
 		session.autoResetStatement = true

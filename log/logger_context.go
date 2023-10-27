@@ -7,7 +7,7 @@ package log
 import (
 	"fmt"
 
-	"xorm.io/xorm/contexts"
+	"xorm.io/xorm/v2/contexts"
 )
 
 // LogContext represents a log context
@@ -35,9 +35,7 @@ type ContextLogger interface {
 	IsShowSQL() bool
 }
 
-var (
-	_ ContextLogger = &LoggerAdapter{}
-)
+var _ ContextLogger = &LoggerAdapter{}
 
 // enumerate all the context keys
 var (

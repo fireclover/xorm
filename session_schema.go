@@ -13,8 +13,8 @@ import (
 	"os"
 	"strings"
 
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/utils"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/utils"
 )
 
 // Ping test if database is ok

@@ -9,7 +9,7 @@ import (
 	"reflect"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/schemas"
 )
 
 var (
@@ -91,7 +91,7 @@ func (statement *Statement) ProcessIDParam() error {
 	}
 
 	for i, col := range statement.RefTable.PKColumns() {
-		var colName = statement.colName(col, statement.TableName())
+		colName := statement.colName(col, statement.TableName())
 		statement.cond = statement.cond.And(builder.Eq{colName: statement.idParam[i]})
 	}
 	return nil

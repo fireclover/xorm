@@ -8,12 +8,10 @@ import (
 	"context"
 	"database/sql"
 
-	"xorm.io/xorm/contexts"
+	"xorm.io/xorm/v2/contexts"
 )
 
-var (
-	_ QueryExecuter = &Tx{}
-)
+var _ QueryExecuter = &Tx{}
 
 // Tx represents a transaction
 type Tx struct {
