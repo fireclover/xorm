@@ -14,7 +14,6 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.8.1
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/ziutek/mymysql v1.5.4
 	modernc.org/sqlite v1.20.4
 	xorm.io/builder v0.3.11-0.20220531020008-1bd24a7dc978
 	xorm.io/xorm v1.3.4

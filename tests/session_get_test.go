@@ -185,8 +185,7 @@ func TestGetVar(t *testing.T) {
 	assert.Equal(t, "28", valuesString["age"])
 	assert.Equal(t, "1.5", valuesString["money"])
 
-	// for mymysql driver, interface{} will be []byte, so ignore it currently
-	if testEngine.DriverName() != "mymysql" {
+	{
 		valuesInter := make(map[string]interface{})
 		has, err = testEngine.Table("get_var").Where("`id` = ?", 1).Select("*").Get(&valuesInter)
 		assert.NoError(t, err)
