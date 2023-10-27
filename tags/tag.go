@@ -90,8 +90,6 @@ type Context struct {
 	isUnique        bool
 	indexNames      map[string]int
 	parser          *Parser
-	hasCacheTag     bool
-	hasNoCacheTag   bool
 	ignoreNext      bool
 	isUnsigned      bool
 }
@@ -118,8 +116,6 @@ var defaultTagHandlers = map[string]Handler{
 	"NOTNULL":  NotNullTagHandler,
 	"INDEX":    IndexTagHandler,
 	"UNIQUE":   UniqueTagHandler,
-	"CACHE":    CacheTagHandler,
-	"NOCACHE":  NoCacheTagHandler,
 	"COMMENT":  CommentTagHandler,
 	"EXTENDS":  ExtendsTagHandler,
 	"UNSIGNED": UnsignedTagHandler,
@@ -390,20 +386,4 @@ func ExtendsTagHandler(ctx *Context) error {
 		// TODO: warning
 	}
 	return ErrIgnoreField
-}
-
-// CacheTagHandler describes cache tag handler
-func CacheTagHandler(ctx *Context) error {
-	if !ctx.hasCacheTag {
-		ctx.hasCacheTag = true
-	}
-	return nil
-}
-
-// NoCacheTagHandler describes nocache tag handler
-func NoCacheTagHandler(ctx *Context) error {
-	if !ctx.hasNoCacheTag {
-		ctx.hasNoCacheTag = true
-	}
-	return nil
 }

@@ -321,13 +321,6 @@ func (session *Session) MustLogSQL(logs ...bool) *Session {
 	return session
 }
 
-// NoCache ask this session do not retrieve data from cache system and
-// get data from database directly.
-func (session *Session) NoCache() *Session {
-	session.statement.UseCache = false
-	return session
-}
-
 // Join join_operator should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
 func (session *Session) Join(joinOperator string, tablename interface{}, condition interface{}, args ...interface{}) *Session {
 	session.statement.Join(joinOperator, tablename, condition, args...)
@@ -349,19 +342,6 @@ func (session *Session) Having(conditions string) *Session {
 // DB db return the wrapper of sql.DB
 func (session *Session) DB() *core.DB {
 	return session.db()
-}
-
-func (session *Session) canCache() bool {
-	if session.statement.RefTable == nil ||
-		session.statement.NeedTableName() ||
-		session.statement.RawSQL != "" ||
-		!session.statement.UseCache ||
-		session.statement.IsForUpdate ||
-		session.tx != nil ||
-		len(session.statement.SelectStr) > 0 {
-		return false
-	}
-	return true
 }
 
 func (session *Session) doPrepare(db *core.DB, sqlStr string) (stmt *core.Stmt, err error) {

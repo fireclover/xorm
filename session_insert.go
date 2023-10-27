@@ -197,8 +197,6 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 		return 0, err
 	}
 
-	_ = session.cacheInsert(tableName)
-
 	lenAfterClosures := len(session.afterClosures)
 	for i := 0; i < size; i++ {
 		elemValue := reflect.Indirect(sliceValue.Index(i)).Addr().Interface()
@@ -354,8 +352,6 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 
 		defer handleAfterInsertProcessorFunc(bean)
 
-		_ = session.cacheInsert(tableName)
-
 		if table.Version != "" && session.statement.CheckVersion {
 			verValue, err := table.VersionColumn().ValueOf(bean)
 			if err != nil {
@@ -383,8 +379,6 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 	}
 
 	defer handleAfterInsertProcessorFunc(bean)
-
-	_ = session.cacheInsert(tableName)
 
 	if table.Version != "" && session.statement.CheckVersion {
 		verValue, err := table.VersionColumn().ValueOf(bean)
@@ -431,19 +425,6 @@ func (session *Session) InsertOne(bean interface{}) (int64, error) {
 	}
 
 	return session.insertStruct(bean)
-}
-
-func (session *Session) cacheInsert(table string) error {
-	if !session.statement.UseCache {
-		return nil
-	}
-	cacher := session.engine.cacherMgr.GetCacher(table)
-	if cacher == nil {
-		return nil
-	}
-	session.engine.logger.Debugf("[cache] clear SQL: %v", table)
-	cacher.ClearIds(table)
-	return nil
 }
 
 // genInsertColumns generates insert needed columns
@@ -655,10 +636,6 @@ func (session *Session) insertMap(columns []string, args []interface{}) (int64, 
 	}
 	sql = session.engine.dialect.Quoter().Replace(sql)
 
-	if err := session.cacheInsert(tableName); err != nil {
-		return 0, err
-	}
-
 	res, err := session.exec(sql, args...)
 	if err != nil {
 		return 0, err
@@ -681,10 +658,6 @@ func (session *Session) insertMultipleMap(columns []string, argss [][]interface{
 		return 0, err
 	}
 	sql = session.engine.dialect.Quoter().Replace(sql)
-
-	if err := session.cacheInsert(tableName); err != nil {
-		return 0, err
-	}
 
 	res, err := session.exec(sql, args...)
 	if err != nil {

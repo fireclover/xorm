@@ -64,7 +64,6 @@ type Statement struct {
 	UseAutoJoin     bool
 	StoreEngine     string
 	Charset         string
-	UseCache        bool
 	UseAutoTime     bool
 	NoAutoCondition bool
 	IsDistinct      bool
@@ -138,7 +137,6 @@ func (statement *Statement) Reset() {
 	statement.idParam = nil
 	statement.RawSQL = ""
 	statement.RawParams = make([]interface{}, 0)
-	statement.UseCache = true
 	statement.UseAutoTime = true
 	statement.NoAutoCondition = false
 	statement.IsDistinct = false

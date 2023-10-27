@@ -80,7 +80,7 @@ func (session *Session) bufferIterate(bean interface{}, fun IterFunc) error {
 
 	for bufferSize > 0 {
 		slice := reflect.New(sliceType)
-		if err := session.NoCache().Limit(bufferSize, start).find(slice.Interface(), bean); err != nil {
+		if err := session.Limit(bufferSize, start).find(slice.Interface(), bean); err != nil {
 			return err
 		}
 
