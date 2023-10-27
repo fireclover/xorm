@@ -7,7 +7,7 @@ package tests
 import (
 	"testing"
 
-	"xorm.io/xorm"
+	"xorm.io/xorm/v2"
 	"xorm.io/xorm/v2/log"
 	"xorm.io/xorm/v2/schemas"
 

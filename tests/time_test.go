@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"xorm.io/xorm/v2/convert"
-
 	"xorm.io/xorm/v2/internal/utils"
 
 	"github.com/stretchr/testify/assert"

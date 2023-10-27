@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"xorm.io/builder"
-	"xorm.io/xorm"
+	"xorm.io/xorm/v2"
 	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/names"
 	"xorm.io/xorm/v2/schemas"

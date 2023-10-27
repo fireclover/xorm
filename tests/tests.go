@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"xorm.io/xorm"
+	"xorm.io/xorm/v2"
 	"xorm.io/xorm/v2/caches"
 	"xorm.io/xorm/v2/dialects"
 	"xorm.io/xorm/v2/log"

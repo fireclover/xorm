@@ -10,12 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm"
+	"xorm.io/xorm/v2"
 	"xorm.io/xorm/v2/internal/statements"
 	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/names"
 	"xorm.io/xorm/v2/schemas"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdateMap(t *testing.T) {

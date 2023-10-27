@@ -11,9 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm"
+	"xorm.io/xorm/v2"
 	"xorm.io/xorm/v2/schemas"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStoreEngine(t *testing.T) {
