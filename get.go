@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"time"
 
-	"xorm.io/xorm/v2/convert"
+	"xorm.io/xorm/v2/internal/convert"
 	"xorm.io/xorm/v2/internal/core"
 	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/schemas"
@@ -256,4 +256,31 @@ func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields 
 	default:
 		return fmt.Errorf("unspoorted map type: %t", t)
 	}
+}
+
+// Exist returns true if the record exist otherwise return false
+func (session *Session) Exist(bean ...interface{}) (bool, error) {
+	if session.isAutoClose {
+		defer session.Close()
+	}
+
+	if session.statement.LastError != nil {
+		return false, session.statement.LastError
+	}
+
+	sqlStr, args, err := session.statement.GenExistSQL(bean...)
+	if err != nil {
+		return false, err
+	}
+
+	rows, err := session.queryRows(sqlStr, args...)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		return true, nil
+	}
+	return false, rows.Err()
 }

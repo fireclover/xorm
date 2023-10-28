@@ -832,6 +832,9 @@ type AfterLoadStructB struct {
 	Err     error            `xorm:"-"`
 }
 
+// ErrNotExist record does not exist error
+var ErrNotExist = errors.New("Record does not exist")
+
 func (s *AfterLoadStructB) AfterLoad(session *xorm.Session) {
 	has, err := session.ID(s.AId).NoAutoCondition().Get(&s.A)
 	if err != nil {
@@ -839,7 +842,7 @@ func (s *AfterLoadStructB) AfterLoad(session *xorm.Session) {
 		return
 	}
 	if !has {
-		s.Err = xorm.ErrNotExist
+		s.Err = ErrNotExist
 	}
 }
 

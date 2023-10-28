@@ -15,10 +15,9 @@ import (
 	"hash/crc32"
 	"io"
 	"reflect"
-	"strconv"
 
 	"xorm.io/xorm/v2/contexts"
-	"xorm.io/xorm/v2/convert"
+	"xorm.io/xorm/v2/internal/convert"
 	"xorm.io/xorm/v2/internal/core"
 	"xorm.io/xorm/v2/internal/json"
 	"xorm.io/xorm/v2/internal/statements"
@@ -354,21 +353,6 @@ func (session *Session) doPrepare(db *core.DB, sqlStr string) (stmt *core.Stmt, 
 	return
 }
 
-func (session *Session) doPrepareTx(sqlStr string) (stmt *core.Stmt, err error) {
-	crc := crc32.ChecksumIEEE([]byte(sqlStr))
-	// TODO try hash(sqlStr+len(sqlStr))
-	var has bool
-	stmt, has = session.txStmtCache[crc]
-	if !has {
-		stmt, err = session.tx.PrepareContext(session.ctx, sqlStr)
-		if err != nil {
-			return nil, err
-		}
-		session.txStmtCache[crc] = stmt
-	}
-	return
-}
-
 func getField(dataStruct *reflect.Value, table *schemas.Table, field *QueryedField) (*schemas.Column, *reflect.Value, error) {
 	col := field.ColumnSchema
 	if col == nil {
@@ -468,44 +452,6 @@ func setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult inter
 		fieldValue.Set(x.Elem())
 	}
 	return nil
-}
-
-func asKind(vv reflect.Value, tp reflect.Type) (interface{}, error) {
-	switch tp.Kind() {
-	case reflect.Ptr:
-		return asKind(vv.Elem(), tp.Elem())
-	case reflect.Int64:
-		return vv.Int(), nil
-	case reflect.Int:
-		return int(vv.Int()), nil
-	case reflect.Int32:
-		return int32(vv.Int()), nil
-	case reflect.Int16:
-		return int16(vv.Int()), nil
-	case reflect.Int8:
-		return int8(vv.Int()), nil
-	case reflect.Uint64:
-		return vv.Uint(), nil
-	case reflect.Uint:
-		return uint(vv.Uint()), nil
-	case reflect.Uint32:
-		return uint32(vv.Uint()), nil
-	case reflect.Uint16:
-		return uint16(vv.Uint()), nil
-	case reflect.Uint8:
-		return uint8(vv.Uint()), nil
-	case reflect.String:
-		return vv.String(), nil
-	case reflect.Slice:
-		if tp.Elem().Kind() == reflect.Uint8 {
-			v, err := strconv.ParseInt(string(vv.Interface().([]byte)), 10, 64)
-			if err != nil {
-				return nil, err
-			}
-			return v, nil
-		}
-	}
-	return nil, fmt.Errorf("unsupported primary key type: %v, %v", tp, vv)
 }
 
 var uint8ZeroValue = reflect.ValueOf(uint8(0))
@@ -652,7 +598,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 				return errors.New("unsupported non or composited primary key cascade")
 			}
 			pk := make(schemas.PK, len(table.PrimaryKeys))
-			pk[0], err = asKind(vv, reflect.TypeOf(scanResult))
+			pk[0], err = convert.AsKind(vv, reflect.TypeOf(scanResult))
 			if err != nil {
 				return err
 			}

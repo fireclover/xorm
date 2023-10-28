@@ -12,8 +12,8 @@ import (
 	"sync"
 	"unicode"
 
-	"xorm.io/xorm/v2/convert"
 	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/convert"
 	"xorm.io/xorm/v2/names"
 	"xorm.io/xorm/v2/schemas"
 )
