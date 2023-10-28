@@ -1249,6 +1249,44 @@ func TestInsertNotDeleted(t *testing.T) {
 	assert.Equal(t, v4.DeletedAt.In(testEngine.GetTZDatabase()).Format("2006-01-02 15:04:05"), zeroTime.Format("2006-01-02 15:04:05"))
 }
 
+func TestInsertNotDeletedNum(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	type TestInsertNotDeletedStructNotRight struct {
+		ID        uint64 `xorm:"'ID' pk autoincr"`
+		DeletedAt int64  `xorm:"'DELETED_AT' deleted notnull INT(11)"`
+	}
+	// notnull tag will be ignored
+	err := testEngine.Sync(new(TestInsertNotDeletedStructNotRight))
+	assert.NoError(t, err)
+
+	type TestInsertNotDeletedStruct struct {
+		ID        uint64 `xorm:"'ID' pk autoincr"`
+		DeletedAt int64  `xorm:"'DELETED_AT' deleted INT(11)"`
+	}
+
+	assert.NoError(t, testEngine.Sync(new(TestInsertNotDeletedStruct)))
+
+	var v1 TestInsertNotDeletedStructNotRight
+	_, err = testEngine.Insert(&v1)
+	assert.NoError(t, err)
+
+	var v2 TestInsertNotDeletedStructNotRight
+	has, err := testEngine.Get(&v2)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, v2.DeletedAt, int64(0))
+
+	var v3 TestInsertNotDeletedStruct
+	_, err = testEngine.Insert(&v3)
+	assert.NoError(t, err)
+
+	var v4 TestInsertNotDeletedStruct
+	has, err = testEngine.Get(&v4)
+	assert.NoError(t, err)
+	assert.True(t, has)
+	assert.Equal(t, v4.DeletedAt, int64(0))
+}
+
 type MyAutoTimeFields1 struct {
 	Id int64
 	Dt time.Time `xorm:"created DATETIME"`
