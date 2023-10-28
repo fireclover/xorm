@@ -22,7 +22,7 @@ func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.C
 			return 0, nil
 		}
 		if col.SQLType.Name == schemas.TimeStamp || col.SQLType.Name == schemas.TimeStampz {
-			t = time.Unix(0, 0)
+			return 0, nil
 		}
 	}
 
