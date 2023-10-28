@@ -707,7 +707,11 @@ func (statement *Statement) CondDeleted(col *schemas.Column) builder.Cond {
 	if col.SQLType.IsNumeric() {
 		cond = builder.Eq{colName: 0}
 	} else if col.SQLType.Name == schemas.TimeStamp || col.SQLType.Name == schemas.TimeStampz {
-		cond = builder.Eq{colName: time.Unix(0, 0).In(statement.defaultTimeZone).Format("2006-01-02 15:04:05.999999999")}
+		tmZone := statement.defaultTimeZone
+		if col.TimeZone != nil {
+			tmZone = col.TimeZone
+		}
+		cond = builder.Eq{colName: time.Unix(0, 0).In(tmZone).Format("2006-01-02 15:04:05.999999999")}
 	} else {
 		cond = builder.Eq{colName: utils.ZeroTime1}
 	}
