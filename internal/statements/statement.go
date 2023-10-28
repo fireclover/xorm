@@ -707,10 +707,7 @@ func (statement *Statement) CondDeleted(col *schemas.Column) builder.Cond {
 	if col.SQLType.IsNumeric() || col.SQLType.Name == schemas.TimeStamp || col.SQLType.Name == schemas.TimeStampz {
 		cond = builder.Eq{colName: 0}
 	} else {
-		// FIXME: mssql: The conversion of a nvarchar data type to a datetime data type resulted in an out-of-range value.
-		if statement.dialect.URI().DBType != schemas.MSSQL {
-			cond = builder.Eq{colName: utils.ZeroTime1}
-		}
+		cond = builder.Eq{colName: utils.ZeroTime1}
 	}
 
 	if col.Nullable {
