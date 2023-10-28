@@ -21,6 +21,9 @@ func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.C
 		if col.SQLType.IsNumeric() {
 			return 0, nil
 		}
+		if col.SQLType.Name == schemas.TimeStamp || col.SQLType.Name == schemas.TimeStampz {
+			t = time.Unix(0, 0)
+		}
 	}
 
 	tmZone := dbLocation
