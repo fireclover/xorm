@@ -23,14 +23,14 @@ var ErrObjectIsNil = errors.New("object should not be nil")
 
 // Get retrieve one record from database, bean's non-empty fields
 // will be as conditions
-func (session *Session) Get(beans ...interface{}) (bool, error) {
+func (session *Session) Get(beans ...any) (bool, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
 	return session.get(beans...)
 }
 
-func isPtrOfTime(v interface{}) bool {
+func isPtrOfTime(v any) bool {
 	if _, ok := v.(*time.Time); ok {
 		return true
 	}
@@ -43,7 +43,7 @@ func isPtrOfTime(v interface{}) bool {
 	return el.Type().ConvertibleTo(schemas.TimeType)
 }
 
-func (session *Session) get(beans ...interface{}) (bool, error) {
+func (session *Session) get(beans ...any) (bool, error) {
 	defer session.resetStatement()
 
 	if session.statement.LastError != nil {
@@ -70,7 +70,7 @@ func (session *Session) get(beans ...interface{}) (bool, error) {
 	}
 
 	var sqlStr string
-	var args []interface{}
+	var args []any
 	var err error
 
 	if session.statement.RawSQL == "" {
@@ -114,7 +114,7 @@ func (session *Session) get(beans ...interface{}) (bool, error) {
 	return true, nil
 }
 
-func isScannableStruct(bean interface{}, typeLen int) bool {
+func isScannableStruct(bean any, typeLen int) bool {
 	switch bean.(type) {
 	case *time.Time:
 		return false
@@ -128,7 +128,7 @@ func isScannableStruct(bean interface{}, typeLen int) bool {
 	return true
 }
 
-func (session *Session) nocacheGet(beanKind reflect.Kind, table *schemas.Table, beans []interface{}, sqlStr string, args ...interface{}) (bool, error) {
+func (session *Session) nocacheGet(beanKind reflect.Kind, table *schemas.Table, beans []any, sqlStr string, args ...any) (bool, error) {
 	rows, err := session.queryRows(sqlStr, args...)
 	if err != nil {
 		return false, err
@@ -159,7 +159,7 @@ func (session *Session) nocacheGet(beanKind reflect.Kind, table *schemas.Table, 
 	return true, session.executeProcessors()
 }
 
-func (session *Session) scan(rows *core.Rows, table *schemas.Table, firstBeanKind reflect.Kind, beans []interface{}, columnsSchema *ColumnsSchema, types []*sql.ColumnType, fields []string) error {
+func (session *Session) scan(rows *core.Rows, table *schemas.Table, firstBeanKind reflect.Kind, beans []any, columnsSchema *ColumnsSchema, types []*sql.ColumnType, fields []string) error {
 	if len(beans) == 1 {
 		bean := beans[0]
 		switch firstBeanKind {
@@ -189,7 +189,7 @@ func (session *Session) scan(rows *core.Rows, table *schemas.Table, firstBeanKin
 	return session.engine.scan(rows, fields, types, beans...)
 }
 
-func (session *Session) getSlice(rows *core.Rows, types []*sql.ColumnType, fields []string, bean interface{}) error {
+func (session *Session) getSlice(rows *core.Rows, types []*sql.ColumnType, fields []string, bean any) error {
 	switch t := bean.(type) {
 	case *[]string:
 		res, err := session.engine.scanStringInterface(rows, fields, types)
@@ -206,7 +206,7 @@ func (session *Session) getSlice(rows *core.Rows, types []*sql.ColumnType, field
 			}
 		}
 		return nil
-	case *[]interface{}:
+	case *[]any:
 		scanResults, err := session.engine.scanInterfaces(rows, fields, types)
 		if err != nil {
 			return err
@@ -229,7 +229,7 @@ func (session *Session) getSlice(rows *core.Rows, types []*sql.ColumnType, field
 	}
 }
 
-func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields []string, bean interface{}) error {
+func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields []string, bean any) error {
 	switch t := bean.(type) {
 	case *map[string]string:
 		scanResults, err := session.engine.scanStringInterface(rows, fields, types)
@@ -240,7 +240,7 @@ func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields 
 			(*t)[key] = scanResults[ii].(*sql.NullString).String
 		}
 		return nil
-	case *map[string]interface{}:
+	case *map[string]any:
 		scanResults, err := session.engine.scanInterfaces(rows, fields, types)
 		if err != nil {
 			return err
@@ -259,7 +259,7 @@ func (session *Session) getMap(rows *core.Rows, types []*sql.ColumnType, fields 
 }
 
 // Exist returns true if the record exist otherwise return false
-func (session *Session) Exist(bean ...interface{}) (bool, error) {
+func (session *Session) Exist(bean ...any) (bool, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}

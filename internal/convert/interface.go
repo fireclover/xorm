@@ -11,7 +11,7 @@ import (
 )
 
 // Interface2Interface converts interface of pointer as interface of value
-func Interface2Interface(userLocation *time.Location, v interface{}) (interface{}, error) {
+func Interface2Interface(userLocation *time.Location, v any) (any, error) {
 	if v == nil {
 		return nil, nil
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 // AsString converts interface as string
-func AsString(src interface{}) string {
+func AsString(src any) string {
 	switch v := src.(type) {
 	case string:
 		return v
@@ -42,7 +42,7 @@ func AsString(src interface{}) string {
 }
 
 // AsBytes converts interface as bytes
-func AsBytes(src interface{}) ([]byte, bool) {
+func AsBytes(src any) ([]byte, bool) {
 	switch t := src.(type) {
 	case []byte:
 		return t, true

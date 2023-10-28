@@ -84,7 +84,7 @@ func (statement *Statement) writeOrderCond(orderCondWriter *builder.BytesWriter,
 	}
 }
 
-func (statement *Statement) WriteDelete(realSQLWriter, deleteSQLWriter *builder.BytesWriter, nowTime func(*schemas.Column) (interface{}, time.Time, error)) error {
+func (statement *Statement) WriteDelete(realSQLWriter, deleteSQLWriter *builder.BytesWriter, nowTime func(*schemas.Column) (any, time.Time, error)) error {
 	tableNameNoQuote := statement.TableName()
 	tableName := statement.dialect.Quoter().Quote(tableNameNoQuote)
 	table := statement.RefTable

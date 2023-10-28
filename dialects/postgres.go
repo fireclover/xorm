@@ -998,13 +998,13 @@ func (db *postgres) AutoIncrStr() string {
 	return ""
 }
 
-func (db *postgres) IndexCheckSQL(tableName, idxName string) (string, []interface{}) {
+func (db *postgres) IndexCheckSQL(tableName, idxName string) (string, []any) {
 	if len(db.getSchema()) == 0 {
-		args := []interface{}{tableName, idxName}
+		args := []any{tableName, idxName}
 		return `SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?`, args
 	}
 
-	args := []interface{}{db.getSchema(), tableName, idxName}
+	args := []any{db.getSchema(), tableName, idxName}
 	return `SELECT indexname FROM pg_indexes ` +
 		`WHERE schemaname = ? AND tablename = ? AND indexname = ?`, args
 }
@@ -1071,11 +1071,11 @@ func (db *postgres) DropIndexSQL(tableName string, index *schemas.Index) string 
 }
 
 func (db *postgres) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
-	args := []interface{}{db.getSchema(), tableName, colName}
+	args := []any{db.getSchema(), tableName, colName}
 	query := "SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = $1 AND table_name = $2" +
 		" AND column_name = $3"
 	if len(db.getSchema()) == 0 {
-		args = []interface{}{tableName, colName}
+		args = []any{tableName, colName}
 		query = "SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = $1" +
 			" AND column_name = $2"
 	}
@@ -1093,7 +1093,7 @@ func (db *postgres) IsColumnExist(queryer core.Queryer, ctx context.Context, tab
 }
 
 func (db *postgres) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
-	args := []interface{}{tableName}
+	args := []any{tableName}
 	s := `SELECT column_name, column_default, is_nullable, data_type, character_maximum_length, description,
     CASE WHEN p.contype = 'p' THEN true ELSE false END AS primarykey,
     CASE WHEN p.contype = 'u' THEN true ELSE false END AS uniquekey
@@ -1246,7 +1246,7 @@ WHERE n.nspname= s.table_schema AND c.relkind = 'r' AND c.relname = $1%s AND f.a
 }
 
 func (db *postgres) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
-	args := []interface{}{}
+	args := []any{}
 	s := "SELECT tablename FROM pg_tables"
 	schema := db.getSchema()
 	if schema != "" {
@@ -1289,7 +1289,7 @@ func getIndexColName(indexdef string) []string {
 }
 
 func (db *postgres) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
-	args := []interface{}{tableName}
+	args := []any{tableName}
 	s := "SELECT indexname, indexdef FROM pg_indexes WHERE tablename=$1"
 	if len(db.getSchema()) != 0 {
 		args = append(args, db.getSchema())
@@ -1522,7 +1522,7 @@ func (p *pqDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	return db, nil
 }
 
-func (p *pqDriver) GenScanResult(colType string) (interface{}, error) {
+func (p *pqDriver) GenScanResult(colType string) (any, error) {
 	switch colType {
 	case "VARCHAR", "TEXT":
 		var s sql.NullString

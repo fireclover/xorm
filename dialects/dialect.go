@@ -67,7 +67,7 @@ type Dialect interface {
 	AutoIncrStr() string
 
 	GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error)
-	IndexCheckSQL(tableName, idxName string) (string, []interface{})
+	IndexCheckSQL(tableName, idxName string) (string, []any)
 	CreateIndexSQL(tableName string, index *schemas.Index) string
 	DropIndexSQL(tableName string, index *schemas.Index) string
 
@@ -177,7 +177,7 @@ func (db *Base) DropTableSQL(tableName string) (string, bool) {
 }
 
 // HasRecords returns true if the SQL has records returned
-func (db *Base) HasRecords(queryer core.Queryer, ctx context.Context, query string, args ...interface{}) (bool, error) {
+func (db *Base) HasRecords(queryer core.Queryer, ctx context.Context, query string, args ...any) (bool, error) {
 	rows, err := queryer.QueryContext(ctx, query, args...)
 	if err != nil {
 		return false, err

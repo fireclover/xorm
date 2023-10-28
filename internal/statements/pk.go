@@ -36,7 +36,7 @@ func IsIDConditionWithNoTableErr(err error) bool {
 }
 
 // ID generate "where id = ? " statement or for composite key "where key1 = ? and key2 = ?"
-func (statement *Statement) ID(id interface{}) *Statement {
+func (statement *Statement) ID(id any) *Statement {
 	switch t := id.(type) {
 	case *schemas.PK:
 		statement.idParam = *t

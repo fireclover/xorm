@@ -156,7 +156,7 @@ func (table *Table) AddIndex(index *Index) {
 // IDOfV get id from one value of struct
 func (table *Table) IDOfV(rv reflect.Value) (PK, error) {
 	v := reflect.Indirect(rv)
-	pk := make([]interface{}, len(table.PrimaryKeys))
+	pk := make([]any, len(table.PrimaryKeys))
 	for i, col := range table.PKColumns() {
 		var err error
 

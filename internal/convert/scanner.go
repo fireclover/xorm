@@ -6,14 +6,12 @@ package convert
 
 import "database/sql"
 
-var (
-	_ sql.Scanner = &EmptyScanner{}
-)
+var _ sql.Scanner = &EmptyScanner{}
 
 // EmptyScanner represents an empty scanner which will ignore the scan
 type EmptyScanner struct{}
 
 // Scan implements sql.Scanner
-func (EmptyScanner) Scan(value interface{}) error {
+func (EmptyScanner) Scan(value any) error {
 	return nil
 }

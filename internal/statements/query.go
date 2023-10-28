@@ -15,7 +15,7 @@ import (
 )
 
 // GenQuerySQL generate query SQL
-func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []interface{}, error) {
+func (statement *Statement) GenQuerySQL(sqlOrArgs ...any) (string, []any, error) {
 	if len(sqlOrArgs) > 0 {
 		return statement.ConvertSQLOrArgs(sqlOrArgs...)
 	}
@@ -40,7 +40,7 @@ func (statement *Statement) GenQuerySQL(sqlOrArgs ...interface{}) (string, []int
 }
 
 // GenSumSQL generates sum SQL
-func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (string, []interface{}, error) {
+func (statement *Statement) GenSumSQL(bean any, columns ...string) (string, []any, error) {
 	if statement.RawSQL != "" {
 		return statement.GenRawSQL(), statement.RawParams, nil
 	}
@@ -71,7 +71,7 @@ func (statement *Statement) GenSumSQL(bean interface{}, columns ...string) (stri
 }
 
 // GenGetSQL generates Get SQL
-func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, error) {
+func (statement *Statement) GenGetSQL(bean any) (string, []any, error) {
 	var isStruct bool
 	if bean != nil {
 		v := rValue(bean)
@@ -127,7 +127,7 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 }
 
 // GenCountSQL generates the SQL for counting
-func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interface{}, error) {
+func (statement *Statement) GenCountSQL(beans ...any) (string, []any, error) {
 	if statement.RawSQL != "" {
 		return statement.GenRawSQL(), statement.RawParams, nil
 	}
@@ -286,12 +286,12 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 }
 
 // GenExistSQL generates Exist SQL
-func (statement *Statement) GenExistSQL(bean ...interface{}) (string, []interface{}, error) {
+func (statement *Statement) GenExistSQL(bean ...any) (string, []any, error) {
 	if statement.RawSQL != "" {
 		return statement.GenRawSQL(), statement.RawParams, nil
 	}
 
-	var b interface{}
+	var b any
 	if len(bean) > 0 {
 		b = bean[0]
 		beanValue := reflect.ValueOf(bean[0])
@@ -393,7 +393,7 @@ func (statement *Statement) genSelectColumnStr() string {
 }
 
 // GenFindSQL generates Find SQL
-func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []interface{}, error) {
+func (statement *Statement) GenFindSQL(autoCond builder.Cond) (string, []any, error) {
 	if statement.RawSQL != "" {
 		return statement.GenRawSQL(), statement.RawParams, nil
 	}

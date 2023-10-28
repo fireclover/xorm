@@ -146,7 +146,7 @@ func TestFind3(t *testing.T) {
 	err = testEngine.Cols("`team`.`id`").
 		Where("`team_user`.`org_id`=?", 1).
 		And("`team_user`.`uid`=?", 2).
-		Join("INNER", []interface{}{teamUser}, "`team_user`.`team_id`=`team`.`id`").
+		Join("INNER", []any{teamUser}, "`team_user`.`team_id`=`team`.`id`").
 		Find(&teams)
 	assert.NoError(t, err)
 
@@ -162,7 +162,7 @@ func TestFind3(t *testing.T) {
 	err = testEngine.Cols("`team`.`id`").
 		Where("`tu`.`org_id`=?", 1).
 		And("`tu`.`uid`=?", 2).
-		Join("INNER", []interface{}{"team_user", "tu"}, "`tu`.`team_id`=`team`.`id`").
+		Join("INNER", []any{"team_user", "tu"}, "`tu`.`team_id`=`team`.`id`").
 		Find(&teams)
 	assert.NoError(t, err)
 
@@ -170,7 +170,7 @@ func TestFind3(t *testing.T) {
 	err = testEngine.Cols("`team`.`id`").
 		Where("`tu`.`org_id`=?", 1).
 		And("`tu`.`uid`=?", 2).
-		Join("INNER", []interface{}{teamUser, "tu"}, "`tu`.`team_id`=`team`.`id`").
+		Join("INNER", []any{teamUser, "tu"}, "`tu`.`team_id`=`team`.`id`").
 		Find(&teams)
 	assert.NoError(t, err)
 }
@@ -367,7 +367,7 @@ func TestFindInterface(t *testing.T) {
 
 	userinfo := testEngine.GetTableMapper().Obj2Table("Userinfo")
 	username := testEngine.GetColumnMapper().Obj2Table("Username")
-	var idsInterface []interface{}
+	var idsInterface []any
 	err := testEngine.Table(userinfo).Cols(username).Desc("id").Find(&idsInterface)
 	assert.NoError(t, err)
 }

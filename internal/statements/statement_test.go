@@ -88,7 +88,7 @@ func TestConvertSQLOrArgs(t *testing.T) {
 	// 	ID  int
 	// 	del *time.Time `xorm:"deleted"`
 	// }
-	args := []interface{}{
+	args := []any{
 		"INSERT `table` (`id`, `del`) VALUES (?, ?)", 1, (*time.Time)(nil),
 	}
 	// before fix, here will panic

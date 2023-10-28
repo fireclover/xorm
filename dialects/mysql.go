@@ -370,8 +370,8 @@ func (db *mysql) AutoIncrStr() string {
 	return "AUTO_INCREMENT"
 }
 
-func (db *mysql) IndexCheckSQL(tableName, idxName string) (string, []interface{}) {
-	args := []interface{}{db.uri.DBName, tableName, idxName}
+func (db *mysql) IndexCheckSQL(tableName, idxName string) (string, []any) {
+	args := []any{db.uri.DBName, tableName, idxName}
 	sql := "SELECT `INDEX_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS`"
 	sql += " WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? AND `INDEX_NAME`=?"
 	return sql, args
@@ -408,7 +408,7 @@ func (db *mysql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
 }
 
 func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
-	args := []interface{}{db.uri.DBName, tableName}
+	args := []any{db.uri.DBName, tableName}
 	alreadyQuoted := "(INSTR(VERSION(), 'maria') > 0 && " +
 		"(SUBSTRING_INDEX(VERSION(), '.', 1) > 10 || " +
 		"(SUBSTRING_INDEX(VERSION(), '.', 1) = 10 && " +
@@ -545,7 +545,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 }
 
 func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
-	args := []interface{}{db.uri.DBName}
+	args := []any{db.uri.DBName}
 	s := "SELECT `TABLE_NAME`, `ENGINE`, `AUTO_INCREMENT`, `TABLE_COMMENT`, `TABLE_COLLATION` from " +
 		"`INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? AND (`ENGINE`='MyISAM' OR `ENGINE` = 'InnoDB' OR `ENGINE` = 'TokuDB')"
 
@@ -597,7 +597,7 @@ func (db *mysql) SetQuotePolicy(quotePolicy QuotePolicy) {
 }
 
 func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
-	args := []interface{}{db.uri.DBName, tableName}
+	args := []any{db.uri.DBName, tableName}
 	s := "SELECT `INDEX_NAME`, `NON_UNIQUE`, `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? ORDER BY `SEQ_IN_INDEX`"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -759,7 +759,7 @@ func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	return uri, nil
 }
 
-func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
+func (p *mysqlDriver) GenScanResult(colType string) (any, error) {
 	colType = strings.Replace(colType, "UNSIGNED ", "", -1)
 	switch colType {
 	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET", "JSON":
