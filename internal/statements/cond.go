@@ -27,17 +27,17 @@ func (statement *Statement) QuoteReplacer(w *builder.BytesWriter) *QuoteReplacer
 }
 
 // Where add Where statement
-func (statement *Statement) Where(query interface{}, args ...interface{}) *Statement {
+func (statement *Statement) Where(query any, args ...any) *Statement {
 	return statement.And(query, args...)
 }
 
 // And add Where & and statement
-func (statement *Statement) And(query interface{}, args ...interface{}) *Statement {
+func (statement *Statement) And(query any, args ...any) *Statement {
 	switch qr := query.(type) {
 	case string:
 		cond := builder.Expr(qr, args...)
 		statement.cond = statement.cond.And(cond)
-	case map[string]interface{}:
+	case map[string]any:
 		cond := make(builder.Eq)
 		for k, v := range qr {
 			cond[statement.quote(k)] = v
@@ -58,12 +58,12 @@ func (statement *Statement) And(query interface{}, args ...interface{}) *Stateme
 }
 
 // Or add Where & Or statement
-func (statement *Statement) Or(query interface{}, args ...interface{}) *Statement {
+func (statement *Statement) Or(query any, args ...any) *Statement {
 	switch qr := query.(type) {
 	case string:
 		cond := builder.Expr(qr, args...)
 		statement.cond = statement.cond.Or(cond)
-	case map[string]interface{}:
+	case map[string]any:
 		cond := make(builder.Eq)
 		for k, v := range qr {
 			cond[statement.quote(k)] = v
@@ -83,14 +83,14 @@ func (statement *Statement) Or(query interface{}, args ...interface{}) *Statemen
 }
 
 // In generate "Where column IN (?) " statement
-func (statement *Statement) In(column string, args ...interface{}) *Statement {
+func (statement *Statement) In(column string, args ...any) *Statement {
 	in := builder.In(statement.quote(column), args...)
 	statement.cond = statement.cond.And(in)
 	return statement
 }
 
 // NotIn generate "Where column NOT IN (?) " statement
-func (statement *Statement) NotIn(column string, args ...interface{}) *Statement {
+func (statement *Statement) NotIn(column string, args ...any) *Statement {
 	notIn := builder.NotIn(statement.quote(column), args...)
 	statement.cond = statement.cond.And(notIn)
 	return statement

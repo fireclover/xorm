@@ -32,7 +32,7 @@ XORM supports raw SQL execution:
 
 	results, err := engine.QueryString("select * from user")
 
-3. query with a SQL string, the returned results is []map[string]interface{}
+3. query with a SQL string, the returned results is []map[string]any
 
 	results, err := engine.QueryInterface("select * from user")
 
@@ -88,7 +88,7 @@ There are 8 major ORM methods and many helpful methods to use to operate databas
 4. Query multiple records and record by record handle, there two methods, one is Iterate,
 another is Rows
 
-	err := engine.Iterate(new(User), func(i int, bean interface{}) error {
+	err := engine.Iterate(new(User), func(i int, bean any) error {
 	    // do something
 	})
 	// SELECT * FROM user

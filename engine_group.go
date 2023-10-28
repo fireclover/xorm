@@ -22,7 +22,7 @@ type EngineGroup struct {
 }
 
 // NewEngineGroup creates a new engine group
-func NewEngineGroup(args1 interface{}, args2 interface{}, policies ...GroupPolicy) (*EngineGroup, error) {
+func NewEngineGroup(args1 any, args2 any, policies ...GroupPolicy) (*EngineGroup, error) {
 	var eg EngineGroup
 	if len(policies) > 0 {
 		eg.policy = policies[0]
@@ -128,7 +128,7 @@ func (eg *EngineGroup) SetConnMaxLifetime(d time.Duration) {
 }
 
 // SetLogger set the new logger
-func (eg *EngineGroup) SetLogger(logger interface{}) {
+func (eg *EngineGroup) SetLogger(logger any) {
 	eg.Engine.SetLogger(logger)
 	for i := 0; i < len(eg.slaves); i++ {
 		eg.slaves[i].SetLogger(logger)
@@ -230,28 +230,28 @@ func (eg *EngineGroup) Slaves() []*Engine {
 }
 
 // Query execcute a select SQL and return the result
-func (eg *EngineGroup) Query(sqlOrArgs ...interface{}) (resultsSlice []map[string][]byte, err error) {
+func (eg *EngineGroup) Query(sqlOrArgs ...any) (resultsSlice []map[string][]byte, err error) {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
 	return sess.Query(sqlOrArgs...)
 }
 
 // QueryInterface execcute a select SQL and return the result
-func (eg *EngineGroup) QueryInterface(sqlOrArgs ...interface{}) ([]map[string]interface{}, error) {
+func (eg *EngineGroup) QueryInterface(sqlOrArgs ...any) ([]map[string]any, error) {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
 	return sess.QueryInterface(sqlOrArgs...)
 }
 
 // QueryString execcute a select SQL and return the result
-func (eg *EngineGroup) QueryString(sqlOrArgs ...interface{}) ([]map[string]string, error) {
+func (eg *EngineGroup) QueryString(sqlOrArgs ...any) ([]map[string]string, error) {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
 	return sess.QueryString(sqlOrArgs...)
 }
 
 // Rows execcute a select SQL and return the result
-func (eg *EngineGroup) Rows(bean interface{}) (*Rows, error) {
+func (eg *EngineGroup) Rows(bean any) (*Rows, error) {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
 	return sess.Rows(bean)

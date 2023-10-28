@@ -18,9 +18,9 @@ import (
 )
 
 // genScanResultsByBeanNullabale generates scan result
-func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
+func genScanResultsByBeanNullable(bean any) (any, bool, error) {
 	switch t := bean.(type) {
-	case *interface{}:
+	case *any:
 		return t, false, nil
 	case *sql.NullInt64, *sql.NullBool, *sql.NullFloat64, *sql.NullString, *sql.RawBytes, *[]byte:
 		return t, false, nil
@@ -71,9 +71,9 @@ func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
 	}
 }
 
-func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
+func genScanResultsByBean(bean any) (any, bool, error) {
 	switch t := bean.(type) {
-	case *interface{}:
+	case *any:
 		return t, false, nil
 	case *sql.NullInt64, *sql.NullBool, *sql.NullFloat64, *sql.NullString,
 		*sql.RawBytes,
@@ -129,8 +129,8 @@ func genScanResultsByBean(bean interface{}) (interface{}, bool, error) {
 	}
 }
 
-func (engine *Engine) scanStringInterface(rows *core.Rows, fields []string, types []*sql.ColumnType) ([]interface{}, error) {
-	scanResults := make([]interface{}, len(types))
+func (engine *Engine) scanStringInterface(rows *core.Rows, fields []string, types []*sql.ColumnType) ([]any, error) {
+	scanResults := make([]any, len(types))
 	for i := 0; i < len(types); i++ {
 		var s sql.NullString
 		scanResults[i] = &s
@@ -143,13 +143,13 @@ func (engine *Engine) scanStringInterface(rows *core.Rows, fields []string, type
 }
 
 // scan is a wrap of driver.Scan but will automatically change the input values according requirements
-func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.ColumnType, vv ...interface{}) error {
-	scanResults := make([]interface{}, 0, len(types))
+func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.ColumnType, vv ...any) error {
+	scanResults := make([]any, 0, len(types))
 	replaces := make([]bool, 0, len(types))
 	var err error
 	for _, v := range vv {
 		var replaced bool
-		var scanResult interface{}
+		var scanResult any
 		switch t := v.(type) {
 		case *big.Float, *time.Time, *sql.NullTime:
 			scanResult = &sql.NullString{}
@@ -193,8 +193,8 @@ func (engine *Engine) scan(rows *core.Rows, fields []string, types []*sql.Column
 	return nil
 }
 
-func (engine *Engine) scanInterfaces(rows *core.Rows, fields []string, types []*sql.ColumnType) ([]interface{}, error) {
-	scanResultContainers := make([]interface{}, len(types))
+func (engine *Engine) scanInterfaces(rows *core.Rows, fields []string, types []*sql.ColumnType) ([]any, error) {
+	scanResultContainers := make([]any, len(types))
 	for i := 0; i < len(types); i++ {
 		scanResult, err := engine.driver.GenScanResult(types[i].DatabaseTypeName())
 		if err != nil {
@@ -209,11 +209,11 @@ func (engine *Engine) scanInterfaces(rows *core.Rows, fields []string, types []*
 }
 
 ////////////////////
-// row -> map[string]interface{}
+// row -> map[string]any
 
-func (engine *Engine) row2mapInterface(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string]interface{}, error) {
-	resultsMap := make(map[string]interface{}, len(fields))
-	scanResultContainers := make([]interface{}, len(fields))
+func (engine *Engine) row2mapInterface(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string]any, error) {
+	resultsMap := make(map[string]any, len(fields))
+	scanResultContainers := make([]any, len(fields))
 	for i := 0; i < len(fields); i++ {
 		scanResult, err := engine.driver.GenScanResult(types[i].DatabaseTypeName())
 		if err != nil {
@@ -236,7 +236,7 @@ func (engine *Engine) row2mapInterface(rows *core.Rows, types []*sql.ColumnType,
 }
 
 // ScanInterfaceMap scan result from *core.Rows and return a map
-func (engine *Engine) ScanInterfaceMap(rows *core.Rows) (map[string]interface{}, error) {
+func (engine *Engine) ScanInterfaceMap(rows *core.Rows) (map[string]any, error) {
 	fields, err := rows.Columns()
 	if err != nil {
 		return nil, err
@@ -250,7 +250,7 @@ func (engine *Engine) ScanInterfaceMap(rows *core.Rows) (map[string]interface{},
 }
 
 // ScanInterfaceMaps scan results from *core.Rows and return a slice of map
-func (engine *Engine) ScanInterfaceMaps(rows *core.Rows) (resultsSlice []map[string]interface{}, err error) {
+func (engine *Engine) ScanInterfaceMaps(rows *core.Rows) (resultsSlice []map[string]any, err error) {
 	fields, err := rows.Columns()
 	if err != nil {
 		return nil, err
@@ -277,7 +277,7 @@ func (engine *Engine) ScanInterfaceMaps(rows *core.Rows) (resultsSlice []map[str
 // row -> map[string]string
 
 func (engine *Engine) row2mapStr(rows *core.Rows, types []*sql.ColumnType, fields []string) (map[string]string, error) {
-	scanResults := make([]interface{}, len(fields))
+	scanResults := make([]any, len(fields))
 	for i := 0; i < len(fields); i++ {
 		var s sql.NullString
 		scanResults[i] = &s

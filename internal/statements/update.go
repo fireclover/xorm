@@ -67,7 +67,7 @@ func (statement *Statement) ifAddColUpdate(col *schemas.Column, includeVersion, 
 func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 	includeVersion, includeUpdated, includeNil,
 	includeAutoIncr, update bool,
-) ([]string, []interface{}, error) {
+) ([]string, []any, error) {
 	table := statement.RefTable
 	allUseBool := statement.allUseBool
 	useAllCols := statement.useAllCols
@@ -75,7 +75,7 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 	nullableMap := statement.NullableMap
 
 	colNames := make([]string, 0)
-	args := make([]interface{}, 0)
+	args := make([]any, 0)
 
 	for _, col := range table.Columns() {
 		ok, err := statement.ifAddColUpdate(col, includeVersion, includeUpdated, includeNil,
@@ -122,7 +122,7 @@ func (statement *Statement) BuildUpdates(tableValue reflect.Value,
 			}
 		}
 
-		var val interface{}
+		var val any
 
 		if fieldValue.CanAddr() {
 			if structConvert, ok := fieldValue.Addr().Interface().(convert.Conversion); ok {
@@ -424,9 +424,9 @@ func (statement *Statement) writeUpdateLimit(updateWriter *builder.BytesWriter, 
 	}
 }
 
-func (statement *Statement) GenConditionsFromMap(m interface{}) ([]builder.Cond, error) {
+func (statement *Statement) GenConditionsFromMap(m any) ([]builder.Cond, error) {
 	switch t := m.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		conds := []builder.Cond{}
 		for k, v := range t {
 			conds = append(conds, builder.Eq{k: v})
@@ -541,7 +541,7 @@ func (statement *Statement) writeExprSets(w *builder.BytesWriter, hasPreviousSet
 	return nil
 }
 
-func (statement *Statement) writeSetColumns(colNames []string, args []interface{}) func(w *builder.BytesWriter) error {
+func (statement *Statement) writeSetColumns(colNames []string, args []any) func(w *builder.BytesWriter) error {
 	return func(w *builder.BytesWriter) error {
 		if len(colNames) == 0 {
 			return nil
@@ -564,7 +564,7 @@ func (statement *Statement) writeSetColumns(colNames []string, args []interface{
 	}
 }
 
-func (statement *Statement) writeUpdateSets(w *builder.BytesWriter, v reflect.Value, colNames []string, args []interface{}) error {
+func (statement *Statement) writeUpdateSets(w *builder.BytesWriter, v reflect.Value, colNames []string, args []any) error {
 	if err := statement.writeSetColumns(colNames, args)(w); err != nil {
 		return err
 	}
@@ -593,7 +593,7 @@ func (statement *Statement) writeUpdateSets(w *builder.BytesWriter, v reflect.Va
 
 var ErrNoColumnsTobeUpdated = errors.New("no columns found to be updated")
 
-func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond builder.Cond, v reflect.Value, colNames []string, args []interface{}) error {
+func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond builder.Cond, v reflect.Value, colNames []string, args []any) error {
 	if _, err := fmt.Fprintf(updateWriter, "UPDATE"); err != nil {
 		return err
 	}

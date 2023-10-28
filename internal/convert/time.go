@@ -90,7 +90,7 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 }
 
 // AsTime converts interface as time
-func AsTime(src interface{}, dbLoc *time.Location, uiLoc *time.Location) (*time.Time, error) {
+func AsTime(src any, dbLoc *time.Location, uiLoc *time.Location) (*time.Time, error) {
 	switch t := src.(type) {
 	case string:
 		return String2Time(t, dbLoc, uiLoc)

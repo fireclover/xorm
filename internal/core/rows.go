@@ -24,9 +24,9 @@ func (rs *Rows) ToMapString() ([]map[string]string, error) {
 		return nil, err
 	}
 
-	var results = make([]map[string]string, 0, 10)
+	results := make([]map[string]string, 0, 10)
 	for rs.Next() {
-		var record = make(map[string]string, len(cols))
+		record := make(map[string]string, len(cols))
 		err = rs.ScanMap(&record)
 		if err != nil {
 			return nil, err
@@ -37,7 +37,7 @@ func (rs *Rows) ToMapString() ([]map[string]string, error) {
 }
 
 // ScanStructByIndex scan data to a struct's pointer according field index
-func (rs *Rows) ScanStructByIndex(dest ...interface{}) error {
+func (rs *Rows) ScanStructByIndex(dest ...any) error {
 	if len(dest) == 0 {
 		return errors.New("at least one struct")
 	}
@@ -56,9 +56,9 @@ func (rs *Rows) ScanStructByIndex(dest ...interface{}) error {
 	if err != nil {
 		return err
 	}
-	newDest := make([]interface{}, len(cols))
+	newDest := make([]any, len(cols))
 
-	var i = 0
+	i := 0
 	for _, vvv := range vvvs {
 		for j := 0; j < vvv.NumField(); j++ {
 			newDest[i] = vvv.Field(j).Addr().Interface()
@@ -97,7 +97,7 @@ func fieldByName(v reflect.Value, name string) reflect.Value {
 }
 
 // ScanStructByName scan data to a struct's pointer according field name
-func (rs *Rows) ScanStructByName(dest interface{}) error {
+func (rs *Rows) ScanStructByName(dest any) error {
 	vv := reflect.ValueOf(dest)
 	if vv.Kind() != reflect.Ptr || vv.Elem().Kind() != reflect.Struct {
 		return errors.New("dest should be a struct's pointer")
@@ -108,7 +108,7 @@ func (rs *Rows) ScanStructByName(dest interface{}) error {
 		return err
 	}
 
-	newDest := make([]interface{}, len(cols))
+	newDest := make([]any, len(cols))
 	var v EmptyScanner
 	for j, name := range cols {
 		f := fieldByName(vv.Elem(), rs.db.Mapper.Table2Obj(name))
@@ -123,7 +123,7 @@ func (rs *Rows) ScanStructByName(dest interface{}) error {
 }
 
 // ScanSlice scan data to a slice's pointer, slice's length should equal to columns' number
-func (rs *Rows) ScanSlice(dest interface{}) error {
+func (rs *Rows) ScanSlice(dest any) error {
 	vv := reflect.ValueOf(dest)
 	if vv.Kind() != reflect.Ptr || vv.Elem().Kind() != reflect.Slice {
 		return errors.New("dest should be a slice's pointer")
@@ -135,7 +135,7 @@ func (rs *Rows) ScanSlice(dest interface{}) error {
 		return err
 	}
 
-	newDest := make([]interface{}, len(cols))
+	newDest := make([]any, len(cols))
 
 	for j := 0; j < len(cols); j++ {
 		if j >= vvv.Len() {
@@ -158,7 +158,7 @@ func (rs *Rows) ScanSlice(dest interface{}) error {
 }
 
 // ScanMap scan data to a map's pointer
-func (rs *Rows) ScanMap(dest interface{}) error {
+func (rs *Rows) ScanMap(dest any) error {
 	vv := reflect.ValueOf(dest)
 	if vv.Kind() != reflect.Ptr || vv.Elem().Kind() != reflect.Map {
 		return errors.New("dest should be a map's pointer")
@@ -169,7 +169,7 @@ func (rs *Rows) ScanMap(dest interface{}) error {
 		return err
 	}
 
-	newDest := make([]interface{}, len(cols))
+	newDest := make([]any, len(cols))
 	vvv := vv.Elem()
 
 	for i := range cols {
@@ -217,7 +217,7 @@ func (row *Row) Columns() ([]string, error) {
 }
 
 // Scan retrieves all row column values
-func (row *Row) Scan(dest ...interface{}) error {
+func (row *Row) Scan(dest ...any) error {
 	if row.err != nil {
 		return row.err
 	}
@@ -244,7 +244,7 @@ func (row *Row) Scan(dest ...interface{}) error {
 }
 
 // ScanStructByName retrieves all row column values into a struct
-func (row *Row) ScanStructByName(dest interface{}) error {
+func (row *Row) ScanStructByName(dest any) error {
 	if row.err != nil {
 		return row.err
 	}
@@ -265,7 +265,7 @@ func (row *Row) ScanStructByName(dest interface{}) error {
 }
 
 // ScanStructByIndex retrieves all row column values into a struct
-func (row *Row) ScanStructByIndex(dest interface{}) error {
+func (row *Row) ScanStructByIndex(dest any) error {
 	if row.err != nil {
 		return row.err
 	}
@@ -286,7 +286,7 @@ func (row *Row) ScanStructByIndex(dest interface{}) error {
 }
 
 // ScanSlice scan data to a slice's pointer, slice's length should equal to columns' number
-func (row *Row) ScanSlice(dest interface{}) error {
+func (row *Row) ScanSlice(dest any) error {
 	if row.err != nil {
 		return row.err
 	}
@@ -308,7 +308,7 @@ func (row *Row) ScanSlice(dest interface{}) error {
 }
 
 // ScanMap scan data to a map's pointer
-func (row *Row) ScanMap(dest interface{}) error {
+func (row *Row) ScanMap(dest any) error {
 	if row.err != nil {
 		return row.err
 	}
@@ -336,7 +336,7 @@ func (row *Row) ToMapString() (map[string]string, error) {
 		return nil, err
 	}
 
-	var record = make(map[string]string, len(cols))
+	record := make(map[string]string, len(cols))
 	err = row.ScanMap(&record)
 	if err != nil {
 		return nil, err

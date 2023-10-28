@@ -155,7 +155,7 @@ func TestIn(t *testing.T) {
 	}
 
 	users = make([]Userinfo, 0)
-	var idsInterface []interface{}
+	var idsInterface []any
 	for _, id := range ids {
 		idsInterface = append(idsInterface, id)
 	}

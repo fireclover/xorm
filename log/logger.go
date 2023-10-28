@@ -33,14 +33,14 @@ const (
 
 // Logger is a logger interface
 type Logger interface {
-	Debug(v ...interface{})
-	Debugf(format string, v ...interface{})
-	Error(v ...interface{})
-	Errorf(format string, v ...interface{})
-	Info(v ...interface{})
-	Infof(format string, v ...interface{})
-	Warn(v ...interface{})
-	Warnf(format string, v ...interface{})
+	Debug(v ...any)
+	Debugf(format string, v ...any)
+	Error(v ...any)
+	Errorf(format string, v ...any)
+	Info(v ...any)
+	Infof(format string, v ...any)
+	Warn(v ...any)
+	Warnf(format string, v ...any)
 
 	Level() LogLevel
 	SetLevel(l LogLevel)
@@ -55,28 +55,28 @@ var _ Logger = DiscardLogger{}
 type DiscardLogger struct{}
 
 // Debug empty implementation
-func (DiscardLogger) Debug(v ...interface{}) {}
+func (DiscardLogger) Debug(v ...any) {}
 
 // Debugf empty implementation
-func (DiscardLogger) Debugf(format string, v ...interface{}) {}
+func (DiscardLogger) Debugf(format string, v ...any) {}
 
 // Error empty implementation
-func (DiscardLogger) Error(v ...interface{}) {}
+func (DiscardLogger) Error(v ...any) {}
 
 // Errorf empty implementation
-func (DiscardLogger) Errorf(format string, v ...interface{}) {}
+func (DiscardLogger) Errorf(format string, v ...any) {}
 
 // Info empty implementation
-func (DiscardLogger) Info(v ...interface{}) {}
+func (DiscardLogger) Info(v ...any) {}
 
 // Infof empty implementation
-func (DiscardLogger) Infof(format string, v ...interface{}) {}
+func (DiscardLogger) Infof(format string, v ...any) {}
 
 // Warn empty implementation
-func (DiscardLogger) Warn(v ...interface{}) {}
+func (DiscardLogger) Warn(v ...any) {}
 
 // Warnf empty implementation
-func (DiscardLogger) Warnf(format string, v ...interface{}) {}
+func (DiscardLogger) Warnf(format string, v ...any) {}
 
 // Level empty implementation
 func (DiscardLogger) Level() LogLevel {
@@ -128,56 +128,56 @@ func NewSimpleLogger3(out io.Writer, prefix string, flag int, l LogLevel) *Simpl
 }
 
 // Error implement ILogger
-func (s *SimpleLogger) Error(v ...interface{}) {
+func (s *SimpleLogger) Error(v ...any) {
 	if s.level <= LOG_ERR {
 		_ = s.ERR.Output(2, fmt.Sprintln(v...))
 	}
 }
 
 // Errorf implement ILogger
-func (s *SimpleLogger) Errorf(format string, v ...interface{}) {
+func (s *SimpleLogger) Errorf(format string, v ...any) {
 	if s.level <= LOG_ERR {
 		_ = s.ERR.Output(2, fmt.Sprintf(format, v...))
 	}
 }
 
 // Debug implement ILogger
-func (s *SimpleLogger) Debug(v ...interface{}) {
+func (s *SimpleLogger) Debug(v ...any) {
 	if s.level <= LOG_DEBUG {
 		_ = s.DEBUG.Output(2, fmt.Sprintln(v...))
 	}
 }
 
 // Debugf implement ILogger
-func (s *SimpleLogger) Debugf(format string, v ...interface{}) {
+func (s *SimpleLogger) Debugf(format string, v ...any) {
 	if s.level <= LOG_DEBUG {
 		_ = s.DEBUG.Output(2, fmt.Sprintf(format, v...))
 	}
 }
 
 // Info implement ILogger
-func (s *SimpleLogger) Info(v ...interface{}) {
+func (s *SimpleLogger) Info(v ...any) {
 	if s.level <= LOG_INFO {
 		_ = s.INFO.Output(2, fmt.Sprintln(v...))
 	}
 }
 
 // Infof implement ILogger
-func (s *SimpleLogger) Infof(format string, v ...interface{}) {
+func (s *SimpleLogger) Infof(format string, v ...any) {
 	if s.level <= LOG_INFO {
 		_ = s.INFO.Output(2, fmt.Sprintf(format, v...))
 	}
 }
 
 // Warn implement ILogger
-func (s *SimpleLogger) Warn(v ...interface{}) {
+func (s *SimpleLogger) Warn(v ...any) {
 	if s.level <= LOG_WARNING {
 		_ = s.WARN.Output(2, fmt.Sprintln(v...))
 	}
 }
 
 // Warnf implement ILogger
-func (s *SimpleLogger) Warnf(format string, v ...interface{}) {
+func (s *SimpleLogger) Warnf(format string, v ...any) {
 	if s.level <= LOG_WARNING {
 		_ = s.WARN.Output(2, fmt.Sprintf(format, v...))
 	}

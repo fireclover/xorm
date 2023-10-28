@@ -12,10 +12,10 @@ import (
 )
 
 // PK represents primary key values
-type PK []interface{}
+type PK []any
 
 // NewPK creates primay keys
-func NewPK(pks ...interface{}) *PK {
+func NewPK(pks ...any) *PK {
 	p := PK(pks)
 	return &p
 }

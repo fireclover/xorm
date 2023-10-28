@@ -19,11 +19,11 @@ func init() {
 type JSONiter struct{}
 
 // Marshal implements JSONInterface
-func (JSONiter) Marshal(v interface{}) ([]byte, error) {
+func (JSONiter) Marshal(v any) ([]byte, error) {
 	return jsoniter.Marshal(v)
 }
 
 // Unmarshal implements JSONInterface
-func (JSONiter) Unmarshal(data []byte, v interface{}) error {
+func (JSONiter) Unmarshal(data []byte, v any) error {
 	return jsoniter.Unmarshal(data, v)
 }

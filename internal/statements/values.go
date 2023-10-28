@@ -24,7 +24,7 @@ var (
 )
 
 // Value2Interface convert a field value of a struct to interface for putting into database
-func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue reflect.Value) (interface{}, error) {
+func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue reflect.Value) (any, error) {
 	if fieldValue.CanAddr() {
 		if fieldConvert, ok := fieldValue.Addr().Interface().(convert.Conversion); ok {
 			data, err := fieldConvert.ToDB()

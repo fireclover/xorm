@@ -25,7 +25,7 @@ const (
 // Find retrieve records from table, condiBeans's non-empty fields
 // are conditions. beans could be []Struct, []*Struct, map[int64]Struct
 // map[int64]*Struct
-func (session *Session) Find(rowsSlicePtr interface{}, condiBean ...interface{}) error {
+func (session *Session) Find(rowsSlicePtr any, condiBean ...any) error {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -33,7 +33,7 @@ func (session *Session) Find(rowsSlicePtr interface{}, condiBean ...interface{})
 }
 
 // FindAndCount find the results and also return the counts
-func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...interface{}) (int64, error) {
+func (session *Session) FindAndCount(rowsSlicePtr any, condiBean ...any) (int64, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -77,7 +77,7 @@ func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...inte
 	return session.Unscoped().Count()
 }
 
-func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{}) error {
+func (session *Session) find(rowsSlicePtr any, condiBean ...any) error {
 	defer session.resetStatement()
 	if session.statement.LastError != nil {
 		return session.statement.LastError
@@ -208,7 +208,7 @@ func ParseColumnsSchema(fieldNames []string, types []*sql.ColumnType, table *sch
 	return &columnsSchema
 }
 
-func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect.Value, sqlStr string, args ...interface{}) error {
+func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect.Value, sqlStr string, args ...any) error {
 	elemType := containerValue.Type().Elem()
 	var isPointer bool
 	if elemType.Kind() == reflect.Ptr {

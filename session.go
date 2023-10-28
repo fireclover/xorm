@@ -68,20 +68,20 @@ type Session struct {
 	autoResetStatement bool
 
 	// !nashtsai! storing these beans due to yet committed tx
-	afterInsertBeans map[interface{}]*[]func(interface{})
-	afterUpdateBeans map[interface{}]*[]func(interface{})
-	afterDeleteBeans map[interface{}]*[]func(interface{})
+	afterInsertBeans map[any]*[]func(any)
+	afterUpdateBeans map[any]*[]func(any)
+	afterDeleteBeans map[any]*[]func(any)
 	// --
 
-	beforeClosures  []func(interface{})
-	afterClosures   []func(interface{})
+	beforeClosures  []func(any)
+	afterClosures   []func(any)
 	afterProcessors []executedProcessor
 
 	stmtCache   map[uint32]*core.Stmt // key: hash.Hash32 of (queryStr, len(queryStr))
 	txStmtCache map[uint32]*core.Stmt // for tx statement
 
 	lastSQL     string
-	lastSQLArgs []interface{}
+	lastSQLArgs []any
 
 	ctx         context.Context
 	sessionType sessionType
@@ -122,17 +122,17 @@ func newSession(engine *Engine) *Session {
 		autoResetStatement:     true,
 		prepareStmt:            false,
 
-		afterInsertBeans: make(map[interface{}]*[]func(interface{})),
-		afterUpdateBeans: make(map[interface{}]*[]func(interface{})),
-		afterDeleteBeans: make(map[interface{}]*[]func(interface{})),
-		beforeClosures:   make([]func(interface{}), 0),
-		afterClosures:    make([]func(interface{}), 0),
+		afterInsertBeans: make(map[any]*[]func(any)),
+		afterUpdateBeans: make(map[any]*[]func(any)),
+		afterDeleteBeans: make(map[any]*[]func(any)),
+		beforeClosures:   make([]func(any), 0),
+		afterClosures:    make([]func(any), 0),
 		afterProcessors:  make([]executedProcessor, 0),
 		stmtCache:        make(map[uint32]*core.Stmt),
 		txStmtCache:      make(map[uint32]*core.Stmt),
 
 		lastSQL:     "",
-		lastSQLArgs: make([]interface{}, 0),
+		lastSQLArgs: make([]any, 0),
 
 		sessionType: engineSession,
 	}
@@ -218,7 +218,7 @@ func (session *Session) Prepare() *Session {
 }
 
 // Before Apply before Processor, affected bean is passed to closure arg
-func (session *Session) Before(closures func(interface{})) *Session {
+func (session *Session) Before(closures func(any)) *Session {
 	if closures != nil {
 		session.beforeClosures = append(session.beforeClosures, closures)
 	}
@@ -226,7 +226,7 @@ func (session *Session) Before(closures func(interface{})) *Session {
 }
 
 // After Apply after Processor, affected bean is passed to closure arg
-func (session *Session) After(closures func(interface{})) *Session {
+func (session *Session) After(closures func(any)) *Session {
 	if closures != nil {
 		session.afterClosures = append(session.afterClosures, closures)
 	}
@@ -234,7 +234,7 @@ func (session *Session) After(closures func(interface{})) *Session {
 }
 
 // Table can input a string or pointer to struct for special a table to operate.
-func (session *Session) Table(tableNameOrBean interface{}) *Session {
+func (session *Session) Table(tableNameOrBean any) *Session {
 	if err := session.statement.SetTable(tableNameOrBean); err != nil {
 		session.statement.LastError = err
 	}
@@ -273,7 +273,7 @@ func (session *Session) Limit(limit int, start ...int) *Session {
 
 // OrderBy provide order by query condition, the input parameter is the content
 // after order by on a sql statement.
-func (session *Session) OrderBy(order interface{}, args ...interface{}) *Session {
+func (session *Session) OrderBy(order any, args ...any) *Session {
 	session.statement.OrderBy(order, args...)
 	return session
 }
@@ -321,7 +321,7 @@ func (session *Session) MustLogSQL(logs ...bool) *Session {
 }
 
 // Join join_operator should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
-func (session *Session) Join(joinOperator string, tablename interface{}, condition interface{}, args ...interface{}) *Session {
+func (session *Session) Join(joinOperator string, tablename any, condition any, args ...any) *Session {
 	session.statement.Join(joinOperator, tablename, condition, args...)
 	return session
 }
@@ -374,7 +374,7 @@ func getField(dataStruct *reflect.Value, table *schemas.Table, field *QueryedFie
 }
 
 // Cell cell is a result of one column field
-type Cell *interface{}
+type Cell *any
 
 func (session *Session) rows2Beans(rows *core.Rows, columnsSchema *ColumnsSchema, fields []string, types []*sql.ColumnType,
 	table *schemas.Table, newElemFunc func([]string) reflect.Value,
@@ -395,7 +395,7 @@ func (session *Session) rows2Beans(rows *core.Rows, columnsSchema *ColumnsSchema
 			return err
 		}
 		session.afterProcessors = append(session.afterProcessors, executedProcessor{
-			fun: func(*Session, interface{}) error {
+			fun: func(*Session, any) error {
 				return sliceValueSetFunc(&newValue, pk)
 			},
 			session: session,
@@ -405,14 +405,14 @@ func (session *Session) rows2Beans(rows *core.Rows, columnsSchema *ColumnsSchema
 	return rows.Err()
 }
 
-func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql.ColumnType, bean interface{}) ([]interface{}, error) {
+func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql.ColumnType, bean any) ([]any, error) {
 	for _, closure := range session.beforeClosures {
 		closure(bean)
 	}
 
-	scanResults := make([]interface{}, len(fields))
+	scanResults := make([]any, len(fields))
 	for i := 0; i < len(fields); i++ {
-		var cell interface{}
+		var cell any
 		scanResults[i] = &cell
 	}
 	if err := session.engine.scan(rows, fields, types, scanResults...); err != nil {
@@ -424,7 +424,7 @@ func (session *Session) row2Slice(rows *core.Rows, fields []string, types []*sql
 	return scanResults, nil
 }
 
-func setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult interface{}) error {
+func setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult any) error {
 	bs, ok := convert.AsBytes(scanResult)
 	if !ok {
 		return fmt.Errorf("unsupported database data type: %#v", scanResult)
@@ -457,9 +457,9 @@ func setJSON(fieldValue *reflect.Value, fieldType reflect.Type, scanResult inter
 var uint8ZeroValue = reflect.ValueOf(uint8(0))
 
 func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflect.Value,
-	scanResult interface{}, table *schemas.Table,
+	scanResult any, table *schemas.Table,
 ) error {
-	v, ok := scanResult.(*interface{})
+	v, ok := scanResult.(*any)
 	if ok {
 		scanResult = *v
 	}
@@ -625,7 +625,7 @@ func (session *Session) convertBeanField(col *schemas.Column, fieldValue *reflec
 	return convert.AssignValue(fieldValue.Addr(), scanResult)
 }
 
-func (session *Session) slice2Bean(scanResults []interface{}, columnsSchema *ColumnsSchema, fields []string, bean interface{}, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
+func (session *Session) slice2Bean(scanResults []any, columnsSchema *ColumnsSchema, fields []string, bean any, dataStruct *reflect.Value, table *schemas.Table) (schemas.PK, error) {
 	defer func() {
 		executeAfterSet(bean, fields, scanResults)
 	}()
@@ -656,13 +656,13 @@ func (session *Session) slice2Bean(scanResults []interface{}, columnsSchema *Col
 }
 
 // saveLastSQL stores executed query information
-func (session *Session) saveLastSQL(sql string, args ...interface{}) {
+func (session *Session) saveLastSQL(sql string, args ...any) {
 	session.lastSQL = sql
 	session.lastSQLArgs = args
 }
 
 // LastSQL returns last query information
-func (session *Session) LastSQL() (string, []interface{}) {
+func (session *Session) LastSQL() (string, []any) {
 	return session.lastSQL, session.lastSQLArgs
 }
 
