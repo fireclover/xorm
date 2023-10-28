@@ -448,18 +448,18 @@ func (db *mssql) IndexCheckSQL(tableName, idxName string) (string, []any) {
 	return sql, args
 }
 
-func (db *mssql) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
+func (db *mssql) IsColumnExist(ctx context.Context, queryer core.Queryer, tableName, colName string) (bool, error) {
 	query := `SELECT "COLUMN_NAME" FROM "INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = ? AND "COLUMN_NAME" = ?`
 
-	return db.HasRecords(queryer, ctx, query, tableName, colName)
+	return db.HasRecords(ctx, queryer, query, tableName, colName)
 }
 
-func (db *mssql) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
+func (db *mssql) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
 	sql := "select * from sysobjects where id = object_id(N'" + tableName + "') and OBJECTPROPERTY(id, N'IsUserTable') = 1"
-	return db.HasRecords(queryer, ctx, sql)
+	return db.HasRecords(ctx, queryer, sql)
 }
 
-func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
+func (db *mssql) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
 	args := []any{}
 	s := `select a.name as name, b.name as ctype,a.max_length,a.precision,a.scale,a.is_nullable as nullable,
 		  "default_is_null" = (CASE WHEN c.text is null THEN 1 ELSE 0 END),
@@ -553,7 +553,7 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	return colSeq, cols, nil
 }
 
-func (db *mssql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
+func (db *mssql) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
 	args := []any{}
 	s := `select name from sysobjects where xtype ='U'`
 
@@ -580,7 +580,7 @@ func (db *mssql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 	return tables, nil
 }
 
-func (db *mssql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
+func (db *mssql) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
 	args := []any{tableName}
 	s := `SELECT
 IXS.NAME                    AS  [INDEX_NAME],

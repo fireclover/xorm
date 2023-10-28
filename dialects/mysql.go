@@ -377,9 +377,9 @@ func (db *mysql) IndexCheckSQL(tableName, idxName string) (string, []any) {
 	return sql, args
 }
 
-func (db *mysql) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
+func (db *mysql) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
 	sql := "SELECT `TABLE_NAME` from `INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? and `TABLE_NAME`=?"
-	return db.HasRecords(queryer, ctx, sql, db.uri.DBName, tableName)
+	return db.HasRecords(ctx, queryer, sql, db.uri.DBName, tableName)
 }
 
 func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
@@ -407,7 +407,7 @@ func (db *mysql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
 	return fmt.Sprintf("ALTER TABLE %s MODIFY COLUMN %s", db.quoter.Quote(tableName), s)
 }
 
-func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
+func (db *mysql) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
 	args := []any{db.uri.DBName, tableName}
 	alreadyQuoted := "(INSTR(VERSION(), 'maria') > 0 && " +
 		"(SUBSTRING_INDEX(VERSION(), '.', 1) > 10 || " +
@@ -544,7 +544,7 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	return colSeq, cols, nil
 }
 
-func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
+func (db *mysql) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
 	args := []any{db.uri.DBName}
 	s := "SELECT `TABLE_NAME`, `ENGINE`, `AUTO_INCREMENT`, `TABLE_COMMENT`, `TABLE_COLLATION` from " +
 		"`INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? AND (`ENGINE`='MyISAM' OR `ENGINE` = 'InnoDB' OR `ENGINE` = 'TokuDB')"
@@ -596,7 +596,7 @@ func (db *mysql) SetQuotePolicy(quotePolicy QuotePolicy) {
 	}
 }
 
-func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
+func (db *mysql) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
 	args := []any{db.uri.DBName, tableName}
 	s := "SELECT `INDEX_NAME`, `NON_UNIQUE`, `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? ORDER BY `SEQ_IN_INDEX`"
 

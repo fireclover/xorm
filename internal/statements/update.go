@@ -565,6 +565,12 @@ func (statement *Statement) writeSetColumns(colNames []string, args []any) func(
 }
 
 func (statement *Statement) writeUpdateSets(w *builder.BytesWriter, v reflect.Value, colNames []string, args []any) error {
+	// write set
+	if _, err := fmt.Fprint(w, " SET "); err != nil {
+		return err
+	}
+	previousLen := w.Len()
+
 	if err := statement.writeSetColumns(colNames, args)(w); err != nil {
 		return err
 	}
@@ -588,6 +594,11 @@ func (statement *Statement) writeUpdateSets(w *builder.BytesWriter, v reflect.Va
 	if err := statement.writeVersionIncrSet(w, v, setNumber > 0); err != nil {
 		return err
 	}
+
+	// if no columns to be updated, return error
+	if previousLen == w.Len() {
+		return ErrNoColumnsTobeUpdated
+	}
 	return nil
 }
 
@@ -606,19 +617,8 @@ func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond 
 		return err
 	}
 
-	// write set
-	if _, err := fmt.Fprint(updateWriter, " SET "); err != nil {
-		return err
-	}
-	previousLen := updateWriter.Len()
-
 	if err := statement.writeUpdateSets(updateWriter, v, colNames, args); err != nil {
 		return err
-	}
-
-	// if no columns to be updated, return error
-	if previousLen == updateWriter.Len() {
-		return ErrNoColumnsTobeUpdated
 	}
 
 	// write from

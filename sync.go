@@ -67,7 +67,7 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...any) (*SyncRe
 		defer session.Close()
 	}
 
-	tables, err := engine.dialect.GetTables(session.getQueryer(), session.ctx)
+	tables, err := engine.dialect.GetTables(session.ctx, session.getQueryer())
 	if err != nil {
 		return nil, err
 	}
