@@ -4,6 +4,27 @@
 
 package xorm
 
+import (
+	"hash/crc32"
+
+	"xorm.io/xorm/v2/internal/core"
+)
+
+func (session *Session) doPrepareTx(sqlStr string) (stmt *core.Stmt, err error) {
+	crc := crc32.ChecksumIEEE([]byte(sqlStr))
+	// TODO try hash(sqlStr+len(sqlStr))
+	var has bool
+	stmt, has = session.txStmtCache[crc]
+	if !has {
+		stmt, err = session.tx.PrepareContext(session.ctx, sqlStr)
+		if err != nil {
+			return nil, err
+		}
+		session.txStmtCache[crc] = stmt
+	}
+	return
+}
+
 // Begin a transaction
 func (session *Session) Begin() error {
 	if session.isAutoCommit {

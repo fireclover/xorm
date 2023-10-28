@@ -22,6 +22,9 @@ import (
 // ErrNoElementsOnSlice represents an error there is no element when insert
 var ErrNoElementsOnSlice = errors.New("no element on slice when insert")
 
+// ErrPtrSliceType represents a type error
+var ErrPtrSliceType = errors.New("A point to a slice is needed")
+
 // Insert insert one or more beans
 func (session *Session) Insert(beans ...interface{}) (int64, error) {
 	var affected int64
