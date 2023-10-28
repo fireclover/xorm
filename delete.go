@@ -63,13 +63,12 @@ func (session *Session) delete(beans []any, mustHaveConditions bool) (int64, err
 	table := session.statement.RefTable
 
 	realSQLWriter := builder.NewWriter()
-	deleteSQLWriter := builder.NewWriter()
-	if err := session.statement.WriteDelete(realSQLWriter, deleteSQLWriter, session.engine.nowTime); err != nil {
+	if err := session.statement.WriteDelete(realSQLWriter, session.engine.nowTime); err != nil {
 		return 0, err
 	}
 
-	if session.statement.GetUnscoped() || table == nil || table.DeletedColumn() == nil { // tag "deleted" is disabled
-	} else {
+	// if tag "deleted" is enabled, then set the field as deleted value
+	if !session.statement.GetUnscoped() && table != nil && table.DeletedColumn() != nil {
 		deletedColumn := table.DeletedColumn()
 		_, t, err := session.engine.nowTime(deletedColumn)
 		if err != nil {
