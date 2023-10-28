@@ -15,8 +15,8 @@ import (
 
 	"xorm.io/builder"
 	"xorm.io/xorm/v2/contexts"
-	"xorm.io/xorm/v2/convert"
 	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/convert"
 	"xorm.io/xorm/v2/internal/json"
 	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/schemas"

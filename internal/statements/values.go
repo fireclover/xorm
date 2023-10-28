@@ -12,8 +12,8 @@ import (
 	"reflect"
 	"time"
 
-	"xorm.io/xorm/v2/convert"
 	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/convert"
 	"xorm.io/xorm/v2/internal/json"
 	"xorm.io/xorm/v2/schemas"
 )
