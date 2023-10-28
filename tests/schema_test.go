@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"
 )
 
@@ -644,4 +645,102 @@ func TestCollate(t *testing.T) {
 		Name:   "Test1",
 	})
 	assert.NoError(t, err)
+}
+
+type SyncWithOpts1 struct {
+	Id        int64
+	Index     int `xorm:"index"`
+	Unique    int `xorm:"unique"`
+	Group1    int `xorm:"index(ttt)"`
+	Group2    int `xorm:"index(ttt)"`
+	UniGroup1 int `xorm:"unique(lll)"`
+	UniGroup2 int `xorm:"unique(lll)"`
+}
+
+func (*SyncWithOpts1) TableName() string {
+	return "sync_with_opts"
+}
+
+type SyncWithOpts2 struct {
+	Id        int64
+	Index     int `xorm:"index"`
+	Unique    int `xorm:""`
+	Group1    int `xorm:"index(ttt)"`
+	Group2    int `xorm:"index(ttt)"`
+	UniGroup1 int `xorm:""`
+	UniGroup2 int `xorm:"unique(lll)"`
+}
+
+func (*SyncWithOpts2) TableName() string {
+	return "sync_with_opts"
+}
+
+type SyncWithOpts3 struct {
+	Id        int64
+	Index     int `xorm:""`
+	Unique    int `xorm:"unique"`
+	Group1    int `xorm:""`
+	Group2    int `xorm:"index(ttt)"`
+	UniGroup1 int `xorm:"unique(lll)"`
+	UniGroup2 int `xorm:"unique(lll)"`
+}
+
+func (*SyncWithOpts3) TableName() string {
+	return "sync_with_opts"
+}
+
+func TestSyncWithOptions(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	// ignore indices and constrains
+	result, err := testEngine.SyncWithOptions(xorm.SyncOptions{IgnoreIndices: true, IgnoreConstrains: true}, &SyncWithOpts1{})
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Len(t, getIndicesOfBeanFromDB(t, &SyncWithOpts1{}), 0)
+
+	// only ignore indices
+	result, err = testEngine.SyncWithOptions(xorm.SyncOptions{IgnoreConstrains: true}, &SyncWithOpts2{})
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	indices := getIndicesOfBeanFromDB(t, &SyncWithOpts1{})
+	assert.Len(t, indices, 2)
+	assert.ElementsMatch(t, []string{"ttt", "index"}, getKeysFromMap(indices))
+
+	// only ignore constrains
+	result, err = testEngine.SyncWithOptions(xorm.SyncOptions{IgnoreIndices: true}, &SyncWithOpts3{})
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	indices = getIndicesOfBeanFromDB(t, &SyncWithOpts1{})
+	assert.Len(t, indices, 4)
+	assert.ElementsMatch(t, []string{"ttt", "index", "unique", "lll"}, getKeysFromMap(indices))
+
+	tableInfoFromStruct, _ := testEngine.TableInfo(&SyncWithOpts1{})
+	assert.ElementsMatch(t, getKeysFromMap(tableInfoFromStruct.Indexes), getKeysFromMap(getIndicesOfBeanFromDB(t, &SyncWithOpts1{})))
+
+}
+
+func getIndicesOfBeanFromDB(t *testing.T, bean interface{}) map[string]*schemas.Index {
+	dbm, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+
+	tName := testEngine.TableName(bean)
+	var tSchema *schemas.Table
+	for _, t := range dbm {
+		if t.Name == tName {
+			tSchema = t
+			break
+		}
+	}
+	if !assert.NotNil(t, tSchema) {
+		return nil
+	}
+	return tSchema.Indexes
+}
+
+func getKeysFromMap(m map[string]*schemas.Index) []string {
+	var ss []string
+	for k := range m {
+		ss = append(ss, k)
+	}
+	return ss
 }
