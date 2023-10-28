@@ -18,10 +18,7 @@ func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.C
 		if col.Nullable {
 			return nil, nil
 		}
-		if col.SQLType.IsNumeric() {
-			return 0, nil
-		}
-		if col.SQLType.Name == schemas.TimeStamp || col.SQLType.Name == schemas.TimeStampz {
+		if col.SQLType.IsNumeric() || col.SQLType.Name == schemas.TimeStamp || col.SQLType.Name == schemas.TimeStampz {
 			return 0, nil
 		}
 	}
