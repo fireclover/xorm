@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package executors
+package executor
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestQuerier(t *testing.T) {
+func TestExecutor(t *testing.T) {
 	type User struct {
 		Id   int64
 		Name string
@@ -25,7 +25,7 @@ func TestQuerier(t *testing.T) {
 	assert.NoError(t, engine.Sync(new(User)))
 
 	// create querier
-	querier := NewQuerier[User](engine)
+	querier := New[User](engine)
 
 	users, err := querier.All(context.Background())
 	if err != nil {
