@@ -150,7 +150,7 @@ func (session *Session) dropTable(beanOrTableName any) error {
 	tableName := session.engine.TableName(beanOrTableName)
 	sqlStr, checkIfExist := session.engine.dialect.DropTableSQL(session.engine.TableName(tableName, true))
 	if !checkIfExist {
-		exist, err := session.engine.dialect.IsTableExist(session.getQueryer(), session.ctx, tableName)
+		exist, err := session.engine.dialect.IsTableExist(session.ctx, session.getQueryer(), tableName)
 		if err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func (session *Session) IsTableExist(beanOrTableName any) (bool, error) {
 }
 
 func (session *Session) isTableExist(tableName string) (bool, error) {
-	return session.engine.dialect.IsTableExist(session.getQueryer(), session.ctx, tableName)
+	return session.engine.dialect.IsTableExist(session.ctx, session.getQueryer(), tableName)
 }
 
 // IsTableEmpty if table have any records

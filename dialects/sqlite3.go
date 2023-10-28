@@ -272,8 +272,8 @@ func (db *sqlite3) IndexCheckSQL(tableName, idxName string) (string, []any) {
 	return "SELECT name FROM sqlite_master WHERE type='index' and name = ?", args
 }
 
-func (db *sqlite3) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
-	return db.HasRecords(queryer, ctx, "SELECT name FROM sqlite_master WHERE type='table' and name = ?", tableName)
+func (db *sqlite3) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
+	return db.HasRecords(ctx, queryer, "SELECT name FROM sqlite_master WHERE type='table' and name = ?", tableName)
 }
 
 func (db *sqlite3) DropIndexSQL(tableName string, index *schemas.Index) string {
@@ -291,7 +291,7 @@ func (db *sqlite3) DropIndexSQL(tableName string, index *schemas.Index) string {
 	return fmt.Sprintf("DROP INDEX %v", db.Quoter().Quote(idxName))
 }
 
-func (db *sqlite3) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
+func (db *sqlite3) IsColumnExist(ctx context.Context, queryer core.Queryer, tableName, colName string) (bool, error) {
 	query := "SELECT * FROM " + tableName + " LIMIT 0"
 	rows, err := queryer.QueryContext(ctx, query)
 	if err != nil {
@@ -375,7 +375,7 @@ func parseString(colStr string) (*schemas.Column, error) {
 	return col, nil
 }
 
-func (db *sqlite3) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
+func (db *sqlite3) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
 	args := []any{tableName}
 	s := "SELECT sql FROM sqlite_master WHERE type='table' and name = ?"
 
@@ -434,7 +434,7 @@ func (db *sqlite3) GetColumns(queryer core.Queryer, ctx context.Context, tableNa
 	return colSeq, cols, nil
 }
 
-func (db *sqlite3) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
+func (db *sqlite3) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
 	args := []any{}
 	s := "SELECT name FROM sqlite_master WHERE type='table'"
 
@@ -462,7 +462,7 @@ func (db *sqlite3) GetTables(queryer core.Queryer, ctx context.Context) ([]*sche
 	return tables, nil
 }
 
-func (db *sqlite3) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
+func (db *sqlite3) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
 	args := []any{tableName}
 	s := "SELECT sql FROM sqlite_master WHERE type='index' and tbl_name = ?"
 

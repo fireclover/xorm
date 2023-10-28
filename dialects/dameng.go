@@ -755,8 +755,8 @@ func (db *dameng) IndexCheckSQL(tableName, idxName string) (string, []any) {
 		`WHERE TABLE_NAME = ? AND INDEX_NAME = ?`, args
 }
 
-func (db *dameng) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
-	return db.HasRecords(queryer, ctx, `SELECT table_name FROM user_tables WHERE table_name = ?`, tableName)
+func (db *dameng) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
+	return db.HasRecords(ctx, queryer, `SELECT table_name FROM user_tables WHERE table_name = ?`, tableName)
 }
 
 func (db *dameng) IsSequenceExist(ctx context.Context, queryer core.Queryer, seqName string) (bool, error) {
@@ -779,11 +779,11 @@ func (db *dameng) IsSequenceExist(ctx context.Context, queryer core.Queryer, seq
 	return cnt > 0, nil
 }
 
-func (db *dameng) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
+func (db *dameng) IsColumnExist(ctx context.Context, queryer core.Queryer, tableName, colName string) (bool, error) {
 	args := []any{tableName, colName}
 	query := "SELECT column_name FROM USER_TAB_COLUMNS WHERE table_name = ?" +
 		" AND column_name = ?"
-	return db.HasRecords(queryer, ctx, query, args...)
+	return db.HasRecords(ctx, queryer, query, args...)
 }
 
 var _ sql.Scanner = &dmClobScanner{}
@@ -850,7 +850,7 @@ func addSingleQuote(name string) string {
 	return b.String()
 }
 
-func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
+func (db *dameng) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
 	s := `select   column_name   from   user_cons_columns   
   where   constraint_name   =   (select   constraint_name   from   user_constraints   
 			  where   table_name   =   ?  and   constraint_type   ='P')`
@@ -925,7 +925,7 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		}
 		if utils.IndexSlice(pkNames, col.Name) > -1 {
 			col.IsPrimaryKey = true
-			has, err := db.HasRecords(queryer, ctx, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", utils.SeqName(tableName))
+			has, err := db.HasRecords(ctx, queryer, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", utils.SeqName(tableName))
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1002,7 +1002,7 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 	return colSeq, cols, nil
 }
 
-func (db *dameng) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
+func (db *dameng) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
 	s := "SELECT table_name FROM user_tables WHERE temporary = 'N' AND table_name NOT LIKE ?"
 	args := []any{strings.ToUpper(db.uri.User), "%$%"}
 
@@ -1028,7 +1028,7 @@ func (db *dameng) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 	return tables, nil
 }
 
-func (db *dameng) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
+func (db *dameng) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
 	args := []any{tableName, tableName}
 	s := "SELECT t.column_name,i.uniqueness,i.index_name FROM user_ind_columns t,user_indexes i " +
 		"WHERE t.index_name = i.index_name and t.table_name = i.table_name and t.table_name =?" +

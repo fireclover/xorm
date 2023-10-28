@@ -658,7 +658,7 @@ func (db *oracle) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 }
 
 func (db *oracle) IsSequenceExist(ctx context.Context, queryer core.Queryer, seqName string) (bool, error) {
-	return db.HasRecords(queryer, ctx, `SELECT sequence_name FROM user_sequences WHERE sequence_name = :1`, seqName)
+	return db.HasRecords(ctx, queryer, `SELECT sequence_name FROM user_sequences WHERE sequence_name = :1`, seqName)
 }
 
 func (db *oracle) SetQuotePolicy(quotePolicy QuotePolicy) {
@@ -684,18 +684,18 @@ func (db *oracle) IndexCheckSQL(tableName, idxName string) (string, []any) {
 		`WHERE TABLE_NAME = :1 AND INDEX_NAME = :2`, args
 }
 
-func (db *oracle) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
-	return db.HasRecords(queryer, ctx, `SELECT table_name FROM user_tables WHERE table_name = :1`, tableName)
+func (db *oracle) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
+	return db.HasRecords(ctx, queryer, `SELECT table_name FROM user_tables WHERE table_name = :1`, tableName)
 }
 
-func (db *oracle) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
+func (db *oracle) IsColumnExist(ctx context.Context, queryer core.Queryer, tableName, colName string) (bool, error) {
 	args := []any{tableName, colName}
 	query := "SELECT column_name FROM USER_TAB_COLUMNS WHERE table_name = :1" +
 		" AND column_name = :2"
-	return db.HasRecords(queryer, ctx, query, args...)
+	return db.HasRecords(ctx, queryer, query, args...)
 }
 
-func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
+func (db *oracle) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
 	args := []any{tableName}
 	s := "SELECT column_name,data_default,data_type,data_length,data_precision,data_scale," +
 		"nullable FROM USER_TAB_COLUMNS WHERE table_name = :1"
@@ -795,7 +795,7 @@ func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 	return colSeq, cols, nil
 }
 
-func (db *oracle) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
+func (db *oracle) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
 	args := []any{}
 	s := "SELECT table_name FROM user_tables"
 
@@ -821,7 +821,7 @@ func (db *oracle) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 	return tables, nil
 }
 
-func (db *oracle) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
+func (db *oracle) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
 	args := []any{tableName}
 	s := "SELECT t.column_name,i.uniqueness,i.index_name FROM user_ind_columns t,user_indexes i " +
 		"WHERE t.index_name = i.index_name and t.table_name = i.table_name and t.table_name =:1"

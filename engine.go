@@ -308,14 +308,14 @@ func (engine *Engine) NoAutoCondition(no ...bool) *Session {
 }
 
 func (engine *Engine) loadTableInfo(ctx context.Context, table *schemas.Table) error {
-	colSeq, cols, err := engine.dialect.GetColumns(engine.db, ctx, table.Name)
+	colSeq, cols, err := engine.dialect.GetColumns(ctx, engine.db, table.Name)
 	if err != nil {
 		return err
 	}
 	for _, name := range colSeq {
 		table.AddColumn(cols[name])
 	}
-	indexes, err := engine.dialect.GetIndexes(engine.db, ctx, table.Name)
+	indexes, err := engine.dialect.GetIndexes(ctx, engine.db, table.Name)
 	if err != nil {
 		return err
 	}
@@ -345,7 +345,7 @@ func (engine *Engine) loadTableInfo(ctx context.Context, table *schemas.Table) e
 
 // DBMetas Retrieve all tables, columns, indexes' informations from database.
 func (engine *Engine) DBMetas() ([]*schemas.Table, error) {
-	tables, err := engine.dialect.GetTables(engine.db, engine.defaultContext)
+	tables, err := engine.dialect.GetTables(engine.defaultContext, engine.db)
 	if err != nil {
 		return nil, err
 	}
