@@ -1251,36 +1251,36 @@ func TestInsertNotDeleted(t *testing.T) {
 
 func TestInsertNotDeletedNum(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	type TestInsertNotDeletedStructNotRight struct {
+	type TestInsertNotDeletedNumStructNotRight struct {
 		ID        uint64 `xorm:"'ID' pk autoincr"`
 		DeletedAt int64  `xorm:"'DELETED_AT' deleted notnull INT(11)"`
 	}
 	// notnull tag will be ignored
-	err := testEngine.Sync(new(TestInsertNotDeletedStructNotRight))
+	err := testEngine.Sync(new(TestInsertNotDeletedNumStructNotRight))
 	assert.NoError(t, err)
 
-	type TestInsertNotDeletedStruct struct {
+	type TestInsertNotDeletedNumStruct struct {
 		ID        uint64 `xorm:"'ID' pk autoincr"`
 		DeletedAt int64  `xorm:"'DELETED_AT' deleted INT(11)"`
 	}
 
-	assert.NoError(t, testEngine.Sync(new(TestInsertNotDeletedStruct)))
+	assert.NoError(t, testEngine.Sync(new(TestInsertNotDeletedNumStruct)))
 
-	var v1 TestInsertNotDeletedStructNotRight
+	var v1 TestInsertNotDeletedNumStructNotRight
 	_, err = testEngine.Insert(&v1)
 	assert.NoError(t, err)
 
-	var v2 TestInsertNotDeletedStructNotRight
+	var v2 TestInsertNotDeletedNumStructNotRight
 	has, err := testEngine.Get(&v2)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.Equal(t, v2.DeletedAt, int64(0))
 
-	var v3 TestInsertNotDeletedStruct
+	var v3 TestInsertNotDeletedNumStruct
 	_, err = testEngine.Insert(&v3)
 	assert.NoError(t, err)
 
-	var v4 TestInsertNotDeletedStruct
+	var v4 TestInsertNotDeletedNumStruct
 	has, err = testEngine.Get(&v4)
 	assert.NoError(t, err)
 	assert.True(t, has)
@@ -1289,36 +1289,36 @@ func TestInsertNotDeletedNum(t *testing.T) {
 
 func TestInsertNotDeletedTimeStamp(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	type TestInsertNotDeletedStructNotRight struct {
+	type TestInsertNotDeletedTimeStampStructNotRight struct {
 		ID        uint64    `xorm:"'ID' pk autoincr"`
 		DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull TIMESTAMP"`
 	}
 	// notnull tag will be ignored
-	err := testEngine.Sync(new(TestInsertNotDeletedStructNotRight))
+	err := testEngine.Sync(new(TestInsertNotDeletedTimeStampStructNotRight))
 	assert.NoError(t, err)
 
-	type TestInsertNotDeletedStruct struct {
+	type TestInsertNotDeletedTimeStampStruct struct {
 		ID        uint64    `xorm:"'ID' pk autoincr"`
 		DeletedAt time.Time `xorm:"'DELETED_AT' deleted TIMESTAMP"`
 	}
 
-	assert.NoError(t, testEngine.Sync(new(TestInsertNotDeletedStruct)))
+	assert.NoError(t, testEngine.Sync(new(TestInsertNotDeletedTimeStampStruct)))
 
-	var v1 TestInsertNotDeletedStructNotRight
+	var v1 TestInsertNotDeletedTimeStampStructNotRight
 	_, err = testEngine.Insert(&v1)
 	assert.NoError(t, err)
 
-	var v2 TestInsertNotDeletedStructNotRight
+	var v2 TestInsertNotDeletedTimeStampStructNotRight
 	has, err := testEngine.Get(&v2)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.Equal(t, v2.DeletedAt, time.Unix(0, 0))
 
-	var v3 TestInsertNotDeletedStruct
+	var v3 TestInsertNotDeletedTimeStampStruct
 	_, err = testEngine.Insert(&v3)
 	assert.NoError(t, err)
 
-	var v4 TestInsertNotDeletedStruct
+	var v4 TestInsertNotDeletedTimeStampStruct
 	has, err = testEngine.Get(&v4)
 	assert.NoError(t, err)
 	assert.True(t, has)
