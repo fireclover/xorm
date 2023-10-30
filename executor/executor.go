@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 
+	"xorm.io/builder"
 	"xorm.io/xorm/v2"
 )
 
@@ -19,6 +20,30 @@ func New[T any](c xorm.Interface) *Executor[T] {
 	return &Executor[T]{
 		client: c,
 	}
+}
+
+func (q *Executor[T]) Where(cond builder.Cond) *Executor[T] {
+	q.client.Where(cond)
+	return q
+}
+
+func (q *Executor[T]) Get(ctx context.Context) (*T, error) {
+	var result T
+	if has, err := q.client.Get(&result); err != nil {
+		return nil, err
+	} else if !has {
+		return nil, nil
+	}
+	return &result, nil
+}
+
+func (q *Executor[T]) InsertOne(ctx context.Context, obj *T) error {
+	_, err := q.client.InsertOne(obj)
+	return err
+}
+
+func (q *Executor[T]) Insert(ctx context.Context, results []T) (int64, error) {
+	return q.client.Insert(results)
 }
 
 func (q *Executor[T]) Exec(ctx context.Context) (sql.Result, error) {

@@ -8,6 +8,7 @@ import (
 	"context"
 	"testing"
 
+	"xorm.io/builder"
 	"xorm.io/xorm/v2"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -25,11 +26,23 @@ func TestExecutor(t *testing.T) {
 	assert.NoError(t, engine.Sync(new(User)))
 
 	// create querier
-	querier := New[User](engine)
+	executor := New[User](engine)
 
-	users, err := querier.All(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, len(users), 0)
+	err = executor.InsertOne(context.Background(), &User{
+		Name: "test",
+	})
+	assert.NoError(t, err)
+
+	user, err := executor.Get(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, user.Name, "test")
+	assert.Equal(t, user.Id, int64(1))
+
+	users, err := executor.All(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, len(users), 1)
+
+	users, err = executor.Where(builder.Eq{"id": 1}).All(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, len(users), 1)
 }
