@@ -31,7 +31,7 @@ func TestFormatColumnTime(t *testing.T) {
 		location *time.Location
 		column   *schemas.Column
 		time     time.Time
-		wantRes  interface{}
+		wantRes  any
 		wantErr  error
 	}{
 		{

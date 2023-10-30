@@ -32,7 +32,7 @@ func TestBefore_Get(t *testing.T) {
 	assert.EqualValues(t, 1, cnt)
 
 	var be BeforeTable
-	has, err := testEngine.Before(func(bean interface{}) {
+	has, err := testEngine.Before(func(bean any) {
 		bean.(*BeforeTable).Val = "val"
 	}).Get(&be)
 	assert.NoError(t, err)
@@ -60,7 +60,7 @@ func TestBefore_Find(t *testing.T) {
 	assert.EqualValues(t, 2, cnt)
 
 	var be []BeforeTable2
-	err = testEngine.Before(func(bean interface{}) {
+	err = testEngine.Before(func(bean any) {
 		bean.(*BeforeTable2).Val = "val"
 	}).Find(&be)
 	assert.NoError(t, err)
@@ -133,7 +133,7 @@ func TestProcessors(t *testing.T) {
 	err = testEngine.CreateTables(&ProcessorsStruct{})
 	assert.NoError(t, err)
 
-	b4InsertFunc := func(bean interface{}) {
+	b4InsertFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.B4InsertViaExt = 1
 		} else {
@@ -141,7 +141,7 @@ func TestProcessors(t *testing.T) {
 		}
 	}
 
-	afterInsertFunc := func(bean interface{}) {
+	afterInsertFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.AfterInsertedViaExt = 1
 		} else {
@@ -234,7 +234,7 @@ func TestProcessors(t *testing.T) {
 	// --
 
 	// test update processors
-	b4UpdateFunc := func(bean interface{}) {
+	b4UpdateFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.B4UpdateViaExt = 1
 		} else {
@@ -242,7 +242,7 @@ func TestProcessors(t *testing.T) {
 		}
 	}
 
-	afterUpdateFunc := func(bean interface{}) {
+	afterUpdateFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.AfterUpdatedViaExt = 1
 		} else {
@@ -274,7 +274,7 @@ func TestProcessors(t *testing.T) {
 	// --
 
 	// test delete processors
-	b4DeleteFunc := func(bean interface{}) {
+	b4DeleteFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.B4DeleteViaExt = 1
 		} else {
@@ -282,7 +282,7 @@ func TestProcessors(t *testing.T) {
 		}
 	}
 
-	afterDeleteFunc := func(bean interface{}) {
+	afterDeleteFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.AfterDeletedViaExt = 1
 		} else {
@@ -374,7 +374,7 @@ func TestProcessorsTx(t *testing.T) {
 	assert.NoError(t, err)
 
 	p := &ProcessorsStruct{}
-	b4InsertFunc := func(bean interface{}) {
+	b4InsertFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.B4InsertViaExt = 1
 		} else {
@@ -382,7 +382,7 @@ func TestProcessorsTx(t *testing.T) {
 		}
 	}
 
-	afterInsertFunc := func(bean interface{}) {
+	afterInsertFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.AfterInsertedViaExt = 1
 		} else {
@@ -497,7 +497,7 @@ func TestProcessorsTx(t *testing.T) {
 	err = session.Begin()
 	assert.NoError(t, err)
 
-	b4UpdateFunc := func(bean interface{}) {
+	b4UpdateFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.B4UpdateViaExt = 1
 		} else {
@@ -505,7 +505,7 @@ func TestProcessorsTx(t *testing.T) {
 		}
 	}
 
-	afterUpdateFunc := func(bean interface{}) {
+	afterUpdateFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.AfterUpdatedViaExt = 1
 		} else {
@@ -671,7 +671,7 @@ func TestProcessorsTx(t *testing.T) {
 	err = session.Begin()
 	assert.NoError(t, err)
 
-	b4DeleteFunc := func(bean interface{}) {
+	b4DeleteFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.B4DeleteViaExt = 1
 		} else {
@@ -679,7 +679,7 @@ func TestProcessorsTx(t *testing.T) {
 		}
 	}
 
-	afterDeleteFunc := func(bean interface{}) {
+	afterDeleteFunc := func(bean any) {
 		if v, ok := (bean).(*ProcessorsStruct); ok {
 			v.AfterDeletedViaExt = 1
 		} else {

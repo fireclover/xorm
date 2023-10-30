@@ -20,13 +20,13 @@ type Rows struct {
 	beanType reflect.Type
 }
 
-func newRows(session *Session, bean interface{}) (*Rows, error) {
+func newRows(session *Session, bean any) (*Rows, error) {
 	rows := new(Rows)
 	rows.session = session
 	rows.beanType = reflect.Indirect(reflect.ValueOf(bean)).Type()
 
 	var sqlStr string
-	var args []interface{}
+	var args []any
 	var err error
 
 	beanValue := reflect.ValueOf(bean)
@@ -98,7 +98,7 @@ func (rows *Rows) Err() error {
 }
 
 // Scan row record to bean properties
-func (rows *Rows) Scan(beans ...interface{}) error {
+func (rows *Rows) Scan(beans ...any) error {
 	if rows.Err() != nil {
 		return rows.Err()
 	}

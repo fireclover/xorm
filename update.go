@@ -18,12 +18,12 @@ var (
 	ErrNoColumnsTobeUpdated = statements.ErrNoColumnsTobeUpdated
 )
 
-func (session *Session) genAutoCond(condiBean interface{}) (builder.Cond, error) {
+func (session *Session) genAutoCond(condiBean any) (builder.Cond, error) {
 	if session.statement.NoAutoCondition {
 		return builder.NewCond(), nil
 	}
 
-	if c, ok := condiBean.(map[string]interface{}); ok {
+	if c, ok := condiBean.(map[string]any); ok {
 		eq := make(builder.Eq)
 		for k, v := range c {
 			eq[session.engine.Quote(k)] = v
@@ -60,7 +60,7 @@ func (session *Session) genAutoCond(condiBean interface{}) (builder.Cond, error)
 //	1.bool will defaultly be updated content nor conditions
 //	 You should call UseBool if you have bool to use.
 //	2.float32 & float64 may be not inexact as conditions
-func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int64, error) {
+func (session *Session) Update(bean any, condiBean ...any) (int64, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -79,13 +79,13 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		closure(bean)
 	}
 	cleanupProcessorsClosures(&session.beforeClosures) // cleanup after used
-	if processor, ok := interface{}(bean).(BeforeUpdateProcessor); ok {
+	if processor, ok := any(bean).(BeforeUpdateProcessor); ok {
 		processor.BeforeUpdate()
 	}
 	// --
 
 	var colNames []string
-	var args []interface{}
+	var args []any
 	var err error
 	isMap := t.Kind() == reflect.Map
 	isStruct := t.Kind() == reflect.Struct
@@ -109,7 +109,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		}
 	} else if isMap {
 		colNames = make([]string, 0)
-		args = make([]interface{}, 0)
+		args = make([]any, 0)
 		bValue := reflect.Indirect(reflect.ValueOf(bean))
 
 		for _, v := range bValue.MapKeys() {
@@ -139,7 +139,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 
 			colName := col.Name
 			if isStruct {
-				session.afterClosures = append(session.afterClosures, func(bean interface{}) {
+				session.afterClosures = append(session.afterClosures, func(bean any) {
 					col := table.GetColumn(colName)
 					setColumnTime(bean, col, t)
 				})
@@ -206,7 +206,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		for _, closure := range session.afterClosures {
 			closure(bean)
 		}
-		if processor, ok := interface{}(bean).(AfterUpdateProcessor); ok {
+		if processor, ok := any(bean).(AfterUpdateProcessor); ok {
 			session.engine.logger.Debugf("[event] %v has after update processor", tableName)
 			processor.AfterUpdate()
 		}
@@ -216,13 +216,13 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 			if value, has := session.afterUpdateBeans[bean]; has && value != nil {
 				*value = append(*value, session.afterClosures...)
 			} else {
-				afterClosures := make([]func(interface{}), lenAfterClosures)
+				afterClosures := make([]func(any), lenAfterClosures)
 				copy(afterClosures, session.afterClosures)
 				// FIXME: if bean is a map type, it will panic because map cannot be as map key
 				session.afterUpdateBeans[bean] = &afterClosures
 			}
 		} else {
-			if _, ok := interface{}(bean).(AfterUpdateProcessor); ok {
+			if _, ok := any(bean).(AfterUpdateProcessor); ok {
 				session.afterUpdateBeans[bean] = nil
 			}
 		}
@@ -233,10 +233,10 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	return res.RowsAffected()
 }
 
-func (session *Session) genUpdateColumns(bean interface{}) ([]string, []interface{}, error) {
+func (session *Session) genUpdateColumns(bean any) ([]string, []any, error) {
 	table := session.statement.RefTable
 	colNames := make([]string, 0, len(table.ColumnsSeq()))
-	args := make([]interface{}, 0, len(table.ColumnsSeq()))
+	args := make([]any, 0, len(table.ColumnsSeq()))
 
 	for _, col := range table.Columns() {
 		if !col.IsVersion && !col.IsCreated && !col.IsUpdated {
@@ -292,7 +292,7 @@ func (session *Session) genUpdateColumns(bean interface{}) ([]string, []interfac
 			args = append(args, val)
 
 			colName := col.Name
-			session.afterClosures = append(session.afterClosures, func(bean interface{}) {
+			session.afterClosures = append(session.afterClosures, func(bean any) {
 				col := table.GetColumn(colName)
 				setColumnTime(bean, col, t)
 			})

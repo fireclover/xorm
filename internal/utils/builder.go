@@ -12,7 +12,7 @@ import (
 
 type BuildReader interface {
 	String() string
-	Args() []interface{}
+	Args() []any
 }
 
 // WriteBuilder writes writers to one

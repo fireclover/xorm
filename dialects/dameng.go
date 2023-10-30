@@ -749,14 +749,14 @@ func (db *dameng) SetQuotePolicy(quotePolicy QuotePolicy) {
 	}
 }
 
-func (db *dameng) IndexCheckSQL(tableName, idxName string) (string, []interface{}) {
-	args := []interface{}{tableName, idxName}
+func (db *dameng) IndexCheckSQL(tableName, idxName string) (string, []any) {
+	args := []any{tableName, idxName}
 	return `SELECT INDEX_NAME FROM USER_INDEXES ` +
 		`WHERE TABLE_NAME = ? AND INDEX_NAME = ?`, args
 }
 
-func (db *dameng) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
-	return db.HasRecords(queryer, ctx, `SELECT table_name FROM user_tables WHERE table_name = ?`, tableName)
+func (db *dameng) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
+	return db.HasRecords(ctx, queryer, `SELECT table_name FROM user_tables WHERE table_name = ?`, tableName)
 }
 
 func (db *dameng) IsSequenceExist(ctx context.Context, queryer core.Queryer, seqName string) (bool, error) {
@@ -779,11 +779,11 @@ func (db *dameng) IsSequenceExist(ctx context.Context, queryer core.Queryer, seq
 	return cnt > 0, nil
 }
 
-func (db *dameng) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
-	args := []interface{}{tableName, colName}
+func (db *dameng) IsColumnExist(ctx context.Context, queryer core.Queryer, tableName, colName string) (bool, error) {
+	args := []any{tableName, colName}
 	query := "SELECT column_name FROM USER_TAB_COLUMNS WHERE table_name = ?" +
 		" AND column_name = ?"
-	return db.HasRecords(queryer, ctx, query, args...)
+	return db.HasRecords(ctx, queryer, query, args...)
 }
 
 var _ sql.Scanner = &dmClobScanner{}
@@ -800,7 +800,7 @@ type dmClobObject interface {
 
 // var _ dmClobObject = &dm.DmClob{}
 
-func (d *dmClobScanner) Scan(data interface{}) error {
+func (d *dmClobScanner) Scan(data any) error {
 	if data == nil {
 		return nil
 	}
@@ -850,7 +850,7 @@ func addSingleQuote(name string) string {
 	return b.String()
 }
 
-func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
+func (db *dameng) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
 	s := `select   column_name   from   user_cons_columns   
   where   constraint_name   =   (select   constraint_name   from   user_constraints   
 			  where   table_name   =   ?  and   constraint_type   ='P')`
@@ -925,7 +925,7 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		}
 		if utils.IndexSlice(pkNames, col.Name) > -1 {
 			col.IsPrimaryKey = true
-			has, err := db.HasRecords(queryer, ctx, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", utils.SeqName(tableName))
+			has, err := db.HasRecords(ctx, queryer, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = ?", utils.SeqName(tableName))
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1002,9 +1002,9 @@ func (db *dameng) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 	return colSeq, cols, nil
 }
 
-func (db *dameng) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
+func (db *dameng) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
 	s := "SELECT table_name FROM user_tables WHERE temporary = 'N' AND table_name NOT LIKE ?"
-	args := []interface{}{strings.ToUpper(db.uri.User), "%$%"}
+	args := []any{strings.ToUpper(db.uri.User), "%$%"}
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
 	if err != nil {
@@ -1028,8 +1028,8 @@ func (db *dameng) GetTables(queryer core.Queryer, ctx context.Context) ([]*schem
 	return tables, nil
 }
 
-func (db *dameng) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
-	args := []interface{}{tableName, tableName}
+func (db *dameng) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
+	args := []any{tableName, tableName}
 	s := "SELECT t.column_name,i.uniqueness,i.index_name FROM user_ind_columns t,user_indexes i " +
 		"WHERE t.index_name = i.index_name and t.table_name = i.table_name and t.table_name =?" +
 		" AND t.index_name not in (SELECT index_name FROM ALL_CONSTRAINTS WHERE CONSTRAINT_TYPE='P' AND table_name = ?)"
@@ -1120,7 +1120,7 @@ func (d *damengDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	}, nil
 }
 
-func (d *damengDriver) GenScanResult(colType string) (interface{}, error) {
+func (d *damengDriver) GenScanResult(colType string) (any, error) {
 	switch colType {
 	case "CHAR", "NCHAR", "VARCHAR", "VARCHAR2", "NVARCHAR2", "LONG", "CLOB", "NCLOB":
 		var s sql.NullString
@@ -1149,13 +1149,13 @@ func (d *damengDriver) GenScanResult(colType string) (interface{}, error) {
 	}
 }
 
-func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.ColumnType, vv ...interface{}) error {
-	scanResults := make([]interface{}, 0, len(types))
+func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.ColumnType, vv ...any) error {
+	scanResults := make([]any, 0, len(types))
 	replaces := make([]bool, 0, len(types))
 	var err error
 	for i, v := range vv {
 		var replaced bool
-		var scanResult interface{}
+		var scanResult any
 		switch types[i].DatabaseTypeName() {
 		case "CLOB", "TEXT":
 			scanResult = &dmClobScanner{}
@@ -1179,7 +1179,7 @@ func (d *damengDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.Colu
 		if replaced {
 			switch t := scanResults[i].(type) {
 			case *dmClobScanner:
-				var d interface{}
+				var d any
 				if t.valid {
 					d = t.data
 				} else {

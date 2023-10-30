@@ -76,7 +76,7 @@ func NewColumn(name, fieldName string, sqlType SQLType, len1, len2 int64, nullab
 }
 
 // ValueOf returns column's filed of struct's value
-func (col *Column) ValueOf(bean interface{}) (*reflect.Value, error) {
+func (col *Column) ValueOf(bean any) (*reflect.Value, error) {
 	dataStruct := reflect.Indirect(reflect.ValueOf(bean))
 	return col.ValueOfV(&dataStruct)
 }
@@ -99,7 +99,7 @@ func (col *Column) ValueOfV(dataStruct *reflect.Value) (*reflect.Value, error) {
 }
 
 // ConvertID converts id content to suitable type according column type
-func (col *Column) ConvertID(sid string) (interface{}, error) {
+func (col *Column) ConvertID(sid string) (any, error) {
 	if col.SQLType.IsNumeric() {
 		n, err := strconv.ParseInt(sid, 10, 64)
 		if err != nil {

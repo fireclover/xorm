@@ -12,7 +12,7 @@ import (
 )
 
 // FormatColumnTime format column time
-func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.Column, t time.Time) (interface{}, error) {
+func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.Column, t time.Time) (any, error) {
 	if t.IsZero() {
 		if col.Nullable {
 			return nil, nil

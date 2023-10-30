@@ -23,10 +23,10 @@ import (
 var ErrNoElementsOnSlice = errors.New("no element on slice when insert")
 
 // ErrPtrSliceType represents a type error
-var ErrPtrSliceType = errors.New("A point to a slice is needed")
+var ErrPtrSliceType = errors.New("a point to a slice is needed")
 
 // Insert insert one or more beans
-func (session *Session) Insert(beans ...interface{}) (int64, error) {
+func (session *Session) Insert(beans ...any) (int64, error) {
 	var affected int64
 	var err error
 
@@ -44,9 +44,9 @@ func (session *Session) Insert(beans ...interface{}) (int64, error) {
 		var cnt int64
 		var err error
 		switch v := bean.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			cnt, err = session.insertMapInterface(v)
-		case []map[string]interface{}:
+		case []map[string]any:
 			cnt, err = session.insertMultipleMapInterface(v)
 		case map[string]string:
 			cnt, err = session.insertMapString(v)
@@ -69,7 +69,7 @@ func (session *Session) Insert(beans ...interface{}) (int64, error) {
 	return affected, err
 }
 
-func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, error) {
+func (session *Session) insertMultipleStruct(rowsSlicePtr any) (int64, error) {
 	sliceValue := reflect.Indirect(reflect.ValueOf(rowsSlicePtr))
 	if sliceValue.Kind() != reflect.Slice {
 		return 0, errors.New("needs a pointer to a slice")
@@ -93,7 +93,7 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 		size           = sliceValue.Len()
 		colNames       []string
 		colMultiPlaces []string
-		args           []interface{}
+		args           []any
 	)
 
 	for i := 0; i < size; i++ {
@@ -114,7 +114,7 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 			closure(elemValue)
 		}
 
-		if processor, ok := interface{}(elemValue).(BeforeInsertProcessor); ok {
+		if processor, ok := any(elemValue).(BeforeInsertProcessor); ok {
 			processor.BeforeInsert()
 		}
 		// --
@@ -161,14 +161,14 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 				args = append(args, val)
 
 				colName := col.Name
-				session.afterClosures = append(session.afterClosures, func(bean interface{}) {
+				session.afterClosures = append(session.afterClosures, func(bean any) {
 					col := table.GetColumn(colName)
 					setColumnTime(bean, col, t)
 				})
 			} else if col.IsVersion && session.statement.CheckVersion {
 				args = append(args, 1)
 				colName := col.Name
-				session.afterClosures = append(session.afterClosures, func(bean interface{}) {
+				session.afterClosures = append(session.afterClosures, func(bean any) {
 					col := table.GetColumn(colName)
 					setColumnInt(bean, col, 1)
 				})
@@ -218,7 +218,7 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 				if value, has := session.afterInsertBeans[elemValue]; has && value != nil {
 					*value = append(*value, session.afterClosures...)
 				} else {
-					afterClosures := make([]func(interface{}), lenAfterClosures)
+					afterClosures := make([]func(any), lenAfterClosures)
 					copy(afterClosures, session.afterClosures)
 					session.afterInsertBeans[elemValue] = &afterClosures
 				}
@@ -235,7 +235,7 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr interface{}) (int64, e
 }
 
 // InsertMulti insert multiple records
-func (session *Session) InsertMulti(rowsSlicePtr interface{}) (int64, error) {
+func (session *Session) InsertMulti(rowsSlicePtr any) (int64, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -248,7 +248,7 @@ func (session *Session) InsertMulti(rowsSlicePtr interface{}) (int64, error) {
 	return session.insertMultipleStruct(rowsSlicePtr)
 }
 
-func (session *Session) insertStruct(bean interface{}) (int64, error) {
+func (session *Session) insertStruct(bean any) (int64, error) {
 	if err := session.statement.SetRefBean(bean); err != nil {
 		return 0, err
 	}
@@ -262,7 +262,7 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 	}
 	cleanupProcessorsClosures(&session.beforeClosures) // cleanup after used
 
-	if processor, ok := interface{}(bean).(BeforeInsertProcessor); ok {
+	if processor, ok := any(bean).(BeforeInsertProcessor); ok {
 		processor.BeforeInsert()
 	}
 
@@ -280,12 +280,12 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 	}
 	sqlStr = session.engine.dialect.Quoter().Replace(sqlStr)
 
-	handleAfterInsertProcessorFunc := func(bean interface{}) {
+	handleAfterInsertProcessorFunc := func(bean any) {
 		if session.isAutoCommit {
 			for _, closure := range session.afterClosures {
 				closure(bean)
 			}
-			if processor, ok := interface{}(bean).(AfterInsertProcessor); ok {
+			if processor, ok := any(bean).(AfterInsertProcessor); ok {
 				processor.AfterInsert()
 			}
 		} else {
@@ -294,12 +294,12 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 				if value, has := session.afterInsertBeans[bean]; has && value != nil {
 					*value = append(*value, session.afterClosures...)
 				} else {
-					afterClosures := make([]func(interface{}), lenAfterClosures)
+					afterClosures := make([]func(any), lenAfterClosures)
 					copy(afterClosures, session.afterClosures)
 					session.afterInsertBeans[bean] = &afterClosures
 				}
 			} else {
-				if _, ok := interface{}(bean).(AfterInsertProcessor); ok {
+				if _, ok := any(bean).(AfterInsertProcessor); ok {
 					session.afterInsertBeans[bean] = nil
 				}
 			}
@@ -310,7 +310,7 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 	// if there is auto increment column and driver don't support return it
 	if len(table.AutoIncrement) > 0 && !session.engine.driver.Features().SupportReturnInsertedID {
 		var sql string
-		var newArgs []interface{}
+		var newArgs []any
 		var needCommit bool
 		var id int64
 		if session.engine.dialect.URI().DBType == schemas.ORACLE || session.engine.dialect.URI().DBType == schemas.DAMENG {
@@ -422,7 +422,7 @@ func (session *Session) insertStruct(bean interface{}) (int64, error) {
 // The in parameter bean must a struct or a point to struct. The return
 // parameter is inserted and error
 // Deprecated: Please use Insert directly
-func (session *Session) InsertOne(bean interface{}) (int64, error) {
+func (session *Session) InsertOne(bean any) (int64, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -431,10 +431,10 @@ func (session *Session) InsertOne(bean interface{}) (int64, error) {
 }
 
 // genInsertColumns generates insert needed columns
-func (session *Session) genInsertColumns(bean interface{}) ([]string, []interface{}, error) {
+func (session *Session) genInsertColumns(bean any) ([]string, []any, error) {
 	table := session.statement.RefTable
 	colNames := make([]string, 0, len(table.ColumnsSeq()))
-	args := make([]interface{}, 0, len(table.ColumnsSeq()))
+	args := make([]any, 0, len(table.ColumnsSeq()))
 
 	for _, col := range table.Columns() {
 		if col.MapType == schemas.ONLYFROMDB {
@@ -491,7 +491,7 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 			args = append(args, val)
 
 			colName := col.Name
-			session.afterClosures = append(session.afterClosures, func(bean interface{}) {
+			session.afterClosures = append(session.afterClosures, func(bean any) {
 				col := table.GetColumn(colName)
 				setColumnTime(bean, col, t)
 			})
@@ -510,7 +510,7 @@ func (session *Session) genInsertColumns(bean interface{}) ([]string, []interfac
 	return colNames, args, nil
 }
 
-func (session *Session) insertMapInterface(m map[string]interface{}) (int64, error) {
+func (session *Session) insertMapInterface(m map[string]any) (int64, error) {
 	if len(m) == 0 {
 		return 0, ErrParamsType
 	}
@@ -529,7 +529,7 @@ func (session *Session) insertMapInterface(m map[string]interface{}) (int64, err
 	}
 	sort.Strings(columns)
 
-	args := make([]interface{}, 0, len(m))
+	args := make([]any, 0, len(m))
 	for _, colName := range columns {
 		args = append(args, m[colName])
 	}
@@ -537,7 +537,7 @@ func (session *Session) insertMapInterface(m map[string]interface{}) (int64, err
 	return session.insertMap(columns, args)
 }
 
-func (session *Session) insertMultipleMapInterface(maps []map[string]interface{}) (int64, error) {
+func (session *Session) insertMultipleMapInterface(maps []map[string]any) (int64, error) {
 	if len(maps) == 0 {
 		return 0, ErrNoElementsOnSlice
 	}
@@ -556,9 +556,9 @@ func (session *Session) insertMultipleMapInterface(maps []map[string]interface{}
 	}
 	sort.Strings(columns)
 
-	argss := make([][]interface{}, 0, len(maps))
+	argss := make([][]any, 0, len(maps))
 	for _, m := range maps {
-		args := make([]interface{}, 0, len(m))
+		args := make([]any, 0, len(m))
 		for _, colName := range columns {
 			args = append(args, m[colName])
 		}
@@ -588,7 +588,7 @@ func (session *Session) insertMapString(m map[string]string) (int64, error) {
 
 	sort.Strings(columns)
 
-	args := make([]interface{}, 0, len(m))
+	args := make([]any, 0, len(m))
 	for _, colName := range columns {
 		args = append(args, m[colName])
 	}
@@ -615,9 +615,9 @@ func (session *Session) insertMultipleMapString(maps []map[string]string) (int64
 	}
 	sort.Strings(columns)
 
-	argss := make([][]interface{}, 0, len(maps))
+	argss := make([][]any, 0, len(maps))
 	for _, m := range maps {
-		args := make([]interface{}, 0, len(m))
+		args := make([]any, 0, len(m))
 		for _, colName := range columns {
 			args = append(args, m[colName])
 		}
@@ -627,7 +627,7 @@ func (session *Session) insertMultipleMapString(maps []map[string]string) (int64
 	return session.insertMultipleMap(columns, argss)
 }
 
-func (session *Session) insertMap(columns []string, args []interface{}) (int64, error) {
+func (session *Session) insertMap(columns []string, args []any) (int64, error) {
 	tableName := session.statement.TableName()
 	if len(tableName) == 0 {
 		return 0, ErrTableNotFound
@@ -650,7 +650,7 @@ func (session *Session) insertMap(columns []string, args []interface{}) (int64, 
 	return affected, nil
 }
 
-func (session *Session) insertMultipleMap(columns []string, argss [][]interface{}) (int64, error) {
+func (session *Session) insertMultipleMap(columns []string, argss [][]any) (int64, error) {
 	tableName := session.statement.TableName()
 	if len(tableName) == 0 {
 		return 0, ErrTableNotFound

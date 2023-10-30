@@ -239,7 +239,7 @@ func BenchmarkSliceInterfaceQuery(b *testing.B) {
 		}
 
 		for rows.Next() {
-			slice := make([]interface{}, len(cols))
+			slice := make([]any, len(cols))
 			err = rows.ScanSlice(&slice)
 			if err != nil {
 				b.Error(err)
@@ -394,7 +394,7 @@ func BenchmarkMapInterfaceQuery(b *testing.B) {
 		}
 
 		for rows.Next() {
-			m := make(map[string]interface{})
+			m := make(map[string]any)
 			err = rows.ScanMap(&m)
 			if err != nil {
 				b.Error(err)
@@ -551,7 +551,7 @@ func BenchmarkExecMap(b *testing.B) {
 
 	b.StartTimer()
 
-	mp := map[string]interface{}{
+	mp := map[string]any{
 		"name":      "xlw",
 		"title":     "tester",
 		"age":       1.2,
@@ -582,7 +582,7 @@ func TestExecMap(t *testing.T) {
 		t.Error(err)
 	}
 
-	mp := map[string]interface{}{
+	mp := map[string]any{
 		"name":      "xlw",
 		"title":     "tester",
 		"age":       1.2,

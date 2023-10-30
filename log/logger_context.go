@@ -23,10 +23,10 @@ type SQLLogger interface {
 type ContextLogger interface {
 	SQLLogger
 
-	Debugf(format string, v ...interface{})
-	Errorf(format string, v ...interface{})
-	Infof(format string, v ...interface{})
-	Warnf(format string, v ...interface{})
+	Debugf(format string, v ...any)
+	Errorf(format string, v ...any)
+	Infof(format string, v ...any)
+	Warnf(format string, v ...any)
 
 	Level() LogLevel
 	SetLevel(l LogLevel)
@@ -74,22 +74,22 @@ func (l *LoggerAdapter) AfterSQL(ctx LogContext) {
 }
 
 // Debugf implements ContextLogger
-func (l *LoggerAdapter) Debugf(format string, v ...interface{}) {
+func (l *LoggerAdapter) Debugf(format string, v ...any) {
 	l.logger.Debugf(format, v...)
 }
 
 // Errorf implements ContextLogger
-func (l *LoggerAdapter) Errorf(format string, v ...interface{}) {
+func (l *LoggerAdapter) Errorf(format string, v ...any) {
 	l.logger.Errorf(format, v...)
 }
 
 // Infof implements ContextLogger
-func (l *LoggerAdapter) Infof(format string, v ...interface{}) {
+func (l *LoggerAdapter) Infof(format string, v ...any) {
 	l.logger.Infof(format, v...)
 }
 
 // Warnf implements ContextLogger
-func (l *LoggerAdapter) Warnf(format string, v ...interface{}) {
+func (l *LoggerAdapter) Warnf(format string, v ...any) {
 	l.logger.Warnf(format, v...)
 }
 

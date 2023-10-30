@@ -103,7 +103,7 @@ func (tx *Tx) Stmt(stmt *Stmt) *Stmt {
 }
 
 // ExecMapContext executes query with args in a map
-func (tx *Tx) ExecMapContext(ctx context.Context, query string, mp interface{}) (sql.Result, error) {
+func (tx *Tx) ExecMapContext(ctx context.Context, query string, mp any) (sql.Result, error) {
 	query, args, err := MapToSlice(query, mp)
 	if err != nil {
 		return nil, err
@@ -112,12 +112,12 @@ func (tx *Tx) ExecMapContext(ctx context.Context, query string, mp interface{}) 
 }
 
 // ExecMap executes query with args in a map
-func (tx *Tx) ExecMap(query string, mp interface{}) (sql.Result, error) {
+func (tx *Tx) ExecMap(query string, mp any) (sql.Result, error) {
 	return tx.ExecMapContext(context.Background(), query, mp)
 }
 
 // ExecStructContext executes query with args in a struct
-func (tx *Tx) ExecStructContext(ctx context.Context, query string, st interface{}) (sql.Result, error) {
+func (tx *Tx) ExecStructContext(ctx context.Context, query string, st any) (sql.Result, error) {
 	query, args, err := StructToSlice(query, st)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (tx *Tx) ExecStructContext(ctx context.Context, query string, st interface{
 }
 
 // ExecContext executes a query with args
-func (tx *Tx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	hookCtx := contexts.NewContextHook(ctx, query, args)
 	ctx, err := tx.db.beforeProcess(hookCtx)
 	if err != nil {
@@ -141,12 +141,12 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...interface{}
 }
 
 // ExecStruct executes query with args in a struct
-func (tx *Tx) ExecStruct(query string, st interface{}) (sql.Result, error) {
+func (tx *Tx) ExecStruct(query string, st any) (sql.Result, error) {
 	return tx.ExecStructContext(context.Background(), query, st)
 }
 
 // QueryContext query with args
-func (tx *Tx) QueryContext(ctx context.Context, query string, args ...interface{}) (*Rows, error) {
+func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
 	hookCtx := contexts.NewContextHook(ctx, query, args)
 	ctx, err := tx.db.beforeProcess(hookCtx)
 	if err != nil {
@@ -164,12 +164,12 @@ func (tx *Tx) QueryContext(ctx context.Context, query string, args ...interface{
 }
 
 // Query query with args
-func (tx *Tx) Query(query string, args ...interface{}) (*Rows, error) {
+func (tx *Tx) Query(query string, args ...any) (*Rows, error) {
 	return tx.QueryContext(context.Background(), query, args...)
 }
 
 // QueryMapContext query with args in a map
-func (tx *Tx) QueryMapContext(ctx context.Context, query string, mp interface{}) (*Rows, error) {
+func (tx *Tx) QueryMapContext(ctx context.Context, query string, mp any) (*Rows, error) {
 	query, args, err := MapToSlice(query, mp)
 	if err != nil {
 		return nil, err
@@ -178,12 +178,12 @@ func (tx *Tx) QueryMapContext(ctx context.Context, query string, mp interface{})
 }
 
 // QueryMap query with args in a map
-func (tx *Tx) QueryMap(query string, mp interface{}) (*Rows, error) {
+func (tx *Tx) QueryMap(query string, mp any) (*Rows, error) {
 	return tx.QueryMapContext(context.Background(), query, mp)
 }
 
 // QueryStructContext query with args in struct
-func (tx *Tx) QueryStructContext(ctx context.Context, query string, st interface{}) (*Rows, error) {
+func (tx *Tx) QueryStructContext(ctx context.Context, query string, st any) (*Rows, error) {
 	query, args, err := StructToSlice(query, st)
 	if err != nil {
 		return nil, err
@@ -192,23 +192,23 @@ func (tx *Tx) QueryStructContext(ctx context.Context, query string, st interface
 }
 
 // QueryStruct query with args in struct
-func (tx *Tx) QueryStruct(query string, st interface{}) (*Rows, error) {
+func (tx *Tx) QueryStruct(query string, st any) (*Rows, error) {
 	return tx.QueryStructContext(context.Background(), query, st)
 }
 
 // QueryRowContext query one row with args
-func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...interface{}) *Row {
+func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
 	rows, err := tx.QueryContext(ctx, query, args...)
 	return &Row{rows, err}
 }
 
 // QueryRow query one row with args
-func (tx *Tx) QueryRow(query string, args ...interface{}) *Row {
+func (tx *Tx) QueryRow(query string, args ...any) *Row {
 	return tx.QueryRowContext(context.Background(), query, args...)
 }
 
 // QueryRowMapContext query one row with args in a map
-func (tx *Tx) QueryRowMapContext(ctx context.Context, query string, mp interface{}) *Row {
+func (tx *Tx) QueryRowMapContext(ctx context.Context, query string, mp any) *Row {
 	query, args, err := MapToSlice(query, mp)
 	if err != nil {
 		return &Row{nil, err}
@@ -217,12 +217,12 @@ func (tx *Tx) QueryRowMapContext(ctx context.Context, query string, mp interface
 }
 
 // QueryRowMap query one row with args in a map
-func (tx *Tx) QueryRowMap(query string, mp interface{}) *Row {
+func (tx *Tx) QueryRowMap(query string, mp any) *Row {
 	return tx.QueryRowMapContext(context.Background(), query, mp)
 }
 
 // QueryRowStructContext query one row with args in struct
-func (tx *Tx) QueryRowStructContext(ctx context.Context, query string, st interface{}) *Row {
+func (tx *Tx) QueryRowStructContext(ctx context.Context, query string, st any) *Row {
 	query, args, err := StructToSlice(query, st)
 	if err != nil {
 		return &Row{nil, err}
@@ -231,6 +231,6 @@ func (tx *Tx) QueryRowStructContext(ctx context.Context, query string, st interf
 }
 
 // QueryRowStruct query one row with args in struct
-func (tx *Tx) QueryRowStruct(query string, st interface{}) *Row {
+func (tx *Tx) QueryRowStruct(query string, st any) *Row {
 	return tx.QueryRowStructContext(context.Background(), query, st)
 }

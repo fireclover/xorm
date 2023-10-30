@@ -13,7 +13,7 @@ import (
 )
 
 // AsFloat64 convets interface as float64
-func AsFloat64(src interface{}) (float64, error) {
+func AsFloat64(src any) (float64, error) {
 	switch v := src.(type) {
 	case int:
 		return float64(v), nil
@@ -64,7 +64,7 @@ func AsFloat64(src interface{}) (float64, error) {
 }
 
 // AsBigFloat converts interface as big.Float
-func AsBigFloat(src interface{}) (*big.Float, error) {
+func AsBigFloat(src any) (*big.Float, error) {
 	res := big.NewFloat(0)
 	switch v := src.(type) {
 	case int:

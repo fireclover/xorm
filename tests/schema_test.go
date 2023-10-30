@@ -719,7 +719,7 @@ func TestSyncWithOptions(t *testing.T) {
 	assert.ElementsMatch(t, getKeysFromMap(tableInfoFromStruct.Indexes), getKeysFromMap(getIndicesOfBeanFromDB(t, &SyncWithOpts1{})))
 }
 
-func getIndicesOfBeanFromDB(t *testing.T, bean interface{}) map[string]*schemas.Index {
+func getIndicesOfBeanFromDB(t *testing.T, bean any) map[string]*schemas.Index {
 	dbm, err := testEngine.DBMetas()
 	assert.NoError(t, err)
 

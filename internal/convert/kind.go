@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func AsKind(vv reflect.Value, tp reflect.Type) (interface{}, error) {
+func AsKind(vv reflect.Value, tp reflect.Type) (any, error) {
 	switch tp.Kind() {
 	case reflect.Ptr:
 		return AsKind(vv.Elem(), tp.Elem())

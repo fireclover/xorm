@@ -13,12 +13,10 @@ import (
 // NullTime defines a customize type NullTime
 type NullTime time.Time
 
-var (
-	_ driver.Valuer = NullTime{}
-)
+var _ driver.Valuer = NullTime{}
 
 // Scan implements driver.Valuer
-func (ns *NullTime) Scan(value interface{}) error {
+func (ns *NullTime) Scan(value any) error {
 	if value == nil {
 		return nil
 	}
@@ -33,7 +31,7 @@ func (ns NullTime) Value() (driver.Value, error) {
 	return (time.Time)(ns).Format("2006-01-02 15:04:05"), nil
 }
 
-func convertTime(dest *NullTime, src interface{}) error {
+func convertTime(dest *NullTime, src any) error {
 	// Common cases, without reflect.
 	switch s := src.(type) {
 	case string:
@@ -61,10 +59,9 @@ func convertTime(dest *NullTime, src interface{}) error {
 }
 
 // EmptyScanner represents an empty scanner
-type EmptyScanner struct {
-}
+type EmptyScanner struct{}
 
 // Scan implements
-func (EmptyScanner) Scan(src interface{}) error {
+func (EmptyScanner) Scan(src any) error {
 	return nil
 }

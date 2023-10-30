@@ -72,7 +72,7 @@ func TestQueryString2(t *testing.T) {
 	assert.True(t, "0" == records[0]["msg"] || "false" == records[0]["msg"])
 }
 
-func toBool(i interface{}) bool {
+func toBool(i any) bool {
 	switch t := i.(type) {
 	case int32:
 		return t > 0
@@ -422,7 +422,7 @@ func TestQueryBLOBInMySQL(t *testing.T) {
 	}
 
 	{
-		arr := make([][]interface{}, 0)
+		arr := make([][]any, 0)
 		err = testEngine.Table(testEngine.Quote(testEngine.TableName("avatar", true))).Cols("avatar").Find(&arr)
 		assert.NoError(t, err)
 		for i, record := range arr {
@@ -433,7 +433,7 @@ func TestQueryBLOBInMySQL(t *testing.T) {
 	}
 
 	{
-		arr := make([]map[string]interface{}, 0)
+		arr := make([]map[string]any, 0)
 		err = testEngine.Table(testEngine.Quote(testEngine.TableName("avatar", true))).Cols("avatar").Find(&arr)
 		assert.NoError(t, err)
 		for i, record := range arr {

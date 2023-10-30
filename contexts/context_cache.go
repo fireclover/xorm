@@ -7,24 +7,24 @@ package contexts
 // ContextCache is the interface that operates the cache data.
 type ContextCache interface {
 	// Put puts value into cache with key.
-	Put(key string, val interface{})
+	Put(key string, val any)
 	// Get gets cached value by given key.
-	Get(key string) interface{}
+	Get(key string) any
 }
 
-type memoryContextCache map[string]interface{}
+type memoryContextCache map[string]any
 
 // NewMemoryContextCache return memoryContextCache
 func NewMemoryContextCache() memoryContextCache {
-	return make(map[string]interface{})
+	return make(map[string]any)
 }
 
 // Put puts value into cache with key.
-func (m memoryContextCache) Put(key string, val interface{}) {
+func (m memoryContextCache) Put(key string, val any) {
 	m[key] = val
 }
 
 // Get gets cached value by given key.
-func (m memoryContextCache) Get(key string) interface{} {
+func (m memoryContextCache) Get(key string) any {
 	return m[key]
 }

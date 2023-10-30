@@ -55,10 +55,10 @@ func cloneBytes(b []byte) []byte {
 // Assign copies to dest the value in src, converting it if possible.
 // An error is returned if the copy would result in loss of information.
 // dest should be a pointer type.
-func Assign(dest, src interface{}, originalLocation *time.Location, convertedLocation *time.Location) error {
+func Assign(dest, src any, originalLocation *time.Location, convertedLocation *time.Location) error {
 	// Common cases, without reflect.
 	switch s := src.(type) {
-	case *interface{}:
+	case *any:
 		return Assign(dest, *s, originalLocation, convertedLocation)
 	case string:
 		switch d := dest.(type) {
@@ -83,7 +83,7 @@ func Assign(dest, src interface{}, originalLocation *time.Location, convertedLoc
 			}
 			*d = string(s)
 			return nil
-		case *interface{}:
+		case *any:
 			if d == nil {
 				return ErrNilPtr
 			}
@@ -110,7 +110,7 @@ func Assign(dest, src interface{}, originalLocation *time.Location, convertedLoc
 		}
 	case nil:
 		switch d := dest.(type) {
-		case *interface{}:
+		case *any:
 			if d == nil {
 				return ErrNilPtr
 			}
@@ -295,7 +295,7 @@ func Assign(dest, src interface{}, originalLocation *time.Location, convertedLoc
 
 	switch d := dest.(type) {
 	case *string:
-		var sv = reflect.ValueOf(src)
+		sv := reflect.ValueOf(src)
 		switch sv.Kind() {
 		case reflect.Bool,
 			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -315,7 +315,7 @@ func Assign(dest, src interface{}, originalLocation *time.Location, convertedLoc
 			*d = bv.(bool)
 		}
 		return err
-	case *interface{}:
+	case *any:
 		*d = src
 		return nil
 	}
@@ -329,11 +329,11 @@ var (
 )
 
 // AssignValue assign src as dv
-func AssignValue(dv reflect.Value, src interface{}) error {
+func AssignValue(dv reflect.Value, src any) error {
 	if src == nil {
 		return nil
 	}
-	if v, ok := src.(*interface{}); ok {
+	if v, ok := src.(*any); ok {
 		return AssignValue(dv, *v)
 	}
 

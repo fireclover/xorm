@@ -11,7 +11,7 @@ import (
 	"xorm.io/xorm/v2/internal/core"
 )
 
-func (session *Session) queryPreprocess(sqlStr *string, paramStr ...interface{}) {
+func (session *Session) queryPreprocess(sqlStr *string, paramStr ...any) {
 	for _, filter := range session.engine.dialect.Filters() {
 		*sqlStr = filter.Do(session.ctx, *sqlStr)
 	}
@@ -20,7 +20,7 @@ func (session *Session) queryPreprocess(sqlStr *string, paramStr ...interface{})
 	session.lastSQLArgs = paramStr
 }
 
-func (session *Session) queryRows(sqlStr string, args ...interface{}) (*core.Rows, error) {
+func (session *Session) queryRows(sqlStr string, args ...any) (*core.Rows, error) {
 	defer session.resetStatement()
 	if session.statement.LastError != nil {
 		return nil, session.statement.LastError
@@ -64,12 +64,12 @@ func (session *Session) queryRows(sqlStr string, args ...interface{}) (*core.Row
 	return session.tx.QueryContext(session.ctx, sqlStr, args...)
 }
 
-func (session *Session) queryRow(sqlStr string, args ...interface{}) *core.Row {
+func (session *Session) queryRow(sqlStr string, args ...any) *core.Row {
 	return core.NewRow(session.queryRows(sqlStr, args...))
 }
 
 // Query runs a raw sql and return records as []map[string][]byte
-func (session *Session) Query(sqlOrArgs ...interface{}) ([]map[string][]byte, error) {
+func (session *Session) Query(sqlOrArgs ...any) ([]map[string][]byte, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -89,7 +89,7 @@ func (session *Session) Query(sqlOrArgs ...interface{}) ([]map[string][]byte, er
 }
 
 // QueryString runs a raw sql and return records as []map[string]string
-func (session *Session) QueryString(sqlOrArgs ...interface{}) ([]map[string]string, error) {
+func (session *Session) QueryString(sqlOrArgs ...any) ([]map[string]string, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -109,7 +109,7 @@ func (session *Session) QueryString(sqlOrArgs ...interface{}) ([]map[string]stri
 }
 
 // QuerySliceString runs a raw sql and return records as [][]string
-func (session *Session) QuerySliceString(sqlOrArgs ...interface{}) ([][]string, error) {
+func (session *Session) QuerySliceString(sqlOrArgs ...any) ([][]string, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -128,8 +128,8 @@ func (session *Session) QuerySliceString(sqlOrArgs ...interface{}) ([][]string, 
 	return session.engine.ScanStringSlices(rows)
 }
 
-// QueryInterface runs a raw sql and return records as []map[string]interface{}
-func (session *Session) QueryInterface(sqlOrArgs ...interface{}) ([]map[string]interface{}, error) {
+// QueryInterface runs a raw sql and return records as []map[string]any
+func (session *Session) QueryInterface(sqlOrArgs ...any) ([]map[string]any, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}
@@ -148,7 +148,7 @@ func (session *Session) QueryInterface(sqlOrArgs ...interface{}) ([]map[string]i
 	return session.engine.ScanInterfaceMaps(rows)
 }
 
-func (session *Session) exec(sqlStr string, args ...interface{}) (sql.Result, error) {
+func (session *Session) exec(sqlStr string, args ...any) (sql.Result, error) {
 	defer session.resetStatement()
 
 	session.queryPreprocess(&sqlStr, args...)
@@ -179,7 +179,7 @@ func (session *Session) exec(sqlStr string, args ...interface{}) (sql.Result, er
 }
 
 // Exec raw sql
-func (session *Session) Exec(sqlOrArgs ...interface{}) (sql.Result, error) {
+func (session *Session) Exec(sqlOrArgs ...any) (sql.Result, error) {
 	if session.isAutoClose {
 		defer session.Close()
 	}

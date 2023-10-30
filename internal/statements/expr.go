@@ -24,7 +24,7 @@ func (err ErrUnsupportedExprType) Error() string {
 // Expr represents an SQL express
 type Expr struct {
 	ColName string
-	Arg     interface{}
+	Arg     any
 }
 
 // WriteArgs writes args to the writer
@@ -66,7 +66,7 @@ func (exprs exprParams) ColNames() []string {
 	return cols
 }
 
-func (exprs *exprParams) Add(name string, arg interface{}) {
+func (exprs *exprParams) Add(name string, arg any) {
 	*exprs = append(*exprs, Expr{name, arg})
 }
 

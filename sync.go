@@ -24,14 +24,14 @@ type SyncResult struct{}
 // Sync the new struct changes to database, this method will automatically add
 // table, column, index, unique. but will not delete or change anything.
 // If you change some field, you should change the database manually.
-func (engine *Engine) Sync(beans ...interface{}) error {
+func (engine *Engine) Sync(beans ...any) error {
 	session := engine.NewSession()
 	defer session.Close()
 	return session.Sync(beans...)
 }
 
 // SyncWithOptions sync the database schemas according options and table structs
-func (engine *Engine) SyncWithOptions(opts SyncOptions, beans ...interface{}) (*SyncResult, error) {
+func (engine *Engine) SyncWithOptions(opts SyncOptions, beans ...any) (*SyncResult, error) {
 	session := engine.NewSession()
 	defer session.Close()
 	return session.SyncWithOptions(opts, beans...)
@@ -39,18 +39,18 @@ func (engine *Engine) SyncWithOptions(opts SyncOptions, beans ...interface{}) (*
 
 // Sync2 synchronize structs to database tables
 // Depricated
-func (engine *Engine) Sync2(beans ...interface{}) error {
+func (engine *Engine) Sync2(beans ...any) error {
 	return engine.Sync(beans...)
 }
 
 // Sync2 synchronize structs to database tables
 // Depricated
-func (session *Session) Sync2(beans ...interface{}) error {
+func (session *Session) Sync2(beans ...any) error {
 	return session.Sync(beans...)
 }
 
 // Sync synchronize structs to database tables
-func (session *Session) Sync(beans ...interface{}) error {
+func (session *Session) Sync(beans ...any) error {
 	_, err := session.SyncWithOptions(SyncOptions{
 		WarnIfDatabaseColumnMissed: false,
 		IgnoreConstrains:           false,
@@ -59,7 +59,7 @@ func (session *Session) Sync(beans ...interface{}) error {
 	return err
 }
 
-func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) (*SyncResult, error) {
+func (session *Session) SyncWithOptions(opts SyncOptions, beans ...any) (*SyncResult, error) {
 	engine := session.engine
 
 	if session.isAutoClose {
@@ -67,7 +67,7 @@ func (session *Session) SyncWithOptions(opts SyncOptions, beans ...interface{}) 
 		defer session.Close()
 	}
 
-	tables, err := engine.dialect.GetTables(session.getQueryer(), session.ctx)
+	tables, err := engine.dialect.GetTables(session.ctx, session.getQueryer())
 	if err != nil {
 		return nil, err
 	}
