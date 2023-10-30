@@ -163,7 +163,7 @@ func (statement *Statement) Reset() {
 // SQL adds raw sql statement
 func (statement *Statement) SQL(query interface{}, args ...interface{}) *Statement {
 	switch t := query.(type) {
-	case (*builder.Builder):
+	case *builder.Builder:
 		var err error
 		statement.RawSQL, statement.RawParams, err = t.ToSQL()
 		if err != nil {
@@ -609,7 +609,7 @@ func (statement *Statement) BuildConds(table *schemas.Table, bean interface{}, i
 // MergeConds merge conditions from bean and id
 func (statement *Statement) MergeConds(bean interface{}) error {
 	if !statement.NoAutoCondition && statement.RefTable != nil {
-		addedTableName := (len(statement.joins) > 0)
+		addedTableName := len(statement.joins) > 0
 		autoCond, err := statement.BuildConds(statement.RefTable, bean, true, true, false, true, addedTableName)
 		if err != nil {
 			return err
