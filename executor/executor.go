@@ -13,12 +13,14 @@ import (
 )
 
 type Executor[T any] struct {
-	client xorm.Interface
+	client   xorm.Interface
+	tableObj *T
 }
 
 func New[T any](c xorm.Interface) *Executor[T] {
 	return &Executor[T]{
-		client: c,
+		client:   c,
+		tableObj: new(T),
 	}
 }
 
@@ -42,8 +44,19 @@ func (q *Executor[T]) InsertOne(ctx context.Context, obj *T) error {
 	return err
 }
 
-func (q *Executor[T]) Insert(ctx context.Context, results []T) (int64, error) {
-	return q.client.Insert(results)
+func (q *Executor[T]) InsertMap(ctx context.Context, result map[string]any) error {
+	_, err := q.client.Table(q.tableObj).Insert(result)
+	return err
+}
+
+func (q *Executor[T]) Insert(ctx context.Context, results []T) error {
+	_, err := q.client.Insert(results)
+	return err
+}
+
+func (q *Executor[T]) InsertMaps(ctx context.Context, results []map[string]any) error {
+	_, err := q.client.Table(q.tableObj).Insert(results)
+	return err
 }
 
 func (q *Executor[T]) Exec(ctx context.Context) (sql.Result, error) {

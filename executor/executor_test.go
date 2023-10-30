@@ -45,4 +45,15 @@ func TestExecutor(t *testing.T) {
 	users, err = executor.Where(builder.Eq{"id": 1}).All(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(t, len(users), 1)
+
+	err = executor.InsertMap(context.Background(), map[string]any{
+		"name": "test2",
+	})
+	assert.NoError(t, err)
+
+	users, err = executor.All(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, len(users), 2)
+	assert.Equal(t, "test", users[0].Name)
+	assert.Equal(t, "test2", users[1].Name)
 }
