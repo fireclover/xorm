@@ -85,12 +85,9 @@ func String2Time(s string, originalLocation *time.Location, convertedLocation *t
 		if err != nil {
 			return nil, err
 		}
-		currentDate := time.Now()
-		// add current date for correct time locations
-		dt = dt.AddDate(currentDate.Year(), int(currentDate.Month()), currentDate.Day())
-		dt = dt.In(convertedLocation)
+		dt = dt.AddDate(2006, 01, 02).In(convertedLocation)
 		// back to zero year
-		dt = dt.AddDate(-currentDate.Year(), int(-currentDate.Month()), -currentDate.Day())
+		dt = dt.AddDate(-2006, -01, -02)
 		return &dt, nil
 	} else {
 		i, err := strconv.ParseInt(s, 10, 64)
