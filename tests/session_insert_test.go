@@ -1292,14 +1292,30 @@ func TestInsertNotDeletedNum(t *testing.T) {
 func TestInsertNotDeletedTimeStamp(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
-	// UTC time from 1970-01-01 00:00:01.000000 to 2038-01-19 03:14:07.999999
-	//type TestInsertNotDeletedTimeStampStructNotRight struct {
-	//	ID        uint64    `xorm:"'ID' pk autoincr"`
-	//	DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull TIMESTAMP"`
-	//}
-	//// notnull tag will be ignored
-	//err := testEngine.Sync(new(TestInsertNotDeletedTimeStampStructNotRight))
-	//assert.NoError(t, err)
+	// IN MYSQL DB
+	// The time range that timestamps can store is from '1970 01 01 00:00:01.000000' to '2038 01 19 03:14:07.999999'
+	// PASS notnull timestamp IN MYSQL DB
+	if testEngine.Dialect().URI().DBType == schemas.MSSQL ||
+		testEngine.Dialect().URI().DBType == schemas.SQLITE ||
+		testEngine.Dialect().URI().DBType == schemas.POSTGRES {
+
+		type TestInsertNotDeletedTimeStampStructNotRight struct {
+			ID        uint64    `xorm:"'ID' pk autoincr"`
+			DeletedAt time.Time `xorm:"'DELETED_AT' deleted notnull TIMESTAMP"`
+		}
+		err := testEngine.Sync(new(TestInsertNotDeletedTimeStampStructNotRight))
+		assert.NoError(t, err)
+
+		var v1 TestInsertNotDeletedTimeStampStructNotRight
+		_, err = testEngine.Insert(&v1)
+		assert.NoError(t, err)
+
+		var v2 TestInsertNotDeletedTimeStampStructNotRight
+		has, err := testEngine.Get(&v2)
+		assert.NoError(t, err)
+		assert.True(t, has)
+		assert.Equal(t, v2.DeletedAt, time.Unix(0, 0))
+	}
 
 	type TestInsertNotDeletedTimeStampStruct struct {
 		ID        uint64    `xorm:"'ID' pk autoincr"`
@@ -1307,16 +1323,6 @@ func TestInsertNotDeletedTimeStamp(t *testing.T) {
 	}
 	err := testEngine.Sync(new(TestInsertNotDeletedTimeStampStruct))
 	assert.NoError(t, err)
-
-	//var v1 TestInsertNotDeletedTimeStampStructNotRight
-	//_, err = testEngine.Insert(&v1)
-	//assert.NoError(t, err)
-	//
-	//var v2 TestInsertNotDeletedTimeStampStructNotRight
-	//has, err := testEngine.Get(&v2)
-	//assert.NoError(t, err)
-	//assert.True(t, has)
-	//assert.Equal(t, v2.DeletedAt, time.Unix(0, 0))
 
 	var v3 TestInsertNotDeletedTimeStampStruct
 	_, err = testEngine.Insert(&v3)
