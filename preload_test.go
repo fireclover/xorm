@@ -1,12 +1,14 @@
 package xorm
 
 import (
+	"sort"
+	"testing"
+
+	"xorm.io/builder"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sort"
-	"testing"
-	"xorm.io/builder"
 )
 
 // https://gitea.com/xorm/xorm/issues/2240
