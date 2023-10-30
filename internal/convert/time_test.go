@@ -12,8 +12,7 @@ import (
 )
 
 func TestString2Time(t *testing.T) {
-	expectedLoc, err := time.LoadLocation("Asia/Shanghai")
-	assert.NoError(t, err)
+	expectedLoc := time.FixedZone("CST", 8*3600)
 
 	cases := map[string]time.Time{
 		"2021-08-10":                          time.Date(2021, 8, 10, 8, 0, 0, 0, expectedLoc),
