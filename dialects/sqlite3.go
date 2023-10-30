@@ -12,8 +12,8 @@ import (
 	"regexp"
 	"strings"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/internal/core"
+	"xorm.io/xorm/v2/schemas"
 )
 
 var (
@@ -267,13 +267,13 @@ func (db *sqlite3) AutoIncrStr() string {
 	return "AUTOINCREMENT"
 }
 
-func (db *sqlite3) IndexCheckSQL(tableName, idxName string) (string, []interface{}) {
-	args := []interface{}{idxName}
+func (db *sqlite3) IndexCheckSQL(tableName, idxName string) (string, []any) {
+	args := []any{idxName}
 	return "SELECT name FROM sqlite_master WHERE type='index' and name = ?", args
 }
 
-func (db *sqlite3) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
-	return db.HasRecords(queryer, ctx, "SELECT name FROM sqlite_master WHERE type='table' and name = ?", tableName)
+func (db *sqlite3) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
+	return db.HasRecords(ctx, queryer, "SELECT name FROM sqlite_master WHERE type='table' and name = ?", tableName)
 }
 
 func (db *sqlite3) DropIndexSQL(tableName string, index *schemas.Index) string {
@@ -291,7 +291,7 @@ func (db *sqlite3) DropIndexSQL(tableName string, index *schemas.Index) string {
 	return fmt.Sprintf("DROP INDEX %v", db.Quoter().Quote(idxName))
 }
 
-func (db *sqlite3) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
+func (db *sqlite3) IsColumnExist(ctx context.Context, queryer core.Queryer, tableName, colName string) (bool, error) {
 	query := "SELECT * FROM " + tableName + " LIMIT 0"
 	rows, err := queryer.QueryContext(ctx, query)
 	if err != nil {
@@ -375,8 +375,8 @@ func parseString(colStr string) (*schemas.Column, error) {
 	return col, nil
 }
 
-func (db *sqlite3) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
-	args := []interface{}{tableName}
+func (db *sqlite3) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
+	args := []any{tableName}
 	s := "SELECT sql FROM sqlite_master WHERE type='table' and name = ?"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -434,8 +434,8 @@ func (db *sqlite3) GetColumns(queryer core.Queryer, ctx context.Context, tableNa
 	return colSeq, cols, nil
 }
 
-func (db *sqlite3) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
-	args := []interface{}{}
+func (db *sqlite3) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
+	args := []any{}
 	s := "SELECT name FROM sqlite_master WHERE type='table'"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -462,8 +462,8 @@ func (db *sqlite3) GetTables(queryer core.Queryer, ctx context.Context) ([]*sche
 	return tables, nil
 }
 
-func (db *sqlite3) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
-	args := []interface{}{tableName}
+func (db *sqlite3) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
+	args := []any{tableName}
 	s := "SELECT sql FROM sqlite_master WHERE type='index' and tbl_name = ?"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -547,7 +547,7 @@ func (p *sqlite3Driver) Parse(driverName, dataSourceName string) (*URI, error) {
 	return &URI{DBType: schemas.SQLITE, DBName: dataSourceName}, nil
 }
 
-func (p *sqlite3Driver) GenScanResult(colType string) (interface{}, error) {
+func (p *sqlite3Driver) GenScanResult(colType string) (any, error) {
 	switch colType {
 	case "TEXT":
 		var s sql.NullString

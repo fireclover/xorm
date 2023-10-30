@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"xorm.io/xorm"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2"
+	"xorm.io/xorm/v2/contexts"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/convert"
+	"xorm.io/xorm/v2/schemas"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -185,9 +185,8 @@ func TestGetVar(t *testing.T) {
 	assert.Equal(t, "28", valuesString["age"])
 	assert.Equal(t, "1.5", valuesString["money"])
 
-	// for mymysql driver, interface{} will be []byte, so ignore it currently
-	if testEngine.DriverName() != "mymysql" {
-		valuesInter := make(map[string]interface{})
+	{
+		valuesInter := make(map[string]any)
 		has, err = testEngine.Table("get_var").Where("`id` = ?", 1).Select("*").Get(&valuesInter)
 		assert.NoError(t, err)
 		assert.Equal(t, true, has)
@@ -207,7 +206,7 @@ func TestGetVar(t *testing.T) {
 	assert.Equal(t, "28", valuesSliceString[2])
 	assert.Equal(t, "1.5", valuesSliceString[3])
 
-	valuesSliceInter := make([]interface{}, 5)
+	valuesSliceInter := make([]any, 5)
 	has, err = testEngine.Table("get_var").Get(&valuesSliceInter)
 	assert.NoError(t, err)
 	assert.Equal(t, true, has)
@@ -510,7 +509,7 @@ func TestContextGet(t *testing.T) {
 	context := contexts.NewMemoryContextCache()
 
 	var c2 ContextGetStruct
-	has, err := sess.ID(1).NoCache().ContextCache(context).Get(&c2)
+	has, err := sess.ID(1).ContextCache(context).Get(&c2)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, c2.Id)
@@ -520,7 +519,7 @@ func TestContextGet(t *testing.T) {
 	assert.True(t, len(args) > 0)
 
 	var c3 ContextGetStruct
-	has, err = sess.ID(1).NoCache().ContextCache(context).Get(&c3)
+	has, err = sess.ID(1).ContextCache(context).Get(&c3)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, c3.Id)
@@ -545,14 +544,14 @@ func TestContextGet2(t *testing.T) {
 	context := contexts.NewMemoryContextCache()
 
 	var c2 ContextGetStruct2
-	has, err := testEngine.ID(1).NoCache().ContextCache(context).Get(&c2)
+	has, err := testEngine.ID(1).ContextCache(context).Get(&c2)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, c2.Id)
 	assert.EqualValues(t, "1", c2.Name)
 
 	var c3 ContextGetStruct2
-	has, err = testEngine.ID(1).NoCache().ContextCache(context).Get(&c3)
+	has, err = testEngine.ID(1).ContextCache(context).Get(&c3)
 	assert.NoError(t, err)
 	assert.True(t, has)
 	assert.EqualValues(t, 1, c3.Id)
@@ -728,7 +727,7 @@ func TestGetViaMapCond(t *testing.T) {
 		r           GetViaMapCond
 		platformStr = colMapper.Obj2Table("Platform")
 		indexStr    = colMapper.Obj2Table("Index")
-		query       = map[string]interface{}{
+		query       = map[string]any{
 			platformStr: 1,
 			indexStr:    1,
 		}

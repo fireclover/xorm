@@ -10,12 +10,11 @@ import (
 	"reflect"
 	"time"
 
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/contexts"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/log"
+	"xorm.io/xorm/v2/names"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // Interface defines the interface which Engine, EngineGroup and Session will implementate.
@@ -25,89 +24,83 @@ type Interface interface {
 	Asc(colNames ...string) *Session
 	BufferSize(size int) *Session
 	Cols(columns ...string) *Session
-	Count(...interface{}) (int64, error)
-	CreateIndexes(bean interface{}) error
-	CreateUniques(bean interface{}) error
-	Decr(column string, arg ...interface{}) *Session
+	Count(...any) (int64, error)
+	CreateIndexes(bean any) error
+	CreateUniques(bean any) error
+	Decr(column string, arg ...any) *Session
 	Desc(...string) *Session
-	Delete(...interface{}) (int64, error)
-	Truncate(...interface{}) (int64, error)
+	Delete(...any) (int64, error)
+	Truncate(...any) (int64, error)
 	Distinct(columns ...string) *Session
-	DropIndexes(bean interface{}) error
-	Exec(sqlOrArgs ...interface{}) (sql.Result, error)
-	Exist(bean ...interface{}) (bool, error)
-	Find(interface{}, ...interface{}) error
-	FindAndCount(interface{}, ...interface{}) (int64, error)
-	Get(...interface{}) (bool, error)
+	DropIndexes(bean any) error
+	Exec(sqlOrArgs ...any) (sql.Result, error)
+	Exist(bean ...any) (bool, error)
+	Find(any, ...any) error
+	FindAndCount(any, ...any) (int64, error)
+	Get(...any) (bool, error)
 	GroupBy(keys string) *Session
-	ID(interface{}) *Session
-	In(string, ...interface{}) *Session
-	Incr(column string, arg ...interface{}) *Session
-	Insert(...interface{}) (int64, error)
-	InsertOne(interface{}) (int64, error)
-	IsTableEmpty(bean interface{}) (bool, error)
-	IsTableExist(beanOrTableName interface{}) (bool, error)
-	Iterate(interface{}, IterFunc) error
+	ID(any) *Session
+	In(string, ...any) *Session
+	Incr(column string, arg ...any) *Session
+	Insert(...any) (int64, error)
+	InsertOne(any) (int64, error)
+	IsTableEmpty(bean any) (bool, error)
+	IsTableExist(beanOrTableName any) (bool, error)
+	Iterate(any, IterFunc) error
 	Limit(int, ...int) *Session
 	MustCols(columns ...string) *Session
 	NoAutoCondition(...bool) *Session
-	NotIn(string, ...interface{}) *Session
+	NotIn(string, ...any) *Session
 	Nullable(...string) *Session
-	Join(joinOperator string, tablename interface{}, condition interface{}, args ...interface{}) *Session
+	Join(joinOperator string, tablename any, condition any, args ...any) *Session
 	Omit(columns ...string) *Session
-	OrderBy(order interface{}, args ...interface{}) *Session
+	OrderBy(order any, args ...any) *Session
 	Ping() error
-	Query(sqlOrArgs ...interface{}) (resultsSlice []map[string][]byte, err error)
-	QueryInterface(sqlOrArgs ...interface{}) ([]map[string]interface{}, error)
-	QueryString(sqlOrArgs ...interface{}) ([]map[string]string, error)
-	Rows(bean interface{}) (*Rows, error)
-	SetExpr(string, interface{}) *Session
+	Query(sqlOrArgs ...any) (resultsSlice []map[string][]byte, err error)
+	QueryInterface(sqlOrArgs ...any) ([]map[string]any, error)
+	QueryString(sqlOrArgs ...any) ([]map[string]string, error)
+	Rows(bean any) (*Rows, error)
+	SetExpr(string, any) *Session
 	Select(string) *Session
-	SQL(interface{}, ...interface{}) *Session
-	Sum(bean interface{}, colName string) (float64, error)
-	SumInt(bean interface{}, colName string) (int64, error)
-	Sums(bean interface{}, colNames ...string) ([]float64, error)
-	SumsInt(bean interface{}, colNames ...string) ([]int64, error)
-	Table(tableNameOrBean interface{}) *Session
+	SQL(any, ...any) *Session
+	Sum(bean any, colName string) (float64, error)
+	SumInt(bean any, colName string) (int64, error)
+	Sums(bean any, colNames ...string) ([]float64, error)
+	SumsInt(bean any, colNames ...string) ([]int64, error)
+	Table(tableNameOrBean any) *Session
 	Unscoped() *Session
-	Update(bean interface{}, condiBeans ...interface{}) (int64, error)
+	Update(bean any, condiBeans ...any) (int64, error)
 	UseBool(...string) *Session
-	Where(interface{}, ...interface{}) *Session
+	Where(any, ...any) *Session
 }
 
 // EngineInterface defines the interface which Engine, EngineGroup will implementate.
 type EngineInterface interface {
 	Interface
 
-	Before(func(interface{})) *Session
+	Before(func(any)) *Session
 	Charset(charset string) *Session
-	ClearCache(...interface{}) error
 	Context(context.Context) *Session
-	CreateTables(...interface{}) error
+	CreateTables(...any) error
 	DBMetas() ([]*schemas.Table, error)
 	DBVersion() (*schemas.Version, error)
 	Dialect() dialects.Dialect
 	DriverName() string
-	DropTables(...interface{}) error
+	DropTables(...any) error
 	DumpAllToFile(fp string, tp ...schemas.DBType) error
-	GetCacher(string) caches.Cacher
 	GetColumnMapper() names.Mapper
-	GetDefaultCacher() caches.Cacher
 	GetTableMapper() names.Mapper
 	GetTZDatabase() *time.Location
 	GetTZLocation() *time.Location
 	ImportFile(fp string) ([]sql.Result, error)
-	MapCacher(interface{}, caches.Cacher) error
 	NewSession() *Session
 	NoAutoTime() *Session
 	Prepare() *Session
 	Quote(string) string
-	SetCacher(string, caches.Cacher)
 	SetConnMaxLifetime(time.Duration)
 	SetColumnMapper(names.Mapper)
 	SetTagIdentifier(string)
-	SetDefaultCacher(caches.Cacher)
-	SetLogger(logger interface{})
+	SetLogger(logger any)
 	SetLogLevel(log.LogLevel)
 	SetMapper(names.Mapper)
 	SetMaxOpenConns(int)
@@ -119,12 +112,12 @@ type EngineInterface interface {
 	SetTZLocation(tz *time.Location)
 	AddHook(hook contexts.Hook)
 	ShowSQL(show ...bool)
-	Sync(...interface{}) error
-	Sync2(...interface{}) error
-	SyncWithOptions(SyncOptions, ...interface{}) (*SyncResult, error)
+	Sync(...any) error
+	Sync2(...any) error
+	SyncWithOptions(SyncOptions, ...any) (*SyncResult, error)
 	StoreEngine(storeEngine string) *Session
-	TableInfo(bean interface{}) (*schemas.Table, error)
-	TableName(interface{}, ...bool) string
+	TableInfo(bean any) (*schemas.Table, error)
+	TableName(any, ...bool) string
 	UnMapType(reflect.Type)
 	EnableSessionID(bool)
 }

@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
-	"xorm.io/xorm/tags"
+	"xorm.io/xorm/v2/contexts"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/convert"
+	"xorm.io/xorm/v2/internal/json"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/schemas"
+	"xorm.io/xorm/v2/tags"
 )
 
 var (
@@ -36,9 +36,9 @@ var (
 
 type join struct {
 	op        string
-	table     interface{}
-	condition interface{}
-	args      []interface{}
+	table     any
+	condition any
+	args      []any
 }
 
 // Statement save all the sql info for executing SQL
@@ -59,12 +59,11 @@ type Statement struct {
 	AltTableName    string
 	tableName       string
 	RawSQL          string
-	RawParams       []interface{}
+	RawParams       []any
 	UseCascade      bool
 	UseAutoJoin     bool
 	StoreEngine     string
 	Charset         string
-	UseCache        bool
 	UseAutoTime     bool
 	NoAutoCondition bool
 	IsDistinct      bool
@@ -137,8 +136,7 @@ func (statement *Statement) Reset() {
 	statement.tableName = ""
 	statement.idParam = nil
 	statement.RawSQL = ""
-	statement.RawParams = make([]interface{}, 0)
-	statement.UseCache = true
+	statement.RawParams = make([]any, 0)
 	statement.UseAutoTime = true
 	statement.NoAutoCondition = false
 	statement.IsDistinct = false
@@ -161,7 +159,7 @@ func (statement *Statement) Reset() {
 }
 
 // SQL adds raw sql statement
-func (statement *Statement) SQL(query interface{}, args ...interface{}) *Statement {
+func (statement *Statement) SQL(query any, args ...any) *Statement {
 	switch t := query.(type) {
 	case *builder.Builder:
 		var err error
@@ -194,12 +192,12 @@ func (statement *Statement) SetRefValue(v reflect.Value) error {
 	return nil
 }
 
-func rValue(bean interface{}) reflect.Value {
+func rValue(bean any) reflect.Value {
 	return reflect.Indirect(reflect.ValueOf(bean))
 }
 
 // SetRefBean set ref bean
-func (statement *Statement) SetRefBean(bean interface{}) error {
+func (statement *Statement) SetRefBean(bean any) error {
 	var err error
 	statement.RefTable, err = statement.tagParser.ParseWithCache(rValue(bean))
 	if err != nil {
@@ -214,7 +212,7 @@ func (statement *Statement) NeedTableName() bool {
 }
 
 // Incr Generate  "Update ... Set column = column + arg" statement
-func (statement *Statement) Incr(column string, arg ...interface{}) *Statement {
+func (statement *Statement) Incr(column string, arg ...any) *Statement {
 	if len(arg) > 0 {
 		statement.IncrColumns.Add(column, arg[0])
 	} else {
@@ -224,7 +222,7 @@ func (statement *Statement) Incr(column string, arg ...interface{}) *Statement {
 }
 
 // Decr Generate  "Update ... Set column = column - arg" statement
-func (statement *Statement) Decr(column string, arg ...interface{}) *Statement {
+func (statement *Statement) Decr(column string, arg ...any) *Statement {
 	if len(arg) > 0 {
 		statement.DecrColumns.Add(column, arg[0])
 	} else {
@@ -234,7 +232,7 @@ func (statement *Statement) Decr(column string, arg ...interface{}) *Statement {
 }
 
 // SetExpr Generate  "Update ... Set column = {expression}" statement
-func (statement *Statement) SetExpr(column string, expression interface{}) *Statement {
+func (statement *Statement) SetExpr(column string, expression any) *Statement {
 	if e, ok := expression.(string); ok {
 		statement.ExprColumns.Add(column, statement.dialect.Quoter().Replace(e))
 	} else {
@@ -273,7 +271,7 @@ func (statement *Statement) Limit(limit int, start ...int) *Statement {
 }
 
 // SetTable tempororily set table name, the parameter could be a string or a pointer of struct
-func (statement *Statement) SetTable(tableNameOrBean interface{}) error {
+func (statement *Statement) SetTable(tableNameOrBean any) error {
 	v := rValue(tableNameOrBean)
 	t := v.Type()
 	if t.Kind() == reflect.Struct {
@@ -367,7 +365,7 @@ func (statement *Statement) GenDelIndexSQL() []string {
 	return sqls
 }
 
-func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect.Type, col *schemas.Column, allUseBool, requiredField bool) (interface{}, bool, error) {
+func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect.Type, col *schemas.Column, allUseBool, requiredField bool) (any, bool, error) {
 	switch fieldType.Kind() {
 	case reflect.Ptr:
 		if fieldValue.IsNil() {
@@ -503,7 +501,7 @@ func (statement *Statement) asDBCond(fieldValue reflect.Value, fieldType reflect
 	return fieldValue.Interface(), true, nil
 }
 
-func (statement *Statement) buildConds2(table *schemas.Table, bean interface{},
+func (statement *Statement) buildConds2(table *schemas.Table, bean any,
 	includeVersion bool, includeUpdated bool, includeNil bool,
 	includeAutoIncr bool, allUseBool bool, useAllCols bool, unscoped bool,
 	mustColumnMap map[string]bool, tableName, aliasName string, addedTableName bool,
@@ -601,13 +599,13 @@ func (statement *Statement) buildConds2(table *schemas.Table, bean interface{},
 }
 
 // BuildConds builds condition
-func (statement *Statement) BuildConds(table *schemas.Table, bean interface{}, includeVersion bool, includeUpdated bool, includeNil bool, includeAutoIncr bool, addedTableName bool) (builder.Cond, error) {
+func (statement *Statement) BuildConds(table *schemas.Table, bean any, includeVersion bool, includeUpdated bool, includeNil bool, includeAutoIncr bool, addedTableName bool) (builder.Cond, error) {
 	return statement.buildConds2(table, bean, includeVersion, includeUpdated, includeNil, includeAutoIncr, statement.allUseBool, statement.useAllCols,
 		statement.unscoped, statement.MustColumnMap, statement.TableName(), statement.TableAlias, addedTableName)
 }
 
 // MergeConds merge conditions from bean and id
-func (statement *Statement) MergeConds(bean interface{}) error {
+func (statement *Statement) MergeConds(bean any) error {
 	if !statement.NoAutoCondition && statement.RefTable != nil {
 		addedTableName := len(statement.joins) > 0
 		autoCond, err := statement.BuildConds(statement.RefTable, bean, true, true, false, true, addedTableName)
@@ -626,7 +624,7 @@ func (statement *Statement) quoteColumnStr(columnStr string) string {
 }
 
 // ConvertSQLOrArgs converts sql or args
-func (statement *Statement) ConvertSQLOrArgs(sqlOrArgs ...interface{}) (string, []interface{}, error) {
+func (statement *Statement) ConvertSQLOrArgs(sqlOrArgs ...any) (string, []any, error) {
 	sql, args, err := statement.convertSQLOrArgs(sqlOrArgs...)
 	if err != nil {
 		return "", nil, err
@@ -634,11 +632,11 @@ func (statement *Statement) ConvertSQLOrArgs(sqlOrArgs ...interface{}) (string, 
 	return statement.ReplaceQuote(sql), args, nil
 }
 
-func (statement *Statement) convertSQLOrArgs(sqlOrArgs ...interface{}) (string, []interface{}, error) {
+func (statement *Statement) convertSQLOrArgs(sqlOrArgs ...any) (string, []any, error) {
 	switch sqlOrArgs[0].(type) {
 	case string:
 		if len(sqlOrArgs) > 1 {
-			newArgs := make([]interface{}, 0, len(sqlOrArgs)-1)
+			newArgs := make([]any, 0, len(sqlOrArgs)-1)
 			for _, arg := range sqlOrArgs[1:] {
 				if v, ok := arg.(time.Time); ok {
 					newArgs = append(newArgs, v.In(statement.defaultTimeZone).Format("2006-01-02 15:04:05"))

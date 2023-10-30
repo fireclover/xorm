@@ -10,11 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"xorm.io/xorm/v2/convert"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/names"
+	"xorm.io/xorm/v2/schemas"
+
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
 )
 
 type tempUser struct {
@@ -505,30 +506,6 @@ func TestExtends5(t *testing.T) {
 			}
 		}
 	}
-}
-
-func TestCacheTag(t *testing.T) {
-	assert.NoError(t, PrepareEngine())
-
-	type CacheDomain struct {
-		Id   int64 `xorm:"pk cache"`
-		Name string
-	}
-
-	assert.NoError(t, testEngine.CreateTables(&CacheDomain{}))
-	assert.True(t, testEngine.GetCacher(testEngine.TableName(&CacheDomain{})) != nil)
-}
-
-func TestNoCacheTag(t *testing.T) {
-	assert.NoError(t, PrepareEngine())
-
-	type NoCacheDomain struct {
-		Id   int64 `xorm:"pk nocache"`
-		Name string
-	}
-
-	assert.NoError(t, testEngine.CreateTables(&NoCacheDomain{}))
-	assert.True(t, testEngine.GetCacher(testEngine.TableName(&NoCacheDomain{})) == nil)
 }
 
 type IDGonicMapper struct {

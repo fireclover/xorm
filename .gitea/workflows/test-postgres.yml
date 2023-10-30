@@ -9,6 +9,7 @@ env:
   GOPROXY: https://goproxy.io,direct
   GOPATH: /go_path
   GOCACHE: /go_cache
+  RUNNER_TOOL_CACHE: /toolcache # specify with your cache path
 
 jobs:
   lint:

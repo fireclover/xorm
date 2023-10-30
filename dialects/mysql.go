@@ -12,10 +12,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/internal/core"
+	"xorm.io/xorm/v2/schemas"
 )
 
 var (
@@ -371,16 +370,16 @@ func (db *mysql) AutoIncrStr() string {
 	return "AUTO_INCREMENT"
 }
 
-func (db *mysql) IndexCheckSQL(tableName, idxName string) (string, []interface{}) {
-	args := []interface{}{db.uri.DBName, tableName, idxName}
+func (db *mysql) IndexCheckSQL(tableName, idxName string) (string, []any) {
+	args := []any{db.uri.DBName, tableName, idxName}
 	sql := "SELECT `INDEX_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS`"
 	sql += " WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? AND `INDEX_NAME`=?"
 	return sql, args
 }
 
-func (db *mysql) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
+func (db *mysql) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
 	sql := "SELECT `TABLE_NAME` from `INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? and `TABLE_NAME`=?"
-	return db.HasRecords(queryer, ctx, sql, db.uri.DBName, tableName)
+	return db.HasRecords(ctx, queryer, sql, db.uri.DBName, tableName)
 }
 
 func (db *mysql) AddColumnSQL(tableName string, col *schemas.Column) string {
@@ -408,8 +407,8 @@ func (db *mysql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
 	return fmt.Sprintf("ALTER TABLE %s MODIFY COLUMN %s", db.quoter.Quote(tableName), s)
 }
 
-func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
-	args := []interface{}{db.uri.DBName, tableName}
+func (db *mysql) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
+	args := []any{db.uri.DBName, tableName}
 	alreadyQuoted := "(INSTR(VERSION(), 'maria') > 0 && " +
 		"(SUBSTRING_INDEX(VERSION(), '.', 1) > 10 || " +
 		"(SUBSTRING_INDEX(VERSION(), '.', 1) = 10 && " +
@@ -545,8 +544,8 @@ func (db *mysql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	return colSeq, cols, nil
 }
 
-func (db *mysql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
-	args := []interface{}{db.uri.DBName}
+func (db *mysql) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
+	args := []any{db.uri.DBName}
 	s := "SELECT `TABLE_NAME`, `ENGINE`, `AUTO_INCREMENT`, `TABLE_COMMENT`, `TABLE_COLLATION` from " +
 		"`INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`=? AND (`ENGINE`='MyISAM' OR `ENGINE` = 'InnoDB' OR `ENGINE` = 'TokuDB')"
 
@@ -597,8 +596,8 @@ func (db *mysql) SetQuotePolicy(quotePolicy QuotePolicy) {
 	}
 }
 
-func (db *mysql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
-	args := []interface{}{db.uri.DBName, tableName}
+func (db *mysql) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
+	args := []any{db.uri.DBName, tableName}
 	s := "SELECT `INDEX_NAME`, `NON_UNIQUE`, `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`STATISTICS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? ORDER BY `SEQ_IN_INDEX`"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -760,7 +759,7 @@ func (p *mysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	return uri, nil
 }
 
-func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
+func (p *mysqlDriver) GenScanResult(colType string) (any, error) {
 	colType = strings.Replace(colType, "UNSIGNED ", "", -1)
 	switch colType {
 	case "CHAR", "VARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET", "JSON":
@@ -791,57 +790,4 @@ func (p *mysqlDriver) GenScanResult(colType string) (interface{}, error) {
 		var r sql.RawBytes
 		return &r, nil
 	}
-}
-
-type mymysqlDriver struct {
-	mysqlDriver
-}
-
-func (p *mymysqlDriver) Parse(driverName, dataSourceName string) (*URI, error) {
-	uri := &URI{DBType: schemas.MYSQL}
-
-	pd := strings.SplitN(dataSourceName, "*", 2)
-	if len(pd) == 2 {
-		// Parse protocol part of URI
-		p := strings.SplitN(pd[0], ":", 2)
-		if len(p) != 2 {
-			return nil, errors.New("wrong protocol part of URI")
-		}
-		uri.Proto = p[0]
-		options := strings.Split(p[1], ",")
-		uri.Raddr = options[0]
-		for _, o := range options[1:] {
-			kv := strings.SplitN(o, "=", 2)
-			var k, v string
-			if len(kv) == 2 {
-				k, v = kv[0], kv[1]
-			} else {
-				k, v = o, "true"
-			}
-			switch k {
-			case "laddr":
-				uri.Laddr = v
-			case "timeout":
-				to, err := time.ParseDuration(v)
-				if err != nil {
-					return nil, err
-				}
-				uri.Timeout = to
-			default:
-				return nil, errors.New("unknown option: " + k)
-			}
-		}
-		// Remove protocol part
-		pd = pd[1:]
-	}
-	// Parse database part of URI
-	dup := strings.SplitN(pd[0], "/", 3)
-	if len(dup) != 3 {
-		return nil, errors.New("Wrong database part of URI")
-	}
-	uri.DBName = dup[0]
-	uri.User = dup[1]
-	uri.Passwd = dup[2]
-
-	return uri, nil
 }

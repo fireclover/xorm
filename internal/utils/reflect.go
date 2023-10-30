@@ -9,6 +9,6 @@ import (
 )
 
 // ReflectValue returns value of a bean
-func ReflectValue(bean interface{}) reflect.Value {
+func ReflectValue(bean any) reflect.Value {
 	return reflect.Indirect(reflect.ValueOf(bean))
 }

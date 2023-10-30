@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/names"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/names"
 )
 
 func TestTransaction(t *testing.T) {
@@ -201,7 +201,7 @@ func TestInsertMulti2InterfaceTransaction(t *testing.T) {
 	err := session.Begin()
 	assert.NoError(t, err)
 
-	users := []interface{}{
+	users := []any{
 		&Multi2InterfaceTransaction{Name: "a", Alias: "A"},
 		&Multi2InterfaceTransaction{Name: "b", Alias: "B"},
 		&Multi2InterfaceTransaction{Name: "c", Alias: "C"},

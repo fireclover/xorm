@@ -9,7 +9,7 @@ import (
 	"reflect"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/schemas"
 )
 
 var (
@@ -36,7 +36,7 @@ func IsIDConditionWithNoTableErr(err error) bool {
 }
 
 // ID generate "where id = ? " statement or for composite key "where key1 = ? and key2 = ?"
-func (statement *Statement) ID(id interface{}) *Statement {
+func (statement *Statement) ID(id any) *Statement {
 	switch t := id.(type) {
 	case *schemas.PK:
 		statement.idParam = *t
@@ -91,7 +91,7 @@ func (statement *Statement) ProcessIDParam() error {
 	}
 
 	for i, col := range statement.RefTable.PKColumns() {
-		var colName = statement.colName(col, statement.TableName())
+		colName := statement.colName(col, statement.TableName())
 		statement.cond = statement.cond.And(builder.Eq{colName: statement.idParam[i]})
 	}
 	return nil

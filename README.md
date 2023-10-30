@@ -21,7 +21,6 @@ v1.0.0 has some break changes from v0.8.2.
 * Transaction Support
 * Both ORM and raw SQL operation Support
 * Sync database schema Support
-* Query Cache speed up
 * Database Reverse support via [xorm.io/reverse](https://xorm.io/reverse)
 * Simple cascade loading support
 * Optimistic Locking support
@@ -37,7 +36,6 @@ Drivers for Go's sql package which currently support database/sql includes:
 
 * [Mysql5.*](https://github.com/mysql/mysql-server/tree/5.7) / [Mysql8.*](https://github.com/mysql/mysql-server) / [Mariadb](https://github.com/MariaDB/server) / [Tidb](https://github.com/pingcap/tidb)
   - [github.com/go-sql-driver/mysql](https://github.com/go-sql-driver/mysql)
-  - [github.com/ziutek/mymysql/godrv](https://github.com/ziutek/mymysql/godrv)
 
 * [Postgres](https://github.com/postgres/postgres) / [Cockroach](https://github.com/cockroachdb/cockroach)
   - [github.com/lib/pq](https://github.com/lib/pq)
@@ -57,13 +55,13 @@ Drivers for Go's sql package which currently support database/sql includes:
 
 ## Installation
 
-	go get xorm.io/xorm
+	go get xorm.io/xorm/v2
 
 ## Documents
 
 * [Manual](http://xorm.io/docs)
 
-* [GoDoc](http://pkg.go.dev/xorm.io/xorm)
+* [GoDoc](http://pkg.go.dev/xorm.io/xorm/v2)
 
 ## Quick Start
 
@@ -107,7 +105,7 @@ engineGroup, err := xorm.NewEngineGroup(masterEngine, []*Engine{slave1Engine, sl
 
 Then all place where `engine` you can just use `engineGroup`.
 
-* `Query` runs a SQL string, the returned results is `[]map[string][]byte`, `QueryString` returns `[]map[string]string`, `QueryInterface` returns `[]map[string]interface{}`.
+* `Query` runs a SQL string, the returned results is `[]map[string][]byte`, `QueryString` returns `[]map[string]string`, `QueryInterface` returns `[]map[string]any`.
 
 ```Go
 results, err := engine.Query("select * from user")
@@ -143,13 +141,13 @@ affected, err := engine.Insert(&user1, &users)
 // INSERT INTO struct1 () values ()
 // INSERT INTO struct2 () values (),(),()
 
-affected, err := engine.Table("user").Insert(map[string]interface{}{
+affected, err := engine.Table("user").Insert(map[string]any{
     "name": "lunny",
     "age": 18,
 })
 // INSERT INTO user (name, age) values (?,?)
 
-affected, err := engine.Table("user").Insert([]map[string]interface{}{
+affected, err := engine.Table("user").Insert([]map[string]any{
     {
         "name": "lunny",
         "age": 18,
@@ -189,7 +187,7 @@ var valuesMap = make(map[string]string)
 has, err := engine.Table(&user).Where("id = ?", id).Get(&valuesMap)
 // SELECT * FROM user WHERE id = ?
 
-var valuesSlice = make([]interface{}, len(cols))
+var valuesSlice = make([]any, len(cols))
 has, err := engine.Table(&user).Where("id = ?", id).Cols(cols...).Get(&valuesSlice)
 // SELECT col1, col2, col3 FROM user WHERE id = ?
 ```
@@ -246,13 +244,13 @@ err := engine.Table("user").Select("user.*, detail.*").
 * `Iterate` and `Rows` query multiple records and record by record handle, there are two methods Iterate and Rows
 
 ```Go
-err := engine.Iterate(&User{Name:name}, func(idx int, bean interface{}) error {
+err := engine.Iterate(&User{Name:name}, func(idx int, bean any) error {
     user := bean.(*User)
     return nil
 })
 // SELECT * FROM user
 
-err := engine.BufferSize(100).Iterate(&User{Name:name}, func(idx int, bean interface{}) error {
+err := engine.BufferSize(100).Iterate(&User{Name:name}, func(idx int, bean any) error {
     user := bean.(*User)
     return nil
 })
@@ -416,7 +414,7 @@ return session.Commit()
 * Or you can use `Transaction` to replace above codes.
 
 ```Go
-res, err := engine.Transaction(func(session *xorm.Session) (interface{}, error) {
+res, err := engine.Transaction(func(session *xorm.Session) (any, error) {
     user1 := Userinfo{Username: "xiaoxiao", Departname: "dev", Alias: "lunny", Created: time.Now()}
     if _, err := session.Insert(&user1); err != nil {
         return nil, err
@@ -490,19 +488,17 @@ You can find all the changelog [here](CHANGELOG.md)
 
 ## Cases
 
-* [studygolang](http://studygolang.com/) - [github.com/studygolang/studygolang](https://github.com/studygolang/studygolang)
-
-* [Gitea](http://gitea.io) - [github.com/go-gitea/gitea](http://github.com/go-gitea/gitea)
-
-* [Gogs](http://try.gogits.org) - [github.com/gogits/gogs](http://github.com/gogits/gogs)
+* [Gitea](http://about.gitea.com) - [github.com/go-gitea/gitea](http://github.com/go-gitea/gitea)
 
 * [grafana](https://grafana.com/) - [github.com/grafana/grafana](http://github.com/grafana/grafana)
+
+* [studygolang](http://studygolang.com/) - [github.com/studygolang/studygolang](https://github.com/studygolang/studygolang)
+
+* [Gogs](http://try.gogits.org) - [github.com/gogits/gogs](http://github.com/gogits/gogs)
 
 * [github.com/m3ng9i/qreader](https://github.com/m3ng9i/qreader)
 
 * [Wego](http://github.com/go-tango/wego)
-
-* [Docker.cn](https://docker.cn/)
 
 * [Xorm Adapter](https://github.com/casbin/xorm-adapter) for [Casbin](https://github.com/casbin/casbin) - [github.com/casbin/xorm-adapter](https://github.com/casbin/xorm-adapter)
 

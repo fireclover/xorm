@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/internal/core"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // URI represents an uri to visit database
@@ -66,13 +66,13 @@ type Dialect interface {
 
 	AutoIncrStr() string
 
-	GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error)
-	IndexCheckSQL(tableName, idxName string) (string, []interface{})
+	GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error)
+	IndexCheckSQL(tableName, idxName string) (string, []any)
 	CreateIndexSQL(tableName string, index *schemas.Index) string
 	DropIndexSQL(tableName string, index *schemas.Index) string
 
-	GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error)
-	IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error)
+	GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error)
+	IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error)
 	CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error)
 	DropTableSQL(tableName string) (string, bool)
 
@@ -80,8 +80,8 @@ type Dialect interface {
 	IsSequenceExist(ctx context.Context, queryer core.Queryer, seqName string) (bool, error)
 	DropSequenceSQL(seqName string) (string, error)
 
-	GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error)
-	IsColumnExist(queryer core.Queryer, ctx context.Context, tableName string, colName string) (bool, error)
+	GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error)
+	IsColumnExist(ctx context.Context, queryer core.Queryer, tableName string, colName string) (bool, error)
 	AddColumnSQL(tableName string, col *schemas.Column) string
 	ModifyColumnSQL(tableName string, col *schemas.Column) string
 
@@ -177,7 +177,7 @@ func (db *Base) DropTableSQL(tableName string) (string, bool) {
 }
 
 // HasRecords returns true if the SQL has records returned
-func (db *Base) HasRecords(queryer core.Queryer, ctx context.Context, query string, args ...interface{}) (bool, error) {
+func (db *Base) HasRecords(ctx context.Context, queryer core.Queryer, query string, args ...any) (bool, error) {
 	rows, err := queryer.QueryContext(ctx, query, args...)
 	if err != nil {
 		return false, err
@@ -191,7 +191,7 @@ func (db *Base) HasRecords(queryer core.Queryer, ctx context.Context, query stri
 }
 
 // IsColumnExist returns true if the column of the table exist
-func (db *Base) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
+func (db *Base) IsColumnExist(ctx context.Context, queryer core.Queryer, tableName, colName string) (bool, error) {
 	quote := db.dialect.Quoter().Quote
 	query := fmt.Sprintf(
 		"SELECT %v FROM %v.%v WHERE %v = ? AND %v = ? AND %v = ?",
@@ -202,7 +202,7 @@ func (db *Base) IsColumnExist(queryer core.Queryer, ctx context.Context, tableNa
 		quote("TABLE_NAME"),
 		quote("COLUMN_NAME"),
 	)
-	return db.HasRecords(queryer, ctx, query, db.uri.DBName, tableName, colName)
+	return db.HasRecords(ctx, queryer, query, db.uri.DBName, tableName, colName)
 }
 
 // AddColumnSQL returns a SQL to add a column
@@ -274,7 +274,6 @@ func regDrvsNDialects() bool {
 		"mssql":    {"mssql", func() Driver { return &odbcDriver{} }, func() Dialect { return &mssql{} }},
 		"odbc":     {"mssql", func() Driver { return &odbcDriver{} }, func() Dialect { return &mssql{} }}, // !nashtsai! TODO change this when supporting MS Access
 		"mysql":    {"mysql", func() Driver { return &mysqlDriver{} }, func() Dialect { return &mysql{} }},
-		"mymysql":  {"mysql", func() Driver { return &mymysqlDriver{} }, func() Dialect { return &mysql{} }},
 		"postgres": {"postgres", func() Driver { return &pqDriver{} }, func() Dialect { return &postgres{} }},
 		"pgx":      {"postgres", func() Driver { return &pqDriverPgx{} }, func() Dialect { return &postgres{} }},
 		"sqlite3":  {"sqlite3", func() Driver { return &sqlite3Driver{} }, func() Dialect { return &sqlite3{} }},

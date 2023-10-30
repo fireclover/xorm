@@ -35,7 +35,7 @@ func (CustomStruct) String() string {
 	return "CustomStruct"
 }
 
-func (m *CustomStruct) Scan(value interface{}) error {
+func (m *CustomStruct) Scan(value any) error {
 	if value == nil {
 		m.Year, m.Month, m.Day = 0, 0, 0
 		return nil
@@ -261,7 +261,7 @@ func TestNullStructIterate(t *testing.T) {
 
 	if true {
 		err := testEngine.Where("`age` IS NOT NULL").OrderBy("age").Iterate(new(NullStruct),
-			func(i int, bean interface{}) error {
+			func(i int, bean any) error {
 				nultype := bean.(*NullStruct)
 				fmt.Println(i, nultype)
 				return nil

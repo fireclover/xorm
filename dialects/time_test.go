@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/schemas"
 )
 
 type dialect struct {
@@ -31,7 +31,7 @@ func TestFormatColumnTime(t *testing.T) {
 		location *time.Location
 		column   *schemas.Column
 		time     time.Time
-		wantRes  interface{}
+		wantRes  any
 		wantErr  error
 	}{
 		{

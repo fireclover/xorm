@@ -7,13 +7,13 @@ package dialects
 import (
 	"strings"
 	"time"
-	"xorm.io/xorm/internal/utils"
 
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // FormatColumnTime format column time
-func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.Column, t time.Time) (interface{}, error) {
+func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.Column, t time.Time) (any, error) {
 	if utils.IsTimeZero(t) {
 		if col.Nullable {
 			return nil, nil

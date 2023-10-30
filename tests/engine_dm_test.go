@@ -7,7 +7,7 @@
 
 package tests
 
-import "xorm.io/xorm/schemas"
+import "xorm.io/xorm/v2/schemas"
 
 func init() {
 	dbtypes = append(dbtypes, schemas.DAMENG)

@@ -54,12 +54,12 @@ type AfterLoadSessionProcessor interface {
 	AfterLoad(*Session)
 }
 
-type executedProcessorFunc func(*Session, interface{}) error
+type executedProcessorFunc func(*Session, any) error
 
 type executedProcessor struct {
 	fun     executedProcessorFunc
 	session *Session
-	bean    interface{}
+	bean    any
 }
 
 func (executor *executedProcessor) execute() error {
@@ -77,13 +77,13 @@ func (session *Session) executeProcessors() error {
 	return nil
 }
 
-func cleanupProcessorsClosures(slices *[]func(interface{})) {
+func cleanupProcessorsClosures(slices *[]func(any)) {
 	if len(*slices) > 0 {
-		*slices = make([]func(interface{}), 0)
+		*slices = make([]func(any), 0)
 	}
 }
 
-func executeBeforeClosures(session *Session, bean interface{}) {
+func executeBeforeClosures(session *Session, bean any) {
 	// handle before delete processors
 	for _, closure := range session.beforeClosures {
 		closure(bean)
@@ -91,27 +91,27 @@ func executeBeforeClosures(session *Session, bean interface{}) {
 	cleanupProcessorsClosures(&session.beforeClosures)
 }
 
-func executeBeforeSet(bean interface{}, fields []string, scanResults []interface{}) {
+func executeBeforeSet(bean any, fields []string, scanResults []any) {
 	if b, hasBeforeSet := bean.(BeforeSetProcessor); hasBeforeSet {
 		for ii, key := range fields {
-			b.BeforeSet(key, Cell(scanResults[ii].(*interface{})))
+			b.BeforeSet(key, Cell(scanResults[ii].(*any)))
 		}
 	}
 }
 
-func executeAfterSet(bean interface{}, fields []string, scanResults []interface{}) {
+func executeAfterSet(bean any, fields []string, scanResults []any) {
 	if b, hasAfterSet := bean.(AfterSetProcessor); hasAfterSet {
 		for ii, key := range fields {
-			b.AfterSet(key, Cell(scanResults[ii].(*interface{})))
+			b.AfterSet(key, Cell(scanResults[ii].(*any)))
 		}
 	}
 }
 
-func buildAfterProcessors(session *Session, bean interface{}) {
+func buildAfterProcessors(session *Session, bean any) {
 	// handle afterClosures
 	for _, closure := range session.afterClosures {
 		session.afterProcessors = append(session.afterProcessors, executedProcessor{
-			fun: func(sess *Session, bean interface{}) error {
+			fun: func(sess *Session, bean any) error {
 				closure(bean)
 				return nil
 			},
@@ -122,7 +122,7 @@ func buildAfterProcessors(session *Session, bean interface{}) {
 
 	if a, has := bean.(AfterLoadProcessor); has {
 		session.afterProcessors = append(session.afterProcessors, executedProcessor{
-			fun: func(sess *Session, bean interface{}) error {
+			fun: func(sess *Session, bean any) error {
 				a.AfterLoad()
 				return nil
 			},
@@ -133,7 +133,7 @@ func buildAfterProcessors(session *Session, bean interface{}) {
 
 	if a, has := bean.(AfterLoadSessionProcessor); has {
 		session.afterProcessors = append(session.afterProcessors, executedProcessor{
-			fun: func(sess *Session, bean interface{}) error {
+			fun: func(sess *Session, bean any) error {
 				a.AfterLoad(sess)
 				return nil
 			},
