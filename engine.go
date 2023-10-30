@@ -1353,3 +1353,15 @@ func (engine *Engine) Transaction(f func(*Session) (any, error)) (any, error) {
 
 	return result, nil
 }
+
+// Preloads builds the preloads
+func (engine *Engine) Preloads(preloads ...*Preload) *Session {
+	session := engine.NewSession()
+	session.isAutoClose = true
+	return session.Preloads(preloads...)
+}
+
+// Preload creates a preload
+func (engine *Engine) Preload(path string) *Preload {
+	return NewPreload(path)
+}

@@ -85,7 +85,7 @@ func (parser *Parser) SetIdentifier(identifier string) {
 
 // ParseWithCache parse a struct with cache
 func (parser *Parser) ParseWithCache(v reflect.Value) (*schemas.Table, error) {
-	t := v.Type()
+	t := reflect.Indirect(v).Type()
 	tableI, ok := parser.tableCache.Load(t)
 	if ok {
 		return tableI.(*schemas.Table), nil
@@ -165,6 +165,7 @@ func (parser *Parser) parseFieldWithNoTag(fieldIndex int, field reflect.StructFi
 		field.Name, sqlType, sqlType.DefaultLength,
 		sqlType.DefaultLength2, true)
 	col.FieldIndex = []int{fieldIndex}
+	col.FieldType = field.Type
 
 	if field.Type.Kind() == reflect.Int64 && (strings.ToUpper(col.FieldName) == "ID" || strings.HasSuffix(strings.ToUpper(col.FieldName), ".ID")) {
 		col.IsAutoIncrement = true
@@ -178,6 +179,7 @@ func (parser *Parser) parseFieldWithTags(table *schemas.Table, fieldIndex int, f
 	col := &schemas.Column{
 		FieldName:       field.Name,
 		FieldIndex:      []int{fieldIndex},
+		FieldType:       field.Type,
 		Nullable:        true,
 		IsPrimaryKey:    false,
 		IsAutoIncrement: false,

@@ -67,11 +67,27 @@ func (session *Session) get(beans ...any) (bool, error) {
 		if err := session.statement.SetRefBean(beans[0]); err != nil {
 			return false, err
 		}
+	} else if session.preloadNode != nil {
+		return false, errors.New("preloading requires a pointer to struct")
 	}
 
 	var sqlStr string
 	var args []any
 	var err error
+
+	table := session.statement.RefTable
+
+	if session.preloadNode != nil {
+		if err := session.preloadNode.Validate(table); err != nil {
+			return false, err
+		}
+		// we need the columns required for the preloads
+		if !session.statement.ColumnMap.IsEmpty() {
+			for _, k := range session.preloadNode.extraCols {
+				session.statement.ColumnMap.Add(k)
+			}
+		}
+	}
 
 	if session.statement.RawSQL == "" {
 		if len(session.statement.TableName()) == 0 {
@@ -87,7 +103,6 @@ func (session *Session) get(beans ...any) (bool, error) {
 		args = session.statement.RawParams
 	}
 
-	table := session.statement.RefTable
 	context := session.statement.Context
 	if context != nil && isStruct {
 		res := context.Get(fmt.Sprintf("%v-%v", sqlStr, args))
@@ -105,6 +120,19 @@ func (session *Session) get(beans ...any) (bool, error) {
 	has, err := session.nocacheGet(beanValue.Elem().Kind(), table, beans, sqlStr, args...)
 	if err != nil || !has {
 		return has, err
+	}
+
+	if session.preloadNode != nil {
+		// convert to a map before preloading
+		pkColumn := table.PKColumns()[0]
+		sliceValue := reflect.MakeMap(reflect.MapOf(pkColumn.FieldType, beanValue.Type()))
+		dataStruct := beanValue.Elem()
+		pkValue, _ := pkColumn.ValueOfV(&dataStruct)
+		sliceValue.SetMapIndex(*pkValue, beanValue)
+
+		if err := session.preloadNode.Compute(session, sliceValue); err != nil {
+			return false, err
+		}
 	}
 
 	if context != nil && isStruct {

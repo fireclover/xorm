@@ -98,6 +98,10 @@ func (statement *Statement) genColumnStr() string {
 			continue
 		}
 
+		if col.Association != nil {
+			continue
+		}
+
 		if buf.Len() != 0 {
 			buf.WriteString(", ")
 		}
