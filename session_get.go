@@ -34,6 +34,21 @@ func (session *Session) Get(beans ...interface{}) (bool, error) {
 	return session.get(beans...)
 }
 
+// MustGet like Get, but will return error if record not exist
+func (session *Session) MustGet(beans ...interface{}) error {
+	if session.isAutoClose {
+		defer session.Close()
+	}
+	exist, err := session.get(beans...)
+	if err != nil {
+		return err
+	} else if !exist {
+		return ErrNotExist
+	} else {
+		return nil
+	}
+}
+
 func isPtrOfTime(v interface{}) bool {
 	if _, ok := v.(*time.Time); ok {
 		return true
