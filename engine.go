@@ -51,7 +51,7 @@ type Engine struct {
 
 // NewEngine new a db manager according to the parameter. Currently support four
 // drivers
-func NewEngine(driverName string, dataSourceName string) (*Engine, error) {
+func NewEngine(driverName string, dataSourceName string, driverOptions ...func(db *sql.DB) error) (*Engine, error) {
 	dialect, err := dialects.OpenDialect(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
@@ -60,6 +60,12 @@ func NewEngine(driverName string, dataSourceName string) (*Engine, error) {
 	db, err := core.Open(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(driverOptions) > 0 {
+		if err := driverOptions[0](db.DB); err != nil {
+			return nil, err
+		}
 	}
 
 	return newEngine(driverName, dataSourceName, dialect, db)
