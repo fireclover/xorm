@@ -62,8 +62,8 @@ func NewEngine(driverName string, dataSourceName string, driverOptions ...func(d
 		return nil, err
 	}
 
-	if len(driverOptions) > 0 {
-		if err := driverOptions[0](db.DB); err != nil {
+	for _, driverOption := range driverOptions {
+		if err := driverOption(db.DB); err != nil {
 			return nil, err
 		}
 	}
