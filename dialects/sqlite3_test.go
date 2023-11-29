@@ -27,6 +27,13 @@ func TestSplitColStr(t *testing.T) {
 				"`created`", "DATETIME", "DEFAULT", "'2006-01-02 15:04:05'", "NULL",
 			},
 		},
+		{
+			colStr: `    id               INTEGER           not null
+primary key autoincrement`,
+			fields: []string{
+				"id", "INTEGER", "not null", "primary", "key", "autoincrement",
+			},
+		},
 	}
 
 	for _, kase := range kases {
