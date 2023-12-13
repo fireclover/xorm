@@ -254,6 +254,7 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 	return statement.writeMultiple(buf,
 		statement.writeSelectColumns(columnStr),
 		statement.writeFrom,
+		statement.writeIndexHints,
 		statement.writeWhere,
 		statement.writeGroupBy,
 		statement.writeHaving,

@@ -62,3 +62,14 @@ func TestEnableSessionId(t *testing.T) {
 	_, err := testEngine.Table("userinfo").MustLogSQL(true).Get(new(Userinfo))
 	assert.NoError(t, err)
 }
+
+func TestIndexHint(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(Userinfo))
+	if testEngine.Dialect().URI().DBType != "mysql" {
+		return
+	}
+
+	_, err := testEngine.Table("userinfo").IndexHint("USE", "idx1").Get(new(Userinfo))
+	assert.NoError(t, err)
+}
