@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"xorm.io/builder"
+	"xorm.io/xorm/schemas"
 )
 
 type ErrInvalidIndexHintOperator struct {
@@ -28,8 +29,12 @@ func (statement *Statement) IndexHint(op, indexName string) error {
 }
 
 func (statement *Statement) writeIndexHints(w *builder.BytesWriter) error {
+	if len(statement.indexHints) == 0 {
+		return nil
+	}
+
 	switch statement.dialect.URI().DBType {
-	case "mysql":
+	case schemas.MYSQL:
 		return statement.writeIndexHintsMySQL(w)
 	default:
 		return ErrNotImplemented
