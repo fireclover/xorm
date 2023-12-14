@@ -46,7 +46,7 @@ func (statement *Statement) writeIndexHintsMySQL(w *builder.BytesWriter) error {
 		if hint.op != "USE" && hint.op != "FORCE" && hint.op != "IGNORE" {
 			return ErrInvalidIndexHintOperator{Op: hint.op}
 		}
-		if err := statement.writeStrings(hint.op, " INDEX(", hint.indexName, ")")(w); err != nil {
+		if err := statement.writeStrings(" ", hint.op, " INDEX(", hint.indexName, ")")(w); err != nil {
 			return err
 		}
 	}
