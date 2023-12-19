@@ -19,10 +19,11 @@ func (e ErrInvalidIndexHintOperator) Error() string {
 	return "invalid index hint operator: " + e.Op
 }
 
-func (statement *Statement) IndexHint(op, indexName string) error {
+func (statement *Statement) IndexHint(op, forType, indexName string) error {
 	op = strings.ToUpper(op)
 	statement.indexHints = append(statement.indexHints, indexHint{
 		op:        op,
+		forType:   forType,
 		indexName: indexName,
 	})
 	return nil
@@ -46,7 +47,16 @@ func (statement *Statement) writeIndexHintsMySQL(w *builder.BytesWriter) error {
 		if hint.op != "USE" && hint.op != "FORCE" && hint.op != "IGNORE" {
 			return ErrInvalidIndexHintOperator{Op: hint.op}
 		}
-		if err := statement.writeStrings(" ", hint.op, " INDEX(", hint.indexName, ")")(w); err != nil {
+		if err := statement.writeStrings(" ", hint.op, " INDEX")(w); err != nil {
+			return err
+		}
+		if hint.forType != "" {
+			if err := statement.writeStrings(" FOR ", hint.forType)(w); err != nil {
+				return err
+			}
+		}
+
+		if err := statement.writeStrings("(", hint.indexName, ")")(w); err != nil {
 			return err
 		}
 	}

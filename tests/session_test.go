@@ -70,6 +70,12 @@ func TestIndexHint(t *testing.T) {
 		return
 	}
 
-	_, err := testEngine.Table("userinfo").IndexHint("USE", "UQE_userinfo_username").Get(new(Userinfo))
+	_, err := testEngine.Table("userinfo").IndexHint("USE", "", "UQE_userinfo_username").Get(new(Userinfo))
+	assert.NoError(t, err)
+
+	_, err = testEngine.Table("userinfo").IndexHint("USE", "ORDER BY", "UQE_userinfo_username").Get(new(Userinfo))
+	assert.NoError(t, err)
+
+	_, err = testEngine.Table("userinfo").IndexHint("USE", "GROUP BY", "UQE_userinfo_username").Get(new(Userinfo))
 	assert.NoError(t, err)
 }

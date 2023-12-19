@@ -312,7 +312,7 @@ func (session *Session) Import(r io.Reader) ([]sql.Result, error) {
 	return results, lastError
 }
 
-func (session *Session) IndexHint(op, indexerOrColName string) *Session {
-	session.statement.IndexHint(op, indexerOrColName)
+func (session *Session) IndexHint(op, forType, indexerOrColName string) *Session {
+	session.statement.IndexHint(op, forType, indexerOrColName)
 	return session
 }

@@ -1434,9 +1434,9 @@ func (engine *Engine) Transaction(f func(*Session) (interface{}, error)) (interf
 	return result, nil
 }
 
-func (engine *Engine) IndexHint(op, indexerOrColName string) *Session {
+func (engine *Engine) IndexHint(op, forType, indexerOrColName string) *Session {
 	session := engine.NewSession()
 	session.isAutoClose = true
-	session.statement.LastError = session.statement.IndexHint(op, indexerOrColName)
+	session.statement.LastError = session.statement.IndexHint(op, forType, indexerOrColName)
 	return session
 }

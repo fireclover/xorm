@@ -43,6 +43,7 @@ type join struct {
 
 type indexHint struct {
 	op        string
+	forType   string
 	indexName string
 }
 
