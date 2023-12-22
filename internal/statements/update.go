@@ -626,6 +626,10 @@ func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond 
 		return err
 	}
 
+	if err := statement.writeJoins(updateWriter); err != nil {
+		return err
+	}
+
 	if statement.dialect.URI().DBType == schemas.MSSQL {
 		table := statement.RefTable
 		if statement.HasOrderBy() && table != nil && len(table.PrimaryKeys) == 1 {
