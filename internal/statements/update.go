@@ -617,6 +617,12 @@ func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond 
 		return err
 	}
 
+	if statement.dialect.URI().DBType == schemas.MYSQL {
+		if err := statement.writeJoins(updateWriter); err != nil {
+			return err
+		}
+	}
+
 	if err := statement.writeUpdateSets(updateWriter, v, colNames, args); err != nil {
 		return err
 	}
@@ -626,8 +632,10 @@ func (statement *Statement) WriteUpdate(updateWriter *builder.BytesWriter, cond 
 		return err
 	}
 
-	if err := statement.writeJoins(updateWriter); err != nil {
-		return err
+	if statement.dialect.URI().DBType != schemas.MYSQL {
+		if err := statement.writeJoins(updateWriter); err != nil {
+			return err
+		}
 	}
 
 	if statement.dialect.URI().DBType == schemas.MSSQL {
