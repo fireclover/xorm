@@ -65,7 +65,7 @@ func TestEnableSessionId(t *testing.T) {
 
 func TestIndexHint(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	assertSync(t, new(Userinfo))
+	assertSync(t, new(Userinfo), new(Userdetail))
 	if testEngine.Dialect().URI().DBType != "mysql" {
 		return
 	}
