@@ -555,8 +555,14 @@ func (statement *Statement) writeSetColumns(colNames []string, args []any) func(
 					return err
 				}
 			}
-			if _, err := fmt.Fprint(w, colName); err != nil {
-				return err
+			if len(statement.joins) > 0 {
+				if _, err := fmt.Fprint(w, statement.tableName, ".", colName); err != nil {
+					return err
+				}
+			} else {
+				if _, err := fmt.Fprint(w, colName); err != nil {
+					return err
+				}
 			}
 		}
 		w.Append(args...)
