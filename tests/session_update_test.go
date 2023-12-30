@@ -1473,11 +1473,6 @@ func TestNilFromDB(t *testing.T) {
 }
 
 func TestUpdateWithJoin(t *testing.T) {
-	if testEngine.Dialect().URI().DBType == schemas.SQLITE {
-		t.Skip()
-		return
-	}
-
 	type TestUpdateWithJoin struct {
 		Id    int64
 		ExtId int64
@@ -1497,6 +1492,12 @@ func TestUpdateWithJoin(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = testEngine.Insert(&TestUpdateWithJoin{ExtId: b.Id, Name: "test"})
+	assert.NoError(t, err)
+
+	_, err = testEngine.Table("test_update_with_join").
+		Join("INNER", "test_update_with_join2 AS b", "test_update_with_join.ext_id = b.id").
+		Where("b.`name` = ?", "test").
+		Update(&TestUpdateWithJoin{Name: "test2"})
 	assert.NoError(t, err)
 
 	_, err = testEngine.Table("test_update_with_join").
