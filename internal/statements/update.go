@@ -342,15 +342,11 @@ func (statement *Statement) writeUpdateTableName(updateWriter *builder.BytesWrit
 }
 
 func (statement *Statement) writeUpdateFrom(updateWriter *builder.BytesWriter) (builder.Cond, error) {
-	if len(statement.joins) == 0 {
-		return builder.NewCond(), nil
-	}
-
-	if _, err := fmt.Fprint(updateWriter, " FROM"); err != nil {
-		return nil, err
-	}
-
 	if statement.dialect.URI().DBType == schemas.MSSQL {
+		if _, err := fmt.Fprint(updateWriter, " FROM"); err != nil {
+			return nil, err
+		}
+
 		if _, err := fmt.Fprint(updateWriter, " ", statement.quote(statement.TableName())); err != nil {
 			return nil, err
 		}
@@ -358,6 +354,16 @@ func (statement *Statement) writeUpdateFrom(updateWriter *builder.BytesWriter) (
 			if _, err := fmt.Fprint(updateWriter, " ", statement.TableAlias); err != nil {
 				return nil, err
 			}
+		}
+	}
+
+	if len(statement.joins) == 0 {
+		return builder.NewCond(), nil
+	}
+
+	if statement.dialect.URI().DBType != schemas.MSSQL {
+		if _, err := fmt.Fprint(updateWriter, " FROM"); err != nil {
+			return nil, err
 		}
 	}
 
