@@ -583,8 +583,12 @@ func (statement *Statement) writeSetColumns(colNames []string, args []any) func(
 					return err
 				}
 			}
-			if statement.dialect.URI().DBType == schemas.MSSQL && len(statement.joins) > 0 {
-				if _, err := fmt.Fprint(w, statement.tableName, ".", colName); err != nil {
+			if statement.dialect.URI().DBType != schemas.SQLITE && len(statement.joins) > 0 {
+				tbName := statement.TableAlias
+				if tbName == "" {
+					tbName = statement.TableName()
+				}
+				if _, err := fmt.Fprint(w, tbName, ".", colName); err != nil {
 					return err
 				}
 			} else {
