@@ -342,6 +342,10 @@ func (statement *Statement) writeUpdateTableName(updateWriter *builder.BytesWrit
 }
 
 func (statement *Statement) writeUpdateFrom(updateWriter *builder.BytesWriter) (builder.Cond, error) {
+	if len(statement.joins) == 0 {
+		return builder.NewCond(), nil
+	}
+
 	if _, err := fmt.Fprint(updateWriter, " FROM"); err != nil {
 		return nil, err
 	}
