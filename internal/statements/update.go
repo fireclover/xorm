@@ -699,19 +699,8 @@ func (statement *Statement) writeUpdateMSSQL(updateWriter *builder.BytesWriter, 
 		return err
 	}
 
-	// write set
-	if _, err := fmt.Fprint(updateWriter, " SET "); err != nil {
-		return err
-	}
-	previousLen := updateWriter.Len()
-
 	if err := statement.writeUpdateSets(updateWriter, v, colNames, args); err != nil {
 		return err
-	}
-
-	// if no columns to be updated, return error
-	if previousLen == updateWriter.Len() {
-		return ErrNoColumnsTobeUpdated
 	}
 
 	// write from
