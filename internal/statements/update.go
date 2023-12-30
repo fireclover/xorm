@@ -593,7 +593,7 @@ func (statement *Statement) writeSetColumns(colNames []string, args []any) func(
 					return err
 				}
 			}
-			if statement.dialect.URI().DBType != schemas.SQLITE && len(statement.joins) > 0 {
+			if statement.dialect.URI().DBType != schemas.SQLITE && statement.dialect.URI().DBType != schemas.POSTGRES && len(statement.joins) > 0 {
 				tbName := statement.TableAlias
 				if tbName == "" {
 					tbName = statement.TableName()
