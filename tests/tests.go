@@ -55,7 +55,12 @@ func createEngine(dbType, connStr string) error {
 				if err != nil {
 					return err
 				}
-				if _, err = db.Exec(fmt.Sprintf("If(db_id(N'xorm_test') IS NULL) BEGIN CREATE DATABASE xorm_test COLLATE %s; END;", *collation)); err != nil {
+				createDBSQL := "If(db_id(N'xorm_test') IS NULL) BEGIN CREATE DATABASE xorm_test"
+				if collation != nil && *collation != "" {
+					createDBSQL += fmt.Sprintf(" COLLATE %s", *collation)
+				}
+				createDBSQL += "; END;"
+				if _, err = db.Exec(createDBSQL); err != nil {
 					return fmt.Errorf("db.Exec: %v", err)
 				}
 				db.Close()
