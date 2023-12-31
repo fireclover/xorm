@@ -48,7 +48,7 @@ jobs:
       - name: test mssql with collation
         env:
           TEST_MSSQL_HOST: mssql
-          TEST_MSSQL_DBNAME: xorm_test
+          TEST_MSSQL_DBNAME: xorm_test2
           TEST_MSSQL_USERNAME: sa
           TEST_MSSQL_PASSWORD: "yourStrong(!)Password"
           TEST_MSSQL_COLLATION: SQL_Latin1_General_CP1_CS_AS
