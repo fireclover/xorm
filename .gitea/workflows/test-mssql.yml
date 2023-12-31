@@ -44,6 +44,14 @@ jobs:
           TEST_MSSQL_USERNAME: sa
           TEST_MSSQL_PASSWORD: "yourStrong(!)Password"
         run: TEST_MSSQL_DEFAULT_VARCHAR=NVARCHAR TEST_MSSQL_DEFAULT_CHAR=NCHAR make test-mssql
+      - name: test mssql with collation
+        env:
+          TEST_MSSQL_HOST: mssql
+          TEST_MSSQL_DBNAME: xorm_test
+          TEST_MSSQL_USERNAME: sa
+          TEST_MSSQL_PASSWORD: "yourStrong(!)Password"
+          TEST_MSSQL_COLLATION: SQL_Latin1_General_CP1_CS_AS
+        run: TEST_MSSQL_DEFAULT_VARCHAR=NVARCHAR TEST_MSSQL_DEFAULT_CHAR=NCHAR make test-mssql
 
     services:
       mssql:

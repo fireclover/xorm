@@ -586,7 +586,7 @@ func (db *mssql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName
 IXS.NAME                    AS  [INDEX_NAME],
 C.NAME                      AS  [COLUMN_NAME],
 IXS.is_unique AS [IS_UNIQUE]
-FROM SYS.INDEXES IXS
+FROM sys.indexes IXS
 INNER JOIN SYS.INDEX_COLUMNS   IXCS
 ON IXS.OBJECT_ID=IXCS.OBJECT_ID  AND IXS.INDEX_ID = IXCS.INDEX_ID
 INNER   JOIN SYS.COLUMNS C  ON IXS.OBJECT_ID=C.OBJECT_ID

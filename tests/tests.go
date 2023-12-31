@@ -40,6 +40,7 @@ var (
 	quotePolicyStr     = flag.String("quote", "always", "quote could be always, none, reversed")
 	defaultVarchar     = flag.String("default_varchar", "varchar", "default varchar type, mssql only, could be varchar or nvarchar, default is varchar")
 	defaultChar        = flag.String("default_char", "char", "default char type, mssql only, could be char or nchar, default is char")
+	collation          = flag.String("collation", "", "default database collation, it's different for different database")
 	tableMapper        names.Mapper
 	colMapper          names.Mapper
 )
@@ -55,7 +56,12 @@ func createEngine(dbType, connStr string) error {
 				if err != nil {
 					return err
 				}
-				if _, err = db.Exec("If(db_id(N'xorm_test') IS NULL) BEGIN CREATE DATABASE xorm_test; END;"); err != nil {
+				createDBSQL := "If(db_id(N'xorm_test') IS NULL) BEGIN CREATE DATABASE xorm_test"
+				if collation != nil && *collation != "" {
+					createDBSQL += fmt.Sprintf(" COLLATE %s", *collation)
+				}
+				createDBSQL += "; END;"
+				if _, err = db.Exec(createDBSQL); err != nil {
 					return fmt.Errorf("db.Exec: %v", err)
 				}
 				db.Close()
