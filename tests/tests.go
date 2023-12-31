@@ -51,7 +51,6 @@ func createEngine(dbType, connStr string) error {
 		if !*cluster {
 			switch schemas.DBType(strings.ToLower(dbType)) {
 			case schemas.MSSQL:
-				dialects.connStr
 				db, err := sql.Open(dbType, strings.ReplaceAll(connStr, "xorm_test", "master"))
 				if err != nil {
 					return err
