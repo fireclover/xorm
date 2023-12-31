@@ -65,7 +65,7 @@ func TestEnableSessionId(t *testing.T) {
 
 func TestIndexHint(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
-	assertSync(t, new(Userinfo))
+	assertSync(t, new(Userinfo), new(Userdetail))
 	if testEngine.Dialect().URI().DBType != "mysql" {
 		return
 	}
@@ -77,5 +77,12 @@ func TestIndexHint(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = testEngine.Table("userinfo").IndexHint("USE", "GROUP BY", "UQE_userinfo_username").Get(new(Userinfo))
+	assert.NoError(t, err)
+
+	// with join
+	_, err = testEngine.Table("userinfo").
+		Join("LEFT", "userdetail", "userinfo.id = userdetail.id").
+		IndexHint("USE", "", "UQE_userinfo_username").
+		Get(new(Userinfo))
 	assert.NoError(t, err)
 }

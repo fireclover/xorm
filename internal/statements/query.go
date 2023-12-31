@@ -184,6 +184,7 @@ func (statement *Statement) writeFrom(w *builder.BytesWriter) error {
 		statement.writeStrings(" FROM "),
 		statement.writeTableName,
 		statement.writeAlias,
+		statement.writeIndexHints,
 		statement.writeJoins,
 	)
 }
@@ -254,7 +255,6 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 	return statement.writeMultiple(buf,
 		statement.writeSelectColumns(columnStr),
 		statement.writeFrom,
-		statement.writeIndexHints,
 		statement.writeWhere,
 		statement.writeGroupBy,
 		statement.writeHaving,
