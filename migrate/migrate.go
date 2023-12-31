@@ -87,7 +87,11 @@ func (m *Migrate) Migrate() error {
 		return err
 	}
 
-	if m.initSchema != nil && m.isFirstRun() {
+	isFirstRun, err := m.isFirstRun()
+	if err != nil {
+		return err
+	}
+	if m.initSchema != nil && isFirstRun {
 		return m.runInitSchema()
 	}
 
@@ -200,11 +204,10 @@ func (m *Migrate) migrationDidRun(mig *Migration) (bool, error) {
 	return count > 0, err
 }
 
-func (m *Migrate) isFirstRun() bool {
-	row := m.db.DB().QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", m.options.TableName))
+func (m *Migrate) isFirstRun() (bool, error) {
 	var count int
-	_ = row.Scan(&count)
-	return count == 0
+	_, err := m.db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s", m.options.TableName)).Get(&count)
+	return count == 0, err
 }
 
 func (m *Migrate) insertMigration(id string) error {
