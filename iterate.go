@@ -27,6 +27,12 @@ func (session *Session) Iterate(bean any, fun IterFunc) error {
 		defer session.Close()
 	}
 
+	session.autoResetStatement = false
+	defer func() {
+		session.autoResetStatement = true
+		session.resetStatement()
+	}()
+
 	if session.statement.LastError != nil {
 		return session.statement.LastError
 	}
