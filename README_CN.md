@@ -1,6 +1,6 @@
 # xorm
 
-[English](https://gitea.com/xorm/xorm/src/branch/master/README.md)
+[English](https://gitea.com/xorm/xorm/src/branch/v1/README.md)
 
 xorm 是一个简单而强大的Go语言ORM库. 通过它可以使数据库操作非常简便。
 

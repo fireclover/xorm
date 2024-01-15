@@ -1,6 +1,6 @@
 # xorm
 
-[中文](https://gitea.com/xorm/xorm/src/branch/master/README_CN.md)
+[中文](https://gitea.com/xorm/xorm/src/branch/v1/README_CN.md)
 
 Xorm is a simple and powerful ORM for Go.
 
