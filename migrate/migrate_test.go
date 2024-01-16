@@ -26,28 +26,26 @@ const (
 	dbName = "testdb.sqlite3"
 )
 
-var (
-	migrations = []*Migration{
-		{
-			ID: "201608301400",
-			Migrate: func(tx *xorm.Engine) error {
-				return tx.Sync(&Person{})
-			},
-			Rollback: func(tx *xorm.Engine) error {
-				return tx.DropTables(&Person{})
-			},
+var migrations = []*Migration{
+	{
+		ID: "201608301400",
+		Migrate: func(tx *xorm.Engine) error {
+			return tx.Sync(&Person{})
 		},
-		{
-			ID: "201608301430",
-			Migrate: func(tx *xorm.Engine) error {
-				return tx.Sync(&Pet{})
-			},
-			Rollback: func(tx *xorm.Engine) error {
-				return tx.DropTables(&Pet{})
-			},
+		Rollback: func(tx *xorm.Engine) error {
+			return tx.DropTables(&Person{})
 		},
-	}
-)
+	},
+	{
+		ID: "201608301430",
+		Migrate: func(tx *xorm.Engine) error {
+			return tx.Sync(&Pet{})
+		},
+		Rollback: func(tx *xorm.Engine) error {
+			return tx.DropTables(&Pet{})
+		},
+	},
+}
 
 func TestMigration(t *testing.T) {
 	_ = os.Remove(dbName)
@@ -58,7 +56,7 @@ func TestMigration(t *testing.T) {
 	}
 	defer db.Close()
 
-	if err = db.DB().Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -97,7 +95,7 @@ func TestInitSchema(t *testing.T) {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	if err = db.DB().Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -126,7 +124,7 @@ func TestMissingID(t *testing.T) {
 	if db != nil {
 		defer db.Close()
 	}
-	assert.NoError(t, db.DB().Ping())
+	assert.NoError(t, db.Ping())
 
 	migrationsMissingID := []*Migration{
 		{
@@ -141,7 +139,6 @@ func TestMissingID(t *testing.T) {
 }
 
 func tableCount(db *xorm.Engine, tableName string) (count int) {
-	row := db.DB().QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName))
-	_ = row.Scan(&count)
+	_, _ = db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Get(&count)
 	return
 }
