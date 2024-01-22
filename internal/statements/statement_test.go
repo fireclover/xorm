@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
-	"xorm.io/xorm/tags"
+
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/names"
+	"xorm.io/xorm/v2/schemas"
+	"xorm.io/xorm/v2/tags"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 		panic("unknow dialect")
 	}
 
-	tagParser = tags.NewParser("xorm", dialect, names.SnakeMapper{}, names.SnakeMapper{}, caches.NewManager())
+	tagParser = tags.NewParser("xorm", dialect, names.SnakeMapper{}, names.SnakeMapper{})
 	if tagParser == nil {
 		panic("tags parser is nil")
 	}
@@ -88,7 +88,7 @@ func TestConvertSQLOrArgs(t *testing.T) {
 	// 	ID  int
 	// 	del *time.Time `xorm:"deleted"`
 	// }
-	args := []interface{}{
+	args := []any{
 		"INSERT `table` (`id`, `del`) VALUES (?, ?)", 1, (*time.Time)(nil),
 	}
 	// before fix, here will panic

@@ -9,13 +9,13 @@ import (
 	"strings"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // Join The joinOP should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
-func (statement *Statement) Join(joinOP string, joinTable interface{}, condition interface{}, args ...interface{}) *Statement {
+func (statement *Statement) Join(joinOP string, joinTable any, condition any, args ...any) *Statement {
 	statement.joins = append(statement.joins, join{
 		op:        joinOP,
 		table:     joinTable,
@@ -34,13 +34,7 @@ func (statement *Statement) writeJoins(w *builder.BytesWriter) error {
 	return nil
 }
 
-func (statement *Statement) writeJoin(buf *builder.BytesWriter, join join) error {
-	// write join operator
-	if _, err := fmt.Fprint(buf, " ", join.op, " JOIN"); err != nil {
-		return err
-	}
-
-	// write join table or subquery
+func (statement *Statement) writeJoinTable(buf *builder.BytesWriter, join join) error {
 	switch tp := join.table.(type) {
 	case builder.Builder:
 		if _, err := fmt.Fprintf(buf, " ("); err != nil {
@@ -87,6 +81,19 @@ func (statement *Statement) writeJoin(buf *builder.BytesWriter, join join) error
 			return err
 		}
 	}
+	return nil
+}
+
+func (statement *Statement) writeJoin(buf *builder.BytesWriter, join join) error {
+	// write join operator
+	if _, err := fmt.Fprint(buf, " ", join.op, " JOIN"); err != nil {
+		return err
+	}
+
+	// write join table or subquery
+	if err := statement.writeJoinTable(buf, join); err != nil {
+		return err
+	}
 
 	// write on condition
 	if _, err := fmt.Fprint(buf, " ON "); err != nil {
@@ -108,4 +115,15 @@ func (statement *Statement) writeJoin(buf *builder.BytesWriter, join join) error
 	buf.Append(join.args...)
 
 	return nil
+}
+
+func (statement *Statement) convertJoinCondition(join join) (builder.Cond, error) {
+	switch condTp := join.condition.(type) {
+	case string:
+		return builder.Expr(statement.ReplaceQuote(condTp), join.args...), nil
+	case builder.Cond:
+		return condTp, nil
+	default:
+		return nil, fmt.Errorf("unsupported join condition type: %v", condTp)
+	}
 }

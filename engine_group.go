@@ -8,11 +8,10 @@ import (
 	"context"
 	"time"
 
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/contexts"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
+	"xorm.io/xorm/v2/contexts"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/log"
+	"xorm.io/xorm/v2/names"
 )
 
 // EngineGroup defines an engine group
@@ -23,7 +22,7 @@ type EngineGroup struct {
 }
 
 // NewEngineGroup creates a new engine group
-func NewEngineGroup(args1 interface{}, args2 interface{}, policies ...GroupPolicy) (*EngineGroup, error) {
+func NewEngineGroup(args1 any, args2 any, policies ...GroupPolicy) (*EngineGroup, error) {
 	var eg EngineGroup
 	if len(policies) > 0 {
 		eg.policy = policies[0]
@@ -128,16 +127,8 @@ func (eg *EngineGroup) SetConnMaxLifetime(d time.Duration) {
 	}
 }
 
-// SetDefaultCacher set the default cacher
-func (eg *EngineGroup) SetDefaultCacher(cacher caches.Cacher) {
-	eg.Engine.SetDefaultCacher(cacher)
-	for i := 0; i < len(eg.slaves); i++ {
-		eg.slaves[i].SetDefaultCacher(cacher)
-	}
-}
-
 // SetLogger set the new logger
-func (eg *EngineGroup) SetLogger(logger interface{}) {
+func (eg *EngineGroup) SetLogger(logger any) {
 	eg.Engine.SetLogger(logger)
 	for i := 0; i < len(eg.slaves); i++ {
 		eg.slaves[i].SetLogger(logger)
@@ -178,17 +169,17 @@ func (eg *EngineGroup) SetTagIdentifier(tagIdentifier string) {
 
 // SetMaxIdleConns set the max idle connections on pool, default is 2
 func (eg *EngineGroup) SetMaxIdleConns(conns int) {
-	eg.Engine.DB().SetMaxIdleConns(conns)
+	eg.Engine.db.SetMaxIdleConns(conns)
 	for i := 0; i < len(eg.slaves); i++ {
-		eg.slaves[i].DB().SetMaxIdleConns(conns)
+		eg.slaves[i].db.SetMaxIdleConns(conns)
 	}
 }
 
 // SetMaxOpenConns is only available for go 1.2+
 func (eg *EngineGroup) SetMaxOpenConns(conns int) {
-	eg.Engine.DB().SetMaxOpenConns(conns)
+	eg.Engine.db.SetMaxOpenConns(conns)
 	for i := 0; i < len(eg.slaves); i++ {
-		eg.slaves[i].DB().SetMaxOpenConns(conns)
+		eg.slaves[i].db.SetMaxOpenConns(conns)
 	}
 }
 
@@ -239,28 +230,28 @@ func (eg *EngineGroup) Slaves() []*Engine {
 }
 
 // Query execcute a select SQL and return the result
-func (eg *EngineGroup) Query(sqlOrArgs ...interface{}) (resultsSlice []map[string][]byte, err error) {
+func (eg *EngineGroup) Query(sqlOrArgs ...any) (resultsSlice []map[string][]byte, err error) {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
 	return sess.Query(sqlOrArgs...)
 }
 
 // QueryInterface execcute a select SQL and return the result
-func (eg *EngineGroup) QueryInterface(sqlOrArgs ...interface{}) ([]map[string]interface{}, error) {
+func (eg *EngineGroup) QueryInterface(sqlOrArgs ...any) ([]map[string]any, error) {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
 	return sess.QueryInterface(sqlOrArgs...)
 }
 
 // QueryString execcute a select SQL and return the result
-func (eg *EngineGroup) QueryString(sqlOrArgs ...interface{}) ([]map[string]string, error) {
+func (eg *EngineGroup) QueryString(sqlOrArgs ...any) ([]map[string]string, error) {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
 	return sess.QueryString(sqlOrArgs...)
 }
 
 // Rows execcute a select SQL and return the result
-func (eg *EngineGroup) Rows(bean interface{}) (*Rows, error) {
+func (eg *EngineGroup) Rows(bean any) (*Rows, error) {
 	sess := eg.NewSession()
 	sess.isAutoClose = true
 	return sess.Rows(bean)

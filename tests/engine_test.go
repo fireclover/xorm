@@ -11,17 +11,16 @@ import (
 	"testing"
 	"time"
 
-	"xorm.io/xorm"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2"
+	"xorm.io/xorm/v2/schemas"
 
 	_ "gitee.com/travelliu/dm"
-	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/microsoft/go-mssqldb"
 	"github.com/stretchr/testify/assert"
-	_ "github.com/ziutek/mymysql/godrv"
 	_ "modernc.org/sqlite"
 )
 
@@ -58,7 +57,7 @@ func TestAutoTransaction(t *testing.T) {
 	engine := testEngine.(*xorm.Engine)
 
 	// will success
-	_, err := engine.Transaction(func(session *xorm.Session) (interface{}, error) {
+	_, err := engine.Transaction(func(session *xorm.Session) (any, error) {
 		_, err := session.Insert(TestTx{Msg: "hi"})
 		assert.NoError(t, err)
 
@@ -71,7 +70,7 @@ func TestAutoTransaction(t *testing.T) {
 	assert.EqualValues(t, true, has)
 
 	// will rollback
-	_, err = engine.Transaction(func(session *xorm.Session) (interface{}, error) {
+	_, err = engine.Transaction(func(session *xorm.Session) (any, error) {
 		_, err := session.Insert(TestTx{Msg: "hello"})
 		assert.NoError(t, err)
 
@@ -84,7 +83,7 @@ func TestAutoTransaction(t *testing.T) {
 	assert.EqualValues(t, false, has)
 }
 
-func assertSync(t *testing.T, beans ...interface{}) {
+func assertSync(t *testing.T, beans ...any) {
 	for _, bean := range beans {
 		t.Run(testEngine.TableName(bean, true), func(t *testing.T) {
 			assert.NoError(t, testEngine.DropTables(bean))

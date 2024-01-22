@@ -1,6 +1,6 @@
 # xorm
 
-[English](https://gitea.com/xorm/xorm/src/branch/master/README.md)
+[English](https://gitea.com/xorm/xorm/src/branch/main/README.md)
 
 xorm 是一个简单而强大的Go语言ORM库. 通过它可以使数据库操作非常简便。
 
@@ -36,7 +36,6 @@ v1.0.0 相对于 v0.8.2 有以下不兼容的变更：
 
 * [Mysql5.*](https://github.com/mysql/mysql-server/tree/5.7) / [Mysql8.*](https://github.com/mysql/mysql-server) / [Mariadb](https://github.com/MariaDB/server) / [Tidb](https://github.com/pingcap/tidb)
   - [github.com/go-sql-driver/mysql](https://github.com/go-sql-driver/mysql)
-  - [github.com/ziutek/mymysql/godrv](https://github.com/ziutek/mymysql/godrv)
 
 * [Postgres](https://github.com/postgres/postgres) / [Cockroach](https://github.com/cockroachdb/cockroach)
   - [github.com/lib/pq](https://github.com/lib/pq)
@@ -47,7 +46,7 @@ v1.0.0 相对于 v0.8.2 有以下不兼容的变更：
   - [modernc.org/sqlite](https://gitlab.com/cznic/sqlite)
 
 * MsSql
-  - [github.com/denisenkom/go-mssqldb](https://github.com/denisenkom/go-mssqldb)
+  - [github.com/microsoft/go-mssqldb](https://github.com/microsoft/go-mssqldb)
 
 * Oracle
   - [github.com/godror/godror](https://github.com/godror/godror) (试验性支持)
@@ -56,13 +55,13 @@ v1.0.0 相对于 v0.8.2 有以下不兼容的变更：
 
 ## 安装
 
-	go get xorm.io/xorm
+	go get xorm.io/xorm/v2
 
 ## 文档
 
 * [操作指南](http://xorm.io/docs)
 
-* [Godoc代码文档](http://pkg.go.dev/xorm.io/xorm)
+* [Godoc代码文档](http://pkg.go.dev/xorm.io/xorm/v2)
 
 # 快速开始
 
@@ -104,7 +103,7 @@ engineGroup, err := xorm.NewEngineGroup(masterEngine, []*Engine{slave1Engine, sl
 
 所有使用 `engine` 都可以简单的用 `engineGroup` 来替换。
 
-* `Query` 最原始的也支持SQL语句查询，返回的结果类型为 `[]map[string][]byte`。`QueryString` 返回 `[]map[string]string`, `QueryInterface` 返回 `[]map[string]interface{}`.
+* `Query` 最原始的也支持SQL语句查询，返回的结果类型为 `[]map[string][]byte`。`QueryString` 返回 `[]map[string]string`, `QueryInterface` 返回 `[]map[string]any`.
 
 ```Go
 results, err := engine.Query("select * from user")
@@ -140,13 +139,13 @@ affected, err := engine.Insert(&user1, &users)
 // INSERT INTO struct1 () values ()
 // INSERT INTO struct2 () values (),(),()
 
-affected, err := engine.Table("user").Insert(map[string]interface{}{
+affected, err := engine.Table("user").Insert(map[string]any{
     "name": "lunny",
     "age": 18,
 })
 // INSERT INTO user (name, age) values (?,?)
 
-affected, err := engine.Table("user").Insert([]map[string]interface{}{
+affected, err := engine.Table("user").Insert([]map[string]any{
     {
         "name": "lunny",
         "age": 18,
@@ -186,7 +185,7 @@ var valuesMap = make(map[string]string)
 has, err := engine.Table(&user).Where("id = ?", id).Get(&valuesMap)
 // SELECT * FROM user WHERE id = ?
 
-var valuesSlice = make([]interface{}, len(cols))
+var valuesSlice = make([]any, len(cols))
 has, err := engine.Table(&user).Where("id = ?", id).Cols(cols...).Get(&valuesSlice)
 // SELECT col1, col2, col3 FROM user WHERE id = ?
 ```
@@ -243,13 +242,13 @@ err := engine.Table("user").Select("user.*, detail.*").
 * `Iterate` 和 `Rows` 根据条件遍历数据库，可以有两种方式: Iterate and Rows
 
 ```Go
-err := engine.Iterate(&User{Name:name}, func(idx int, bean interface{}) error {
+err := engine.Iterate(&User{Name:name}, func(idx int, bean any) error {
     user := bean.(*User)
     return nil
 })
 // SELECT * FROM user
 
-err := engine.BufferSize(100).Iterate(&User{Name:name}, func(idx int, bean interface{}) error {
+err := engine.BufferSize(100).Iterate(&User{Name:name}, func(idx int, bean any) error {
     user := bean.(*User)
     return nil
 })
@@ -406,7 +405,7 @@ return session.Commit()
 * 事务的简写方法
 
 ```Go
-res, err := engine.Transaction(func(session *xorm.Session) (interface{}, error) {
+res, err := engine.Transaction(func(session *xorm.Session) (any, error) {
     user1 := Userinfo{Username: "xiaoxiao", Departname: "dev", Alias: "lunny", Created: time.Now()}
     if _, err := session.Insert(&user1); err != nil {
         return nil, err

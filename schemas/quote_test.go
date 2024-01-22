@@ -131,6 +131,8 @@ func TestJoin(t *testing.T) {
 
 	assert.EqualValues(t, "[a].*,[b].[c]", quoter.Join([]string{"a.*", " b.c"}, ","))
 
+	assert.EqualValues(t, "[b] [a]", quoter.Join([]string{"b a"}, ","))
+
 	assert.EqualValues(t, "[f1], [f2], [f3]", quoter.Join(cols, ", "))
 
 	quoter.IsReserved = AlwaysNoReserve
@@ -146,7 +148,7 @@ func TestStrings(t *testing.T) {
 }
 
 func TestTrim(t *testing.T) {
-	var kases = map[string]string{
+	kases := map[string]string{
 		"[table_name]":          "table_name",
 		"[schema].[table_name]": "schema.table_name",
 	}
@@ -159,7 +161,7 @@ func TestTrim(t *testing.T) {
 
 func TestReplace(t *testing.T) {
 	q := Quoter{'[', ']', AlwaysReserve}
-	var kases = []struct {
+	kases := []struct {
 		source   string
 		expected string
 	}{
@@ -170,6 +172,10 @@ func TestReplace(t *testing.T) {
 		{
 			"SELECT 'abc```test```''', `a` FROM b",
 			"SELECT 'abc```test```''', [a] FROM b",
+		},
+		{
+			"SELECT * FROM `a` INNER JOIN `b` `c` WHERE `a`.`id` = `c`.`a_id`",
+			"SELECT * FROM [a] INNER JOIN [b] [c] WHERE [a].[id] = [c].[a_id]",
 		},
 		{
 			"UPDATE table SET `a` = ~ `a`, `b`='abc`'",

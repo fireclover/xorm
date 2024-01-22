@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"xorm.io/builder"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/schemas"
 )
 
 func (statement *Statement) writeInsertOutput(buf *strings.Builder, table *schemas.Table) error {
@@ -27,7 +27,7 @@ func (statement *Statement) writeInsertOutput(buf *strings.Builder, table *schem
 }
 
 // GenInsertSQL generates insert beans SQL
-func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) (string, []interface{}, error) {
+func (statement *Statement) GenInsertSQL(colNames []string, args []any) (string, []any, error) {
 	var (
 		buf       = builder.NewWriter()
 		exprs     = statement.ExprColumns
@@ -177,7 +177,7 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []interface{}) 
 }
 
 // GenInsertMapSQL generates insert map SQL
-func (statement *Statement) GenInsertMapSQL(columns []string, args []interface{}) (string, []interface{}, error) {
+func (statement *Statement) GenInsertMapSQL(columns []string, args []any) (string, []any, error) {
 	var (
 		buf       = builder.NewWriter()
 		exprs     = statement.ExprColumns
@@ -242,7 +242,7 @@ func (statement *Statement) GenInsertMapSQL(columns []string, args []interface{}
 	return buf.String(), buf.Args(), nil
 }
 
-func (statement *Statement) GenInsertMultipleMapSQL(columns []string, argss [][]interface{}) (string, []interface{}, error) {
+func (statement *Statement) GenInsertMultipleMapSQL(columns []string, argss [][]any) (string, []any, error) {
 	var (
 		buf       = builder.NewWriter()
 		exprs     = statement.ExprColumns

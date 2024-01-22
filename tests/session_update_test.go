@@ -10,12 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"xorm.io/xorm/v2"
+	"xorm.io/xorm/v2/internal/statements"
+	"xorm.io/xorm/v2/internal/utils"
+	"xorm.io/xorm/v2/names"
+	"xorm.io/xorm/v2/schemas"
+
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm"
-	"xorm.io/xorm/internal/statements"
-	"xorm.io/xorm/internal/utils"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
 )
 
 func TestUpdateMap(t *testing.T) {
@@ -35,14 +36,14 @@ func TestUpdateMap(t *testing.T) {
 	_, err := testEngine.Insert(&tb)
 	assert.NoError(t, err)
 
-	cnt, err := testEngine.Table("update_table").Where("`id` = ?", tb.Id).Update(map[string]interface{}{
+	cnt, err := testEngine.Table("update_table").Where("`id` = ?", tb.Id).Update(map[string]any{
 		"name": "test2",
 		"age":  36,
 	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
-	cnt, err = testEngine.Table("update_table").ID(tb.Id).Update(map[string]interface{}{
+	cnt, err = testEngine.Table("update_table").ID(tb.Id).Update(map[string]any{
 		"name": "test2",
 		"age":  36,
 	})
@@ -50,7 +51,7 @@ func TestUpdateMap(t *testing.T) {
 	assert.True(t, statements.IsIDConditionWithNoTableErr(err))
 	assert.EqualValues(t, 0, cnt)
 
-	cnt, err = testEngine.Table("update_table").Update(map[string]interface{}{
+	cnt, err = testEngine.Table("update_table").Update(map[string]any{
 		"name": "test2",
 		"age":  36,
 	}, &UpdateTable{
@@ -269,7 +270,7 @@ func TestWithIn(t *testing.T) {
 	assert.EqualValues(t, 3, cnt)
 }
 
-type Condi map[string]interface{}
+type Condi map[string]any
 
 type UpdateAllCols struct {
 	Id     int64
@@ -304,7 +305,7 @@ func TestUpdateMap2(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(UpdateMustCols))
 
-	_, err := testEngine.Table("update_must_cols").Where("`id` =?", 1).Update(map[string]interface{}{
+	_, err := testEngine.Table("update_must_cols").Where("`id` =?", 1).Update(map[string]any{
 		"bool": true,
 	})
 	assert.NoError(t, err)
@@ -809,17 +810,17 @@ func TestNewUpdate(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 
 	type TbUserInfo struct {
-		Id       int64       `xorm:"pk autoincr unique BIGINT" json:"id"`
-		Phone    string      `xorm:"not null unique VARCHAR(20)" json:"phone"`
-		UserName string      `xorm:"VARCHAR(20)" json:"user_name"`
-		Gender   int         `xorm:"default 0 INTEGER" json:"gender"`
-		Pw       string      `xorm:"VARCHAR(100)" json:"pw"`
-		Token    string      `xorm:"TEXT" json:"token"`
-		Avatar   string      `xorm:"TEXT" json:"avatar"`
-		Extras   interface{} `xorm:"JSON" json:"extras"`
-		Created  time.Time   `xorm:"DATETIME created"`
-		Updated  time.Time   `xorm:"DATETIME updated"`
-		Deleted  time.Time   `xorm:"DATETIME deleted"`
+		Id       int64     `xorm:"pk autoincr unique BIGINT" json:"id"`
+		Phone    string    `xorm:"not null unique VARCHAR(20)" json:"phone"`
+		UserName string    `xorm:"VARCHAR(20)" json:"user_name"`
+		Gender   int       `xorm:"default 0 INTEGER" json:"gender"`
+		Pw       string    `xorm:"VARCHAR(100)" json:"pw"`
+		Token    string    `xorm:"TEXT" json:"token"`
+		Avatar   string    `xorm:"TEXT" json:"avatar"`
+		Extras   any       `xorm:"JSON" json:"extras"`
+		Created  time.Time `xorm:"DATETIME created"`
+		Updated  time.Time `xorm:"DATETIME updated"`
+		Deleted  time.Time `xorm:"DATETIME deleted"`
 	}
 
 	assertSync(t, new(TbUserInfo))
@@ -964,7 +965,7 @@ func TestUpdateMapCondition(t *testing.T) {
 
 	cnt, err := testEngine.Update(&UpdateMapCondition{
 		String: "string1",
-	}, map[string]interface{}{
+	}, map[string]any{
 		"id": c.Id,
 	})
 	assert.NoError(t, err)
@@ -1000,7 +1001,7 @@ func TestUpdateMapContent(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 18, c.Age)
 
-	cnt, err := testEngine.Table(new(UpdateMapContent)).ID(c.Id).Update(map[string]interface{}{"age": 0})
+	cnt, err := testEngine.Table(new(UpdateMapContent)).ID(c.Id).Update(map[string]any{"age": 0})
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, cnt)
 
@@ -1010,7 +1011,7 @@ func TestUpdateMapContent(t *testing.T) {
 	assert.True(t, has)
 	assert.EqualValues(t, 0, c1.Age)
 
-	cnt, err = testEngine.Table(new(UpdateMapContent)).ID(c.Id).Update(map[string]interface{}{
+	cnt, err = testEngine.Table(new(UpdateMapContent)).ID(c.Id).Update(map[string]any{
 		"age":    16,
 		"is_man": false,
 		"gender": 2,
@@ -1026,7 +1027,7 @@ func TestUpdateMapContent(t *testing.T) {
 	assert.EqualValues(t, false, c2.IsMan)
 	assert.EqualValues(t, 2, c2.Gender)
 
-	cnt, err = testEngine.Table(new(UpdateMapContent)).ID(c.Id).Update(map[string]interface{}{
+	cnt, err = testEngine.Table(new(UpdateMapContent)).ID(c.Id).Update(map[string]any{
 		"age":    15,
 		"is_man": true,
 		"gender": 1,
@@ -1143,7 +1144,7 @@ func TestUpdateDeleted(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, cnt)
 
-	cnt, err = testEngine.Table(&UpdateDeletedStruct{}).ID(s.Id).Update(map[string]interface{}{
+	cnt, err = testEngine.Table(&UpdateDeletedStruct{}).ID(s.Id).Update(map[string]any{
 		"name": "test1",
 	})
 	assert.NoError(t, err)
@@ -1287,13 +1288,13 @@ func TestUpdateMap3(t *testing.T) {
 
 	assertSync(t, new(UpdateMapUser))
 
-	_, err := testEngine.Table(new(UpdateMapUser)).Insert(map[string]interface{}{
+	_, err := testEngine.Table(new(UpdateMapUser)).Insert(map[string]any{
 		"Fname": "first user name",
 		"Fver":  1,
 	})
 	assert.NoError(t, err)
 
-	update := map[string]interface{}{
+	update := map[string]any{
 		"Fname": "user name",
 		"Fver":  1,
 	}
@@ -1301,7 +1302,7 @@ func TestUpdateMap3(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, rows)
 
-	update = map[string]interface{}{
+	update = map[string]any{
 		"Name": "user name",
 		"Ver":  1,
 	}
@@ -1375,10 +1376,10 @@ func TestUpdateMultiplePK(t *testing.T) {
 	assert.EqualValues(t, 1, num)
 
 	test.Value = "4"
-	_, err = testEngine.ID([]interface{}{test.Id, test.Name}).Update(test)
+	_, err = testEngine.ID([]any{test.Id, test.Name}).Update(test)
 	assert.NoError(t, err)
 
-	type MySlice []interface{}
+	type MySlice []any
 	test.Value = "5"
 	_, err = testEngine.ID(&MySlice{test.Id, test.Name}).Update(test)
 	assert.NoError(t, err)
@@ -1471,7 +1472,6 @@ func TestNilFromDB(t *testing.T) {
 	assert.NotNil(t, tt4.Field1.cb)
 }
 
-/*
 func TestUpdateWithJoin(t *testing.T) {
 	type TestUpdateWithJoin struct {
 		Id    int64
@@ -1495,9 +1495,14 @@ func TestUpdateWithJoin(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = testEngine.Table("test_update_with_join").
+		Join("INNER", "test_update_with_join2 AS b", "test_update_with_join.ext_id = b.id").
+		Where("b.`name` = ?", "test").
+		Update(&TestUpdateWithJoin{Name: "test2"})
+	assert.NoError(t, err)
+
+	_, err = testEngine.Table("test_update_with_join").
 		Join("INNER", "test_update_with_join2", "test_update_with_join.ext_id = test_update_with_join2.id").
-		Where("test_update_with_join2.name = ?", "test").
+		Where("test_update_with_join2.`name` = ?", "test").
 		Update(&TestUpdateWithJoin{Name: "test2"})
 	assert.NoError(t, err)
 }
-*/

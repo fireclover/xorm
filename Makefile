@@ -6,10 +6,10 @@ GOFMT ?= gofmt -s
 TAGS ?=
 SED_INPLACE := sed -i
 
-GO_DIRS := caches contexts integrations core dialects internal log migrate names schemas tags
+GO_DIRS := contexts tests dialects internal log migrate names schemas tags
 GOFILES := $(wildcard *.go)
 GOFILES += $(shell find $(GO_DIRS) -name "*.go" -type f)
-INTEGRATION_PACKAGES := xorm.io/xorm/tests
+INTEGRATION_PACKAGES := xorm.io/xorm/v2/tests
 PACKAGES ?= $(filter-out $(INTEGRATION_PACKAGES),$(shell $(GO) list ./...))
 
 TEST_COCKROACH_HOST ?= cockroach:26257
@@ -25,6 +25,7 @@ TEST_MSSQL_PASSWORD ?= MwantsaSecurePassword1
 TEST_MSSQL_DEFAULT_VARCHAR ?= varchar
 TEST_MSSQL_DEFAULT_CHAR ?= char
 TEST_MSSQL_DO_NVARCHAR_OVERRIDE_TEST ?= true
+TEST_MSSQL_COLLATION ?= 
 
 TEST_MYSQL_HOST ?= mysql:3306
 TEST_MYSQL_CHARSET ?= utf8
@@ -47,7 +48,6 @@ TEST_DAMENG_HOST ?= dameng:5236
 TEST_DAMENG_USERNAME ?= SYSDBA
 TEST_DAMENG_PASSWORD ?= SYSDBA
 
-TEST_CACHE_ENABLE ?= false
 TEST_QUOTE_POLICY ?= always
 
 .PHONY: all
@@ -60,7 +60,7 @@ build: go-check $(GO_SOURCES)
 .PHONY: clean
 clean:
 	$(GO) clean -i ./...
-	rm -rf *.sql *.log test.db cover.out cover.html *coverage.out coverage.all integrations/*.sql
+	rm -rf *.sql *.log test.db cover.out cover.html *coverage.out coverage.all tests/*.sql
 
 .PHONY: coverage
 coverage:
@@ -137,145 +137,134 @@ test: go-check
 
 .PNONY: test-cockroach
 test-cockroach: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=postgres -schema='$(TEST_COCKROACH_SCHEMA)' -cache=$(TEST_CACHE_ENABLE) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=postgres -schema='$(TEST_COCKROACH_SCHEMA)' \
 	-conn_str="postgres://$(TEST_COCKROACH_USERNAME):$(TEST_COCKROACH_PASSWORD)@$(TEST_COCKROACH_HOST)/$(TEST_COCKROACH_DBNAME)?sslmode=disable&experimental_serial_normalization=sql_sequence" \
-	-ignore_update_limit=true -coverprofile=cockroach.$(TEST_COCKROACH_SCHEMA).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-ignore_update_limit=true -coverprofile=cockroach.$(TEST_COCKROACH_SCHEMA).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-cockroach\#%
 test-cockroach\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=postgres -schema='$(TEST_COCKROACH_SCHEMA)' -cache=$(TEST_CACHE_ENABLE) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=postgres -schema='$(TEST_COCKROACH_SCHEMA)' \
 	-conn_str="postgres://$(TEST_COCKROACH_USERNAME):$(TEST_COCKROACH_PASSWORD)@$(TEST_COCKROACH_HOST)/$(TEST_COCKROACH_DBNAME)?sslmode=disable&experimental_serial_normalization=sql_sequence" \
-	-ignore_update_limit=true -coverprofile=cockroach.$(TEST_COCKROACH_SCHEMA).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
+	-ignore_update_limit=true -coverprofile=cockroach.$(TEST_COCKROACH_SCHEMA).coverage.out -covermode=atomic
 
 .PNONY: test-mssql
 test-mssql: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mssql -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mssql -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="server=$(TEST_MSSQL_HOST);user id=$(TEST_MSSQL_USERNAME);password=$(TEST_MSSQL_PASSWORD);database=$(TEST_MSSQL_DBNAME)" \
 	-default_varchar=$(TEST_MSSQL_DEFAULT_VARCHAR) -default_char=$(TEST_MSSQL_DEFAULT_CHAR) \
 	-do_nvarchar_override_test=$(TEST_MSSQL_DO_NVARCHAR_OVERRIDE_TEST) \
-	-coverprofile=mssql.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-collation=$(TEST_MSSQL_COLLATION) \
+	-coverprofile=mssql.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PNONY: test-mssql\#%
 test-mssql\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mssql -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mssql -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="server=$(TEST_MSSQL_HOST);user id=$(TEST_MSSQL_USERNAME);password=$(TEST_MSSQL_PASSWORD);database=$(TEST_MSSQL_DBNAME)" \
 	-default_varchar=$(TEST_MSSQL_DEFAULT_VARCHAR) -default_char=$(TEST_MSSQL_DEFAULT_CHAR) \
 	-do_nvarchar_override_test=$(TEST_MSSQL_DO_NVARCHAR_OVERRIDE_TEST) \
-	-coverprofile=mssql.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
-
-.PNONY: test-mymysql
-test-mymysql: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mymysql -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
-	-conn_str="tcp:$(TEST_MYSQL_HOST)*$(TEST_MYSQL_DBNAME)/$(TEST_MYSQL_USERNAME)/$(TEST_MYSQL_PASSWORD)" \
-	-coverprofile=mymysql.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
-
-.PNONY: test-mymysql\#%
-test-mymysql\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mymysql -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
-	-conn_str="tcp:$(TEST_MYSQL_HOST)*$(TEST_MYSQL_DBNAME)/$(TEST_MYSQL_USERNAME)/$(TEST_MYSQL_PASSWORD)" \
-	-coverprofile=mymysql.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
+	-coverprofile=mssql.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic
 
 .PNONY: test-mysql
 test-mysql: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mysql -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mysql -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@tcp($(TEST_MYSQL_HOST))/$(TEST_MYSQL_DBNAME)?charset=$(TEST_MYSQL_CHARSET)" \
-	-coverprofile=mysql.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-coverprofile=mysql.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-mysql\#%
 test-mysql\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mysql -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mysql -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@tcp($(TEST_MYSQL_HOST))/$(TEST_MYSQL_DBNAME)?charset=$(TEST_MYSQL_CHARSET)" \
-	-coverprofile=mysql.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
+	-coverprofile=mysql.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic
 
 .PNONY: test-mysql-tls
 test-mysql-tls: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mysql -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mysql -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@tcp($(TEST_MYSQL_HOST))/$(TEST_MYSQL_DBNAME)?charset=$(TEST_MYSQL_CHARSET)&tls=skip-verify" \
-	-coverprofile=mysql.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-coverprofile=mysql.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-mysql-tls\#%
 test-mysql-tls\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mysql -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mysql -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="$(TEST_MYSQL_USERNAME):$(TEST_MYSQL_PASSWORD)@tcp($(TEST_MYSQL_HOST))/$(TEST_MYSQL_DBNAME)?charset=$(TEST_MYSQL_CHARSET)&tls=skip-verify" \
-	-coverprofile=mysql.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
+	-coverprofile=mysql.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic
 
 .PNONY: test-postgres
 test-postgres: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=postgres -schema='$(TEST_PGSQL_SCHEMA)' -cache=$(TEST_CACHE_ENABLE) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=postgres -schema='$(TEST_PGSQL_SCHEMA)' \
 	-conn_str="postgres://$(TEST_PGSQL_USERNAME):$(TEST_PGSQL_PASSWORD)@$(TEST_PGSQL_HOST)/$(TEST_PGSQL_DBNAME)?sslmode=disable" \
-	-quote=$(TEST_QUOTE_POLICY) -coverprofile=postgres.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-quote=$(TEST_QUOTE_POLICY) -coverprofile=postgres.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-postgres\#%
 test-postgres\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=postgres -schema='$(TEST_PGSQL_SCHEMA)' -cache=$(TEST_CACHE_ENABLE) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=postgres -schema='$(TEST_PGSQL_SCHEMA)' \
 	-conn_str="postgres://$(TEST_PGSQL_USERNAME):$(TEST_PGSQL_PASSWORD)@$(TEST_PGSQL_HOST)/$(TEST_PGSQL_DBNAME)?sslmode=disable" \
-	-quote=$(TEST_QUOTE_POLICY) -coverprofile=postgres.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
+	-quote=$(TEST_QUOTE_POLICY) -coverprofile=postgres.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic
 
 .PHONY: test-sqlite3
 test-sqlite3: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -cache=$(TEST_CACHE_ENABLE) -db=sqlite3 -conn_str="./test.db?cache=shared&mode=rwc" \
-	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite3.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=sqlite3 -conn_str="./test.db?cache=shared&mode=rwc" \
+	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite3.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-sqlite3-schema
 test-sqlite3-schema: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -schema=xorm -cache=$(TEST_CACHE_ENABLE) -db=sqlite3 -conn_str="./test.db?cache=shared&mode=rwc" \
-	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite3.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -schema=xorm -db=sqlite3 -conn_str="./test.db?cache=shared&mode=rwc" \
+	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite3.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-sqlite3\#%
 test-sqlite3\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -cache=$(TEST_CACHE_ENABLE) -db=sqlite3 -conn_str="./test.db?cache=shared&mode=rwc" \
-	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite3.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=sqlite3 -conn_str="./test.db?cache=shared&mode=rwc" \
+	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite3.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PNONY: test-pgx
 test-pgx: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=pgx -schema='$(TEST_PGSQL_SCHEMA)' -cache=$(TEST_CACHE_ENABLE) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=pgx -schema='$(TEST_PGSQL_SCHEMA)' \
 	-conn_str="postgres://$(TEST_PGSQL_USERNAME):$(TEST_PGSQL_PASSWORD)@$(TEST_PGSQL_HOST)/$(TEST_PGSQL_DBNAME)?sslmode=disable" \
-	-quote=$(TEST_QUOTE_POLICY) -coverprofile=postgres.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-quote=$(TEST_QUOTE_POLICY) -coverprofile=postgres.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-pgx\#%
 test-pgx\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=pgx -schema='$(TEST_PGSQL_SCHEMA)' -cache=$(TEST_CACHE_ENABLE) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=pgx -schema='$(TEST_PGSQL_SCHEMA)' \
 	-conn_str="postgres://$(TEST_PGSQL_USERNAME):$(TEST_PGSQL_PASSWORD)@$(TEST_PGSQL_HOST)/$(TEST_PGSQL_DBNAME)?sslmode=disable" \
-	-quote=$(TEST_QUOTE_POLICY) -coverprofile=postgres.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-quote=$(TEST_QUOTE_POLICY) -coverprofile=postgres.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-sqlite
 test-sqlite: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -cache=$(TEST_CACHE_ENABLE) -db=sqlite -conn_str="./test.db?cache=shared&mode=rwc" \
-	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=sqlite -conn_str="./test.db?cache=shared&mode=rwc" \
+	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-sqlite-schema
 test-sqlite-schema: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -schema=xorm -cache=$(TEST_CACHE_ENABLE) -db=sqlite -conn_str="./test.db?cache=shared&mode=rwc" \
-	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -schema=xorm -db=sqlite -conn_str="./test.db?cache=shared&mode=rwc" \
+	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-sqlite\#%
 test-sqlite\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -cache=$(TEST_CACHE_ENABLE) -db=sqlite -conn_str="./test.db?cache=shared&mode=rwc" \
-	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=sqlite -conn_str="./test.db?cache=shared&mode=rwc" \
+	 -quote=$(TEST_QUOTE_POLICY) -coverprofile=sqlite.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic
 
 .PNONY: test-tidb
 test-tidb: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mysql -cache=$(TEST_CACHE_ENABLE) -ignore_select_update=true \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=mysql -ignore_select_update=true \
 	-conn_str="$(TEST_TIDB_USERNAME):$(TEST_TIDB_PASSWORD)@tcp($(TEST_TIDB_HOST))/$(TEST_TIDB_DBNAME)" \
-	-quote=$(TEST_QUOTE_POLICY) -coverprofile=tidb.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-quote=$(TEST_QUOTE_POLICY) -coverprofile=tidb.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-tidb\#%
 test-tidb\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mysql -cache=$(TEST_CACHE_ENABLE) -ignore_select_update=true \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=mysql -ignore_select_update=true \
 	-conn_str="$(TEST_TIDB_USERNAME):$(TEST_TIDB_PASSWORD)@tcp($(TEST_TIDB_HOST))/$(TEST_TIDB_DBNAME)" \
-	-quote=$(TEST_QUOTE_POLICY) -coverprofile=tidb.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
+	-quote=$(TEST_QUOTE_POLICY) -coverprofile=tidb.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic
 
 .PNONY: test-dameng
 test-dameng: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=dm -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=dm -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="dm://$(TEST_DAMENG_USERNAME):$(TEST_DAMENG_PASSWORD)@$(TEST_DAMENG_HOST)" \
-	-coverprofile=dameng.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-coverprofile=dameng.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: test-dameng\#%
 test-dameng\#%: go-check
-	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=dm -cache=$(TEST_CACHE_ENABLE) -quote=$(TEST_QUOTE_POLICY) \
+	$(GO) test $(INTEGRATION_PACKAGES) -v -race -run $* -db=dm -quote=$(TEST_QUOTE_POLICY) \
 	-conn_str="dm://$(TEST_DAMENG_USERNAME):$(TEST_DAMENG_PASSWORD)@$(TEST_DAMENG_HOST)" \
-	-coverprofile=dameng.$(TEST_QUOTE_POLICY).$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic -timeout=20m
+	-coverprofile=dameng.$(TEST_QUOTE_POLICY).coverage.out -covermode=atomic -timeout=20m
 
 .PHONY: vet
 vet:

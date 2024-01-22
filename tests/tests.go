@@ -13,12 +13,12 @@ import (
 	"strings"
 	"testing"
 
-	"xorm.io/xorm"
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2"
+
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/log"
+	"xorm.io/xorm/v2/names"
+	"xorm.io/xorm/v2/schemas"
 )
 
 var (
@@ -30,7 +30,6 @@ var (
 	showSQL            = flag.Bool("show_sql", true, "show generated SQLs")
 	ptrConnStr         = flag.String("conn_str", "./test.db?cache=shared&mode=rwc", "test database connection string")
 	mapType            = flag.String("map_type", "snake", "indicate the name mapping")
-	cacheFlag          = flag.Bool("cache", false, "if enable cache")
 	cluster            = flag.Bool("cluster", false, "if this is a cluster")
 	splitter           = flag.String("splitter", ";", "the splitter on connstr for cluster")
 	schema             = flag.String("schema", "", "specify the schema")
@@ -40,6 +39,7 @@ var (
 	quotePolicyStr     = flag.String("quote", "always", "quote could be always, none, reversed")
 	defaultVarchar     = flag.String("default_varchar", "varchar", "default varchar type, mssql only, could be varchar or nvarchar, default is varchar")
 	defaultChar        = flag.String("default_char", "char", "default char type, mssql only, could be char or nchar, default is char")
+	collation          = flag.String("collation", "", "default database collation, it's different for different database")
 	tableMapper        names.Mapper
 	colMapper          names.Mapper
 )
@@ -55,7 +55,12 @@ func createEngine(dbType, connStr string) error {
 				if err != nil {
 					return err
 				}
-				if _, err = db.Exec("If(db_id(N'xorm_test') IS NULL) BEGIN CREATE DATABASE xorm_test; END;"); err != nil {
+				createDBSQL := "If(db_id(N'xorm_test') IS NULL) BEGIN CREATE DATABASE xorm_test"
+				if collation != nil && *collation != "" {
+					createDBSQL += fmt.Sprintf(" COLLATE %s", *collation)
+				}
+				createDBSQL += "; END;"
+				if _, err = db.Exec(createDBSQL); err != nil {
 					return fmt.Errorf("db.Exec: %v", err)
 				}
 				db.Close()
@@ -111,7 +116,7 @@ func createEngine(dbType, connStr string) error {
 			testEngine, err = xorm.NewEngine(dbType, connStr)
 		} else {
 			testEngine, err = xorm.NewEngineGroup(dbType, strings.Split(connStr, *splitter))
-			if dbType != "mysql" && dbType != "mymysql" {
+			if dbType != "mysql" {
 				*ignoreSelectUpdate = true
 			}
 		}
@@ -124,10 +129,6 @@ func createEngine(dbType, connStr string) error {
 		}
 		testEngine.ShowSQL(*showSQL)
 		testEngine.SetLogLevel(log.LOG_DEBUG)
-		if *cacheFlag {
-			cacher := caches.NewLRUCacher(caches.NewMemoryStore(), 100000)
-			testEngine.SetDefaultCacher(cacher)
-		}
 
 		if len(*mapType) > 0 {
 			switch *mapType {
@@ -161,7 +162,7 @@ func createEngine(dbType, connStr string) error {
 	if err != nil {
 		return err
 	}
-	tableNames := make([]interface{}, 0, len(tables))
+	tableNames := make([]any, 0, len(tables))
 	for _, table := range tables {
 		tableNames = append(tableNames, table.Name)
 	}

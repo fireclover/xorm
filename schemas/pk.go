@@ -8,14 +8,14 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"xorm.io/xorm/internal/utils"
+	"xorm.io/xorm/v2/internal/utils"
 )
 
 // PK represents primary key values
-type PK []interface{}
+type PK []any
 
 // NewPK creates primay keys
-func NewPK(pks ...interface{}) *PK {
+func NewPK(pks ...any) *PK {
 	p := PK(pks)
 	return &p
 }

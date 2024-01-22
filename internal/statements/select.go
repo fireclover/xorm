@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/schemas"
 )
 
 // Select replace select

@@ -11,9 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"xorm.io/xorm/v2"
+	"xorm.io/xorm/v2/schemas"
+
 	"github.com/stretchr/testify/assert"
-	"xorm.io/xorm"
-	"xorm.io/xorm/schemas"
 )
 
 func TestStoreEngine(t *testing.T) {
@@ -716,10 +717,9 @@ func TestSyncWithOptions(t *testing.T) {
 
 	tableInfoFromStruct, _ := testEngine.TableInfo(&SyncWithOpts1{})
 	assert.ElementsMatch(t, getKeysFromMap(tableInfoFromStruct.Indexes), getKeysFromMap(getIndicesOfBeanFromDB(t, &SyncWithOpts1{})))
-
 }
 
-func getIndicesOfBeanFromDB(t *testing.T, bean interface{}) map[string]*schemas.Index {
+func getIndicesOfBeanFromDB(t *testing.T, bean any) map[string]*schemas.Index {
 	dbm, err := testEngine.DBMetas()
 	assert.NoError(t, err)
 

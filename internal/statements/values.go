@@ -12,10 +12,10 @@ import (
 	"reflect"
 	"time"
 
-	"xorm.io/xorm/convert"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/internal/json"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/internal/convert"
+	"xorm.io/xorm/v2/internal/json"
+	"xorm.io/xorm/v2/schemas"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 )
 
 // Value2Interface convert a field value of a struct to interface for putting into database
-func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue reflect.Value) (interface{}, error) {
+func (statement *Statement) Value2Interface(col *schemas.Column, fieldValue reflect.Value) (any, error) {
 	if fieldValue.CanAddr() {
 		if fieldConvert, ok := fieldValue.Addr().Interface().(convert.Conversion); ok {
 			data, err := fieldConvert.ToDB()

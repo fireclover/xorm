@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"xorm.io/xorm/core"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/internal/core"
+	"xorm.io/xorm/v2/schemas"
 )
 
 var (
@@ -442,25 +442,25 @@ func (db *mssql) ModifyColumnSQL(tableName string, col *schemas.Column) string {
 	return fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s", db.quoter.Quote(tableName), s)
 }
 
-func (db *mssql) IndexCheckSQL(tableName, idxName string) (string, []interface{}) {
-	args := []interface{}{idxName}
+func (db *mssql) IndexCheckSQL(tableName, idxName string) (string, []any) {
+	args := []any{idxName}
 	sql := "select name from sysindexes where id=object_id('" + tableName + "') and name=?"
 	return sql, args
 }
 
-func (db *mssql) IsColumnExist(queryer core.Queryer, ctx context.Context, tableName, colName string) (bool, error) {
+func (db *mssql) IsColumnExist(ctx context.Context, queryer core.Queryer, tableName, colName string) (bool, error) {
 	query := `SELECT "COLUMN_NAME" FROM "INFORMATION_SCHEMA"."COLUMNS" WHERE "TABLE_NAME" = ? AND "COLUMN_NAME" = ?`
 
-	return db.HasRecords(queryer, ctx, query, tableName, colName)
+	return db.HasRecords(ctx, queryer, query, tableName, colName)
 }
 
-func (db *mssql) IsTableExist(queryer core.Queryer, ctx context.Context, tableName string) (bool, error) {
+func (db *mssql) IsTableExist(ctx context.Context, queryer core.Queryer, tableName string) (bool, error) {
 	sql := "select * from sysobjects where id = object_id(N'" + tableName + "') and OBJECTPROPERTY(id, N'IsUserTable') = 1"
-	return db.HasRecords(queryer, ctx, sql)
+	return db.HasRecords(ctx, queryer, sql)
 }
 
-func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
-	args := []interface{}{}
+func (db *mssql) GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error) {
+	args := []any{}
 	s := `select a.name as name, b.name as ctype,a.max_length,a.precision,a.scale,a.is_nullable as nullable,
 		  "default_is_null" = (CASE WHEN c.text is null THEN 1 ELSE 0 END),
 	      replace(replace(isnull(c.text,''),'(',''),')','') as vdefault,
@@ -553,8 +553,8 @@ func (db *mssql) GetColumns(queryer core.Queryer, ctx context.Context, tableName
 	return colSeq, cols, nil
 }
 
-func (db *mssql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schemas.Table, error) {
-	args := []interface{}{}
+func (db *mssql) GetTables(ctx context.Context, queryer core.Queryer) ([]*schemas.Table, error) {
+	args := []any{}
 	s := `select name from sysobjects where xtype ='U'`
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -580,16 +580,16 @@ func (db *mssql) GetTables(queryer core.Queryer, ctx context.Context) ([]*schema
 	return tables, nil
 }
 
-func (db *mssql) GetIndexes(queryer core.Queryer, ctx context.Context, tableName string) (map[string]*schemas.Index, error) {
-	args := []interface{}{tableName}
+func (db *mssql) GetIndexes(ctx context.Context, queryer core.Queryer, tableName string) (map[string]*schemas.Index, error) {
+	args := []any{tableName}
 	s := `SELECT
 IXS.NAME                    AS  [INDEX_NAME],
 C.NAME                      AS  [COLUMN_NAME],
 IXS.is_unique AS [IS_UNIQUE]
-FROM SYS.INDEXES IXS
-INNER JOIN SYS.INDEX_COLUMNS   IXCS
+FROM sys.indexes IXS
+INNER JOIN sys.index_columns IXCS
 ON IXS.OBJECT_ID=IXCS.OBJECT_ID  AND IXS.INDEX_ID = IXCS.INDEX_ID
-INNER   JOIN SYS.COLUMNS C  ON IXS.OBJECT_ID=C.OBJECT_ID
+INNER   JOIN sys.columns C  ON IXS.OBJECT_ID=C.OBJECT_ID
 AND IXCS.COLUMN_ID=C.COLUMN_ID
 WHERE IXS.TYPE_DESC='NONCLUSTERED' and OBJECT_NAME(IXS.OBJECT_ID) =?
 `
@@ -719,7 +719,7 @@ func (p *odbcDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 	return &URI{DBName: dbName, DBType: schemas.MSSQL}, nil
 }
 
-func (p *odbcDriver) GenScanResult(colType string) (interface{}, error) {
+func (p *odbcDriver) GenScanResult(colType string) (any, error) {
 	switch colType {
 	case "VARCHAR", "TEXT", "CHAR", "NVARCHAR", "NCHAR", "NTEXT":
 		fallthrough

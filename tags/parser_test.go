@@ -10,10 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"xorm.io/xorm/caches"
-	"xorm.io/xorm/dialects"
-	"xorm.io/xorm/names"
-	"xorm.io/xorm/schemas"
+	"xorm.io/xorm/v2/dialects"
+	"xorm.io/xorm/v2/names"
+	"xorm.io/xorm/v2/schemas"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +45,6 @@ func TestParseTableName(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.SnakeMapper{},
-		caches.NewManager(),
 	)
 	table, err := parser.Parse(reflect.ValueOf(new(ParseTableName1)))
 	assert.NoError(t, err)
@@ -67,7 +65,6 @@ func TestParseTableComment(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.SnakeMapper{},
-		caches.NewManager(),
 	)
 
 	table, err := parser.Parse(reflect.ValueOf(new(ParseTableComment)))
@@ -97,7 +94,6 @@ func TestUnexportField(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.SnakeMapper{},
-		caches.NewManager(),
 	)
 
 	type VanilaStruct struct {
@@ -130,7 +126,6 @@ func TestParseWithOtherIdentifier(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SameMapper{},
 		names.SnakeMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithDBTag struct {
@@ -154,7 +149,6 @@ func TestParseWithIgnore(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SameMapper{},
 		names.SnakeMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithIgnoreTag struct {
@@ -173,7 +167,6 @@ func TestParseWithAutoincrement(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithAutoIncrement struct {
@@ -195,7 +188,6 @@ func TestParseWithAutoincrement2(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithAutoIncrement2 struct {
@@ -218,7 +210,6 @@ func TestParseWithNullable(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithNullable struct {
@@ -243,7 +234,6 @@ func TestParseWithTimes(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithTimes struct {
@@ -276,7 +266,6 @@ func TestParseWithExtends(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithEmbed struct {
@@ -307,59 +296,12 @@ func TestParseWithExtends(t *testing.T) {
 	assert.True(t, table.Columns()[3].IsDeleted)
 }
 
-func TestParseWithCache(t *testing.T) {
-	parser := NewParser(
-		"db",
-		dialects.QueryDialect("mysql"),
-		names.SnakeMapper{},
-		names.GonicMapper{},
-		caches.NewManager(),
-	)
-
-	type StructWithCache struct {
-		Name string `db:"cache"`
-	}
-
-	table, err := parser.Parse(reflect.ValueOf(new(StructWithCache)))
-	assert.NoError(t, err)
-	assert.EqualValues(t, "struct_with_cache", table.Name)
-	assert.EqualValues(t, 1, len(table.Columns()))
-	assert.EqualValues(t, "name", table.Columns()[0].Name)
-	assert.True(t, table.Columns()[0].Nullable)
-	cacher := parser.cacherMgr.GetCacher(table.Name)
-	assert.NotNil(t, cacher)
-}
-
-func TestParseWithNoCache(t *testing.T) {
-	parser := NewParser(
-		"db",
-		dialects.QueryDialect("mysql"),
-		names.SnakeMapper{},
-		names.GonicMapper{},
-		caches.NewManager(),
-	)
-
-	type StructWithNoCache struct {
-		Name string `db:"nocache"`
-	}
-
-	table, err := parser.Parse(reflect.ValueOf(new(StructWithNoCache)))
-	assert.NoError(t, err)
-	assert.EqualValues(t, "struct_with_no_cache", table.Name)
-	assert.EqualValues(t, 1, len(table.Columns()))
-	assert.EqualValues(t, "name", table.Columns()[0].Name)
-	assert.True(t, table.Columns()[0].Nullable)
-	cacher := parser.cacherMgr.GetCacher(table.Name)
-	assert.Nil(t, cacher)
-}
-
 func TestParseWithEnum(t *testing.T) {
 	parser := NewParser(
 		"db",
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithEnum struct {
@@ -385,7 +327,6 @@ func TestParseWithSet(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithSet struct {
@@ -411,7 +352,6 @@ func TestParseWithIndex(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithIndex struct {
@@ -441,7 +381,6 @@ func TestParseWithVersion(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithVersion struct {
@@ -466,7 +405,6 @@ func TestParseWithLocale(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithLocale struct {
@@ -490,7 +428,6 @@ func TestParseWithDefault(t *testing.T) {
 		dialects.QueryDialect("mysql"),
 		names.SnakeMapper{},
 		names.GonicMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithDefault struct {
@@ -516,7 +453,6 @@ func TestParseWithOnlyToDB(t *testing.T) {
 			"DB": true,
 		},
 		names.SnakeMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithOnlyToDB struct {
@@ -542,7 +478,6 @@ func TestParseWithJSON(t *testing.T) {
 			"JSON": true,
 		},
 		names.SnakeMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithJSON struct {
@@ -565,7 +500,6 @@ func TestParseWithJSONB(t *testing.T) {
 			"JSONB": true,
 		},
 		names.SnakeMapper{},
-		caches.NewManager(),
 	)
 
 	type StructWithJSONB struct {
@@ -590,7 +524,6 @@ func TestParseWithSQLType(t *testing.T) {
 		names.GonicMapper{
 			"UUID": true,
 		},
-		caches.NewManager(),
 	)
 
 	type StructWithSQLType struct {

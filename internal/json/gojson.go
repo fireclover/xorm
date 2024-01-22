@@ -19,11 +19,11 @@ func init() {
 type GOjson struct{}
 
 // Marshal implements JSONInterface
-func (GOjson) Marshal(v interface{}) ([]byte, error) {
+func (GOjson) Marshal(v any) ([]byte, error) {
 	return gojson.Marshal(v)
 }
 
 // Unmarshal implements JSONInterface
-func (GOjson) Unmarshal(data []byte, v interface{}) error {
+func (GOjson) Unmarshal(data []byte, v any) error {
 	return gojson.Unmarshal(data, v)
 }

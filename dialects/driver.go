@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"xorm.io/xorm/core"
+	"xorm.io/xorm/v2/internal/core"
 )
 
 // ScanContext represents a context when Scan
@@ -27,13 +27,11 @@ type DriverFeatures struct {
 type Driver interface {
 	Parse(string, string) (*URI, error)
 	Features() *DriverFeatures
-	GenScanResult(string) (interface{}, error) // according given column type generating a suitable scan interface
-	Scan(*ScanContext, *core.Rows, []*sql.ColumnType, ...interface{}) error
+	GenScanResult(string) (any, error) // according given column type generating a suitable scan interface
+	Scan(*ScanContext, *core.Rows, []*sql.ColumnType, ...any) error
 }
 
-var (
-	drivers = map[string]Driver{}
-)
+var drivers = map[string]Driver{}
 
 // RegisterDriver register a driver
 func RegisterDriver(driverName string, driver Driver) {
@@ -80,6 +78,6 @@ func OpenDialect(driverName, connstr string) (Dialect, error) {
 
 type baseDriver struct{}
 
-func (b *baseDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.ColumnType, v ...interface{}) error {
+func (b *baseDriver) Scan(ctx *ScanContext, rows *core.Rows, types []*sql.ColumnType, v ...any) error {
 	return rows.Scan(v...)
 }
