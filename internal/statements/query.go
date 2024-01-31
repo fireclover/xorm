@@ -141,29 +141,20 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 		}
 	}
 
-	selectSQL := statement.SelectStr
-	if len(selectSQL) <= 0 {
-		if statement.IsDistinct {
-			selectSQL = fmt.Sprintf("count(DISTINCT %s)", statement.ColumnStr())
-		} else if statement.ColumnStr() != "" {
-			selectSQL = fmt.Sprintf("count(%s)", statement.ColumnStr())
-		} else {
-			selectSQL = "count(*)"
-		}
+	selectBuf := builder.NewWriter()
+	if err := statement.writeSelectCount(selectBuf); err != nil {
+		return "", nil, err
 	}
 
 	buf := builder.NewWriter()
-	if statement.GroupByStr != "" {
-		if _, err := fmt.Fprintf(buf, "SELECT %s FROM (", selectSQL); err != nil {
-			return "", nil, err
-		}
-	}
-
 	var subQuerySelect string
 	if statement.GroupByStr != "" {
+		if err := statement.writeStrings("SELECT ", selectBuf.String(), " FROM (")(buf); err != nil {
+			return "", nil, err
+		}
 		subQuerySelect = statement.GroupByStr
 	} else {
-		subQuerySelect = selectSQL
+		subQuerySelect = selectBuf.String()
 	}
 
 	if err := statement.writeSelect(buf, subQuerySelect, true); err != nil {
@@ -198,20 +189,27 @@ func (statement *Statement) writeTop(w *builder.BytesWriter) error {
 	return err
 }
 
-func (statement *Statement) writeDistinct(w *builder.BytesWriter) error {
-	if statement.IsDistinct && !strings.HasPrefix(statement.SelectStr, "count(") {
-		_, err := fmt.Fprint(w, " DISTINCT")
-		return err
+func (statement *Statement) writeDistinct(selectStr string) func(w *builder.BytesWriter) error {
+	return func(w *builder.BytesWriter) error {
+		if statement.IsDistinct && !strings.HasPrefix(selectStr, "COUNT(") {
+			_, err := fmt.Fprint(w, " DISTINCT")
+			return err
+		}
+		return nil
 	}
-	return nil
 }
 
-func (statement *Statement) writeSelectColumns(columnStr string) func(w *builder.BytesWriter) error {
-	return statement.groupWriteFns(
-		statement.writeStrings("SELECT"),
-		statement.writeDistinct,
-		statement.writeStrings(" ", columnStr),
-	)
+func (statement *Statement) writeSelectCount(w *builder.BytesWriter) error {
+	if statement.SelectStr != "" {
+		return statement.writeStrings(statement.SelectStr)(w)
+	}
+
+	if statement.IsDistinct {
+		return statement.writeStrings("COUNT(DISTINCT ", statement.ColumnStr(), ")")(w)
+	} else if statement.ColumnStr() != "" {
+		return statement.writeStrings("COUNT(", statement.ColumnStr(), ")")(w)
+	}
+	return statement.writeStrings("COUNT(*)")(w)
 }
 
 func (statement *Statement) writeWhereCond(w *builder.BytesWriter, cond builder.Cond) error {
@@ -253,7 +251,9 @@ func (statement *Statement) writeSelect(buf *builder.BytesWriter, columnStr stri
 	}
 
 	return statement.writeMultiple(buf,
-		statement.writeSelectColumns(columnStr),
+		statement.writeStrings("SELECT"),
+		statement.writeDistinct(columnStr),
+		statement.writeStrings(" ", columnStr),
 		statement.writeFrom,
 		statement.writeWhere,
 		statement.writeGroupBy,

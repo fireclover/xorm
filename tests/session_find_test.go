@@ -1254,3 +1254,20 @@ func TestFindInMaxID(t *testing.T) {
 	err := testEngine.In("id", builder.Select("max(id)").From(testEngine.Quote(tableName))).Find(&res)
 	assert.NoError(t, err)
 }
+
+func TestDistinctFindAndCount(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+
+	type TestDistinctFindAndCount struct {
+		Id   int64
+		Name string `xorm:"index"`
+		Age2 int
+	}
+
+	assertSync(t, new(TestDistinctFindAndCount))
+
+	objects := make([]*TestDistinctFindAndCount, 0, 10)
+	total, err := testEngine.Distinct(testEngine.TableName(new(TestDistinctFindAndCount)) + ".*").FindAndCount(&objects)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 0, total)
+}

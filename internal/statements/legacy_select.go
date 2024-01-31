@@ -19,7 +19,7 @@ func (statement *Statement) isUsingLegacyLimitOffset() bool {
 func (statement *Statement) writeMssqlLegacySelect(buf *builder.BytesWriter, columnStr string) error {
 	return statement.writeMultiple(buf,
 		statement.writeStrings("SELECT"),
-		statement.writeDistinct,
+		statement.writeDistinct(columnStr),
 		statement.writeTop,
 		statement.writeFrom,
 		statement.writeWhereWithMssqlPagination,
@@ -32,7 +32,9 @@ func (statement *Statement) writeMssqlLegacySelect(buf *builder.BytesWriter, col
 
 func (statement *Statement) writeOracleLegacySelect(buf *builder.BytesWriter, columnStr string) error {
 	return statement.writeMultiple(buf,
-		statement.writeSelectColumns(columnStr),
+		statement.writeStrings("SELECT"),
+		statement.writeDistinct(columnStr),
+		statement.writeStrings(" ", columnStr),
 		statement.writeFrom,
 		statement.writeOracleLimit(columnStr),
 		statement.writeGroupBy,
