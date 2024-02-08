@@ -1,10 +1,12 @@
 package migrate
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"xorm.io/xorm"
+	"xorm.io/xorm/schemas"
 )
 
 // MigrateFunc is the func signature for migrating.
@@ -140,7 +142,9 @@ func (m *Migrate) RollbackMigration(mig *Migration) error {
 		return err
 	}
 
-	sql := fmt.Sprintf("DELETE FROM %s WHERE %s = ?", m.options.TableName, m.options.IDColumnName)
+	tableName := m.db.TableName(m.options.TableName, true)
+
+	sql := fmt.Sprintf("DELETE FROM %s WHERE %s = ?", tableName, m.options.IDColumnName)
 	if _, err := m.db.Exec(sql, mig.ID); err != nil {
 		return err
 	}
@@ -192,7 +196,25 @@ func (m *Migrate) createMigrationTableIfNotExists() error {
 		return nil
 	}
 
-	sql := fmt.Sprintf("CREATE TABLE %s (%s VARCHAR(255) PRIMARY KEY)", m.options.TableName, m.options.IDColumnName)
+	idCol := schemas.Column{
+		Name: m.options.IDColumnName,
+		SQLType: schemas.SQLType{
+			Name:          "VARCHAR",
+			DefaultLength: 255,
+		},
+		IsPrimaryKey: true,
+	}
+
+	table := &schemas.Table{
+		Name: m.options.TableName,
+	}
+	table.AddColumn(&idCol)
+
+	sql, _, err := m.db.Dialect().CreateTableSQL(context.Background(), m.db.DB(), table, m.options.TableName)
+	if err != nil {
+		return err
+	}
+
 	if _, err := m.db.Exec(sql); err != nil {
 		return err
 	}
@@ -200,18 +222,21 @@ func (m *Migrate) createMigrationTableIfNotExists() error {
 }
 
 func (m *Migrate) migrationDidRun(mig *Migration) (bool, error) {
-	count, err := m.db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ?", m.options.TableName, m.options.IDColumnName), mig.ID).Count()
+	tableName := m.db.TableName(m.options.TableName, true)
+	count, err := m.db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ?", tableName, m.options.IDColumnName), mig.ID).Count()
 	return count > 0, err
 }
 
 func (m *Migrate) isFirstRun() (bool, error) {
 	var count int
-	_, err := m.db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s", m.options.TableName)).Get(&count)
+	tableName := m.db.TableName(m.options.TableName, true)
+	_, err := m.db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Get(&count)
 	return count == 0, err
 }
 
 func (m *Migrate) insertMigration(id string) error {
-	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?)", m.options.TableName, m.options.IDColumnName)
+	tableName := m.db.TableName(m.options.TableName, true)
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?)", tableName, m.options.IDColumnName)
 	_, err := m.db.Exec(sql, id)
 	return err
 }
