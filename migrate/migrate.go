@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"
@@ -196,19 +197,13 @@ func (m *Migrate) createMigrationTableIfNotExists() error {
 		return nil
 	}
 
-	idCol := schemas.Column{
-		Name: m.options.IDColumnName,
-		SQLType: schemas.SQLType{
-			Name:          "VARCHAR",
-			DefaultLength: 255,
-		},
-		IsPrimaryKey: true,
-	}
+	idCol := schemas.NewColumn(m.options.IDColumnName, "", schemas.SQLType{
+		Name: "VARCHAR",
+	}, 255, 0, true)
+	idCol.IsPrimaryKey = true
 
-	table := &schemas.Table{
-		Name: m.options.TableName,
-	}
-	table.AddColumn(&idCol)
+	table := schemas.NewTable(m.options.TableName, reflect.TypeOf(new(schemas.Table)))
+	table.AddColumn(idCol)
 
 	sql, _, err := m.db.Dialect().CreateTableSQL(context.Background(), m.db.DB(), table, m.options.TableName)
 	if err != nil {
