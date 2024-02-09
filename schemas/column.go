@@ -30,6 +30,7 @@ type Column struct {
 	Length2         int64
 	Nullable        bool
 	Default         string
+	Reference       string
 	Indexes         map[string]int
 	IsPrimaryKey    bool
 	IsAutoIncrement bool
@@ -60,6 +61,7 @@ func NewColumn(name, fieldName string, sqlType SQLType, len1, len2 int64, nullab
 		Length2:         len2,
 		Nullable:        nullable,
 		Default:         "",
+		Reference:       "",
 		Indexes:         make(map[string]int),
 		IsPrimaryKey:    false,
 		IsAutoIncrement: false,

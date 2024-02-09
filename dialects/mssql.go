@@ -663,6 +663,11 @@ func (db *mssql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table
 		s, _ := ColumnString(db.dialect, col, col.IsPrimaryKey && len(table.PrimaryKeys) == 1, true)
 		b.WriteString(s)
 
+		if col.Reference != "" {
+			b.WriteString(" FOREIGN KEY REFERENCES ")
+			b.WriteString(col.Reference)
+		}
+
 		if i != len(table.ColumnsSeq())-1 {
 			b.WriteString(", ")
 		}

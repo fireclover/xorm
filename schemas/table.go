@@ -19,6 +19,7 @@ type Table struct {
 	columns       []*Column
 	Indexes       map[string]*Index
 	PrimaryKeys   []string
+	ForeignKeys   []string
 	AutoIncrement string
 	Created       map[string]bool
 	Updated       string
@@ -45,6 +46,7 @@ func NewTable(name string, t reflect.Type) *Table {
 		Indexes:     make(map[string]*Index),
 		Created:     make(map[string]bool),
 		PrimaryKeys: make([]string, 0),
+		ForeignKeys: make([]string, 0),
 	}
 }
 
@@ -91,6 +93,15 @@ func (table *Table) PKColumns() []*Column {
 	return columns
 }
 
+// FKColumns reprents all foreign key columns
+func (table *Table) FKColumns() []*Column {
+	columns := make([]*Column, len(table.ForeignKeys))
+	for i, name := range table.ForeignKeys {
+		columns[i] = table.GetColumn(name)
+	}
+	return columns
+}
+
 // ColumnType returns a column's type
 func (table *Table) ColumnType(name string) reflect.Type {
 	t, _ := table.Type.FieldByName(name)
@@ -130,6 +141,9 @@ func (table *Table) AddColumn(col *Column) {
 
 	if col.IsPrimaryKey {
 		table.PrimaryKeys = append(table.PrimaryKeys, col.Name)
+	}
+	if col.Reference != "" {
+		table.ForeignKeys = append(table.ForeignKeys, col.Name)
 	}
 	if col.IsAutoIncrement {
 		table.AutoIncrement = col.Name

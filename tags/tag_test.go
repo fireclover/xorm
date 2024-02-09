@@ -90,6 +90,14 @@ func TestSplitTag(t *testing.T) {
 				},
 			},
 		},
+		{
+			"belongsto(foo, bar)", []tag{
+				{
+					name: "belongsto",
+					params: []string{"foo", "bar"},
+				},
+			},
+		},
 	}
 
 	for _, kase := range cases {

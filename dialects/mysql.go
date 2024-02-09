@@ -683,6 +683,13 @@ func (db *mysql) CreateTableSQL(ctx context.Context, queryer core.Queryer, table
 		b.WriteString(")")
 	}
 
+	for _, col := range table.FKColumns() {
+		b.WriteString(", FOREIGN KEY (")
+		b.WriteString(col.Name)
+		b.WriteString(") REFERENCES ")
+		b.WriteString(col.Reference)
+	}
+
 	b.WriteString(")")
 
 	if table.StoreEngine != "" {

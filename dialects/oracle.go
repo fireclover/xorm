@@ -644,6 +644,9 @@ func (db *oracle) CreateTableSQL(ctx context.Context, queryer core.Queryer, tabl
 		sql += s
 		// }
 		sql = strings.TrimSpace(sql)
+		if col.Reference != "" {
+			sql += " FOREIGN KEY REFERENCES "+col.Reference
+		}
 		sql += ", "
 	}
 

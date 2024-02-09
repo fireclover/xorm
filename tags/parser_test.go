@@ -534,6 +534,39 @@ func TestParseWithOnlyToDB(t *testing.T) {
 	assert.EqualValues(t, schemas.ONLYFROMDB, table.Columns()[1].MapType)
 }
 
+func TestParseWithBelongsTo(t *testing.T) {
+	parser := NewParser(
+		"db",
+		dialects.QueryDialect("mysql"),
+		names.SnakeMapper{},
+		names.GonicMapper{},
+		caches.NewManager(),
+	)
+
+	type VanillaStruct struct {
+		ID        int64
+		Name      string
+		CreatedAt time.Time `db:"created"`
+		UpdatedAt time.Time `db:"updated"`
+		DeletedAt time.Time `db:"deleted"`
+	}
+
+	type StructWithBelongsTo struct {
+		Name    string
+		Vanilla VanillaStruct `db:"belongsto"`
+	}
+
+	table, err := parser.Parse(reflect.ValueOf(new(StructWithBelongsTo)))
+	assert.NoError(t, err)
+	assert.EqualValues(t, "struct_with_belongs_to", table.Name)
+	assert.EqualValues(t, 2, len(table.Columns()))
+	assert.EqualValues(t, "name", table.Columns()[0].Name)
+	assert.EqualValues(t, "vanilla", table.Columns()[1].Name)
+	assert.EqualValues(t, "vanilla_struct(id)", table.Columns()[1].Reference)
+	assert.True(t, table.Columns()[0].Nullable)
+	assert.True(t, table.Columns()[1].Nullable)
+}
+
 func TestParseWithJSON(t *testing.T) {
 	parser := NewParser(
 		"db",

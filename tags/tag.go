@@ -124,6 +124,8 @@ var defaultTagHandlers = map[string]Handler{
 	"EXTENDS":  ExtendsTagHandler,
 	"UNSIGNED": UnsignedTagHandler,
 	"COLLATE":  CollateTagHandler,
+
+	"BELONGSTO": BelongsToTagHandler,
 }
 
 func init() {
@@ -267,6 +269,45 @@ func UniqueTagHandler(ctx *Context) error {
 		ctx.isUnique = true
 	}
 	return nil
+}
+
+// BelongsToTagHandler describes belongs tag handler
+func BelongsToTagHandler(ctx *Context) error {
+	fieldValue := ctx.fieldValue
+	colName := ""
+	if len(ctx.params) > 0 {
+		colName = ctx.params[0]
+	}
+	switch fieldValue.Kind() {
+	case reflect.Pointer:
+		f := fieldValue.Type().Elem()
+		if f.Kind() == reflect.Struct {
+			fieldPtr := fieldValue
+			fieldValue = fieldValue.Elem()
+			if !fieldValue.IsValid() || fieldPtr.IsNil() {
+				fieldValue = reflect.New(f).Elem()
+			}
+		}
+		fallthrough
+	case reflect.Struct:
+		parentTable, err := ctx.parser.ParseWithCache(fieldValue)
+		if err != nil {
+			return err
+		}
+		tableName := parentTable.Name
+		if len(ctx.params) > 1 {
+			tableName = ctx.params[1]
+		}
+		for _, col := range parentTable.Columns() {
+			if len(colName) == 0 && col.IsPrimaryKey || colName == col.Name {
+				ctx.col.Reference = tableName+"("+col.Name+")"
+				return nil
+			}
+		}
+	default:
+		// TODO: warning
+	}
+	return ErrIgnoreField
 }
 
 // UnsignedTagHandler represents the column is unsigned
