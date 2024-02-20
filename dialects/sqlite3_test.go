@@ -11,7 +11,7 @@ import (
 )
 
 func TestSplitColStr(t *testing.T) {
-	var kases = []struct {
+	kases := []struct {
 		colStr string
 		fields []string
 	}{
@@ -25,6 +25,13 @@ func TestSplitColStr(t *testing.T) {
 			colStr: "`created` DATETIME DEFAULT '2006-01-02 15:04:05' NULL",
 			fields: []string{
 				"`created`", "DATETIME", "DEFAULT", "'2006-01-02 15:04:05'", "NULL",
+			},
+		},
+		{
+			colStr: `    id               INTEGER           not null
+primary key autoincrement`,
+			fields: []string{
+				"id", "INTEGER", "not", "null", "primary", "key", "autoincrement",
 			},
 		},
 	}

@@ -184,6 +184,7 @@ func (statement *Statement) writeFrom(w *builder.BytesWriter) error {
 		statement.writeStrings(" FROM "),
 		statement.writeTableName,
 		statement.writeAlias,
+		statement.writeIndexHints,
 		statement.writeJoins,
 	)
 }

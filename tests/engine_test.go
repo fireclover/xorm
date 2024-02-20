@@ -15,11 +15,11 @@ import (
 	"xorm.io/xorm/schemas"
 
 	_ "gitee.com/travelliu/dm"
-	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/microsoft/go-mssqldb"
 	"github.com/stretchr/testify/assert"
 	_ "github.com/ziutek/mymysql/godrv"
 	_ "modernc.org/sqlite"

@@ -1,4 +1,4 @@
-name: test mysql8
+name: test mssql
 on: 
   push:
     branches:
@@ -9,10 +9,11 @@ env:
   GOPROXY: https://goproxy.io,direct
   GOPATH: /go_path
   GOCACHE: /go_cache
+  RUNNER_TOOL_CACHE: /toolcache # specify with your cache path
 
 jobs:
-  lint:
-    name: test mysql8
+  test-mssql-collation:
+    name: test mssql with collation
     runs-on: ubuntu-latest
     steps:
       # - name: cache go path
@@ -33,24 +34,25 @@ jobs:
       #     restore-keys: |
       #       go_cache-${{ github.repository }}-
       #       go_cache-                            
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v3
         with:
           go-version: 1.20
       - uses: actions/checkout@v3
-      - name: test mysql8
+      - name: test mssql with collation
         env:
-          TEST_MYSQL_HOST: mysql8
-          TEST_MYSQL_CHARSET: utf8mb4
-          TEST_MYSQL_DBNAME: xorm_test
-          TEST_MYSQL_USERNAME: root
-          TEST_MYSQL_PASSWORD:
-        run: TEST_CACHE_ENABLE=true make test-mysql
+          TEST_MSSQL_HOST: mssql2
+          TEST_MSSQL_DBNAME: xorm_test
+          TEST_MSSQL_USERNAME: sa
+          TEST_MSSQL_PASSWORD: "yourStrong(!)Password"
+          TEST_MSSQL_COLLATION: SQL_Latin1_General_CP1_CS_AS
+        run: TEST_MSSQL_DEFAULT_VARCHAR=NVARCHAR TEST_MSSQL_DEFAULT_CHAR=NCHAR make test-mssql
 
     services:
-      mysql8:
-        image: mysql:8.0
+      mssql2:
+        image: mcr.microsoft.com/mssql/server:latest
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: xorm_test
+          ACCEPT_EULA: Y
+          SA_PASSWORD: yourStrong(!)Password
+          MSSQL_PID: Standard
         ports:
-          - 3306:3306
+          - 1433:1433

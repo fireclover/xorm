@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"xorm.io/xorm/core"
 	"xorm.io/xorm/schemas"
@@ -320,7 +321,7 @@ func splitColStr(colStr string) []string {
 	var lastIdx int
 	var hasC, hasQuote bool
 	for i, c := range colStr {
-		if c == ' ' && !hasQuote {
+		if unicode.IsSpace(c) && !hasQuote {
 			if hasC {
 				results = append(results, colStr[lastIdx:i])
 				hasC = false
@@ -350,7 +351,7 @@ func parseString(colStr string) (*schemas.Column, error) {
 
 	for idx, field := range fields {
 		if idx == 0 {
-			col.Name = strings.Trim(strings.Trim(field, "`[] "), `"`)
+			col.Name = strings.Trim(strings.TrimSpace(field), "`[]'\"")
 			continue
 		} else if idx == 1 {
 			col.SQLType = schemas.SQLType{Name: field, DefaultLength: 0, DefaultLength2: 0}
@@ -399,6 +400,8 @@ func (db *sqlite3) GetColumns(queryer core.Queryer, ctx context.Context, tableNa
 	if name == "" {
 		return nil, nil, errors.New("no table named " + tableName)
 	}
+
+	name = strings.ReplaceAll(name, "\n", " ")
 
 	nStart := strings.Index(name, "(")
 	nEnd := strings.LastIndex(name, ")")
@@ -483,7 +486,7 @@ func (db *sqlite3) GetIndexes(queryer core.Queryer, ctx context.Context, tableNa
 		if !tmpSQL.Valid {
 			continue
 		}
-		sql := tmpSQL.String
+		sql := strings.ReplaceAll(tmpSQL.String, "\n", " ")
 
 		index := new(schemas.Index)
 		nNStart := strings.Index(sql, "INDEX")

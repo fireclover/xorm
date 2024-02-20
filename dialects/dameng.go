@@ -831,6 +831,13 @@ func (d *dmClobScanner) Scan(data interface{}) error {
 		d.data = string(t)
 		d.valid = true
 		return nil
+	case string:
+		if len(t) <= 0 {
+			return nil
+		}
+		d.data = string(t)
+		d.valid = true
+		return nil
 	default:
 		return fmt.Errorf("cannot convert %T as dmClobScanner", data)
 	}

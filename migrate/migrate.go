@@ -1,10 +1,13 @@
 package migrate
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"xorm.io/xorm"
+	"xorm.io/xorm/schemas"
 )
 
 // MigrateFunc is the func signature for migrating.
@@ -87,7 +90,11 @@ func (m *Migrate) Migrate() error {
 		return err
 	}
 
-	if m.initSchema != nil && m.isFirstRun() {
+	isFirstRun, err := m.isFirstRun()
+	if err != nil {
+		return err
+	}
+	if m.initSchema != nil && isFirstRun {
 		return m.runInitSchema()
 	}
 
@@ -136,7 +143,9 @@ func (m *Migrate) RollbackMigration(mig *Migration) error {
 		return err
 	}
 
-	sql := fmt.Sprintf("DELETE FROM %s WHERE %s = ?", m.options.TableName, m.options.IDColumnName)
+	tableName := m.db.TableName(m.options.TableName, true)
+
+	sql := fmt.Sprintf("DELETE FROM %s WHERE %s = ?", tableName, m.options.IDColumnName)
 	if _, err := m.db.Exec(sql, mig.ID); err != nil {
 		return err
 	}
@@ -188,7 +197,19 @@ func (m *Migrate) createMigrationTableIfNotExists() error {
 		return nil
 	}
 
-	sql := fmt.Sprintf("CREATE TABLE %s (%s VARCHAR(255) PRIMARY KEY)", m.options.TableName, m.options.IDColumnName)
+	idCol := schemas.NewColumn(m.options.IDColumnName, "", schemas.SQLType{
+		Name: "VARCHAR",
+	}, 255, 0, true)
+	idCol.IsPrimaryKey = true
+
+	table := schemas.NewTable(m.options.TableName, reflect.TypeOf(new(schemas.Table)))
+	table.AddColumn(idCol)
+
+	sql, _, err := m.db.Dialect().CreateTableSQL(context.Background(), m.db.DB(), table, m.options.TableName)
+	if err != nil {
+		return err
+	}
+
 	if _, err := m.db.Exec(sql); err != nil {
 		return err
 	}
@@ -196,19 +217,21 @@ func (m *Migrate) createMigrationTableIfNotExists() error {
 }
 
 func (m *Migrate) migrationDidRun(mig *Migration) (bool, error) {
-	count, err := m.db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ?", m.options.TableName, m.options.IDColumnName), mig.ID).Count()
+	tableName := m.db.TableName(m.options.TableName, true)
+	count, err := m.db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ?", tableName, m.options.IDColumnName), mig.ID).Count()
 	return count > 0, err
 }
 
-func (m *Migrate) isFirstRun() bool {
-	row := m.db.DB().QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", m.options.TableName))
+func (m *Migrate) isFirstRun() (bool, error) {
 	var count int
-	_ = row.Scan(&count)
-	return count == 0
+	tableName := m.db.TableName(m.options.TableName, true)
+	_, err := m.db.SQL(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Get(&count)
+	return count == 0, err
 }
 
 func (m *Migrate) insertMigration(id string) error {
-	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?)", m.options.TableName, m.options.IDColumnName)
+	tableName := m.db.TableName(m.options.TableName, true)
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?)", tableName, m.options.IDColumnName)
 	_, err := m.db.Exec(sql, id)
 	return err
 }

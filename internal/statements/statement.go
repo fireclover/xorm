@@ -41,6 +41,12 @@ type join struct {
 	args      []interface{}
 }
 
+type indexHint struct {
+	op        string
+	forType   string
+	indexName string
+}
+
 // Statement save all the sql info for executing SQL
 type Statement struct {
 	RefTable        *schemas.Table
@@ -84,6 +90,7 @@ type Statement struct {
 	BufferSize      int
 	Context         contexts.ContextCache
 	LastError       error
+	indexHints      []indexHint
 }
 
 // NewStatement creates a new statement
