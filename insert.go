@@ -455,7 +455,8 @@ func (session *Session) genInsertColumns(bean any) ([]string, []any, error) {
 		}
 
 		if col.IsDeleted {
-			arg, err := dialects.FormatColumnTime(session.engine.dialect, session.engine.DatabaseTZ, col, time.Time{})
+			zeroTime := time.Date(1, 1, 1, 0, 0, 0, 0, session.engine.DatabaseTZ)
+			arg, err := dialects.FormatColumnTime(session.engine.dialect, session.engine.DatabaseTZ, col, zeroTime)
 			if err != nil {
 				return nil, nil, err
 			}

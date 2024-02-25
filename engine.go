@@ -1126,7 +1126,7 @@ func (engine *Engine) Insert(beans ...any) (int64, error) {
 func (engine *Engine) InsertOne(bean any) (int64, error) {
 	session := engine.NewSession()
 	defer session.Close()
-	return session.InsertOne(bean)
+	return session.Insert(bean)
 }
 
 // Update records, bean's non-empty fields are updated contents,

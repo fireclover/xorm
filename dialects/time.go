@@ -8,18 +8,21 @@ import (
 	"strings"
 	"time"
 
+	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/schemas"
 )
 
 // FormatColumnTime format column time
 func FormatColumnTime(dialect Dialect, dbLocation *time.Location, col *schemas.Column, t time.Time) (any, error) {
-	if t.IsZero() {
+	if utils.IsTimeZero(t) {
 		if col.Nullable {
 			return nil, nil
 		}
-
 		if col.SQLType.IsNumeric() {
 			return 0, nil
+		}
+		if col.SQLType.Name == schemas.TimeStamp || col.SQLType.Name == schemas.TimeStampz {
+			t = time.Unix(0, 0)
 		}
 	}
 

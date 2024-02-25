@@ -159,7 +159,7 @@ func PKTagHandler(ctx *Context) error {
 
 // NULLTagHandler describes null tag handler
 func NULLTagHandler(ctx *Context) error {
-	ctx.col.Nullable = (strings.ToUpper(ctx.preTag) != "NOT")
+	ctx.col.Nullable = strings.ToUpper(ctx.preTag) != "NOT"
 	return nil
 }
 

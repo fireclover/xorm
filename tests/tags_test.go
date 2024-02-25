@@ -7,10 +7,10 @@ package tests
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
+	"xorm.io/xorm/v2/internal/convert"
 	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/names"
 	"xorm.io/xorm/v2/schemas"
@@ -1178,8 +1178,10 @@ func TestTagTime(t *testing.T) {
 	has, err = testEngine.Table("tag_u_t_c_struct").Cols("created").Get(&tm)
 	assert.NoError(t, err)
 	assert.True(t, has)
-	assert.EqualValues(t, s.Created.UTC().Format("2006-01-02 15:04:05"),
-		strings.ReplaceAll(strings.ReplaceAll(tm, "T", " "), "Z", ""))
+
+	tmTime, err := convert.String2Time(tm, time.UTC, time.UTC)
+	assert.NoError(t, err)
+	assert.EqualValues(t, s.Created.UTC().Format("2006-01-02 15:04:05"), tmTime.Format("2006-01-02 15:04:05"))
 }
 
 func TestTagAutoIncr(t *testing.T) {

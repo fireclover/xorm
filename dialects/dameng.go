@@ -618,8 +618,8 @@ func (db *dameng) SQLType(c *schemas.Column) string {
 		res = t
 	}
 
-	hasLen1 := (c.Length > 0)
-	hasLen2 := (c.Length2 > 0)
+	hasLen1 := c.Length > 0
+	hasLen2 := c.Length2 > 0
 
 	if hasLen2 {
 		res += "(" + strconv.FormatInt(c.Length, 10) + "," + strconv.FormatInt(c.Length2, 10) + ")"
