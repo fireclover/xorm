@@ -97,7 +97,7 @@ func (session *Session) Truncate(beans ...interface{}) (int64, error) {
 
 func (session *Session) delete(beans []interface{}, mustHaveConditions bool) (int64, error) {
 	if session.isAutoClose {
-		defer session.Close()
+		defer func(session *Session) { _ = session.Close() }(session)
 	}
 
 	if session.statement.LastError != nil {
@@ -116,12 +116,17 @@ func (session *Session) delete(beans []interface{}, mustHaveConditions bool) (in
 
 		executeBeforeClosures(session, bean)
 
-		if processor, ok := interface{}(bean).(BeforeDeleteProcessor); ok {
+		if processor, ok := bean.(BeforeDeleteProcessor); ok {
 			processor.BeforeDelete()
 		}
 
 		if err = session.statement.MergeConds(bean); err != nil {
 			return 0, err
+		}
+	}
+	if session.statement.RefTable != nil {
+		if col := session.statement.RefTable.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
+			session.statement.And(session.statement.CondDeleted(col))
 		}
 	}
 
@@ -138,15 +143,12 @@ func (session *Session) delete(beans []interface{}, mustHaveConditions bool) (in
 	if err := session.statement.WriteDelete(realSQLWriter, deleteSQLWriter, session.engine.nowTime); err != nil {
 		return 0, err
 	}
-
-	if session.statement.GetUnscoped() || table == nil || table.DeletedColumn() == nil { // tag "deleted" is disabled
-	} else {
+	if table != nil && table.DeletedColumn() != nil && !session.statement.GetUnscoped() {
 		deletedColumn := table.DeletedColumn()
 		_, t, err := session.engine.nowTime(deletedColumn)
 		if err != nil {
 			return 0, err
 		}
-
 		colName := deletedColumn.Name
 		session.afterClosures = append(session.afterClosures, func(bean interface{}) {
 			col := table.GetColumn(colName)

@@ -526,7 +526,9 @@ func (statement *Statement) buildConds2(table *schemas.Table, bean interface{},
 		if !includeAutoIncr && col.IsAutoIncrement {
 			continue
 		}
-
+		if col.IsDeleted {
+			continue
+		}
 		if col.IsJSON {
 			continue
 		}
@@ -547,10 +549,6 @@ func (statement *Statement) buildConds2(table *schemas.Table, bean interface{},
 			continue
 		} else if fieldValuePtr == nil {
 			continue
-		}
-
-		if col.IsDeleted && !unscoped { // tag "deleted" is enabled
-			conds = append(conds, statement.CondDeleted(col))
 		}
 
 		fieldValue := *fieldValuePtr

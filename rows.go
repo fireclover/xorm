@@ -50,21 +50,14 @@ func newRows(session *Session, bean interface{}) (*Rows, error) {
 		table := rows.session.statement.RefTable
 
 		if !session.statement.NoAutoCondition {
-			var err error
-			autoCond, err = session.statement.BuildConds(table, bean, true, true, false, true, addedTableName)
-			if err != nil {
+			if autoCond, err = session.statement.BuildConds(table, bean, true, true, false, true, addedTableName); err != nil {
 				return nil, err
 			}
-		} else {
-			// !oinume! Add "<col> IS NULL" to WHERE whatever condiBean is given.
-			// See https://gitea.com/xorm/xorm/issues/179
-			if col := table.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
-				autoCond = session.statement.CondDeleted(col)
-			}
 		}
-
-		sqlStr, args, err = rows.session.statement.GenFindSQL(autoCond)
-		if err != nil {
+		if col := table.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
+			autoCond = builder.And(autoCond, session.statement.CondDeleted(col))
+		}
+		if sqlStr, args, err = rows.session.statement.GenFindSQL(autoCond); err != nil {
 			return nil, err
 		}
 	} else {
@@ -72,12 +65,10 @@ func newRows(session *Session, bean interface{}) (*Rows, error) {
 		args = rows.session.statement.RawParams
 	}
 
-	rows.rows, err = rows.session.queryRows(sqlStr, args...)
-	if err != nil {
-		rows.Close()
+	if rows.rows, err = rows.session.queryRows(sqlStr, args...); err != nil {
+		_ = rows.Close()
 		return nil, err
 	}
-
 	return rows, nil
 }
 

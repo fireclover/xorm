@@ -28,12 +28,6 @@ func (session *Session) genAutoCond(condiBean interface{}) (builder.Cond, error)
 		for k, v := range c {
 			eq[session.engine.Quote(k)] = v
 		}
-
-		if session.statement.RefTable != nil {
-			if col := session.statement.RefTable.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
-				return eq.And(session.statement.CondDeleted(col)), nil
-			}
-		}
 		return eq, nil
 	}
 
@@ -62,7 +56,7 @@ func (session *Session) genAutoCond(condiBean interface{}) (builder.Cond, error)
 //	2.float32 & float64 may be not inexact as conditions
 func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int64, error) {
 	if session.isAutoClose {
-		defer session.Close()
+		defer func(session *Session) { _ = session.Close() }(session)
 	}
 
 	defer session.resetStatement()
@@ -79,7 +73,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 		closure(bean)
 	}
 	cleanupProcessorsClosures(&session.beforeClosures) // cleanup after used
-	if processor, ok := interface{}(bean).(BeforeUpdateProcessor); ok {
+	if processor, ok := bean.(BeforeUpdateProcessor); ok {
 		processor.BeforeUpdate()
 	}
 	// --
@@ -90,7 +84,7 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 	isMap := t.Kind() == reflect.Map
 	isStruct := t.Kind() == reflect.Struct
 	if isStruct {
-		if err := session.statement.SetRefBean(bean); err != nil {
+		if err = session.statement.SetRefBean(bean); err != nil {
 			return 0, err
 		}
 
@@ -153,19 +147,13 @@ func (session *Session) Update(bean interface{}, condiBean ...interface{}) (int6
 
 	var autoCond builder.Cond
 	if len(condiBean) > 0 {
-		autoCond, err = session.genAutoCond(condiBean[0])
-		if err != nil {
+		if autoCond, err = session.genAutoCond(condiBean[0]); err != nil {
 			return 0, err
 		}
-	} else if table != nil {
+	}
+	if table != nil {
 		if col := table.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
-			autoCond1 := session.statement.CondDeleted(col)
-
-			if autoCond == nil {
-				autoCond = autoCond1
-			} else {
-				autoCond = autoCond.And(autoCond1)
-			}
+			autoCond = builder.And(autoCond, session.statement.CondDeleted(col))
 		}
 	}
 

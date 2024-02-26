@@ -118,7 +118,11 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 			return "", nil, err
 		}
 	}
-
+	if statement.RefTable != nil {
+		if col := statement.RefTable.DeletedColumn(); col != nil && !statement.GetUnscoped() { // tag "deleted" is enabled
+			statement.And(statement.CondDeleted(col))
+		}
+	}
 	buf := builder.NewWriter()
 	if err := statement.writeSelect(buf, columnStr, false); err != nil {
 		return "", nil, err

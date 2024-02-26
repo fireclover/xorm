@@ -9,6 +9,7 @@ import (
 	"errors"
 	"reflect"
 	"strings"
+	"xorm.io/xorm/core"
 
 	"xorm.io/builder"
 	"xorm.io/xorm/caches"
@@ -36,7 +37,7 @@ func (session *Session) Find(rowsSlicePtr interface{}, condiBean ...interface{})
 // FindAndCount find the results and also return the counts
 func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...interface{}) (int64, error) {
 	if session.isAutoClose {
-		defer session.Close()
+		defer func(session *Session) { _ = session.Close() }(session)
 	}
 
 	session.autoResetStatement = false
@@ -70,15 +71,13 @@ func (session *Session) FindAndCount(rowsSlicePtr interface{}, condiBean ...inte
 		session.statement.Start = 0
 	}
 
-	// session has stored the conditions so we use `unscoped` to avoid duplicated condition.
 	if sliceElementType.Kind() == reflect.Struct {
-		return session.Unscoped().Count(reflect.New(sliceElementType).Interface())
+		return session.Count(reflect.New(sliceElementType).Interface())
 	}
-
-	return session.Unscoped().Count()
+	return session.Count()
 }
 
-func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{}) error {
+func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{}) (err error) {
 	defer session.resetStatement()
 	if session.statement.LastError != nil {
 		return session.statement.LastError
@@ -98,7 +97,7 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 		if sliceElementType.Kind() == reflect.Ptr {
 			if sliceElementType.Elem().Kind() == reflect.Struct {
 				pv := reflect.New(sliceElementType.Elem())
-				if err := session.statement.SetRefValue(pv); err != nil {
+				if err = session.statement.SetRefValue(pv); err != nil {
 					return err
 				}
 			} else {
@@ -106,7 +105,7 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 			}
 		} else if sliceElementType.Kind() == reflect.Struct {
 			pv := reflect.New(sliceElementType)
-			if err := session.statement.SetRefValue(pv); err != nil {
+			if err = session.statement.SetRefValue(pv); err != nil {
 				return err
 			}
 		} else {
@@ -120,19 +119,19 @@ func (session *Session) find(rowsSlicePtr interface{}, condiBean ...interface{})
 		autoCond       builder.Cond
 	)
 	if tp == tpStruct {
-		if !session.statement.NoAutoCondition && len(condiBean) > 0 {
-			condTable, err := session.engine.tagParser.Parse(reflect.ValueOf(condiBean[0]))
-			if err != nil {
+		condTable := table
+		if len(condiBean) > 0 {
+			if condTable, err = session.engine.tagParser.Parse(reflect.ValueOf(condiBean[0])); err != nil {
 				return err
 			}
-			autoCond, err = session.statement.BuildConds(condTable, condiBean[0], true, true, false, true, addedTableName)
-			if err != nil {
+		}
+		if len(condiBean) > 0 && !session.statement.NoAutoCondition {
+			if autoCond, err = session.statement.BuildConds(condTable, condiBean[0], true, true, false, true, addedTableName); err != nil {
 				return err
 			}
-		} else {
-			if col := table.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
-				autoCond = session.statement.CondDeleted(col)
-			}
+		}
+		if col := condTable.DeletedColumn(); col != nil && !session.statement.GetUnscoped() { // tag "deleted" is enabled
+			autoCond = builder.And(autoCond, session.statement.CondDeleted(col))
 		}
 	}
 
@@ -236,7 +235,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func(rows *core.Rows) { _ = rows.Close() }(rows)
 
 	fields, err := rows.Columns()
 	if err != nil {
@@ -302,7 +301,7 @@ func (session *Session) noCacheFind(table *schemas.Table, containerValue reflect
 		columnsSchema := ParseColumnsSchema(fields, types, tb)
 
 		err = session.rows2Beans(rows, columnsSchema, fields, types, tb, newElemFunc, containerValueSetFunc)
-		rows.Close()
+		_ = rows.Close()
 		if err != nil {
 			return err
 		}
@@ -361,7 +360,7 @@ func (session *Session) cacheFind(t reflect.Type, sqlStr string, rowsSlicePtr in
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *core.Rows) { _ = rows.Close() }(rows)
 
 		var i int
 		ids = make([]schemas.PK, 0)

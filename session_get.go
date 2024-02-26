@@ -29,7 +29,7 @@ var (
 // will be as conditions
 func (session *Session) Get(beans ...interface{}) (bool, error) {
 	if session.isAutoClose {
-		defer session.Close()
+		defer func(session *Session) { _ = session.Close() }(session)
 	}
 	return session.get(beans...)
 }
