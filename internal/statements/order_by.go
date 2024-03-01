@@ -118,10 +118,13 @@ func (statement *Statement) Desc(colNames ...string) *Statement {
 	}
 	for _, colName := range colNames {
 		ob := orderBy{colName, nil, "DESC"}
-		statement.orderBy = append(statement.orderBy, ob)
-		if _, err := ob.CheckValid(); err != nil {
+		notNil, err := ob.CheckValid()
+		if err != nil {
 			statement.LastError = err
 			return statement
+		}
+		if notNil {
+			statement.orderBy = append(statement.orderBy, ob)
 		}
 	}
 	return statement
@@ -135,10 +138,13 @@ func (statement *Statement) Asc(colNames ...string) *Statement {
 	}
 	for _, colName := range colNames {
 		ob := orderBy{colName, nil, "ASC"}
-		statement.orderBy = append(statement.orderBy, ob)
-		if _, err := ob.CheckValid(); err != nil {
+		notNil, err := ob.CheckValid()
+		if err != nil {
 			statement.LastError = err
 			return statement
+		}
+		if notNil {
+			statement.orderBy = append(statement.orderBy, ob)
 		}
 	}
 	return statement
