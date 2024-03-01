@@ -17,23 +17,23 @@ type orderBy struct {
 	direction string // ASC, DESC or "", "" means raw orderStr
 }
 
-func (ob orderBy) CheckValid() error {
+func (ob orderBy) CheckValid() (bool, error) {
 	if ob.orderStr == nil {
-		return fmt.Errorf("order by string is nil")
+		return false, nil
 	}
 	switch t := ob.orderStr.(type) {
 	case string:
 		if t == "" {
-			return fmt.Errorf("order by string is empty")
+			return false, nil
 		}
-		return nil
+		return true, nil
 	case *builder.Expression:
 		if t.Content() == "" {
-			return fmt.Errorf("order by string is empty")
+			return false, nil
 		}
-		return nil
+		return true, nil
 	default:
-		return fmt.Errorf("order by string is not string or builder.Expression")
+		return false, fmt.Errorf("order by string is not string or builder.Expression")
 	}
 }
 
@@ -99,11 +99,14 @@ func (statement *Statement) writeOrderBys(w *builder.BytesWriter) error {
 // OrderBy generate "Order By order" statement
 func (statement *Statement) OrderBy(order interface{}, args ...interface{}) *Statement {
 	ob := orderBy{order, args, ""}
-	if err := ob.CheckValid(); err != nil {
+	notNil, err := ob.CheckValid()
+	if err != nil {
 		statement.LastError = err
 		return statement
 	}
-	statement.orderBy = append(statement.orderBy, ob)
+	if notNil {
+		statement.orderBy = append(statement.orderBy, ob)
+	}
 	return statement
 }
 
@@ -116,7 +119,7 @@ func (statement *Statement) Desc(colNames ...string) *Statement {
 	for _, colName := range colNames {
 		ob := orderBy{colName, nil, "DESC"}
 		statement.orderBy = append(statement.orderBy, ob)
-		if err := ob.CheckValid(); err != nil {
+		if _, err := ob.CheckValid(); err != nil {
 			statement.LastError = err
 			return statement
 		}
@@ -133,7 +136,7 @@ func (statement *Statement) Asc(colNames ...string) *Statement {
 	for _, colName := range colNames {
 		ob := orderBy{colName, nil, "ASC"}
 		statement.orderBy = append(statement.orderBy, ob)
-		if err := ob.CheckValid(); err != nil {
+		if _, err := ob.CheckValid(); err != nil {
 			statement.LastError = err
 			return statement
 		}
