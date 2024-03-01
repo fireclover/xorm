@@ -270,6 +270,21 @@ func TestNullStructIterate(t *testing.T) {
 	}
 }
 
+func TestNullOrderBy(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	assertSync(t, new(NullStruct))
+
+	if true {
+		err := testEngine.Where("`age` IS NOT NULL").OrderBy("").Iterate(new(NullStruct),
+			func(i int, bean any) error {
+				nultype := bean.(*NullStruct)
+				fmt.Println(i, nultype)
+				return nil
+			})
+		assert.NoError(t, err)
+	}
+}
+
 func TestNullStructCount(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assertSync(t, new(NullStruct))
