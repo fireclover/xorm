@@ -698,7 +698,7 @@ func TestSyncWithOptions(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Len(t, getIndicesOfBeanFromDB(t, &SyncWithOpts1{}), 0)
 
-	// only ignore indices
+	// only ignore constrains
 	result, err = testEngine.SyncWithOptions(xorm.SyncOptions{IgnoreConstrains: true}, &SyncWithOpts2{})
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -706,8 +706,16 @@ func TestSyncWithOptions(t *testing.T) {
 	assert.Len(t, indices, 2)
 	assert.ElementsMatch(t, []string{"ttt", "index"}, getKeysFromMap(indices))
 
-	// only ignore constrains
+	// only ignore indices
 	result, err = testEngine.SyncWithOptions(xorm.SyncOptions{IgnoreIndices: true}, &SyncWithOpts3{})
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	indices = getIndicesOfBeanFromDB(t, &SyncWithOpts1{})
+	assert.Len(t, indices, 4)
+	assert.ElementsMatch(t, []string{"ttt", "index", "unique", "lll"}, getKeysFromMap(indices))
+
+	// only ignore drop indices
+	result, err = testEngine.SyncWithOptions(xorm.SyncOptions{IgnoreDropIndices: true}, &SyncWithOpts3{})
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	indices = getIndicesOfBeanFromDB(t, &SyncWithOpts1{})
@@ -716,7 +724,6 @@ func TestSyncWithOptions(t *testing.T) {
 
 	tableInfoFromStruct, _ := testEngine.TableInfo(&SyncWithOpts1{})
 	assert.ElementsMatch(t, getKeysFromMap(tableInfoFromStruct.Indexes), getKeysFromMap(getIndicesOfBeanFromDB(t, &SyncWithOpts1{})))
-
 }
 
 func getIndicesOfBeanFromDB(t *testing.T, bean interface{}) map[string]*schemas.Index {
