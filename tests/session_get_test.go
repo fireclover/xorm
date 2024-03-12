@@ -1013,11 +1013,53 @@ func TestGetBytesVars(t *testing.T) {
 	assert.EqualValues(t, []byte("bytes1-1"), gbv.Bytes1)
 	assert.EqualValues(t, []byte("bytes2-2"), gbv.Bytes2)
 
-	type MyID int64
-	var myID MyID
+	t.Run("typedef int", func(t *testing.T) {
+		type MyID int
+		typedefTest[MyID](t, MyID(gbv.Id))
+	})
+	t.Run("typedef uint", func(t *testing.T) {
+		type MyIDU uint
+		typedefTest[MyIDU](t, MyIDU(gbv.Id))
+	})
+	t.Run("typedef int8", func(t *testing.T) {
+		type MyID8 int8
+		typedefTest[MyID8](t, MyID8(gbv.Id))
+	})
+	t.Run("typedef uint8", func(t *testing.T) {
+		type MyIDU8 uint8
+		typedefTest[MyIDU8](t, MyIDU8(gbv.Id))
+	})
+	t.Run("typedef int16", func(t *testing.T) {
+		type MyID16 int16
+		typedefTest[MyID16](t, MyID16(gbv.Id))
+	})
+	t.Run("typedef uint16", func(t *testing.T) {
+		type MyID16 uint16
+		typedefTest[MyID16](t, MyID16(gbv.Id))
+	})
+	t.Run("typedef int32", func(t *testing.T) {
+		type MyID32 int32
+		typedefTest[MyID32](t, MyID32(gbv.Id))
+	})
+	t.Run("typedef uint32", func(t *testing.T) {
+		type MyIDU32 uint32
+		typedefTest[MyIDU32](t, MyIDU32(gbv.Id))
+	})
+	t.Run("typedef int64", func(t *testing.T) {
+		type MyID64 int64
+		typedefTest[MyID64](t, MyID64(gbv.Id))
+	})
+	t.Run("typedef uint64", func(t *testing.T) {
+		type MyIDU64 uint64
+		typedefTest[MyIDU64](t, MyIDU64(gbv.Id))
+	})
 
-	has, err = testEngine.Table("get_bytes_vars").Select("id").Desc("id").Get(&myID)
+}
+
+func typedefTest[T any](t *testing.T, targetVal T) {
+	var myID T
+	has, err := testEngine.Table("get_bytes_vars").Select("id").Desc("id").Get(&myID)
 	assert.NoError(t, err)
 	assert.True(t, has)
-	assert.EqualValues(t, gbv.Id, myID)
+	assert.EqualValues(t, targetVal, myID)
 }
