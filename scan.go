@@ -17,6 +17,7 @@ import (
 	"xorm.io/xorm/schemas"
 )
 
+
 // genScanResultsByBeanNullabale generates scan result
 func genScanResultsByBeanNullable(bean interface{}) (interface{}, bool, error) {
 	switch t := bean.(type) {
