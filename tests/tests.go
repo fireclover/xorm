@@ -111,6 +111,35 @@ func createEngine(dbType, connStr string) error {
 				}
 				connStr = u.Path
 				*ignoreSelectUpdate = true
+			case schemas.ORACLE, "goora":
+				db, err := sql.Open("oracle", connStr)
+				if err != nil {
+					return err
+				}
+				rows, err := db.Query("SELECT 1 FROM pg_database WHERE datname = 'xorm_test'")
+				if err != nil {
+					return fmt.Errorf("db.Query: %v", err)
+				}
+				defer rows.Close()
+
+				if !rows.Next() {
+					if _, err = db.Exec("CREATE DATABASE xorm_test"); err != nil {
+						return fmt.Errorf("CREATE DATABASE: %v", err)
+					}
+				}
+				if *schema != "" {
+					db.Close()
+					db, err = sql.Open(dbType, connStr)
+					if err != nil {
+						return err
+					}
+					defer db.Close()
+					if _, err = db.Exec("CREATE SCHEMA IF NOT EXISTS " + *schema); err != nil {
+						return fmt.Errorf("CREATE SCHEMA: %v", err)
+					}
+				}
+				db.Close()
+				*ignoreSelectUpdate = true
 			default:
 				*ignoreSelectUpdate = true
 			}

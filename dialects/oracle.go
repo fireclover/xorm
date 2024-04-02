@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"xorm.io/xorm/core"
+	"xorm.io/xorm/internal/utils"
 	"xorm.io/xorm/schemas"
 )
 
@@ -567,11 +568,13 @@ func (db *oracle) SQLType(c *schemas.Column) string {
 			c.Default = "0"
 		}
 		res = "NUMBER(1,0)"
-	case schemas.Bit, schemas.TinyInt, schemas.SmallInt, schemas.MediumInt, schemas.Int, schemas.Integer, schemas.BigInt, schemas.Serial, schemas.BigSerial:
+	case schemas.Bit, schemas.TinyInt, schemas.SmallInt, schemas.MediumInt, schemas.Int,
+		schemas.Integer, schemas.BigInt, schemas.Serial, schemas.BigSerial,
+		schemas.UnsignedBigInt, schemas.UnsignedBit, schemas.UnsignedInt:
 		res = "NUMBER"
 	case schemas.Binary, schemas.VarBinary, schemas.Blob, schemas.TinyBlob, schemas.MediumBlob, schemas.LongBlob, schemas.Bytea:
 		return schemas.Blob
-	case schemas.Time, schemas.DateTime, schemas.TimeStamp:
+	case schemas.Date, schemas.Time, schemas.DateTime, schemas.TimeStamp:
 		res = schemas.TimeStamp
 	case schemas.TimeStampz:
 		res = "TIMESTAMP WITH TIME ZONE"
@@ -695,9 +698,29 @@ func (db *oracle) IsColumnExist(queryer core.Queryer, ctx context.Context, table
 	return db.HasRecords(queryer, ctx, query, args...)
 }
 
+func QueryRowContext(ctx context.Context, queryer core.Queryer, query string, args ...interface{}) *core.Row {
+	rows, err := queryer.QueryContext(ctx, query, args...)
+	if err != nil {
+		return core.NewRow(nil, err)
+	}
+	return core.NewRow(rows, nil)
+}
+
 func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableName string) ([]string, map[string]*schemas.Column, error) {
+	s := `select   column_name   from   user_cons_columns   
+	where   constraint_name   =   (select   constraint_name   from   user_constraints   
+				where   table_name   =   :1  and   constraint_type   ='P')`
+	var pkName string
+	err := QueryRowContext(ctx, queryer, s, tableName).Scan(&pkName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = nil
+		}
+		return nil, nil, err
+	}
+
 	args := []interface{}{tableName}
-	s := "SELECT column_name,data_default,data_type,data_length,data_precision,data_scale," +
+	s = "SELECT column_name,data_default,data_type,data_length,data_precision,data_scale," +
 		"nullable FROM USER_TAB_COLUMNS WHERE table_name = :1"
 
 	rows, err := queryer.QueryContext(ctx, s, args...)
@@ -712,11 +735,11 @@ func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 		col := new(schemas.Column)
 		col.Indexes = make(map[string]int)
 
-		var colName, colDefault, nullable, dataType, dataPrecision, dataScale *string
+		var colName, colDefault, nullable, dataType, dataPrecision, dataScale, comment *string
 		var dataLen int64
 
 		err = rows.Scan(&colName, &colDefault, &dataType, &dataLen, &dataPrecision,
-			&dataScale, &nullable)
+			&dataScale, &nullable, &comment)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -731,6 +754,21 @@ func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 			col.Nullable = true
 		} else {
 			col.Nullable = false
+		}
+
+		if comment != nil {
+			col.Comment = *comment
+		}
+
+		if pkName != "" && pkName == col.Name {
+			col.IsPrimaryKey = true
+			has, err := db.HasRecords(queryer, ctx, "SELECT * FROM USER_SEQUENCES WHERE SEQUENCE_NAME = :1", utils.SeqName(tableName))
+			if err != nil {
+				return nil, nil, err
+			}
+			if has {
+				col.IsAutoIncrement = true
+			}
 		}
 
 		var ignore bool
@@ -758,7 +796,7 @@ func (db *oracle) GetColumns(queryer core.Queryer, ctx context.Context, tableNam
 			col.SQLType = schemas.SQLType{Name: schemas.TimeStampz, DefaultLength: 0, DefaultLength2: 0}
 		case "NUMBER":
 			col.SQLType = schemas.SQLType{Name: schemas.Double, DefaultLength: len1, DefaultLength2: len2}
-		case "LONG", "LONG RAW":
+		case "LONG", "LONG RAW", "NCLOB", "CLOB":
 			col.SQLType = schemas.SQLType{Name: schemas.Text, DefaultLength: 0, DefaultLength2: 0}
 		case "RAW":
 			col.SQLType = schemas.SQLType{Name: schemas.Binary, DefaultLength: 0, DefaultLength2: 0}
