@@ -12,6 +12,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/microsoft/go-mssqldb v1.6.0
 	github.com/shopspring/decimal v1.3.1
+	github.com/sijms/go-ora/v2 v2.8.10
 	github.com/stretchr/testify v1.8.4
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/ziutek/mymysql v1.5.4
