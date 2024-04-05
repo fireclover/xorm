@@ -291,7 +291,7 @@ test-oracle: test-goora
 .PNONY: test-goora
 test-goora: go-check
 	$(GO) test $(INTEGRATION_PACKAGES) -v -race -db=goora -schema='$(TEST_ORACLE_SCHEMA)' -cache=$(TEST_CACHE_ENABLE) \
-	-conn_str="$(TEST_ORACLE_USERNAME):$(TEST_ORACLE_PASSWORD)@$(TEST_ORACLE_HOST)/$(TEST_ORACLE_DBNAME)" \
+	-conn_str="oracle://$(TEST_ORACLE_USERNAME):$(TEST_ORACLE_PASSWORD)@$(TEST_ORACLE_HOST)/$(TEST_ORACLE_DBNAME)" \
 	-coverprofile=oracle.$(TEST_CACHE_ENABLE).coverage.out -covermode=atomic
 
 .PHONY: test-oci8\#%
