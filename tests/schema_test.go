@@ -205,7 +205,6 @@ func TestSyncTable(t *testing.T) {
 	tableInfo, err = testEngine.TableInfo(new(SyncTable3))
 	assert.NoError(t, err)
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
-
 }
 
 func TestSyncTable2(t *testing.T) {
@@ -397,7 +396,6 @@ func TestIndexAndUnique(t *testing.T) {
 	assert.NoError(t, testEngine.DropIndexes(&IndexOrUnique{}))
 }
 
-
 func TestMetaInfo(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assert.NoError(t, testEngine.Sync(new(CustomTableName), new(IndexOrUnique)))
@@ -539,10 +537,7 @@ func TestModifyColum(t *testing.T) {
 	})
 	_, err := testEngine.Exec(alterSQL)
 	assert.NoError(t, err)
-
-
 }
-
 
 type TestCollateColumn struct {
 	Id     int64
@@ -756,7 +751,6 @@ func getKeysFromMap(m map[string]*schemas.Index) []string {
 	}
 	return ss
 }
-
 
 func TestSync2_3(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
