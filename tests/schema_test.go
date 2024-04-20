@@ -205,6 +205,7 @@ func TestSyncTable(t *testing.T) {
 	tableInfo, err = testEngine.TableInfo(new(SyncTable3))
 	assert.NoError(t, err)
 	assert.EqualValues(t, testEngine.Dialect().SQLType(tables[0].GetColumn("name")), testEngine.Dialect().SQLType(tableInfo.GetColumn("name")))
+
 }
 
 func TestSyncTable2(t *testing.T) {
@@ -396,6 +397,7 @@ func TestIndexAndUnique(t *testing.T) {
 	assert.NoError(t, testEngine.DropIndexes(&IndexOrUnique{}))
 }
 
+
 func TestMetaInfo(t *testing.T) {
 	assert.NoError(t, PrepareEngine())
 	assert.NoError(t, testEngine.Sync(new(CustomTableName), new(IndexOrUnique)))
@@ -537,7 +539,10 @@ func TestModifyColum(t *testing.T) {
 	})
 	_, err := testEngine.Exec(alterSQL)
 	assert.NoError(t, err)
+
+
 }
+
 
 type TestCollateColumn struct {
 	Id     int64
@@ -750,4 +755,35 @@ func getKeysFromMap(m map[string]*schemas.Index) []string {
 		ss = append(ss, k)
 	}
 	return ss
+}
+
+
+func TestSync2_3(t *testing.T) {
+	assert.NoError(t, PrepareEngine())
+	{
+		type User struct {
+			Id         int       `xorm:"pk autoincr 'id'"`
+			Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+		}
+		
+		assert.NoError(t, testEngine.Sync2(new(User)))
+	}
+	
+	// add comment for id column
+	type User struct {
+		Id         int       `xorm:"pk autoincr 'id' comment('primary key')"`
+		Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+	}
+
+	assert.NoError(t, testEngine.Sync2(new(User)))
+	tables, err := testEngine.DBMetas()
+	assert.NoError(t, err)
+	tableInfo, err := testEngine.TableInfo(new(User))
+
+	assert.EqualValues(t, tables[0].GetColumn("id").IsAutoIncrement, tableInfo.GetColumn("id").IsAutoIncrement)
+	assert.EqualValues(t, tables[0].GetColumn("id").Name, tableInfo.GetColumn("id").Name)
+	assert.EqualValues(t, tables[0].GetColumn("id").SQLType, tableInfo.GetColumn("id").SQLType)
+	assert.EqualValues(t, tables[0].GetColumn("id").Nullable, tableInfo.GetColumn("id").Nullable)
+	assert.EqualValues(t, tables[0].GetColumn("id").Comment, tableInfo.GetColumn("id").Comment)
+	assert.EqualValues(t, tables[0].GetColumn("id").IsPrimaryKey, tableInfo.GetColumn("id").IsPrimaryKey)
 }
