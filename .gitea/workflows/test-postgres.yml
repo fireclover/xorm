@@ -52,5 +52,3 @@ jobs:
           POSTGRES_DB: xorm_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
