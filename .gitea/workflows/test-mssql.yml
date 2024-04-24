@@ -29,5 +29,3 @@ jobs:
           ACCEPT_EULA: Y
           SA_PASSWORD: yourStrong(!)Password
           MSSQL_PID: Standard
-        ports:
-          - 1433:1433
