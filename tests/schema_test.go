@@ -753,31 +753,33 @@ func getKeysFromMap(m map[string]*schemas.Index) []string {
 }
 
 func TestSync2_3(t *testing.T) {
-	assert.NoError(t, PrepareEngine())
 	{
-		type User struct {
+		type SyncTestUser struct {
 			Id         int       `xorm:"pk autoincr 'id'"`
 			Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
 		}
-		
-		assert.NoError(t, testEngine.Sync2(new(User)))
+		assert.NoError(t, PrepareEngine())
+		assert.NoError(t, testEngine.Sync2(new(SyncTestUser)))
+	}
+
+	{
+		// add comment for id column
+		type SyncTestUser struct {
+			Id         int       `xorm:"pk autoincr 'id' comment('primary key')"`
+			Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+		}
+		assert.NoError(t, PrepareEngine())
+		assert.NoError(t, testEngine.Sync2(new(SyncTestUser)))
+		tables, err := testEngine.DBMetas()
+		assert.NoError(t, err)
+		tableInfo, err := testEngine.TableInfo(new(SyncTestUser))
+
+		assert.EqualValues(t, tables[0].GetColumn("id").IsAutoIncrement, tableInfo.GetColumn("id").IsAutoIncrement)
+		assert.EqualValues(t, tables[0].GetColumn("id").Name, tableInfo.GetColumn("id").Name)
+		assert.EqualValues(t, tables[0].GetColumn("id").SQLType, tableInfo.GetColumn("id").SQLType)
+		assert.EqualValues(t, tables[0].GetColumn("id").Nullable, tableInfo.GetColumn("id").Nullable)
+		assert.EqualValues(t, tables[0].GetColumn("id").Comment, tableInfo.GetColumn("id").Comment)
+		assert.EqualValues(t, tables[0].GetColumn("id").IsPrimaryKey, tableInfo.GetColumn("id").IsPrimaryKey)
 	}
 	
-	// add comment for id column
-	type User struct {
-		Id         int       `xorm:"pk autoincr 'id' comment('primary key')"`
-		Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
-	}
-
-	assert.NoError(t, testEngine.Sync2(new(User)))
-	tables, err := testEngine.DBMetas()
-	assert.NoError(t, err)
-	tableInfo, err := testEngine.TableInfo(new(User))
-
-	assert.EqualValues(t, tables[0].GetColumn("id").IsAutoIncrement, tableInfo.GetColumn("id").IsAutoIncrement)
-	assert.EqualValues(t, tables[0].GetColumn("id").Name, tableInfo.GetColumn("id").Name)
-	assert.EqualValues(t, tables[0].GetColumn("id").SQLType, tableInfo.GetColumn("id").SQLType)
-	assert.EqualValues(t, tables[0].GetColumn("id").Nullable, tableInfo.GetColumn("id").Nullable)
-	assert.EqualValues(t, tables[0].GetColumn("id").Comment, tableInfo.GetColumn("id").Comment)
-	assert.EqualValues(t, tables[0].GetColumn("id").IsPrimaryKey, tableInfo.GetColumn("id").IsPrimaryKey)
 }
