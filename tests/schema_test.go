@@ -753,16 +753,16 @@ func getKeysFromMap(m map[string]*schemas.Index) []string {
 }
 
 func TestSync2_3(t *testing.T) {
-	{
+	func() {
 		type SyncTestUser struct {
 			Id         int       `xorm:"pk autoincr 'id'"`
 			Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
 		}
 		assert.NoError(t, PrepareEngine())
 		assert.NoError(t, testEngine.Sync2(new(SyncTestUser)))
-	}
+	}()
 
-	{
+	func() {
 		// add comment for id column
 		type SyncTestUser struct {
 			Id         int       `xorm:"pk autoincr 'id' comment('primary key')"`
@@ -780,6 +780,6 @@ func TestSync2_3(t *testing.T) {
 		assert.EqualValues(t, tables[0].GetColumn("id").Nullable, tableInfo.GetColumn("id").Nullable)
 		assert.EqualValues(t, tables[0].GetColumn("id").Comment, tableInfo.GetColumn("id").Comment)
 		assert.EqualValues(t, tables[0].GetColumn("id").IsPrimaryKey, tableInfo.GetColumn("id").IsPrimaryKey)
-	}
+	}()
 	
 }
