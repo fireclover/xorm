@@ -752,21 +752,32 @@ func getKeysFromMap(m map[string]*schemas.Index) []string {
 	return ss
 }
 
+
+type SyncTestUser struct {
+	Id         int       `xorm:"pk autoincr 'id'"`
+	Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+}
+
+func (m *SyncTestUser) TableName() string {
+	return "sync_test_user"
+}
+
+// add comment for id column
+type SyncTestUser2 struct {
+	Id         int       `xorm:"pk autoincr 'id' comment('primary key')"`
+	Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+}
+
+func (m *SyncTestUser2) TableName() string {
+	return "sync_test_user"
+}
+
 func TestSync2_3(t *testing.T) {
 	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
-		type SyncTestUser struct {
-			Id         int       `xorm:"pk autoincr 'id'"`
-			Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
-		}
 		assert.NoError(t, PrepareEngine())
-		assert.NoError(t, testEngine.Sync2(new(SyncTestUser)))
+		assertSync(t, new(SyncTestUser))
 
-		// add comment for id column
-		type SyncTestUser2 struct {
-			Id         int       `xorm:"pk autoincr 'id' comment('primary key')"`
-			Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
-		}
-		assert.NoError(t, testEngine.Table("sync_test_user").Sync2(new(SyncTestUser2)))
+		assert.NoError(t, testEngine.Sync2(new(SyncTestUser2)))
 		tables, err := testEngine.DBMetas()
 		assert.NoError(t, err)
 		tableInfo, err := testEngine.TableInfo(new(SyncTestUser2))
