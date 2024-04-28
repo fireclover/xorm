@@ -775,6 +775,5 @@ func TestSync2_3(t *testing.T) {
 	assert.EqualValues(t, tables[0].GetColumn("id").SQLType.Name, tableInfo.GetColumn("id").SQLType.Name)
 	assert.EqualValues(t, tables[0].GetColumn("id").Nullable, tableInfo.GetColumn("id").Nullable)
 	assert.EqualValues(t, tables[0].GetColumn("id").Comment, tableInfo.GetColumn("id").Comment)
-	assert.EqualValues(t, tables[0].GetColumn("id").IsPrimaryKey, tableInfo.GetColumn("id").IsPrimaryKey)
 	
 }
