@@ -754,7 +754,7 @@ func getKeysFromMap(m map[string]*schemas.Index) []string {
 
 
 type SyncTestUser struct {
-	Id         int64       `xorm:"pk autoincr 'id' comment('primary key')"`
+	Id         int64       `xorm:"pk autoincr 'id' comment('primary key 1')"`
 	Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
 }
 
