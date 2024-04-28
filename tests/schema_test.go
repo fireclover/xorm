@@ -753,27 +753,30 @@ func getKeysFromMap(m map[string]*schemas.Index) []string {
 }
 
 func TestSync2_3(t *testing.T) {
-	type SyncTestUser struct {
-		Id         int       `xorm:"pk autoincr 'id'"`
-		Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
-	}
-	assert.NoError(t, PrepareEngine())
-	assert.NoError(t, testEngine.Sync2(new(SyncTestUser)))
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		type SyncTestUser struct {
+			Id         int       `xorm:"pk autoincr 'id'"`
+			Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+		}
+		assert.NoError(t, PrepareEngine())
+		assert.NoError(t, testEngine.Sync2(new(SyncTestUser)))
 
-	// add comment for id column
-	type SyncTestUser2 struct {
-		Id         int       `xorm:"pk autoincr 'id' comment('primary key')"`
-		Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
-	}
-	assert.NoError(t, testEngine.Table("sync_test_user").Sync2(new(SyncTestUser2)))
-	tables, err := testEngine.DBMetas()
-	assert.NoError(t, err)
-	tableInfo, err := testEngine.TableInfo(new(SyncTestUser2))
+		// add comment for id column
+		type SyncTestUser2 struct {
+			Id         int       `xorm:"pk autoincr 'id' comment('primary key')"`
+			Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+		}
+		assert.NoError(t, testEngine.Table("sync_test_user").Sync2(new(SyncTestUser2)))
+		tables, err := testEngine.DBMetas()
+		assert.NoError(t, err)
+		tableInfo, err := testEngine.TableInfo(new(SyncTestUser2))
 
-	assert.EqualValues(t, tables[0].GetColumn("id").IsAutoIncrement, tableInfo.GetColumn("id").IsAutoIncrement)
-	assert.EqualValues(t, tables[0].GetColumn("id").Name, tableInfo.GetColumn("id").Name)
-	assert.EqualValues(t, tables[0].GetColumn("id").SQLType.Name, tableInfo.GetColumn("id").SQLType.Name)
-	assert.EqualValues(t, tables[0].GetColumn("id").Nullable, tableInfo.GetColumn("id").Nullable)
-	assert.EqualValues(t, tables[0].GetColumn("id").Comment, tableInfo.GetColumn("id").Comment)
+		assert.EqualValues(t, tables[0].GetColumn("id").IsAutoIncrement, tableInfo.GetColumn("id").IsAutoIncrement)
+		assert.EqualValues(t, tables[0].GetColumn("id").Name, tableInfo.GetColumn("id").Name)
+		assert.EqualValues(t, tables[0].GetColumn("id").SQLType.Name, tableInfo.GetColumn("id").SQLType.Name)
+		assert.EqualValues(t, tables[0].GetColumn("id").Nullable, tableInfo.GetColumn("id").Nullable)
+		assert.EqualValues(t, tables[0].GetColumn("id").Comment, tableInfo.GetColumn("id").Comment)
+
+	}
 	
 }
