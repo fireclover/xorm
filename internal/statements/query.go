@@ -117,6 +117,9 @@ func (statement *Statement) GenGetSQL(bean interface{}) (string, []interface{}, 
 		if err := statement.ProcessIDParam(); err != nil {
 			return "", nil, err
 		}
+		if err := statement.ProcessAutoCond(); err != nil {
+			return "", nil, err
+		}
 	}
 
 	buf := builder.NewWriter()

@@ -96,3 +96,12 @@ func (statement *Statement) ProcessIDParam() error {
 	}
 	return nil
 }
+
+func (statement *Statement) ProcessAutoCond() error {
+	if statement.RefTable != nil {
+		if col := statement.RefTable.DeletedColumn(); col != nil && !statement.GetUnscoped() { // tag "deleted" is enabled
+			statement.cond = statement.CondDeleted(col)
+		}
+	}
+	return nil
+}
