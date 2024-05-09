@@ -751,3 +751,43 @@ func getKeysFromMap(m map[string]*schemas.Index) []string {
 	}
 	return ss
 }
+
+
+type SyncTestUser struct {
+	Id         int64       `xorm:"pk autoincr 'id' comment('primary key 1')"`
+	Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+}
+
+func (m *SyncTestUser) TableName() string {
+	return "sync_test_user"
+}
+
+
+type SyncTestUser2 struct {
+	Id         int64       `xorm:"pk autoincr 'id' comment('primary key 2')"`
+	Name       string    `xorm:"'name' notnull comment('nickname')" json:"name"`
+}
+
+func (m *SyncTestUser2) TableName() string {
+	return "sync_test_user"
+}
+
+func TestSync2_3(t *testing.T) {
+	if testEngine.Dialect().URI().DBType == schemas.MYSQL {
+		assert.NoError(t, PrepareEngine())
+		assertSync(t, new(SyncTestUser))
+
+		assert.NoError(t, testEngine.Sync2(new(SyncTestUser2)))
+		tables, err := testEngine.DBMetas()
+		assert.NoError(t, err)
+		tableInfo, err := testEngine.TableInfo(new(SyncTestUser2))
+
+		assert.EqualValues(t, tables[0].GetColumn("id").IsAutoIncrement, tableInfo.GetColumn("id").IsAutoIncrement)
+		assert.EqualValues(t, tables[0].GetColumn("id").Name, tableInfo.GetColumn("id").Name)
+		assert.EqualValues(t, tables[0].GetColumn("id").SQLType.Name, tableInfo.GetColumn("id").SQLType.Name)
+		assert.EqualValues(t, tables[0].GetColumn("id").Nullable, tableInfo.GetColumn("id").Nullable)
+		assert.EqualValues(t, tables[0].GetColumn("id").Comment, tableInfo.GetColumn("id").Comment)
+
+	}
+	
+}
