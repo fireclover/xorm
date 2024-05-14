@@ -2,7 +2,8 @@ name: test mssql
 on: 
   push:
     branches:
-      - master
+      - main
+      - v1
   pull_request:
 
 jobs:

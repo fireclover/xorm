@@ -2,7 +2,8 @@ name: test tidb
 on: 
   push:
     branches:
-      - master
+      - main
+      - v1
   pull_request:
 
 jobs:
