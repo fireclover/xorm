@@ -49,6 +49,17 @@ func (session *Session) FindAndCount(rowsSlicePtr any, condiBean ...any) (int64,
 		return 0, errors.New("needs a pointer to a slice or a map")
 	}
 
+	sliceValueLen := sliceValue.Len()
+	if session.statement.LimitN == nil {
+		return int64(sliceValueLen), nil
+	}
+	if *session.statement.LimitN > 0 && sliceValueLen == 0 && session.statement.Start <= 0 {
+		return 0, nil
+	}
+	if session.statement.Start >= 0 && sliceValueLen > 0 && sliceValueLen < *session.statement.LimitN {
+		return int64(session.statement.Start + sliceValueLen), nil
+	}
+
 	sliceElementType := sliceValue.Type().Elem()
 	if sliceElementType.Kind() == reflect.Ptr {
 		sliceElementType = sliceElementType.Elem()
