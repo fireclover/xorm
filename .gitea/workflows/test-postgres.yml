@@ -2,7 +2,8 @@ name: test postgres
 on: 
   push:
     branches:
-      - master
+      - main
+      - v1
   pull_request:
 
 jobs:
@@ -52,5 +53,3 @@ jobs:
           POSTGRES_DB: xorm_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432

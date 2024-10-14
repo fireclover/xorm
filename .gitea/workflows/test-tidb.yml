@@ -2,7 +2,8 @@ name: test tidb
 on: 
   push:
     branches:
-      - master
+      - main
+      - v1
   pull_request:
 
 jobs:
@@ -25,5 +26,3 @@ jobs:
     services:
       tidb:
         image: pingcap/tidb:v3.0.3
-        ports:
-          - 4000:4000

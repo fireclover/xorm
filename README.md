@@ -465,7 +465,7 @@ res, err := engine.Transaction(func(session *xorm.Session) (interface{}, error) 
 
 ## Contributing
 
-If you want to pull request, please see [CONTRIBUTING](https://gitea.com/xorm/xorm/src/branch/master/CONTRIBUTING.md). And you can also go to [Xorm on discourse](https://xorm.discourse.group) to discuss.
+If you want to pull request, please see [CONTRIBUTING](CONTRIBUTING.md). And you can also go to [Xorm on discourse](https://xorm.discourse.group) to discuss.
 
 ## Credits
 
