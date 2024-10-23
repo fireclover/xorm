@@ -161,7 +161,12 @@ func (statement *Statement) GenCountSQL(beans ...interface{}) (string, []interfa
 
 	var subQuerySelect string
 	if statement.GroupByStr != "" {
-		subQuerySelect = statement.GroupByStr
+		i := strings.Index(statement.GroupByStr, ",")
+		if i > -1 {
+			subQuerySelect = statement.GroupByStr[:i]
+		} else {
+			subQuerySelect = statement.GroupByStr
+		}
 	} else {
 		subQuerySelect = selectSQL
 	}
