@@ -14,6 +14,7 @@ import (
 	"xorm.io/xorm"
 	"xorm.io/xorm/schemas"
 
+	_ "gitee.com/opengauss/openGauss-connector-go-pq"
 	_ "gitee.com/travelliu/dm"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v4/stdlib"
