@@ -68,7 +68,12 @@ func OpenDialect(driverName, connstr string) (Dialect, error) {
 		return nil, err
 	}
 
-	dialect := QueryDialect(uri.DBType)
+	var dialect Dialect
+	if driverName == "opengauss" {
+		dialect = QueryDialect("opengauss")
+	} else {
+		dialect = QueryDialect(uri.DBType)
+	}
 	if dialect == nil {
 		return nil, fmt.Errorf("unsupported dialect type: %v", uri.DBType)
 	}
