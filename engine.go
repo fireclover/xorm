@@ -99,6 +99,10 @@ func newEngine(driverName, dataSourceName string, dialect dialects.Dialect, db *
 // NewEngineWithParams new a db manager with params. The params will be passed to dialects.
 func NewEngineWithParams(driverName string, dataSourceName string, params map[string]string) (*Engine, error) {
 	engine, err := NewEngine(driverName, dataSourceName)
+	if err != nil {
+		return nil, err
+	}
+
 	engine.dialect.SetParams(params)
 	return engine, err
 }
