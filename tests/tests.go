@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"xorm.io/xorm/v2"
 
@@ -93,7 +94,6 @@ func createEngine(dbType, connStr string) error {
 					}
 				}
 				db.Close()
-				*ignoreSelectUpdate = true
 			case schemas.MYSQL:
 				db, err := sql.Open(dbType, strings.ReplaceAll(connStr, "xorm_test", "mysql"))
 				if err != nil {
@@ -115,6 +115,19 @@ func createEngine(dbType, connStr string) error {
 			}
 
 			testEngine, err = xorm.NewEngine(dbType, connStr)
+			if err != nil {
+				return err
+			}
+
+			var timeZone string
+			_, err = testEngine.SQL("SHOW TIMEZONE").Get(&timeZone)
+			if err != nil {
+				return err
+			}
+
+			if strings.EqualFold(timeZone, "UTC") {
+				testEngine.SetTZDatabase(time.UTC)
+			}
 		} else {
 			testEngine, err = xorm.NewEngineGroup(dbType, strings.Split(connStr, *splitter))
 			if dbType != "mysql" {
