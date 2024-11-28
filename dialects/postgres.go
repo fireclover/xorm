@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"xorm.io/xorm/v2/internal/core"
+	"xorm.io/xorm/v2/internal/utils"
 	"xorm.io/xorm/v2/schemas"
 )
 
@@ -913,12 +914,12 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 		res = schemas.Boolean
 		return res
 	case schemas.MediumInt, schemas.Int, schemas.Integer, schemas.UnsignedMediumInt, schemas.UnsignedSmallInt:
-		if c.IsAutoIncrement {
+		if c.IsAutoIncrement && db.dialect.URI().Serial != "sql_sequence" {
 			return schemas.Serial
 		}
 		return schemas.Integer
 	case schemas.BigInt, schemas.UnsignedBigInt, schemas.UnsignedInt:
-		if c.IsAutoIncrement {
+		if c.IsAutoIncrement && db.dialect.URI().Serial != "sql_sequence" {
 			return schemas.BigSerial
 		}
 		return schemas.BigInt
@@ -947,7 +948,7 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 	case schemas.Double, schemas.UnsignedFloat:
 		return "DOUBLE PRECISION"
 	default:
-		if c.IsAutoIncrement {
+		if c.IsAutoIncrement && db.dialect.URI().Serial != "sql_sequence" {
 			return schemas.Serial
 		}
 		res = t
@@ -969,8 +970,12 @@ func (db *postgres) SQLType(c *schemas.Column) string {
 }
 
 func (db *postgres) Features() *DialectFeatures {
+	var autoincrMode = IncrAutoincrMode
+	if db.uri.Serial == "sql_sequence" {
+		autoincrMode = SequenceAutoincrMode
+	}
 	return &DialectFeatures{
-		AutoincrMode: IncrAutoincrMode,
+		AutoincrMode: autoincrMode,
 	}
 }
 
@@ -1357,6 +1362,17 @@ func (db *postgres) GetIndexes(ctx context.Context, queryer core.Queryer, tableN
 }
 
 func (db *postgres) CreateTableSQL(ctx context.Context, queryer core.Queryer, table *schemas.Table, tableName string) (string, bool, error) {
+	// compatible with sql sequence of cockroach
+	if db.dialect.URI().Serial == "sql_sequence" {
+		for _, col := range table.Columns() {
+			if col.IsAutoIncrement && col.IsPrimaryKey {
+				col.DefaultIsEmpty = false
+				col.Default = db.NextvalSequenceSQL(utils.SeqName(tableName))
+				break
+			}
+		}
+	}
+
 	quoter := db.dialect.Quoter()
 	if len(db.getSchema()) != 0 && !strings.Contains(tableName, ".") {
 		tableName = fmt.Sprintf("%s.%s", db.getSchema(), tableName)
@@ -1382,6 +1398,37 @@ func (db *postgres) CreateTableSQL(ctx context.Context, queryer core.Queryer, ta
 	}
 
 	return createTableSQL + commentSQL, true, nil
+}
+
+func (db *postgres) CreateSequenceSQL(ctx context.Context, queryer core.Queryer, seqName string) (string, error) {
+	return fmt.Sprintf(`CREATE SEQUENCE %s 
+	minvalue 1
+	   start with 1
+	   increment by 1`, seqName), nil
+}
+
+func (db *postgres) IsSequenceExist(ctx context.Context, queryer core.Queryer, seqName string) (bool, error) {
+	var cnt int
+	rows, err := queryer.QueryContext(ctx, "SELECT COUNT(*) FROM pg_class WHERE relkind = 'S' and relname = $1", strings.ToLower(seqName))
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return false, rows.Err()
+		}
+		return false, errors.New("query sequence failed")
+	}
+
+	if err := rows.Scan(&cnt); err != nil {
+		return false, err
+	}
+	return cnt > 0, nil
+}
+
+func (db *postgres) NextvalSequenceSQL(seqName string) string {
+	return "nextval('" + seqName + "')"
 }
 
 func (db *postgres) Filters() []Filter {
@@ -1411,6 +1458,19 @@ func parseURL(connstr string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func queryURL(connstr, key string) (string, error) {
+	u, err := url.Parse(connstr)
+	if err != nil {
+		return "", err
+	}
+
+	if u.Scheme != "postgresql" && u.Scheme != "postgres" {
+		return "", fmt.Errorf("invalid connection protocol: %s", u.Scheme)
+	}
+
+	return u.Query().Get(key), nil
 }
 
 func parseOpts(urlStr string, o values) error {
@@ -1502,6 +1562,11 @@ func (p *pqDriver) Parse(driverName, dataSourceName string) (*URI, error) {
 		}
 
 		db.DBName, err = parseURL(dataSourceName)
+		if err != nil {
+			return nil, err
+		}
+
+		db.Serial, err = queryURL(dataSourceName, "experimental_serial_normalization")
 		if err != nil {
 			return nil, err
 		}

@@ -423,6 +423,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 		}
 		if tp[0] == schemas.POSTGRES {
 			destURI.Schema = engine.dialect.URI().Schema
+			destURI.Serial = uri.Serial
 		}
 		if err := dstDialect.Init(&destURI); err != nil {
 			return err
@@ -760,7 +761,7 @@ func (engine *Engine) dumpTables(ctx context.Context, tables []*schemas.Table, w
 		}
 
 		// FIXME: Hack for postgres
-		if dstDialect.URI().DBType == schemas.POSTGRES && table.AutoIncrColumn() != nil {
+		if dstDialect.URI().DBType == schemas.POSTGRES && dstDialect.URI().Serial != "sql_sequence" && table.AutoIncrColumn() != nil {
 			_, err = io.WriteString(w, "SELECT setval('"+dstTableName+"_id_seq', COALESCE((SELECT MAX("+table.AutoIncrColumn().Name+") + 1 FROM "+dstDialect.Quoter().Quote(dstTableName)+"), 1), false);\n")
 			if err != nil {
 				return err

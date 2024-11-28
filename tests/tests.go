@@ -94,6 +94,14 @@ func createEngine(dbType, connStr string) error {
 					}
 				}
 				db.Close()
+
+				u, err := url.Parse(connStr)
+				if err != nil {
+					return err
+				}
+				if u.Query().Get("experimental_serial_normalization") == "sql_sequence" {
+					*ignoreSelectUpdate = true
+				}
 			case schemas.MYSQL:
 				db, err := sql.Open(dbType, strings.ReplaceAll(connStr, "xorm_test", "mysql"))
 				if err != nil {

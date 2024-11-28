@@ -56,9 +56,23 @@ func (statement *Statement) writeOrderCond(orderCondWriter *builder.BytesWriter,
 				return err
 			}
 		}
-		if _, err := fmt.Fprintf(orderCondWriter, "ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQLWriter.String()); err != nil {
-			return err
+
+		if statement.dialect.URI().Serial == "sql_sequence" {
+			cols := statement.RefTable.Columns()
+			if len(cols) == 0 {
+				return fmt.Errorf("no column")
+			}
+			colName := cols[0].Name
+
+			if _, err := fmt.Fprintf(orderCondWriter, colName+" IN (SELECT "+colName+" FROM %s%s)", tableName, orderSQLWriter.String()); err != nil {
+				return err
+			}
+		} else {
+			if _, err := fmt.Fprintf(orderCondWriter, "ctid IN (SELECT ctid FROM %s%s)", tableName, orderSQLWriter.String()); err != nil {
+				return err
+			}
 		}
+
 		orderCondWriter.Append(orderSQLWriter.Args()...)
 		return nil
 	case schemas.SQLITE:

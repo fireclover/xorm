@@ -103,7 +103,7 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []any) (string,
 						return "", nil, err
 					}
 				}
-				if _, err := buf.WriteString(utils.SeqName(tableName) + ".nextval"); err != nil {
+				if _, err := buf.WriteString(statement.dialect.NextvalSequenceSQL(utils.SeqName(tableName))); err != nil {
 					return "", nil, err
 				}
 			}
@@ -143,7 +143,7 @@ func (statement *Statement) GenInsertSQL(colNames []string, args []any) (string,
 						return "", nil, err
 					}
 				}
-				if _, err := buf.WriteString(utils.SeqName(tableName) + ".nextval"); err != nil {
+				if _, err := buf.WriteString(statement.dialect.NextvalSequenceSQL(utils.SeqName(tableName))); err != nil {
 					return "", nil, err
 				}
 			}

@@ -28,6 +28,9 @@ type URI struct {
 	Raddr   string
 	Timeout time.Duration
 	Schema  string
+
+	// for cockrocah
+	Serial string
 }
 
 // SetSchema set schema
@@ -79,6 +82,7 @@ type Dialect interface {
 	CreateSequenceSQL(ctx context.Context, queryer core.Queryer, seqName string) (string, error)
 	IsSequenceExist(ctx context.Context, queryer core.Queryer, seqName string) (bool, error)
 	DropSequenceSQL(seqName string) (string, error)
+	NextvalSequenceSQL(seqName string) string
 
 	GetColumns(ctx context.Context, queryer core.Queryer, tableName string) ([]string, map[string]*schemas.Column, error)
 	IsColumnExist(ctx context.Context, queryer core.Queryer, tableName string, colName string) (bool, error)
@@ -168,6 +172,10 @@ func (db *Base) IsSequenceExist(ctx context.Context, queryer core.Queryer, seqNa
 
 func (db *Base) DropSequenceSQL(seqName string) (string, error) {
 	return fmt.Sprintf("DROP SEQUENCE %s", seqName), nil
+}
+
+func (db *Base) NextvalSequenceSQL(seqName string) string {
+	return seqName + ".nextval"
 }
 
 // DropTableSQL returns drop table SQL

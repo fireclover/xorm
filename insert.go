@@ -130,7 +130,8 @@ func (session *Session) insertMultipleStruct(rowsSlicePtr any) (int64, error) {
 					if i == 0 {
 						colNames = append(colNames, col.Name)
 					}
-					colPlaces = append(colPlaces, utils.SeqName(tableName)+".nextval")
+
+					colPlaces = append(colPlaces, session.engine.dialect.NextvalSequenceSQL(utils.SeqName(tableName)))
 				}
 				continue
 			}
